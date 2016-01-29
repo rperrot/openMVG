@@ -1,0 +1,29 @@
+version: 1.0.{build}
+
+# branches to build
+branches:
+  # whitelist
+  only:
+    - delveop_appveyor
+    
+os: Visual Studio 2015
+configuration: Release
+platform: x64
+
+clone_folder: c:\dev\openMVG
+
+build:
+  parallel: true
+  verbosity: minimal
+  project: ALL_BUILD.vcxproj
+
+build_script:
+  - cd c:\dev\openMVG
+  - md openMVG_build
+  - cd openMVG_build
+  - cmake -G"Visual Studio 14" -DOpenMVG_BUILD_TESTS=ON -DOpenMVG_BUILD_EXAMPLES=ON ../openMVG/src/
+
+after_build:
+  - cmd: cmake --build C:\dev\openMVG_build --target RUN_TESTS
+
+
