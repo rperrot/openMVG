@@ -12,16 +12,20 @@ platform: x64
 
 clone_folder: c:\dev\openMVG
 
-build:
-  parallel: true
-  verbosity: minimal
-  project: ALL_BUILD.vcxproj
-
+install:
+  - git submodule update --init --recursive
+  
 build_script:
   - cd c:\dev\openMVG
   - md openMVG_build
   - cd openMVG_build
   - cmake -G"Visual Studio 14" -DOpenMVG_BUILD_TESTS=ON -DOpenMVG_BUILD_EXAMPLES=ON ../src/
+
+build:
+  parallel: true
+  verbosity: minimal
+  project: ALL_BUILD.vcxproj
+
 
 after_build:
   - cmd: cmake --build C:\dev\openMVG_build --target RUN_TESTS
