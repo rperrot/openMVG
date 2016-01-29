@@ -21,7 +21,7 @@ build_script:
   - cd c:\dev\openMVG
   - md openMVG_build
   - cd openMVG_build
-  - cmake -G"Visual Studio 14" -DOpenMVG_BUILD_TESTS=ON -DOpenMVG_BUILD_EXAMPLES=ON ../openMVG/src/
+  - cmake -G"Visual Studio 14" -DOpenMVG_BUILD_TESTS=ON -DOpenMVG_BUILD_EXAMPLES=ON ../src/
 
 after_build:
   - cmd: cmake --build C:\dev\openMVG_build --target RUN_TESTS
