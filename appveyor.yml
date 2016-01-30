@@ -19,7 +19,8 @@ build_script:
   - cd c:\dev\openMVG
   - md openMVG_build
   - cd openMVG_build
-  - cmake -G"Visual Studio 14" -DOpenMVG_BUILD_TESTS=ON -DOpenMVG_BUILD_EXAMPLES=ON ../src/
+  - cmake -G"Visual Studio 14 2015 Win64" -DOpenMVG_BUILD_TESTS=ON -DOpenMVG_BUILD_EXAMPLES=ON ../src/
+  - cmake --build . --target ALL_BUILD
 
 build:
   parallel: true
@@ -28,6 +29,6 @@ build:
 
 
 after_build:
-  - cmd: cmake --build C:\dev\openMVG_build --target RUN_TESTS
+  - cmd: cmake --build C:\dev\openMVG\openMVG_build --target RUN_TESTS
 
 
