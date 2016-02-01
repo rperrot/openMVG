@@ -17,6 +17,7 @@ environment:
     - GENERATOR: "MinGW Makefiles"
       
 build_script:
+  - if [%GENERATOR%]==[MinGW Makefiles] SET PATH=C:\MinGW\bin;%PATH%
   - cd c:\dev\openMVG
   - md openMVG_build
   - cd openMVG_build
