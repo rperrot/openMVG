@@ -6,10 +6,6 @@ branches:
   only:
     - develop_appveyor
 
-os: Visual Studio 2015
-configuration: Release
-platform: x64
-
 clone_folder: c:\dev\openMVG
 
 install:
@@ -19,8 +15,8 @@ build_script:
   - cd c:\dev\openMVG
   - md openMVG_build
   - cd openMVG_build
-  - cmake -G"Visual Studio 14 2015 Win64" -DOpenMVG_BUILD_TESTS=ON -DOpenMVG_BUILD_EXAMPLES=ON ../src/
-  - cmake --build . --target ALL_BUILD --config Release
+  - cmake -G"Visual Studio 14 2015 Win64" -DVC_EXTRALEAN ../src/
+  - cmake --build . --target ALL_BUILD --config Debug
 
 build:
   parallel: true
