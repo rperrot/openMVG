@@ -10,7 +10,7 @@ clone_folder: c:\dev\openMVG
 
 install:
   - git submodule update --init --recursive
-  
+
 build_script:
   - cd c:\dev\openMVG
   - md openMVG_build
@@ -22,9 +22,4 @@ build:
   parallel: true
   verbosity: minimal
   project: ALL_BUILD.vcxproj
-
-
-after_build:
-  - cmd: cmake --build C:\dev\openMVG\openMVG_build --target RUN_TESTS --config Release
-
 
