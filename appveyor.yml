@@ -13,13 +13,8 @@ install:
 
 environment:
   matrix:
-    # - GENERATOR: "Visual Studio 14 2015 Win64"
-    - GENERATOR: "MinGW Makefiles"
-      COMPILER_PATH: C:\MinGW\bin
-
-before_build:
-  - cmd: set PATH=%PATH:C:\Program Files\Git\usr\bin;=%
-  - cmd: set PATH=%COMPILER_PATH%;%PATH%
+    - GENERATOR: "Visual Studio 14 2015 Win64"
+    - GENERATOR: "Visual Studio 14 2015"
 
 build_script:
   - cd c:\dev\openMVG
@@ -31,5 +26,4 @@ build_script:
 build:
   parallel: true
   verbosity: minimal
-  project: ALL_BUILD.vcxproj
 
