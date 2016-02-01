@@ -15,9 +15,13 @@ environment:
   matrix:
     # - GENERATOR: "Visual Studio 14 2015 Win64"
     - GENERATOR: "MinGW Makefiles"
-      
+      COMPILER_PATH: C:\MinGW\bin
+
+before_build:
+  - cmd: set PATH=%PATH:C:\Program Files\Git\usr\bin;=%
+  - cmd: set PATH=%COMPILER_PATH%;%PATH%
+
 build_script:
-  - if ["%GENERATOR%"]==["MinGW Makefiles"] SET PATH=C:\MinGW\bin;%PATH%
   - cd c:\dev\openMVG
   - md openMVG_build
   - cd openMVG_build
