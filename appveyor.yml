@@ -15,7 +15,7 @@ build_script:
   - cd c:\dev\openMVG
   - md openMVG_build
   - cd openMVG_build
-  - cmake -G"Visual Studio 14 2015 Win64" -DVC_EXTRALEAN ../src/
+  - cmake -G"Visual Studio 14 2015 Win64" ../src/
   - cmake --build . --target ALL_BUILD --config Debug
 
 build:
