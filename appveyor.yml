@@ -2,7 +2,7 @@ version: 1.0.{build}
 
 # branches to build
 branches:
-  # whitelist
+  # white list
   only:
     - develop_appveyor
 
@@ -20,8 +20,12 @@ build_script:
   - cd c:\dev\openMVG
   - md openMVG_build
   - cd openMVG_build
-  - cmake -G"%GENERATOR%" -DOpenMVG_BUILD_EXAMPLES=OFF ../src/
-  - cmake --build . --config Debug
+  - cmake -G"%GENERATOR%" -DOpenMVG_BUILD_EXAMPLES=OFF -DOpenMVG_BUILD_TESTS=ON ../src/
+  #Build only some targets since there is no time to compile all
+  - cmake --build . --config Release --target openMVG_test_sequential_SfM
+  - cmake --build . --config Release --target openMVG_test_global_SfM
+  - cmake --build . --config Release --target openMVG_main_IncrementalSfM
+  - cmake --build . --config Release --target openMVG_main_GlobalSfM
 
 build:
   parallel: true
