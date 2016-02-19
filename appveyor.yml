@@ -22,10 +22,10 @@ build_script:
   - cd openMVG_build
   - cmake -G"%GENERATOR%" -DOpenMVG_BUILD_EXAMPLES=OFF -DOpenMVG_BUILD_TESTS=ON ../src/
   #Build only some targets since there is no time to compile all
-  - cmake --build . --config Release --target openMVG_test_sequential_SfM
-  - cmake --build . --config Release --target openMVG_test_global_SfM
-  - cmake --build . --config Release --target openMVG_main_IncrementalSfM
-  - cmake --build . --config Release --target openMVG_main_GlobalSfM
+  - cmake --build . --config Debug --target openMVG_test_sequential_SfM
+  #- cmake --build . --config Debug --target openMVG_test_global_SfM
+  #- cmake --build . --config Debug --target openMVG_main_IncrementalSfM
+  #- cmake --build . --config Debug --target openMVG_main_GlobalSfM
 
 build:
   parallel: true
