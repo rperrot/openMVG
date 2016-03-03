@@ -22,10 +22,16 @@ namespace openMVG
 namespace cameras
 {
 
+template< typename T>
+struct Clonable
+{
+  virtual T * clone() const = 0 ;
+} ;
+
 /**
 * @brief Base class used to store common intrinsics parameters
 */
-struct IntrinsicBase
+struct IntrinsicBase : Clonable<IntrinsicBase>
 {
   /// Width of image
   unsigned int _w ;
@@ -251,6 +257,19 @@ struct IntrinsicBase
     return seed;
   }
 };
+
+/*
+template< typename Derived >
+struct IntrinsicBase : public _IntrinsicBase
+{
+  using _IntrinsicBase::_IntrinsicBase;
+  
+  virtual IntrinsicBase * clone() const 
+  {
+    return new Derived( static_cast<Derived const&>( *this ) ) ; 
+  }
+} ;
+*/
 
 
 /**

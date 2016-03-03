@@ -15,9 +15,9 @@
 #include <set>
 #include <vector>
 
-#if defined OPENMVG_STD_UNORDERED_MAP
+//#if defined OPENMVG_STD_UNORDERED_MAP
   #include <unordered_map>
-#endif
+//#endif
 
 /**
 * @brief Main namespace of openMVG API
@@ -40,7 +40,7 @@ typedef std::set<Pair> Pair_Set;
 /// Vector of Pairs
 typedef std::vector<Pair> Pair_Vec;
 
-#define OPENMVG_NO_UNORDERED_MAP 1
+//#define OPENMVG_NO_UNORDERED_MAP 1
 
 #if defined OPENMVG_NO_UNORDERED_MAP
 
@@ -54,6 +54,7 @@ struct Hash_Map : std::map<K, V, std::less<K>,
   Eigen::aligned_allocator<std::pair<K, V> > > {};
 #endif
 
+#define OPENMVG_STD_UNORDERED_MAP
 #if defined OPENMVG_STD_UNORDERED_MAP
 
 /**

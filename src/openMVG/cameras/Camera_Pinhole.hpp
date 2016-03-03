@@ -30,6 +30,8 @@ namespace cameras
 */
 class Pinhole_Intrinsic : public IntrinsicBase
 {
+  typedef Pinhole_Intrinsic class_type ;
+  
   protected:
 
     /// Intrinsic matrix : Focal & principal point are embed into the calibration matrix K
@@ -240,6 +242,11 @@ class Pinhole_Intrinsic : public IntrinsicBase
     virtual Vec2 get_d_pixel( const Vec2& p ) const
     {
       return p;
+    }
+    
+    virtual IntrinsicBase * clone( void ) const 
+    {
+      return new class_type( *this ) ; 
     }
 
     /**

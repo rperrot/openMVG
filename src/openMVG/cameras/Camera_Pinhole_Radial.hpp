@@ -76,6 +76,8 @@ double bisection_Radius_Solve(
  */
 class Pinhole_Intrinsic_Radial_K1 : public Pinhole_Intrinsic
 {
+  typedef Pinhole_Intrinsic_Radial_K1 class_type ; 
+  
   protected:
     /// center of distortion is applied by the Intrinsics class
     std::vector<double> _params; // K1
@@ -212,6 +214,11 @@ class Pinhole_Intrinsic_Radial_K1 : public Pinhole_Intrinsic
       return cam2ima( add_disto( ima2cam( p ) ) );
     }
 
+    virtual IntrinsicBase * clone( void ) const 
+    {
+      return new class_type( *this ) ; 
+    }
+
 
     /**
     * @brief Serialization out
@@ -258,6 +265,8 @@ class Pinhole_Intrinsic_Radial_K1 : public Pinhole_Intrinsic
 */
 class Pinhole_Intrinsic_Radial_K3 : public Pinhole_Intrinsic
 {
+    typedef Pinhole_Intrinsic_Radial_K3 class_type ; 
+
   protected:
     // center of distortion is applied by the Intrinsics class
     /// K1, K2, K3
@@ -401,6 +410,12 @@ class Pinhole_Intrinsic_Radial_K3 : public Pinhole_Intrinsic
     {
       return cam2ima( add_disto( ima2cam( p ) ) );
     }
+    
+        virtual IntrinsicBase * clone( void ) const 
+    {
+      return new class_type( *this ) ; 
+    }
+
 
 
     /**

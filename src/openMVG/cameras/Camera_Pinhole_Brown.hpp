@@ -25,6 +25,8 @@ namespace cameras
 */
 class Pinhole_Intrinsic_Brown_T2 : public Pinhole_Intrinsic
 {
+    typedef Pinhole_Intrinsic_Brown_T2 class_type ;
+
   protected:
 
     /// center of distortion is applied by the Intrinsics class
@@ -164,6 +166,11 @@ class Pinhole_Intrinsic_Brown_T2 : public Pinhole_Intrinsic
     virtual Vec2 get_d_pixel( const Vec2& p ) const
     {
       return cam2ima( add_disto( ima2cam( p ) ) );
+    }
+
+    virtual IntrinsicBase * clone( void ) const 
+    {
+      return new class_type( *this ) ; 
     }
 
 
