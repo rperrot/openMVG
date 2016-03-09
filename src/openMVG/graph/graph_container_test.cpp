@@ -176,6 +176,35 @@ TEST( graphContainer , OutputToGraphViz )
   file.close() ;
 }
 
+TEST( graphContainer , TestPath )
+{
+  typedef UndirectedGraph<> graph_type ;
+  graph_type g ;
+
+  UndirectedGraph<>::node_type * n1 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n2 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n3 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n4 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n5 = g.AddNode() ;
+
+  EXPECT_EQ( true , g.ExistPathBetween( n1 , n1 ) );
+  EXPECT_EQ( false , g.ExistPathBetween( n1 , n2 ) ) ;
+
+  UndirectedGraph<>::edge_type * e1 = g.AddEdge( n1 , n2 ) ;
+
+  EXPECT_EQ( true , g.ExistPathBetween( n1 , n2 ) ) ;
+  EXPECT_EQ( false , g.ExistPathBetween( n1 , n3 ) ) ;
+  EXPECT_EQ( false , g.ExistPathBetween( n2 , n3 ) ) ;
+  EXPECT_EQ( false , g.ExistPathBetween( n3 , n4 ) ) ;
+
+  UndirectedGraph<>::edge_type * e2 = g.AddEdge( n2 , n3 ) ;
+
+  EXPECT_EQ( true , g.ExistPathBetween( n1 , n2 ) ) ;
+  EXPECT_EQ( true , g.ExistPathBetween( n2 , n3 ) ) ;
+  EXPECT_EQ( true , g.ExistPathBetween( n1 , n3 ) ) ;
+  EXPECT_EQ( true , g.ExistPathBetween( n3 , n1 ) ) ;
+}
+
 
 
 /* ************************************************************************* */

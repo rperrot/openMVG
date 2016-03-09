@@ -10,6 +10,7 @@
 #include "openMVG/graph/graph_container_node.hpp"
 #include "openMVG/graph/graph_container_edge.hpp"
 #include "openMVG/graph/graph_utility.hpp"
+#include "openMVG/graph/graph_traversal.hpp"
 
 #include <cstdint>
 #include <string>
@@ -35,6 +36,11 @@ class UndirectedGraph
     * @brief Build an empty graph
     */
     UndirectedGraph( void ) ;
+
+    /**
+    * @brief dtor
+    */
+    ~UndirectedGraph( void ) ;
 
     /**
     * @brief Copy a graph
@@ -158,6 +164,16 @@ UndirectedGraph<NodeData, EdgeData>::UndirectedGraph( void )
 
 }
 
+/**
+* @brief dtor
+*/
+template< typename NodeData, typename EdgeData >
+UndirectedGraph<NodeData, EdgeData>::~UndirectedGraph( void )
+{
+  clear() ;
+}
+
+
 template< typename NodeData, typename EdgeData >
 UndirectedGraph<NodeData, EdgeData>::UndirectedGraph( const UndirectedGraph<NodeData, EdgeData> & graph )
   : m_nb_edge( graph.m_nb_edge )
@@ -196,12 +212,42 @@ UndirectedGraph<NodeData, EdgeData>::UndirectedGraph( const UndirectedGraph<Node
 }
 
 template< typename NodeData, typename EdgeData >
-UndirectedGraph<NodeData, EdgeData> & UndirectedGraph<NodeData, EdgeData>::operator=( const UndirectedGraph<NodeData, EdgeData> & src )
+UndirectedGraph<NodeData, EdgeData> & UndirectedGraph<NodeData, EdgeData>::operator=( const UndirectedGraph<NodeData, EdgeData> & graph )
 {
-  if( this != &src )
+  if( this != &graph )
   {
-    // TODO make a copy using clonning
-    m_nb_edge = src.m_nb_edge ;
+    clear() ;
+    // Copy all nodes and get a map from source to destination
+    std::map< node_type * , node_type * > map_nodes ;
+
+    for( auto it = graph.m_nodes.begin() ; it != graph.m_nodes.end() ; ++it )
+    {
+      map_nodes[ *it ] = AddNode( ( *it )->Data() ) ;
+    }
+
+    // Build neighbor list of all nodes
+    std::map< edge_type * , edge_type * > map_edges ;
+    for( auto it = graph.m_nodes.begin() ; it != graph.m_nodes.end() ; ++it )
+    {
+      const node_type * cur_node = *it ;
+
+      auto & neighs = cur_node->Neighbors() ;
+
+      for( auto it_neigh = neighs.begin() ; it_neigh != neighs.end() ; ++it_neigh )
+      {
+        edge_type * cur_edge = *it_neigh ;
+        // Find if this edge has already been built
+        if( map_edges.count( cur_edge ) == 0 )
+        {
+          // Build the edge
+          edge_type * dst_edge = new edge_type( map_nodes[ cur_edge->Source() ] , map_nodes[ cur_edge->Destination() ] , cur_edge->Data() ) ;
+          map_edges[ cur_edge ] = dst_edge ;
+        }
+
+        map_nodes[ cur_node ].AddNeighbor( map_edges[ cur_edge ] ) ;
+      }
+    }
+
   }
   return *this ;
 }
@@ -326,7 +372,9 @@ size_t UndirectedGraph<NodeData, EdgeData>::NbEdge( void ) const
 template< typename NodeData, typename EdgeData >
 bool UndirectedGraph<NodeData, EdgeData>::ExistPathBetween( const node_type * source_id , const node_type * dest_id ) const
 {
-  // TODO
+  GraphTraversalDFS< UndirectedGraph<NodeData, EdgeData> > dfs_functor ;
+
+  return dfs_functor.NodeSearch( *this , source_id , dest_id ) ;
 }
 
 // Indicate if there exist an edge between two nodes

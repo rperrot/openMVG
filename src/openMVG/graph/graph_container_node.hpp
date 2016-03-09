@@ -59,7 +59,7 @@ class GraphNode
     * @brief Get list of direct neighors
     * @return List of edge that links this nodes to it's neighbors
     */
-    adjacency_list_type & Neighbors( void ) ;
+    const adjacency_list_type & Neighbors( void ) const ;
 
     /*
     * @brief Add a neighbor from an edge
@@ -125,7 +125,7 @@ NodeData GraphNode<NodeData, EdgeData>::Data( void ) const
 }
 
 template< typename NodeData , typename EdgeData>
-typename GraphNode<NodeData, EdgeData>::adjacency_list_type & GraphNode<NodeData, EdgeData>::Neighbors( void )
+const typename GraphNode<NodeData, EdgeData>::adjacency_list_type & GraphNode<NodeData, EdgeData>::Neighbors( void ) const
 {
   return m_adjacency_list ;
 }
