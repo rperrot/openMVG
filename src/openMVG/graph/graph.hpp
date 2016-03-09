@@ -16,6 +16,14 @@
 #include "openMVG/graph/connectedComponent.hpp"
 #include "openMVG/graph/triplet_finder.hpp"
 
+#include "openMVG/graph/graph_container_node.hpp"
+#include "openMVG/graph/graph_container_edge.hpp"
+#include "openMVG/graph/graph_container.hpp"
+
+#include "openMVG/graph/graph_traversal.hpp"
+#include "openMVG/graph/graph_connected_component.hpp"
+
+
 namespace openMVG
 {
 /**
