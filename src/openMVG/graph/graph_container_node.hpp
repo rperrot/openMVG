@@ -72,6 +72,16 @@ class GraphNode
     */
     void RemoveNeighbor( edge_type * edge ) ;
 
+    /**
+    * @brief Get the degree of the node
+    */
+    size_t Degree( void ) const ;
+
+    /**
+    * @brief Has loop
+    */
+    bool HasLoop( void ) const ;
+
   private:
 
     // Label of the node
@@ -151,6 +161,35 @@ void GraphNode<NodeData, EdgeData>::RemoveNeighbor( edge_type * edge )
     m_adjacency_list.erase( it ) ;
   }
 }
+
+/**
+* @brief Get the degree of the node
+*/
+template< typename NodeData , typename EdgeData>
+size_t GraphNode<NodeData, EdgeData>::Degree( void ) const
+{
+  return m_adjacency_list.size() ;
+}
+
+/**
+* @brief Has loop
+*/
+template< typename NodeData , typename EdgeData>
+bool GraphNode<NodeData, EdgeData>::HasLoop( void ) const
+{
+  for( auto it = m_adjacency_list.begin() ; it != m_adjacency_list.end() ; ++it )
+  {
+    const edge_type * cur_edge = *it ;
+    const type * opp = cur_edge->Opposite( this ) ;
+
+    if( opp == this )
+    {
+      return true ;
+    }
+  }
+  return false;
+}
+
 
 
 

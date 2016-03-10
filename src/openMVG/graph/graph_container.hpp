@@ -150,6 +150,21 @@ class UndirectedGraph
     template< typename NodeData1 , typename EdgeData1 >
     bool SameStructure( const UndirectedGraph<NodeData1, EdgeData1> & g ) const ;
 
+
+    /**
+    * @brief Get the maximum node degree
+    * @return degree of the node with maximum degree
+    */
+    size_t MaxDegree( void ) const ;
+
+    /**
+    * @brief Test if node has loop
+    * @retval true if at least a node has a loop
+    * @retval false if no node has a loop
+    */
+    bool HasLoopNode( void ) const ;
+
+
   private:
 
     std::vector< node_type * > m_nodes ;
@@ -279,7 +294,10 @@ void UndirectedGraph<NodeData, EdgeData>::RemoveNode( node_type * node_id )
       node_type * opp_node = ( *it_neigh )->Opposite( node_id ) ;
 
       // Remove node_id in node
-      opp_node->RemoveNeighbor( *it_neigh ) ;
+      if( opp_node != cur_node )
+      {
+        opp_node->RemoveNeighbor( *it_neigh ) ;
+      }
 
       // Delete the edge (because it's not referenced elsewhere)
       delete *it_neigh ;
@@ -299,12 +317,13 @@ typename UndirectedGraph<NodeData, EdgeData>::edge_type * UndirectedGraph<NodeDa
     node_type * dest_id ,
     const EdgeData & e_data )
 {
-  // TODO : ensure source and dest are in the graph ...
-
   edge_type * edge = new edge_type( source_id , dest_id , e_data ) ;
 
   source_id->AddNeighbor( edge ) ;
-  dest_id->AddNeighbor( edge ) ;
+  if( source_id != dest_id )
+  {
+    dest_id->AddNeighbor( edge ) ;
+  }
 
   ++m_nb_edge ;
 
@@ -318,7 +337,10 @@ void UndirectedGraph<NodeData, EdgeData>::RemoveEdge( edge_type * edge )
   node_type * dest = edge->Destination() ;
 
   source->RemoveNeighbor( edge ) ;
-  dest->RemoveNeighbor( edge ) ;
+  if( source != dest )
+  {
+    dest->RemoveNeighbor( edge ) ;
+  }
 
   delete edge ;
   --m_nb_edge ;
@@ -492,6 +514,39 @@ template< typename NodeData, typename EdgeData >
 std::vector< typename UndirectedGraph<NodeData, EdgeData>::node_type * > UndirectedGraph<NodeData, EdgeData>::Nodes( void ) const
 {
   return m_nodes ;
+}
+
+/**
+* @brief Get the maximum node degree
+* @return degree of the node with maximum degree
+*/
+template< typename NodeData, typename EdgeData >
+size_t UndirectedGraph<NodeData, EdgeData>::MaxDegree( void ) const
+{
+  size_t max_degree = 0 ;
+  for( auto it_node = m_nodes.begin() ; it_node != m_nodes.end() ; ++it_node )
+  {
+    max_degree = std::max( max_degree , it_node->Degree() ) ;
+  }
+  return max_degree ;
+}
+
+/**
+* @brief Test if node has loop
+* @retval true if at least a node has a loop
+* @retval false if no node has a loop
+*/
+template< typename NodeData, typename EdgeData >
+bool UndirectedGraph<NodeData, EdgeData>::HasLoopNode( void ) const
+{
+  for( auto it_node = m_nodes.begin() ; it_node != m_nodes.end() ; ++it_node )
+  {
+    if( ( *it_node )->HasLoop() )
+    {
+      return true ;
+    }
+  }
+  return false ;
 }
 
 
