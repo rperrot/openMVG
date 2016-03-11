@@ -227,6 +227,173 @@ TEST( graphContainer , Loop )
   EXPECT_EQ( true , g.HasLoopNode() ) ;
 }
 
+TEST( graphContainer , MaxDegree )
+{
+  typedef UndirectedGraph<> graph_type ;
+  graph_type g ;
+
+  UndirectedGraph<>::node_type * n1 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n2 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n3 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n4 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n5 = g.AddNode() ;
+
+  EXPECT_EQ( 0 , g.MaxDegree() ) ;
+
+  UndirectedGraph<>::edge_type * e1 = g.AddEdge( n1 , n2 ) ;
+
+  EXPECT_EQ( 1 , g.MaxDegree() ) ;
+
+  UndirectedGraph<>::edge_type * e2 = g.AddEdge( n1 , n1 ) ;
+
+  EXPECT_EQ( 2 , g.MaxDegree() ) ;
+
+  UndirectedGraph<>::edge_type * e3 = g.AddEdge( n1 , n2 ) ;
+
+  EXPECT_EQ( 3 , g.MaxDegree() ) ;
+
+  g.RemoveNode( n1 ) ;
+
+  EXPECT_EQ( 0 , g.MaxDegree() ) ; // (n2) (n3) (n4) (n5)
+
+  UndirectedGraph<>::edge_type * e4 = g.AddEdge( n2 , n3 ) ;
+
+  EXPECT_EQ( 1 , g.MaxDegree() ) ; // n2 - n3
+
+  UndirectedGraph<>::edge_type * e5 = g.AddEdge( n3 , n4 ) ;
+
+  EXPECT_EQ( 2 , g.MaxDegree() ) ; // n2 - n3 - n4
+
+  UndirectedGraph<>::edge_type * e6 = g.AddEdge( n4 , n5 ) ;
+
+  EXPECT_EQ( 2 , g.MaxDegree() ) ; // n2 - n3 - n4 - n5
+
+  UndirectedGraph<>::edge_type * e7 = g.AddEdge( n3 , n5 ) ;
+
+  EXPECT_EQ( 3 , g.MaxDegree() ) ;
+}
+
+TEST( graphContainer , LoopRemoval )
+{
+  typedef UndirectedGraph<> graph_type ;
+  graph_type g ;
+
+  UndirectedGraph<>::node_type * n1 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n2 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n3 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n4 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n5 = g.AddNode() ;
+
+  EXPECT_EQ( 5 , g.NbNode() );
+  EXPECT_EQ( 0 , g.NbEdge() );
+  EXPECT_EQ( false , g.HasLoopNode() ) ;
+
+  g.RemoveNodeLoops() ;
+
+  EXPECT_EQ( 5 , g.NbNode() );
+  EXPECT_EQ( 0 , g.NbEdge() );
+  EXPECT_EQ( false , g.HasLoopNode() ) ;
+
+  UndirectedGraph<>::edge_type * e1 = g.AddEdge( n1 , n2 ) ;
+  UndirectedGraph<>::edge_type * e2 = g.AddEdge( n1 , n3 ) ;
+  UndirectedGraph<>::edge_type * e3 = g.AddEdge( n1 , n4 ) ;
+  UndirectedGraph<>::edge_type * e4 = g.AddEdge( n1 , n5 ) ;
+
+  EXPECT_EQ( 5 , g.NbNode() );
+  EXPECT_EQ( 4 , g.NbEdge() );
+  EXPECT_EQ( false , g.HasLoopNode() ) ;
+
+  g.RemoveNodeLoops() ;
+
+  EXPECT_EQ( 5 , g.NbNode() );
+  EXPECT_EQ( 4 , g.NbEdge() );
+  EXPECT_EQ( false , g.HasLoopNode() ) ;
+
+  UndirectedGraph<>::edge_type * e5 = g.AddEdge( n1 , n1 ) ;
+  UndirectedGraph<>::edge_type * e6 = g.AddEdge( n2 , n2 ) ;
+  UndirectedGraph<>::edge_type * e7 = g.AddEdge( n3 , n3 ) ;
+  UndirectedGraph<>::edge_type * e8 = g.AddEdge( n4 , n4 ) ;
+  UndirectedGraph<>::edge_type * e9 = g.AddEdge( n5 , n5 ) ;
+
+  EXPECT_EQ( 5 , g.NbNode() );
+  EXPECT_EQ( 9 , g.NbEdge() );
+  EXPECT_EQ( true , g.HasLoopNode() ) ;
+
+  g.RemoveNodeLoops();
+
+  EXPECT_EQ( 5 , g.NbNode() );
+  EXPECT_EQ( 4 , g.NbEdge() );
+  EXPECT_EQ( false , g.HasLoopNode() ) ;
+}
+
+TEST( graphContainer , MultipleLinks )
+{
+  typedef UndirectedGraph<> graph_type ;
+  graph_type g ;
+
+  UndirectedGraph<>::node_type * n1 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n2 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n3 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n4 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n5 = g.AddNode() ;
+
+  EXPECT_EQ( false , g.HasMultipleEdgeBetweenNodes() ) ;
+
+  UndirectedGraph<>::edge_type * e1 = g.AddEdge( n1 , n1 ) ;
+
+  EXPECT_EQ( false , g.HasMultipleEdgeBetweenNodes() ) ;
+
+  UndirectedGraph<>::edge_type * e2 = g.AddEdge( n1 , n2 ) ;
+
+  EXPECT_EQ( false , g.HasMultipleEdgeBetweenNodes() ) ;
+
+  UndirectedGraph<>::edge_type * e3 = g.AddEdge( n1 , n2 ) ;
+
+  EXPECT_EQ( true , g.HasMultipleEdgeBetweenNodes() ) ;
+
+  g.RemoveEdge( e3 ) ;
+
+  EXPECT_EQ( false , g.HasMultipleEdgeBetweenNodes() ) ;
+}
+
+TEST( graphContainer , SimpleGraph )
+{
+  typedef UndirectedGraph<> graph_type ;
+  graph_type g ;
+
+  UndirectedGraph<>::node_type * n1 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n2 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n3 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n4 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n5 = g.AddNode() ;
+
+  EXPECT_EQ( true , g.IsSimple() ) ;
+
+  UndirectedGraph<>::edge_type * e1 = g.AddEdge( n1 , n2 ) ;
+  UndirectedGraph<>::edge_type * e2 = g.AddEdge( n1 , n3 ) ;
+  UndirectedGraph<>::edge_type * e3 = g.AddEdge( n1 , n4 ) ;
+  UndirectedGraph<>::edge_type * e4 = g.AddEdge( n1 , n5 ) ;
+
+  EXPECT_EQ( true , g.IsSimple() ) ;
+
+  UndirectedGraph<>::edge_type * e5 = g.AddEdge( n1 , n1 ) ;
+
+  EXPECT_EQ( false , g.IsSimple() ) ;
+
+  g.RemoveEdge( e5 ) ;
+
+  EXPECT_EQ( true , g.IsSimple() ) ;
+
+  UndirectedGraph<>::edge_type * e6 = g.AddEdge( n1 , n5 ) ;
+
+  EXPECT_EQ( false , g.IsSimple() ) ;
+
+  g.RemoveEdge( e6 ) ;
+
+  EXPECT_EQ( true , g.IsSimple() ) ;
+}
+
+
 /* ************************************************************************* */
 int main()
 {

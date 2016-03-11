@@ -164,6 +164,24 @@ class UndirectedGraph
     */
     bool HasLoopNode( void ) const ;
 
+    /**
+    * @brief Remove all existing loops on nodes
+    */
+    void RemoveNodeLoops( void ) ;
+
+    /**
+    * @brief Indicate there exists two nodes with more
+    */
+    bool HasMultipleEdgeBetweenNodes( void ) ;
+
+    /**
+    * @brief Test if graph is simple
+    * -> No loop
+    * -> No more than one edge between two nodes
+    */
+    bool IsSimple( void ) ;
+
+
 
   private:
 
@@ -526,7 +544,7 @@ size_t UndirectedGraph<NodeData, EdgeData>::MaxDegree( void ) const
   size_t max_degree = 0 ;
   for( auto it_node = m_nodes.begin() ; it_node != m_nodes.end() ; ++it_node )
   {
-    max_degree = std::max( max_degree , it_node->Degree() ) ;
+    max_degree = std::max( max_degree , ( *it_node )->Degree() ) ;
   }
   return max_degree ;
 }
@@ -547,6 +565,46 @@ bool UndirectedGraph<NodeData, EdgeData>::HasLoopNode( void ) const
     }
   }
   return false ;
+}
+
+/**
+* @brief Remove all existing loops on nodes
+*/
+template< typename NodeData, typename EdgeData >
+void UndirectedGraph<NodeData, EdgeData>::RemoveNodeLoops( void )
+{
+  for( auto it_node = m_nodes.begin() ; it_node != m_nodes.end() ; ++it_node )
+  {
+    m_nb_edge -= ( *it_node )->RemoveLoops() ;
+  }
+
+}
+
+/**
+* @brief Indicate there exists two nodes with more
+*/
+template< typename NodeData, typename EdgeData >
+bool UndirectedGraph<NodeData, EdgeData>::HasMultipleEdgeBetweenNodes( void )
+{
+  for( auto it_node = m_nodes.begin() ; it_node != m_nodes.end() ; ++it_node )
+  {
+    if( ( *it_node )->HasMultipleLinks() )
+    {
+      return true ;
+    }
+  }
+  return false ;
+}
+
+/**
+* @brief Test if graph is simple
+* -> No loop
+* -> No more than one edge between two nodes
+*/
+template< typename NodeData, typename EdgeData >
+bool UndirectedGraph<NodeData, EdgeData>::IsSimple( void )
+{
+  return ! HasMultipleEdgeBetweenNodes() && ! HasLoopNode() ;
 }
 
 

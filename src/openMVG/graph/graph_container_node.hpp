@@ -82,6 +82,17 @@ class GraphNode
     */
     bool HasLoop( void ) const ;
 
+    /**
+    * @brief Remove edges that links this node to it-self
+    * @return Number of removed node
+    */
+    size_t RemoveLoops( void ) ;
+
+    /**
+    * @brief Indicate if the node has multiple edges linking to the same node
+    */
+    bool HasMultipleLinks( void ) ;
+
   private:
 
     // Label of the node
@@ -190,6 +201,58 @@ bool GraphNode<NodeData, EdgeData>::HasLoop( void ) const
   return false;
 }
 
+/**
+* @brief Remove edges that links this node to it-self
+*/
+template< typename NodeData , typename EdgeData>
+size_t GraphNode<NodeData, EdgeData>::RemoveLoops( void )
+{
+  size_t res = 0 ;
+  auto it = m_adjacency_list.begin() ;
+
+  while( it != m_adjacency_list.end() )
+  {
+    const edge_type * cur_edge = *it ;
+    const type * opp = cur_edge->Opposite( this ) ;
+
+    if( opp == this )
+    {
+      it = m_adjacency_list.erase( it ) ;
+      ++res ;
+    }
+    else
+    {
+      ++it ;
+    }
+  }
+  return res ;
+}
+
+/**
+* @brief Indicate if the node has multiple edges linking to the same node
+*/
+template< typename NodeData , typename EdgeData>
+bool GraphNode<NodeData, EdgeData>::HasMultipleLinks( void )
+{
+  std::map< type * , bool > found ;
+
+  for( auto it = m_adjacency_list.begin() ; it != m_adjacency_list.end() ; ++it )
+  {
+    const edge_type * cur_edge = *it ;
+    type * const opp = cur_edge->Opposite( this ) ;
+
+    if( found.count( opp ) )
+    {
+      return true ;
+    }
+    else
+    {
+      found[ opp ] = true ;
+    }
+  }
+
+  return false ;
+}
 
 
 
