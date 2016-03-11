@@ -21,12 +21,18 @@ namespace openMVG
 namespace graph
 {
 
+template< typename GraphType >
+struct GraphConnectedComponents;
+
+
 /**
 * @brief Generic class for Undirected graph
 */
 template< typename NodeData = NullData , typename EdgeData = NullData >
 class UndirectedGraph
 {
+    friend struct GraphConnectedComponents<UndirectedGraph<NodeData, EdgeData>>;
+
   public:
     typedef GraphNode<NodeData, EdgeData> node_type ;
     typedef GraphEdge<EdgeData, NodeData> edge_type ;
@@ -223,7 +229,7 @@ UndirectedGraph<NodeData, EdgeData>::UndirectedGraph( const UndirectedGraph<Node
   std::map< edge_type * , edge_type * > map_edges ;
   for( auto it = graph.m_nodes.begin() ; it != graph.m_nodes.end() ; ++it )
   {
-    const node_type * cur_node = *it ;
+    node_type * cur_node = *it ;
 
     auto & neighs = cur_node->Neighbors() ;
 
@@ -238,7 +244,8 @@ UndirectedGraph<NodeData, EdgeData>::UndirectedGraph( const UndirectedGraph<Node
         map_edges[ cur_edge ] = dst_edge ;
       }
 
-      map_nodes[ cur_node ].AddNeighbor( map_edges[ cur_edge ] ) ;
+      node_type * new_node = map_nodes[ cur_node ] ;
+      new_node->AddNeighbor( map_edges[ cur_edge ] ) ;
     }
   }
 
@@ -368,29 +375,32 @@ void UndirectedGraph<NodeData, EdgeData>::RemoveEdge( edge_type * edge )
 template< typename NodeData, typename EdgeData >
 void UndirectedGraph<NodeData, EdgeData>::clear( void )
 {
-  for( auto it = m_nodes.begin() ; it != m_nodes.end() ; ++it )
+  if( m_nodes.size() > 0 )
   {
-    node_type * cur_node = *it ;
-
-    auto & neighs = cur_node->Neighbors() ;
-
-    // Remove all reference to this node on all nodes
-    for( auto neigh_it = neighs.begin() ; neigh_it != neighs.end() ; ++neigh_it )
+    for( auto it = m_nodes.begin() ; it != m_nodes.end() ; ++it )
     {
-      node_type * opp_node = ( *neigh_it )->Opposite( cur_node ) ;
+      node_type * cur_node = *it ;
 
-      if( opp_node != cur_node )
+      auto & neighs = cur_node->Neighbors() ;
+
+      // Remove all reference to this node on all nodes
+      for( auto neigh_it = neighs.begin() ; neigh_it != neighs.end() ; ++neigh_it )
       {
-        opp_node->RemoveNeighbor( *neigh_it ) ;
+        node_type * opp_node = ( *neigh_it )->Opposite( cur_node ) ;
+
+        if( opp_node != cur_node )
+        {
+          opp_node->RemoveNeighbor( *neigh_it ) ;
+        }
+
+        // Delete the edge
+        delete *neigh_it ;
+        --m_nb_edge ;
       }
 
-      // Delete the edge
-      delete *neigh_it ;
-      --m_nb_edge ;
+      // Delete the node
+      delete cur_node ;
     }
-
-    // Delete the node
-    delete cur_node ;
   }
   m_nodes.clear() ;
 }

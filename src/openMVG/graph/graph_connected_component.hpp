@@ -14,6 +14,14 @@ namespace openMVG
 namespace graph
 {
 
+/**
+* @brief Helper structure to extract and gets some informations on Connected Components of a graph
+* Currently the helper can :
+* - Extract the connected components
+* - Get the number of nodes in each CC
+* - Get the maximum number of nodes in a CC
+* - Get a deep copy the CC
+*/
 template< typename GraphType >
 struct GraphConnectedComponents
 {
@@ -22,32 +30,91 @@ struct GraphConnectedComponents
     typedef typename GraphType::node_type node_type ;
     typedef typename GraphType::edge_type edge_type ;
 
+    /**
+    * @brief Get a list of connected components
+    * @param g Input graph
+    * @return a list of Connected Components represented by a reference node
+    * @note Reference node is choosen arbitrary
+    */
     std::vector< node_type * > GetCC( const GraphType & g ) const ;
 
     /**
     * @brief Get number of node in each connected components
+    * @param g Input graph
+    * @return vector of size of nb nodes in each CC
+    * @note Ordering result has no meaning
     */
     std::vector< size_t > GetCCNodeCount( const GraphType & g ) const ;
 
     /**
     * @brief Get largest CC
+    * @param g Input graph
     * @return a representant of the largest CC
+    * @note If two CC have the same number of node, result is arbitrary
     */
     node_type * GetLargestCC( const GraphType & g ) const ;
 
     /**
     * @brief Get a copy of each connected components
+    * @param g Input graph
     * @return a copy of each CC
+    * @note Result order is unrevelant
+    * @note Each graph is obtain through a deep copy of nodes
+    * @note If internal data (node or edge) is pointer-like, we only copy the pointer and data is shared on all graphs
     */
     std::vector< GraphType > GetCCCopy( const GraphType & g ) const ;
 
 
   private:
 
+    /**
+    * @brief Get CC helper
+    * @param g Input graph
+    * @param from_node Current node being processed
+    * @param used a map to store already processed nodes
+    * @note This do a DFS search to explore all nodes reachable from from_node
+    * @note At the end of the process, all nodes belonging to the same CC as from_node are found
+    */
     void GetCC( const GraphType & g , node_type * from_node , std::map<node_type*, bool> & used ) const ;
+
+    /**
+    * @brief Get CC Node count helper
+    * @param g Input graph
+    * @param from_node Current node beign processed
+    * @param used a map to store already processed nodes
+    * @return number of nodes that can be reached from from_node
+    * @note This do a DFS search to count how many nodes can be reached from from_node
+    * @note from_node is counted in the result
+    */
     size_t GetCCNodeCount( const GraphType & g , node_type * from_node , std::map<node_type*, bool> & used ) const ;
+
+    /**
+    * @brief Get CC Copy helper
+    * @param g Input graph
+    * @param from_node Current node being processed
+    * @param used a map to store already processed nodes in the input graph
+    * @param map_node A map to get a 1 by 1 relation between the input graph nodes and the output graph nodes
+    * @param map_edge A map to get a 1 by 1 relation between the input graph edges and the output graph edges
+    * @param[out] cur_graph
+    * @note This do a DFS search and for each nodes, build it's corresponding copy in cur_graph
+    * @note At the end of the process, all nodes accessibles from from_node have a copy in cur_graph graph
+    * @note We do a deep copy (nodes/edges of g are deeply copied in cur_graph)
+    * @note Deep copy is only on the structure of the graph, if data of the nodes and/or the edges are pointers, we only to a shallow copy
+    */
+    void GetCCCopy( const GraphType & g ,
+                    node_type * from_node ,
+                    std::map<node_type*, bool> & used ,
+                    std::map<node_type*, node_type*> & map_node ,
+                    std::map<edge_type*, edge_type*> & map_edge ,
+                    GraphType & cur_graph ) const ;
 } ;
 
+/**
+* @brief Get a list of connected components
+* @param g Input graph
+* @return a list of Connected Components represented by a reference node
+* @note Reference node is choosen arbitrary
+*/
 template< typename GraphType >
 std::vector< typename GraphConnectedComponents<GraphType>::node_type * > GraphConnectedComponents<GraphType>::GetCC( const GraphType & g ) const
 {
@@ -80,6 +147,14 @@ std::vector< typename GraphConnectedComponents<GraphType>::node_type * > GraphCo
   return res ;
 }
 
+/**
+* @brief Get CC helper
+* @param g Input graph
+* @param from_node Current node being processed
+* @param used a map to store already processed nodes
+* @note This do a DFS search to explore all nodes reachable from from_node
+* @note At the end of the process, all nodes belonging to the same CC as from_node are found
+*/
 template< typename GraphType >
 void GraphConnectedComponents<GraphType>::GetCC( const GraphType & g ,
     typename GraphConnectedComponents<GraphType>::node_type * from_node ,
@@ -102,6 +177,16 @@ void GraphConnectedComponents<GraphType>::GetCC( const GraphType & g ,
   }
 }
 
+
+/**
+* @brief Get CC Node count helper
+* @param g Input graph
+* @param from_node Current node beign processed
+* @param used a map to store already processed nodes
+* @return number of nodes that can be reached from from_node
+* @note This do a DFS search to count how many nodes can be reached from from_node
+* @note from_node is counted in the result
+*/
 template< typename GraphType >
 size_t GraphConnectedComponents<GraphType>::GetCCNodeCount( const GraphType & g , typename GraphConnectedComponents<GraphType>::node_type * from_node , std::map<typename GraphConnectedComponents<GraphType>::node_type*, bool> & used ) const
 {
@@ -127,6 +212,9 @@ size_t GraphConnectedComponents<GraphType>::GetCCNodeCount( const GraphType & g 
 
 /**
 * @brief Get number of node in each connected components
+* @param g Input graph
+* @return vector of size of nb nodes in each CC
+* @note Ordering result has no meaning
 */
 template< typename GraphType >
 std::vector< size_t > GraphConnectedComponents<GraphType>::GetCCNodeCount( const GraphType & g ) const
@@ -163,7 +251,9 @@ std::vector< size_t > GraphConnectedComponents<GraphType>::GetCCNodeCount( const
 
 /**
 * @brief Get largest CC
+* @param g Input graph
 * @return a representant of the largest CC
+* @note If two CC have the same number of node, result is arbitrary
 */
 template< typename GraphType >
 typename GraphConnectedComponents<GraphType>::node_type * GraphConnectedComponents<GraphType>::GetLargestCC( const GraphType & g ) const
@@ -209,13 +299,97 @@ typename GraphConnectedComponents<GraphType>::node_type * GraphConnectedComponen
 }
 
 /**
+* @brief Get CC Copy helper
+* @param g Input graph
+* @param from_node Current node being processed
+* @param used a map to store already processed nodes in the input graph
+* @param map_node A map to get a 1 by 1 relation between the input graph nodes and the output graph nodes
+* @param map_edge A map to get a 1 by 1 relation between the input graph edges and the output graph edges
+* @param[out] cur_graph
+* @note This do a DFS search and for each nodes, build it's corresponding copy in cur_graph
+* @note At the end of the process, all nodes accessibles from from_node have a copy in cur_graph graph
+* @note We do a deep copy (nodes/edges of g are deeply copied in cur_graph)
+* @note Deep copy is only on the structure of the graph, if data of the nodes and/or the edges are pointers, we only to a shallow copy
+*/
+template< typename GraphType >
+void GraphConnectedComponents<GraphType>::GetCCCopy( const GraphType & g ,
+    typename GraphConnectedComponents<GraphType>::node_type * from_node ,
+    std::map<typename GraphConnectedComponents<GraphType>::node_type*, bool> & used ,
+    std::map<typename GraphConnectedComponents<GraphType>::node_type*, typename GraphConnectedComponents<GraphType>::node_type*> & map_node ,
+    std::map<typename GraphConnectedComponents<GraphType>::edge_type*, typename GraphConnectedComponents<GraphType>::edge_type*> & map_edge ,
+    GraphType & cur_graph ) const
+{
+  used[ from_node ] = true ;
+
+  // Add this node to the resulting graph and make correspondance between the old node and the new one
+  map_node[ from_node ] = cur_graph.AddNode( from_node->Data() ) ;
+
+  // Build all edges based on from_node edges
+  auto & neighs = from_node->Neighbors() ;
+  for( auto it_neigh = neighs.begin() ; it_neigh != neighs.end() ; ++it_neigh )
+  {
+    edge_type * cur_edge = *it_neigh ;
+    node_type * opp = cur_edge->Opposite( from_node ) ;
+
+    // The node hasn't been processed, do it then we'll add the edge
+    if( ! used.count( opp ) )
+    {
+      GetCCCopy( g , opp , used , map_node , map_edge , cur_graph ) ;
+    }
+
+    // We are sure here that map_node[from_node] and map_node[opp] are present, so add the edge to the new graph
+    // Check if edge has already been created ?
+    if( ! map_edge.count( cur_edge ) )
+    {
+      cur_graph.m_nb_edge += 1 ;
+      map_edge[cur_edge] = new edge_type( map_node[from_node] , map_node[opp] , cur_edge->Data() ) ;
+    }
+
+    map_node[from_node]->AddNeighbor( map_edge[cur_edge] ) ;
+  }
+}
+
+
+/**
 * @brief Get a copy of each connected components
 * @return a copy of each CC
 */
 template< typename GraphType >
 std::vector< GraphType > GraphConnectedComponents<GraphType>::GetCCCopy( const GraphType & g ) const
 {
+  std::vector< GraphType > res ;
 
+  const std::vector< node_type * > & nodes = g.Nodes() ;
+
+  int nb_left = nodes.size() ;
+
+  if( nodes.size() > 0 )
+  {
+    std::map<node_type *, bool> used ;
+    std::map<node_type * , node_type * > map_node ;
+    std::map<edge_type * , edge_type * > map_edge ;
+
+    // Loop until some nodes haven't been found
+    while( nb_left > 0 )
+    {
+      // Look for an unused node and start from it
+      int id = 0 ;
+      while( used.count( nodes[id] ) != 0 )
+      {
+        ++id ;
+      }
+
+      // Computes CC from this node and it's corresponding graph
+      GraphType tmp ;
+      res.push_back( tmp ) ;
+      GetCCCopy( g , nodes[id] , used , map_node , map_edge , res[ res.size() - 1 ] ) ;
+
+      // Update nb unseen nodes
+      nb_left = nodes.size() - used.size() ;
+    }
+  }
+
+  return res ;
 }
 
 

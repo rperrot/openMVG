@@ -115,6 +115,61 @@ TEST( graphConnectedComponent , largestCC )
   EXPECT_EQ( true , n1 == ref_big_cc || n2 == ref_big_cc || n3 == ref_big_cc ) ;
 }
 
+TEST( graphConnectedComponent , ccCopy )
+{
+  typedef UndirectedGraph<> graph_type ;
+  graph_type g ;
+
+  UndirectedGraph<>::node_type * n1 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n2 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n3 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n4 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n5 = g.AddNode() ;
+
+  GraphConnectedComponents< graph_type > cc_solver ;
+
+  std::vector< graph_type > graph_cc = cc_solver.GetCCCopy( g ) ;
+
+  EXPECT_EQ( 5 , graph_cc.size() ) ;
+
+  EXPECT_EQ( 1 , graph_cc[0].NbNode() ) ;
+  EXPECT_EQ( 0 , graph_cc[0].NbEdge() ) ;
+
+  EXPECT_EQ( 1 , graph_cc[1].NbNode() ) ;
+  EXPECT_EQ( 0 , graph_cc[1].NbEdge() ) ;
+
+  EXPECT_EQ( 1 , graph_cc[2].NbNode() ) ;
+  EXPECT_EQ( 0 , graph_cc[2].NbEdge() ) ;
+
+  EXPECT_EQ( 1 , graph_cc[3].NbNode() ) ;
+  EXPECT_EQ( 0 , graph_cc[3].NbEdge() ) ;
+
+  EXPECT_EQ( 1 , graph_cc[4].NbNode() ) ;
+  EXPECT_EQ( 0 , graph_cc[4].NbEdge() ) ;
+
+  UndirectedGraph<>::edge_type * e1 = g.AddEdge( n1 , n2 ) ;
+  UndirectedGraph<>::edge_type * e2 = g.AddEdge( n2 , n3 ) ;
+  UndirectedGraph<>::edge_type * e3 = g.AddEdge( n4 , n5 ) ;
+
+  graph_cc = cc_solver.GetCCCopy( g ) ;
+
+  EXPECT_EQ( 2 , graph_cc.size() ) ;
+
+  EXPECT_EQ( 5 , graph_cc[0].NbNode() + graph_cc[1].NbNode() ) ;
+  EXPECT_EQ( 3 , graph_cc[0].NbEdge() + graph_cc[1].NbEdge() ) ;
+
+  EXPECT_EQ( true , graph_cc[0].NbNode() == 3 || graph_cc[1].NbNode() == 3 ) ;
+  EXPECT_EQ( true , graph_cc[0].NbNode() == 2 || graph_cc[1].NbNode() == 2 ) ;
+  EXPECT_EQ( true , graph_cc[0].NbNode() != graph_cc[1].NbNode() ) ;
+
+  EXPECT_EQ( true , graph_cc[0].NbEdge() == 2 || graph_cc[1].NbEdge() == 2 ) ;
+  EXPECT_EQ( true , graph_cc[0].NbEdge() == 1 || graph_cc[1].NbEdge() == 1 ) ;
+  EXPECT_EQ( true , graph_cc[0].NbEdge() != graph_cc[1].NbEdge() ) ;
+
+  EXPECT_EQ( 1 , cc_solver.GetCCCopy( graph_cc[0] ).size() ) ;
+  EXPECT_EQ( 1 , cc_solver.GetCCCopy( graph_cc[1] ).size() ) ;
+}
+
 /* ************************************************************************* */
 int main()
 {
