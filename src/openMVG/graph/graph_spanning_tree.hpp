@@ -5,7 +5,8 @@
 #include <queue>
 #include <utility>
 
-#include "graph_union_find.hpp"
+#include "openMVG/tracks/union_find.hpp"
+
 
 namespace openMVG
 {
@@ -74,7 +75,16 @@ GraphType GraphSpanningTree<GraphType>::MST( const GraphType & g )
 
   // Build initial forest (each nodes is it's own representant)
   // Use disjoint set
-  TUnionFind<node_type*> forest_representant( nodes ) ;
+  UnionFind forest_representant;
+  forest_representant.InitSets( nodes.size() ) ;
+  std::map< node_type * , int > representant_id ;
+  {
+    int node_id = 0 ;
+    for( auto it = nodes.begin() ; it != nodes.end() ; ++it, ++node_id )
+    {
+      representant_id[ *it ] = node_id ;
+    }
+  }
 
   size_t nb_tree = nodes.size() ;
 
@@ -105,14 +115,17 @@ GraphType GraphSpanningTree<GraphType>::MST( const GraphType & g )
     node_type * start_node = cur_edge->Source() ;
     node_type * end_node = cur_edge->Destination() ;
 
-    // Check if edge does not rely two nodes in the same tree
-    node_type * rep_start = forest_representant.Find( start_node ) ;
-    node_type * rep_end = forest_representant.Find( end_node ) ;
+    const int id_start = representant_id[ start_node ] ;
+    const int id_end = representant_id[ end_node ] ;
 
-    if( rep_start != rep_end )
+    // Check if edge does not rely two nodes in the same tree
+    const int rep_start_id = forest_representant.Find( id_start ) ;
+    const int rep_end_id = forest_representant.Find( id_end ) ;
+
+    if( rep_start_id != rep_end_id )
     {
       // Make the tree in the same forest
-      forest_representant.Union( end_node , start_node ) ;
+      forest_representant.Union( id_start , id_end ) ;
 
       // Update the set of edges of the tree
       output_edge.push_back( cur_edge ) ;
