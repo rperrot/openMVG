@@ -23,6 +23,8 @@
 #include "openMVG/graph/graph_traversal.hpp"
 #include "openMVG/graph/graph_connected_component.hpp"
 
+#include "openMVG/graph/graph_spanning_tree.hpp"
+
 
 namespace openMVG
 {

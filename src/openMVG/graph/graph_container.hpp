@@ -53,7 +53,7 @@ class UndirectedGraph
     * @param graph Input graph
     * @note This makes a deep copy
     */
-    explicit UndirectedGraph( const UndirectedGraph & graph ) ;
+    UndirectedGraph( const UndirectedGraph & graph ) ;
 
     /**
     * @brief Assignement of a graph
@@ -150,6 +150,13 @@ class UndirectedGraph
     */
     std::string GetGraphVizString( const std::map< node_type * , std::string > & map_node ,
                                    const std::map< edge_type * , std::string > & map_edge ) const ;
+
+    /**
+    * @brief Get a valid dot string that can be processed by graphviz
+    * @return the graphviz string
+    */
+    std::string GetGraphVizString( void ) const ;
+
 
     // Test graph isomorphism
     // /!\ It's a hard pb with exponential worst case complexity
@@ -534,6 +541,71 @@ std::string UndirectedGraph<NodeData, EdgeData>::GetGraphVizString( const std::m
 
   return res.str() ;
 }
+
+/**
+  * @brief Get a valid dot string that can be processed by graphviz
+  * @return the graphviz string
+  */
+template< typename NodeData, typename EdgeData >
+std::string UndirectedGraph<NodeData, EdgeData>::GetGraphVizString( void ) const
+{
+  std::stringstream res ;
+
+  res << "graph G" << std::endl ;
+  res << "{" << std::endl ;
+
+  // Graph nodes ;
+  uint64_t node_ID = 1 ;
+  std::map< node_type * , uint64_t > map_node_ID ;
+
+  for( auto it_node = m_nodes.begin() ; it_node != m_nodes.end() ; ++it_node , ++node_ID )
+  {
+    node_type * cur_node = *it_node ;
+
+    res << "  node" << node_ID << "[label=\"" << cur_node->Data() << "\"] ;" << std::endl;
+
+    // Save node ID
+    map_node_ID[ cur_node ] = node_ID ;
+  }
+
+  res << std::endl ;
+
+  // Graph edges ;
+  std::map< edge_type * , bool > map_edge_exist ;
+  for( auto it_node = m_nodes.begin() ; it_node != m_nodes.end() ; ++it_node )
+  {
+    node_type * cur_node = *it_node ;
+
+    auto & neighs = cur_node->Neighbors() ;
+
+    // Get all neighbors of this node
+    for( auto it_neigh = neighs.begin() ; it_neigh != neighs.end() ; ++it_neigh )
+    {
+      edge_type * cur_edge = *it_neigh ;
+      // Add this edge only if it was not drawn yet
+      if( map_edge_exist.count( cur_edge ) == 0 )
+      {
+        node_type * opp = cur_edge->Opposite( cur_node ) ;
+
+        const uint64_t source_ID = map_node_ID[ cur_node ] ;
+        const uint64_t dest_ID = map_node_ID[ opp ] ;
+
+        res << "  node" << source_ID << " -- " << "node" << dest_ID << " [label=\"" << ( *it_neigh )->Data() << "\"] ;" << std::endl ;
+      }
+
+      // Mark this edge as treated
+      map_edge_exist[ cur_edge ] = true ;
+    }
+  }
+
+
+
+  res << "}" << std::endl ;
+
+
+  return res.str() ;
+}
+
 
 /**
 * @brief Get all nodes of the graph

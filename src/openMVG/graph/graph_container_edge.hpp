@@ -20,10 +20,13 @@ class GraphNode ;
 template< typename EdgeData = NullData , typename NodeData = NullData >
 class GraphEdge
 {
+
+  public:
+
+    typedef EdgeData edge_data_type ;
     typedef GraphNode<NodeData, EdgeData> node_type ;
     typedef GraphEdge<EdgeData, NodeData> type ;
 
-  public:
     /**
     * @brief Ctr
     * @param start_node First node
