@@ -73,6 +73,35 @@ struct GraphConnectedComponents
     */
     std::vector< node_type * > GetCutPoints( const GraphType & g ) const ;
 
+    /**
+    * @brief Test if graph has cut points
+    * @param g Input graph
+    * @retval true if graph has a cut point
+    * @retval false if graph has no cut point
+    */
+    bool HasCutPoint( const GraphType & g ) const ;
+
+    /**
+    * @brief Test if graph is connected
+    * @retval true if the graph is connected
+    * @retval false if the graph is not connected
+    */
+    bool IsConnected( const GraphType & g ) const ;
+
+    /**
+    * @brief Test if graph is biconnected
+    * Biconnected = remove a node and the graph is still biconnected
+    * @retval true if graph is biconnected
+    * @retval false if graph is not biconnected
+    */
+    bool IsBiConnected( const GraphType & g ) const ;
+
+    /**
+     * @brief Extract bi connected components
+     * @param g input graph
+     * @return list of biconnected components
+     */
+    std::vector< GraphType > GetBiConnectedComponents( const GraphType & g ) const ;
 
   private:
 
@@ -526,10 +555,68 @@ void GraphConnectedComponents<GraphType>::GetCutPoints( typename GraphConnectedC
 
     }
   }
-
-
 }
 
+/**
+* @brief Test if graph has cut points
+* @param g Input graph
+* @retval true if graph has a cut point
+* @retval false if graph has no cut point
+*/
+template< typename GraphType >
+bool GraphConnectedComponents<GraphType>::HasCutPoint( const GraphType & g ) const
+{
+  // TODO : make a dedicated function to optimize the code
+  return ( GetCutPoints( g ).size() != 0 ) ;
+}
+
+/**
+* @brief Test if graph is connected
+* @retval true if the graph is connected
+* @retval false if the graph is not connected
+*/
+template< typename GraphType >
+bool GraphConnectedComponents<GraphType>::IsConnected( const GraphType & g ) const
+{
+  // TODO: make a dedicated function to optimize the code
+  return GetCCNodeCount( g ).size() == 1 ;
+}
+
+/**
+* @brief Test if graph is biconnected
+* Biconnected = remove a node and the graph is still biconnected
+* @retval true if graph is biconnected
+* @retval false if graph is not biconnected
+*/
+template< typename GraphType >
+bool GraphConnectedComponents<GraphType>::IsBiConnected( const GraphType & g ) const
+{
+  // Connected and has no cut point
+  // TODO make a single function for perf
+  return IsConnected( g ) && ( ! HasCutPoint( g ) ) ;
+}
+
+/**
+ * @brief Extract bi connected components
+ * @param g input graph
+ * @return list of biconnected components
+ */
+template< typename GraphType >
+std::vector< GraphType > GraphConnectedComponents<GraphType>::GetBiConnectedComponents( const GraphType & g ) const
+{
+  // Get a copy of the graph
+  GraphType tmp = g ;
+
+  // Remove cut points
+  std::vector< node_type * > cut_nodes = GetCutPoints( tmp ) ;
+  for( size_t id_node = 0 ; id_node < cut_nodes.size() ; ++id_node )
+  {
+    tmp.RemoveNode( cut_nodes[ id_node ] ) ;
+  }
+
+  // Extract the resulting connected components
+  return GetCCCopy( tmp ) ;
+}
 
 
 

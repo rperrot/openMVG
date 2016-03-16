@@ -221,6 +221,66 @@ TEST( graphConnectedComponent , cutPoints )
   EXPECT_EQ( n2 , cuts[0] ) ;
 }
 
+TEST( graphConnectedComponent , isConnected )
+{
+  typedef UndirectedGraph<> graph_type ;
+  graph_type g ;
+
+  UndirectedGraph<>::node_type * n1 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n2 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n3 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n4 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n5 = g.AddNode() ;
+
+  GraphConnectedComponents< graph_type > cc_solver ;
+
+  EXPECT_EQ( false , cc_solver.IsConnected( g ) ) ;
+
+  UndirectedGraph<>::edge_type * e1 = g.AddEdge( n1 , n2 ) ;
+  EXPECT_EQ( false , cc_solver.IsConnected( g ) ) ;
+
+  UndirectedGraph<>::edge_type * e2 = g.AddEdge( n2 , n3 ) ;
+  EXPECT_EQ( false , cc_solver.IsConnected( g ) ) ;
+
+  UndirectedGraph<>::edge_type * e3 = g.AddEdge( n3 , n4 ) ;
+  EXPECT_EQ( false , cc_solver.IsConnected( g ) ) ;
+
+  UndirectedGraph<>::edge_type * e4 = g.AddEdge( n4 , n5 ) ;
+  EXPECT_EQ( true , cc_solver.IsConnected( g ) ) ;
+}
+
+TEST( graphConnectedComponent , isBiconnected )
+{
+  typedef UndirectedGraph<> graph_type ;
+  graph_type g ;
+
+  UndirectedGraph<>::node_type * n1 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n2 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n3 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n4 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n5 = g.AddNode() ;
+
+  GraphConnectedComponents< graph_type > cc_solver ;
+
+  EXPECT_EQ( false , cc_solver.IsBiConnected( g ) ) ;
+
+  UndirectedGraph<>::edge_type * e1 = g.AddEdge( n1 , n2 ) ;
+  EXPECT_EQ( false , cc_solver.IsBiConnected( g ) ) ;
+
+  UndirectedGraph<>::edge_type * e2 = g.AddEdge( n2 , n3 ) ;
+  EXPECT_EQ( false , cc_solver.IsBiConnected( g ) ) ;
+
+  UndirectedGraph<>::edge_type * e3 = g.AddEdge( n3 , n4 ) ;
+  EXPECT_EQ( false , cc_solver.IsBiConnected( g ) ) ;
+
+  UndirectedGraph<>::edge_type * e4 = g.AddEdge( n4 , n5 ) ;
+  EXPECT_EQ( false , cc_solver.IsBiConnected( g ) ) ;
+
+  UndirectedGraph<>::edge_type * e5 = g.AddEdge( n1 , n5 ) ;
+  EXPECT_EQ( true , cc_solver.IsBiConnected( g ) ) ;
+
+}
+
 /* ************************************************************************* */
 int main()
 {
