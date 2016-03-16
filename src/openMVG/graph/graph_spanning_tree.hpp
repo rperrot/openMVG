@@ -1,11 +1,17 @@
+// Copyright (c) 2016 Romuald PERROT.
+
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 #ifndef _OPENMVG_GRAPH_GRAPH_SPANNING_TREE_HPP_
 #define _OPENMVG_GRAPH_GRAPH_SPANNING_TREE_HPP_
 
 #include <map>
-#include <queue>
 #include <utility>
 
 #include "openMVG/tracks/union_find.hpp"
+#include "openMVG/graph/pairing_heap.hpp"
 
 
 namespace openMVG
@@ -48,13 +54,10 @@ struct GraphSpanningTree
 /**
 * @brief Functor used to sort edges given their internal data
 */
+/*
 template<typename edge_type>
 struct edge_comparator_greater
 {
-  /**
-  * @retval true if p1 > p2
-  * @retval false if p1 <= p2
-  */
   bool operator()( const edge_type & p1 , const edge_type & p2 ) const
   {
     return p1->Data() > p2->Data() ;
@@ -79,6 +82,7 @@ struct edge_map_comparator_greater
 
     const std::map<edge_type, WeightType> m_map_w ;
 } ;
+*/
 
 /**
 * @brief Get a graph representing the minimum spanning tree of the input tree
@@ -106,8 +110,9 @@ GraphType GraphSpanningTree<GraphType>::MST( const GraphType & g )
   size_t nb_tree = nodes.size() ;
 
   // Build set of edges, classified by increasing weigth
-  // TODO: use a specialized queue (pair heap)
-  std::priority_queue<edge_type*, std::vector<edge_type*>, edge_comparator_greater<edge_type*>> e_queue ;
+  PairingHeap<edge_data_type, edge_type*> e_queue( g.NbEdge() ) ;
+  typedef typename PairingHeap<edge_data_type, edge_type*>::node_type queue_node_type ;
+
   std::map< edge_type *, bool> already_added_edge ; // Ensure edge is added only once
 
   for( auto it = nodes.begin() ; it < nodes.end() ; ++it )
@@ -117,7 +122,7 @@ GraphType GraphSpanningTree<GraphType>::MST( const GraphType & g )
     {
       if( ! already_added_edge.count( *it_neigh ) )
       {
-        e_queue.push( *it_neigh ) ;
+        e_queue.Insert( ( *it_neigh )->Data() , *it_neigh ) ;
         already_added_edge[ *it_neigh ] = true ;
       }
     }
@@ -125,10 +130,11 @@ GraphType GraphSpanningTree<GraphType>::MST( const GraphType & g )
 
   std::vector< edge_type * > output_edge ;
   // Now compute minimum spanning tree
-  while( nb_tree > 1 && ! e_queue.empty() )
+  while( nb_tree > 1 && ! e_queue.Empty() )
   {
-    edge_type * cur_edge = e_queue.top() ;
-    e_queue.pop() ;
+    queue_node_type * min_edge_node = e_queue.FindMin() ;
+    e_queue.DeleteMin() ;
+    edge_type * cur_edge = e_queue.GetData( min_edge_node ) ;
 
     node_type * start_node = cur_edge->Source() ;
     node_type * end_node = cur_edge->Destination() ;
@@ -204,10 +210,11 @@ GraphType GraphSpanningTree<GraphType>::MST( const GraphType & g ,
   size_t nb_tree = nodes.size() ;
 
   // Build set of edges, classified by increasing weigth
-  // TODO: use a specialized queue (pair heap)
-  edge_map_comparator_greater<edge_type*, WeightType> comp( edge_w ) ;
-  std::priority_queue<edge_type*, std::vector<edge_type*>, edge_map_comparator_greater<edge_type*, WeightType>> e_queue( comp ) ;
+  PairingHeap<WeightType, edge_type*> e_queue( edge_w.size() ) ;
+  typedef typename PairingHeap<WeightType, edge_type*>::node_type queue_node_type ;
+
   std::map< edge_type *, bool> already_added_edge ; // Ensure edge is added only once
+
 
   for( auto it = nodes.begin() ; it < nodes.end() ; ++it )
   {
@@ -217,10 +224,12 @@ GraphType GraphSpanningTree<GraphType>::MST( const GraphType & g ,
       // Dont duplicate edges
       if( ! already_added_edge.count( *it_neigh ) )
       {
+        auto it_w = edge_w.find( *it_neigh ) ;
+
         // Only add edge if it has a weight associated with
-        if( edge_w.count( *it_neigh ) )
+        if( it_w != edge_w.end() )
         {
-          e_queue.push( *it_neigh ) ;
+          e_queue.Insert( it_w->second , *it_neigh ) ;
           already_added_edge[ *it_neigh ] = true ;
         }
       }
@@ -229,10 +238,11 @@ GraphType GraphSpanningTree<GraphType>::MST( const GraphType & g ,
 
   std::vector< edge_type * > output_edge ;
   // Now compute minimum spanning tree
-  while( nb_tree > 1 && ! e_queue.empty() )
+  while( nb_tree > 1 && ! e_queue.Empty() )
   {
-    edge_type * cur_edge = e_queue.top() ;
-    e_queue.pop() ;
+    queue_node_type * min_edge_node = e_queue.FindMin() ;
+    e_queue.DeleteMin() ;
+    edge_type * cur_edge = e_queue.GetData( min_edge_node ) ;
 
     node_type * start_node = cur_edge->Source() ;
     node_type * end_node = cur_edge->Destination() ;
