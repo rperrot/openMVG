@@ -50,40 +50,6 @@ struct GraphSpanningTree
   private:
 } ;
 
-
-/**
-* @brief Functor used to sort edges given their internal data
-*/
-/*
-template<typename edge_type>
-struct edge_comparator_greater
-{
-  bool operator()( const edge_type & p1 , const edge_type & p2 ) const
-  {
-    return p1->Data() > p2->Data() ;
-  }
-} ;
-
-template<typename edge_type, typename WeightType>
-struct edge_map_comparator_greater
-{
-    edge_map_comparator_greater( const std::map<edge_type, WeightType> & w )
-      : m_map_w( w )
-    {
-
-    }
-
-    bool operator()( const edge_type & p1 , const edge_type & p2 ) const
-    {
-      return m_map_w.at( const_cast<edge_type&>( p1 ) ) > m_map_w.at( p2 ) ;
-    }
-
-  private:
-
-    const std::map<edge_type, WeightType> m_map_w ;
-} ;
-*/
-
 /**
 * @brief Get a graph representing the minimum spanning tree of the input tree
 * @param g Input tree

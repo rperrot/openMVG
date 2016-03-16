@@ -7,7 +7,8 @@
 #ifndef _OPENMVG_GRAPH_GRAPH_CONNECTED_COMPONENT_HPP_
 #define _OPENMVG_GRAPH_GRAPH_CONNECTED_COMPONENT_HPP_
 
-#include <map>
+// #include <map>
+#include <unordered_map>
 
 namespace openMVG
 {
@@ -64,6 +65,14 @@ struct GraphConnectedComponents
     */
     std::vector< GraphType > GetCCCopy( const GraphType & g ) const ;
 
+    /**
+    * @brief Computes a list of cut points
+    * @parma g Input graph
+    * @note cut points are nodes that if removed makes a connected graph unconnected
+    * @return list of cut points
+    */
+    std::vector< node_type * > GetCutPoints( const GraphType & g ) const ;
+
 
   private:
 
@@ -75,7 +84,7 @@ struct GraphConnectedComponents
     * @note This do a DFS search to explore all nodes reachable from from_node
     * @note At the end of the process, all nodes belonging to the same CC as from_node are found
     */
-    void GetCC( const GraphType & g , node_type * from_node , std::map<node_type*, bool> & used ) const ;
+    void GetCC( const GraphType & g , node_type * from_node , std::unordered_map<node_type*, bool> & used ) const ;
 
     /**
     * @brief Get CC Node count helper
@@ -86,7 +95,7 @@ struct GraphConnectedComponents
     * @note This do a DFS search to count how many nodes can be reached from from_node
     * @note from_node is counted in the result
     */
-    size_t GetCCNodeCount( const GraphType & g , node_type * from_node , std::map<node_type*, bool> & used ) const ;
+    size_t GetCCNodeCount( const GraphType & g , node_type * from_node , std::unordered_map<node_type*, bool> & used ) const ;
 
     /**
     * @brief Get CC Copy helper
@@ -103,10 +112,27 @@ struct GraphConnectedComponents
     */
     void GetCCCopy( const GraphType & g ,
                     node_type * from_node ,
-                    std::map<node_type*, bool> & used ,
-                    std::map<node_type*, node_type*> & map_node ,
-                    std::map<edge_type*, edge_type*> & map_edge ,
+                    std::unordered_map<node_type*, bool> & used ,
+                    std::unordered_map<node_type*, node_type*> & map_node ,
+                    std::unordered_map<edge_type*, edge_type*> & map_edge ,
                     GraphType & cur_graph ) const ;
+
+    /**
+    * @brief Compute list of cut points (helper)
+    * @param from_node Start of the DFS search
+    * @param parent Current parent of the from_node
+    * @param[in,out] used map to know if a node is already used in DFS
+    * @param[in,out] discovery_time time when a node is firstly seen during DFS
+    * @param[in,out] lowest_time lowest time to see a node during DFS
+    * @param[out] indicate if a node is a cut point
+    */
+    void GetCutPoints( node_type * from_node ,
+                       size_t & current_time ,
+                       std::unordered_map<node_type*, bool> & used ,
+                       std::unordered_map<node_type*, size_t> & discovery_time ,
+                       std::unordered_map<node_type*, size_t> & lowest_time ,
+                       std::unordered_map<node_type*, node_type*> & parent ,
+                       std::unordered_map<node_type*, bool> & is_cp ) const ;
 } ;
 
 /**
@@ -125,7 +151,7 @@ std::vector< typename GraphConnectedComponents<GraphType>::node_type * > GraphCo
 
   if( nodes.size() > 0 )
   {
-    std::map<node_type *, bool> used ;
+    std::unordered_map<node_type *, bool> used ;
 
     while( nb_left > 0 )
     {
@@ -158,7 +184,7 @@ std::vector< typename GraphConnectedComponents<GraphType>::node_type * > GraphCo
 template< typename GraphType >
 void GraphConnectedComponents<GraphType>::GetCC( const GraphType & g ,
     typename GraphConnectedComponents<GraphType>::node_type * from_node ,
-    std::map<typename GraphConnectedComponents<GraphType>::node_type*, bool> & used ) const
+    std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type*, bool> & used ) const
 {
   used[ from_node ] = true ;
 
@@ -188,7 +214,7 @@ void GraphConnectedComponents<GraphType>::GetCC( const GraphType & g ,
 * @note from_node is counted in the result
 */
 template< typename GraphType >
-size_t GraphConnectedComponents<GraphType>::GetCCNodeCount( const GraphType & g , typename GraphConnectedComponents<GraphType>::node_type * from_node , std::map<typename GraphConnectedComponents<GraphType>::node_type*, bool> & used ) const
+size_t GraphConnectedComponents<GraphType>::GetCCNodeCount( const GraphType & g , typename GraphConnectedComponents<GraphType>::node_type * from_node , std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type*, bool> & used ) const
 {
   used[ from_node ] = true ;
 
@@ -226,7 +252,7 @@ std::vector< size_t > GraphConnectedComponents<GraphType>::GetCCNodeCount( const
 
   if( nodes.size() > 0 )
   {
-    std::map<node_type *, bool> used ;
+    std::unordered_map<node_type *, bool> used ;
 
     // Loop until some nodes haven't been found
     while( nb_left > 0 )
@@ -267,7 +293,7 @@ typename GraphConnectedComponents<GraphType>::node_type * GraphConnectedComponen
 
   if( nodes.size() > 0 )
   {
-    std::map<node_type *, bool> used ;
+    std::unordered_map<node_type *, bool> used ;
 
     // Loop until some nodes haven't been found
     while( nb_left > 0 )
@@ -314,9 +340,9 @@ typename GraphConnectedComponents<GraphType>::node_type * GraphConnectedComponen
 template< typename GraphType >
 void GraphConnectedComponents<GraphType>::GetCCCopy( const GraphType & g ,
     typename GraphConnectedComponents<GraphType>::node_type * from_node ,
-    std::map<typename GraphConnectedComponents<GraphType>::node_type*, bool> & used ,
-    std::map<typename GraphConnectedComponents<GraphType>::node_type*, typename GraphConnectedComponents<GraphType>::node_type*> & map_node ,
-    std::map<typename GraphConnectedComponents<GraphType>::edge_type*, typename GraphConnectedComponents<GraphType>::edge_type*> & map_edge ,
+    std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type*, bool> & used ,
+    std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type*, typename GraphConnectedComponents<GraphType>::node_type*> & map_node ,
+    std::unordered_map<typename GraphConnectedComponents<GraphType>::edge_type*, typename GraphConnectedComponents<GraphType>::edge_type*> & map_edge ,
     GraphType & cur_graph ) const
 {
   used[ from_node ] = true ;
@@ -365,9 +391,9 @@ std::vector< GraphType > GraphConnectedComponents<GraphType>::GetCCCopy( const G
 
   if( nodes.size() > 0 )
   {
-    std::map<node_type *, bool> used ;
-    std::map<node_type * , node_type * > map_node ;
-    std::map<edge_type * , edge_type * > map_edge ;
+    std::unordered_map<node_type *, bool> used ;
+    std::unordered_map<node_type * , node_type * > map_node ;
+    std::unordered_map<edge_type * , edge_type * > map_edge ;
 
     // Loop until some nodes haven't been found
     while( nb_left > 0 )
@@ -391,6 +417,119 @@ std::vector< GraphType > GraphConnectedComponents<GraphType>::GetCCCopy( const G
 
   return res ;
 }
+
+
+
+/**
+* @brief Computes a list of cut points
+* @parma g Input graph
+* @note cut points are nodes that if removed makes a connected graph unconnected
+* @return list of cut points
+*/
+template< typename GraphType >
+std::vector< typename GraphConnectedComponents<GraphType>::node_type * > GraphConnectedComponents<GraphType>::GetCutPoints( const GraphType & g ) const
+{
+  if( g.NbNode() == 0 )
+  {
+    std::vector< node_type * > res ;
+    return res ;
+  }
+
+  const std::vector< node_type * > & nodes = g.Nodes() ;
+
+  std::unordered_map< node_type * , bool > used ;
+  std::unordered_map< node_type * , size_t > discovery_time ; // Time of discovery in DFS search of all nodes
+  std::unordered_map< node_type * , size_t > lowest_time ; // lowest_time of any vertex reachable from a given vertex
+  std::unordered_map< node_type * , node_type * > parent ; // Given a node get it's parent in the DFS tree
+  std::unordered_map< node_type * , bool > is_cp ; // Indicate if a node is a cut point
+
+  // Start from first node -> it's the root of the tree so no parent
+  parent[ nodes[0] ] = nullptr ;
+
+  size_t cur_time = 0 ;
+  GetCutPoints( nodes[0] , cur_time , used , discovery_time , lowest_time , parent , is_cp ) ;
+
+  std::vector< node_type * > res ;
+  for( auto it = is_cp.cbegin() ; it != is_cp.end() ; ++it )
+  {
+    res.push_back( it->first ) ;
+  }
+
+  return res ;
+}
+
+/**
+* @brief Compute list of cut points (helper)
+* @param from_node Start of the DFS search
+* @param parent Current parent of the from_node
+* @param used map to know if a node is already used in DFS
+* @param discovery_time time when a node is firstly seen during DFS
+* @param lowest_time lowest time to see a node during DFS
+* @param[out] result List of resulting cut nodes
+*/
+template< typename GraphType >
+void GraphConnectedComponents<GraphType>::GetCutPoints( typename GraphConnectedComponents<GraphType>::node_type * from_node ,
+    size_t & current_time ,
+    std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type *, bool> & used ,
+    std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type *, size_t> & discovery_time ,
+    std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type *, size_t> & lowest_time ,
+    std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type *, typename GraphConnectedComponents<GraphType>::node_type *> & parent ,
+    std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type *, bool> & is_cp ) const
+{
+  used[ from_node ] = true ;
+  discovery_time[ from_node ] = current_time ;
+  lowest_time[ from_node ] = current_time ;
+  ++current_time ;
+
+  auto & neighs = from_node->Neighbors() ;
+
+  // Number of children in the tree with from_node as root
+  // note: this is not the number of neighbors
+  int nb_child = 0 ;
+
+  for( auto it_neigh = neighs.begin() ; it_neigh != neighs.end() ; ++it_neigh )
+  {
+    node_type * opp = ( *it_neigh )->Opposite( from_node ) ;
+
+    if( used.count( opp ) )
+    {
+      // Already found, just update the time if from_node is not direct child of opp
+      if( parent[ from_node ] != opp )
+      {
+        lowest_time[ from_node ] = std::min( lowest_time[ from_node ] , discovery_time[ opp ] ) ;
+      }
+    }
+    else // Node not discovered yet
+    {
+      parent[ opp ] = from_node ;
+      ++nb_child ;
+
+      // Build DFS tree
+      GetCutPoints( opp , current_time , used , discovery_time , lowest_time , parent , is_cp ) ;
+
+      // Now the DFS is built for all children starting from opp, see if from_node is a cut point
+      // -> Update the lowest value of from_node based on the children of opp
+      lowest_time[ from_node ] = std::min( lowest_time[ from_node ] , lowest_time[ opp ] ) ;
+
+      node_type * cur_parent = parent[ from_node ] ;
+      // if we are the root of the tree and we connect more than one node
+      if( cur_parent == nullptr && nb_child > 1 )
+      {
+        is_cp[ from_node ] = true ;
+      }
+
+      // if we're not the root and some child is discovered later than from_node (ie: it can not be discovered passing by another node)
+      if( cur_parent != nullptr && lowest_time[ opp ] >= discovery_time[ from_node ] )
+      {
+        is_cp[ from_node ] = true ;
+      }
+
+    }
+  }
+
+
+}
+
 
 
 

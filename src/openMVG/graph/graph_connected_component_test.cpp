@@ -170,6 +170,57 @@ TEST( graphConnectedComponent , ccCopy )
   EXPECT_EQ( 1 , cc_solver.GetCCCopy( graph_cc[1] ).size() ) ;
 }
 
+TEST( graphConnectedComponent , cutPoints )
+{
+  typedef UndirectedGraph<> graph_type ;
+  graph_type g ;
+
+  UndirectedGraph<>::node_type * n1 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n2 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n3 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n4 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n5 = g.AddNode() ;
+
+  UndirectedGraph<>::edge_type * e12 = g.AddEdge( n1 , n2 ) ;
+  UndirectedGraph<>::edge_type * e23 = g.AddEdge( n2 , n3 ) ;
+  UndirectedGraph<>::edge_type * e34 = g.AddEdge( n3 , n4 ) ;
+  UndirectedGraph<>::edge_type * e45 = g.AddEdge( n4 , n5 ) ;
+
+  GraphConnectedComponents< graph_type > cc_solver ;
+  std::vector< UndirectedGraph<>::node_type * > cuts = cc_solver.GetCutPoints( g ) ;
+
+  EXPECT_EQ( 3 , cuts.size() ) ;
+
+  EXPECT_TRUE( cuts[0] == n2 || cuts[0] == n3 || cuts[0] == n4 ) ;
+  EXPECT_TRUE( cuts[1] == n2 || cuts[1] == n3 || cuts[1] == n4 ) ;
+  EXPECT_TRUE( cuts[2] == n2 || cuts[2] == n3 || cuts[2] == n4 ) ;
+  EXPECT_TRUE( cuts[0] != cuts[1] && cuts[0] != cuts[2] && cuts[1] != cuts[2] );
+
+  g.RemoveEdge( e12 ) ;
+  g.RemoveEdge( e23 ) ;
+  g.RemoveEdge( e34 ) ;
+  g.RemoveEdge( e45 ) ;
+
+  UndirectedGraph<>::node_type * n6 = g.AddNode() ;
+  UndirectedGraph<>::node_type * n7 = g.AddNode() ;
+
+  UndirectedGraph<>::edge_type * e1 = g.AddEdge( n1 , n2 ) ;
+  UndirectedGraph<>::edge_type * e2 = g.AddEdge( n1 , n3 ) ;
+  UndirectedGraph<>::edge_type * e3 = g.AddEdge( n2 , n3 ) ;
+
+  UndirectedGraph<>::edge_type * e4 = g.AddEdge( n2 , n4 ) ;
+  UndirectedGraph<>::edge_type * e5 = g.AddEdge( n2 , n5 ) ;
+
+  UndirectedGraph<>::edge_type * e6 = g.AddEdge( n2 , n7 ) ;
+  UndirectedGraph<>::edge_type * e7 = g.AddEdge( n4 , n6 ) ;
+  UndirectedGraph<>::edge_type * e8 = g.AddEdge( n5 , n6 ) ;
+
+  cuts = cc_solver.GetCutPoints( g ) ;
+
+  EXPECT_EQ( 1 , cuts.size() ) ;
+  EXPECT_EQ( n2 , cuts[0] ) ;
+}
+
 /* ************************************************************************* */
 int main()
 {
