@@ -57,7 +57,7 @@ class GraphTraversalDFS
 
 template< typename Graph>
 template< typename NodeFunctor>
-void GraphTraversalDFS<Graph>::NodeVisitorDFS( const Graph & g , const GraphTraversalDFS<Graph>::node_type * start_node , NodeFunctor & functor ) const
+void GraphTraversalDFS<Graph>::NodeVisitorDFS( const Graph & g , const typename GraphTraversalDFS<Graph>::node_type * start_node , NodeFunctor & functor ) const
 {
   std::map< node_type * , bool > visited ;
   NodeVisitorDFS( g , start_node , functor , visited ) ;
@@ -66,7 +66,7 @@ void GraphTraversalDFS<Graph>::NodeVisitorDFS( const Graph & g , const GraphTrav
 template< typename Graph>
 template< typename NodeFunctor>
 void GraphTraversalDFS<Graph>::NodeVisitorDFS( const Graph & g ,
-    const GraphTraversalDFS<Graph>::node_type * start_node ,
+    const typename GraphTraversalDFS<Graph>::node_type * start_node ,
     NodeFunctor & functor ,
     std::map< node_type * , bool > & visited ) const
 {
@@ -100,7 +100,7 @@ void GraphTraversalDFS<Graph>::NodeVisitorDFS( const Graph & g ,
 * @retval false If searched_node could not be found during traversal
 */
 template< typename Graph>
-bool GraphTraversalDFS<Graph>::NodeSearch( const Graph & g , const GraphTraversalDFS<Graph>::node_type * start_node , const GraphTraversalDFS<Graph>::node_type * searched_node ) const
+bool GraphTraversalDFS<Graph>::NodeSearch( const Graph & g , const typename GraphTraversalDFS<Graph>::node_type * start_node , const typename GraphTraversalDFS<Graph>::node_type * searched_node ) const
 {
   std::map< node_type * , bool > visited ;
   return NodeSearch( g , start_node , searched_node , visited ) ;
@@ -115,7 +115,10 @@ bool GraphTraversalDFS<Graph>::NodeSearch( const Graph & g , const GraphTraversa
 * @retval false If searched_node could not be found during traversal
 */
 template< typename Graph>
-bool GraphTraversalDFS<Graph>::NodeSearch( const Graph & g , const node_type * start_node , const node_type * searched_node , std::map< node_type * , bool > & visited ) const
+bool GraphTraversalDFS<Graph>::NodeSearch( const Graph & g , 
+  const typename GraphTraversalDFS<Graph>::node_type * start_node , 
+  const typename GraphTraversalDFS<Graph>::node_type * searched_node , 
+  std::map< typename GraphTraversalDFS<Graph>::node_type * , bool > & visited ) const
 {
   visited[ const_cast<node_type*>( start_node ) ] = true ;
 
