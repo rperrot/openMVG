@@ -115,10 +115,10 @@ bool GraphTraversalDFS<Graph>::NodeSearch( const Graph & g , const typename Grap
 * @retval false If searched_node could not be found during traversal
 */
 template< typename Graph>
-bool GraphTraversalDFS<Graph>::NodeSearch( const Graph & g , 
-  const typename GraphTraversalDFS<Graph>::node_type * start_node , 
-  const typename GraphTraversalDFS<Graph>::node_type * searched_node , 
-  std::map< typename GraphTraversalDFS<Graph>::node_type * , bool > & visited ) const
+bool GraphTraversalDFS<Graph>::NodeSearch( const Graph & g ,
+    const typename GraphTraversalDFS<Graph>::node_type * start_node ,
+    const typename GraphTraversalDFS<Graph>::node_type * searched_node ,
+    std::map< typename GraphTraversalDFS<Graph>::node_type * , bool > & visited ) const
 {
   visited[ const_cast<node_type*>( start_node ) ] = true ;
 

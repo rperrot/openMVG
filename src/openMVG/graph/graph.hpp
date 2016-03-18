@@ -25,6 +25,8 @@
 
 #include "openMVG/graph/graph_spanning_tree.hpp"
 
+#include "openMVG/graph/graph_path_algorithms.hpp"
+
 
 namespace openMVG
 {

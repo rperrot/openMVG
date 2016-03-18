@@ -7,7 +7,6 @@
 #ifndef _OPENMVG_GRAPH_GRAPH_CONNECTED_COMPONENT_HPP_
 #define _OPENMVG_GRAPH_GRAPH_CONNECTED_COMPONENT_HPP_
 
-// #include <map>
 #include <unordered_map>
 
 namespace openMVG
@@ -107,11 +106,11 @@ struct GraphConnectedComponents
   private:
 
     /**
-    * @brief Traverse a graph from from_node using DFS 
+    * @brief Traverse a graph from from_node using DFS
     * @param from_node Input node
-    * @param[in,out] used map used to tell if a node has already been visited 
+    * @param[in,out] used map used to tell if a node has already been visited
     */
-    void IsConnectedHelper( node_type * from_node , std::unordered_map<node_type*,bool> & used ) const ; 
+    void IsConnectedHelper( node_type * from_node , std::unordered_map<node_type*, bool> & used ) const ;
 
     /**
     * @brief Get CC helper
@@ -157,7 +156,7 @@ struct GraphConnectedComponents
     /**
     * @brief Compute list of cut points (helper)
     * @param from_node Start of the DFS search
-    * @param current_time time of discovery 
+    * @param current_time time of discovery
     * @param[in,out] parent Current parent of the from_node
     * @param[in,out] used map to know if a node is already used in DFS
     * @param[in,out] discovery_time time when a node is firstly seen during DFS
@@ -171,11 +170,11 @@ struct GraphConnectedComponents
                        std::unordered_map<node_type*, size_t> & lowest_time ,
                        std::unordered_map<node_type*, node_type*> & parent ,
                        std::unordered_map<node_type*, bool> & is_cp ) const ;
-                       
+
     /**
-    * @brief Utility function used to tell if graph starting from from_node has a cut point 
-    * @param from_node Start of the DFS search 
-    * @param current_time time of discovery 
+    * @brief Utility function used to tell if graph starting from from_node has a cut point
+    * @param from_node Start of the DFS search
+    * @param current_time time of discovery
     * @param[in,out] parent Current parent of the from_node
     * @param[in,out] used map to know if a node is already used in DFS
     * @param[in,out] discovery_time time when a node is firstly seen during DFS
@@ -184,10 +183,10 @@ struct GraphConnectedComponents
     */
     bool HasCutPoint( node_type * from_node ,
                       size_t & current_time ,
-                      std::unordered_map<node_type*,bool> & used ,
-                       std::unordered_map<node_type*, size_t> & discovery_time ,
-                       std::unordered_map<node_type*, size_t> & lowest_time ,
-                       std::unordered_map<node_type*, node_type*> & parent ) const;
+                      std::unordered_map<node_type*, bool> & used ,
+                      std::unordered_map<node_type*, size_t> & discovery_time ,
+                      std::unordered_map<node_type*, size_t> & lowest_time ,
+                      std::unordered_map<node_type*, node_type*> & parent ) const;
 
 } ;
 
@@ -541,7 +540,7 @@ void GraphConnectedComponents<GraphType>::GetCutPoints( typename GraphConnectedC
 
   // Number of children in the tree with from_node as root
   // note: this is not the number of neighbors
-  int nb_child = 0 ;
+  size_t nb_child = 0 ;
 
   for( auto it_neigh = neighs.begin() ; it_neigh != neighs.end() ; ++it_neigh )
   {
@@ -567,7 +566,7 @@ void GraphConnectedComponents<GraphType>::GetCutPoints( typename GraphConnectedC
       // -> Update the lowest value of from_node based on the children of opp
       lowest_time[ from_node ] = std::min( lowest_time[ from_node ] , lowest_time[ opp ] ) ;
 
-      node_type * cur_parent = parent[ from_node ] ;
+      const node_type * cur_parent = parent[ from_node ] ;
       // if we are the root of the tree and we connect more than one node
       if( cur_parent == nullptr && nb_child > 1 )
       {
@@ -583,23 +582,23 @@ void GraphConnectedComponents<GraphType>::GetCutPoints( typename GraphConnectedC
   }
 }
 
-    /**
-    * @brief Utility function used to tell if graph starting from from_node has a cut point 
-    * @param from_node Start of the DFS search 
-    * @param current_time time of discovery 
-    * @param[in,out] parent Current parent of the from_node
-    * @param[in,out] used map to know if a node is already used in DFS
-    * @param[in,out] discovery_time time when a node is firstly seen during DFS
-    * @param[in,out] lowest_time lowest time to see a node during DFS
-    * @param[out] is_cp indicate if a node is a cut point
-    */
+/**
+* @brief Utility function used to tell if graph starting from from_node has a cut point
+* @param from_node Start of the DFS search
+* @param current_time time of discovery
+* @param[in,out] parent Current parent of the from_node
+* @param[in,out] used map to know if a node is already used in DFS
+* @param[in,out] discovery_time time when a node is firstly seen during DFS
+* @param[in,out] lowest_time lowest time to see a node during DFS
+* @param[out] is_cp indicate if a node is a cut point
+*/
 template< typename GraphType >
-    bool GraphConnectedComponents<GraphType>::HasCutPoint( typename GraphConnectedComponents<GraphType>::node_type * from_node ,
-                      size_t & current_time ,
-                      std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type*,bool> & used ,
-                       std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type*, size_t> & discovery_time ,
-                       std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type*, size_t> & lowest_time ,
-                       std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type*, typename GraphConnectedComponents<GraphType>::node_type*> & parent ) const
+bool GraphConnectedComponents<GraphType>::HasCutPoint( typename GraphConnectedComponents<GraphType>::node_type * from_node ,
+    size_t & current_time ,
+    std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type*, bool> & used ,
+    std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type*, size_t> & discovery_time ,
+    std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type*, size_t> & lowest_time ,
+    std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type*, typename GraphConnectedComponents<GraphType>::node_type*> & parent ) const
 {
   used[ from_node ] = true ;
   discovery_time[ from_node ] = current_time ;
@@ -610,7 +609,7 @@ template< typename GraphType >
 
   // Number of children in the tree with from_node as root
   // note: this is not the number of neighbors
-  int nb_child = 0 ;
+  size_t nb_child = 0 ;
 
   for( auto it_neigh = neighs.begin() ; it_neigh != neighs.end() ; ++it_neigh )
   {
@@ -630,31 +629,31 @@ template< typename GraphType >
       ++nb_child ;
 
       // Build DFS tree
-      bool child_has_cp = HasCutPoint( opp , current_time , used , discovery_time , lowest_time , parent ) ;
+      const bool child_has_cp = HasCutPoint( opp , current_time , used , discovery_time , lowest_time , parent ) ;
       if( child_has_cp )
       {
-          return true ;
+        return true ;
       }
-      
+
       // Now the DFS is built for all children starting from opp, see if from_node is a cut point
       // -> Update the lowest value of from_node based on the children of opp
       lowest_time[ from_node ] = std::min( lowest_time[ from_node ] , lowest_time[ opp ] ) ;
 
-      node_type * cur_parent = parent[ from_node ] ;
+      const node_type * cur_parent = parent[ from_node ] ;
       // if we are the root of the tree and we connect more than one node
       if( cur_parent == nullptr && nb_child > 1 )
       {
-          return true ; 
+        return true ;
       }
 
       // if we're not the root and some child is discovered later than from_node (ie: it can not be discovered passing by another node)
       if( cur_parent != nullptr && lowest_time[ opp ] >= discovery_time[ from_node ] )
       {
-          return true ; 
+        return true ;
       }
     }
   }
-  return false ; 
+  return false ;
 }
 
 /**
@@ -668,8 +667,8 @@ bool GraphConnectedComponents<GraphType>::HasCutPoint( const GraphType & g ) con
 {
   if( g.NbNode() == 0 )
   {
-      // By convention 
-      return false ; 
+    // By convention
+    return false ;
   }
 
   const std::vector< node_type * > & nodes = g.Nodes() ;
@@ -683,32 +682,32 @@ bool GraphConnectedComponents<GraphType>::HasCutPoint( const GraphType & g ) con
   parent[ nodes[0] ] = nullptr ;
 
   size_t cur_time = 0 ;
-  bool has_cp = HasCutPoint( nodes[0] , cur_time , used , discovery_time , lowest_time , parent ) ;
+  const bool has_cp = HasCutPoint( nodes[0] , cur_time , used , discovery_time , lowest_time , parent ) ;
 
   return has_cp ;
 }
 
-    /**
-    * @brief Traverse a graph from from_node using DFS 
-    * @param from_node Input node
-    * @param[in,out] used map used to tell if a node has already been visited 
-    */
+/**
+* @brief Traverse a graph from from_node using DFS
+* @param from_node Input node
+* @param[in,out] used map used to tell if a node has already been visited
+*/
 template< typename GraphType >
-void GraphConnectedComponents<GraphType>::IsConnectedHelper( typename GraphConnectedComponents<GraphType>::node_type * from_node , std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type*,bool> & used ) const 
+void GraphConnectedComponents<GraphType>::IsConnectedHelper( typename GraphConnectedComponents<GraphType>::node_type * from_node , std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type*, bool> & used ) const
 {
-    used[ from_node ] = true ; 
-        
-    auto & neighs = from_node->Neighbors() ;
-        
-    for( auto it_neigh = neighs.begin() ; it_neigh != neighs.end() ; ++it_neigh )
-    { 
-        node_type * opp = ( *it_neigh )->Opposite( from_node ) ;
+  used[ from_node ] = true ;
 
-        if( !used.count( opp ) )
-        {
-            IsConnectedHelper( opp , used ) ;
-        }
+  auto & neighs = from_node->Neighbors() ;
+
+  for( auto it_neigh = neighs.begin() ; it_neigh != neighs.end() ; ++it_neigh )
+  {
+    node_type * opp = ( *it_neigh )->Opposite( from_node ) ;
+
+    if( !used.count( opp ) )
+    {
+      IsConnectedHelper( opp , used ) ;
     }
+  }
 }
 
 
@@ -720,19 +719,19 @@ void GraphConnectedComponents<GraphType>::IsConnectedHelper( typename GraphConne
 template< typename GraphType >
 bool GraphConnectedComponents<GraphType>::IsConnected( const GraphType & g ) const
 {
-    std::unordered_map<node_type*,bool> used ;
-    const std::vector< node_type * > & nodes = g.Nodes() ;
+  std::unordered_map<node_type*, bool> used ;
+  const std::vector< node_type * > & nodes = g.Nodes() ;
 
-    if( nodes.size() == 0 )
-    {
-        // By convention
-        return true ;
-    }
+  if( nodes.size() == 0 )
+  {
+    // By convention
+    return true ;
+  }
 
-    IsConnectedHelper(nodes[0], used);
-    
-    // ensure all nodes have been visited during DFS 
-    return used.size() == nodes.size() ;
+  IsConnectedHelper( nodes[0], used );
+
+  // ensure all nodes have been visited during DFS
+  return used.size() == nodes.size() ;
 }
 
 /**
@@ -744,10 +743,10 @@ bool GraphConnectedComponents<GraphType>::IsConnected( const GraphType & g ) con
 template< typename GraphType >
 bool GraphConnectedComponents<GraphType>::IsBiConnected( const GraphType & g ) const
 {
-      if( g.NbNode() == 0 )
+  if( g.NbNode() == 0 )
   {
-      // By convention 
-      return false ; 
+    // By convention
+    return false ;
   }
 
   const std::vector< node_type * > & nodes = g.Nodes() ;
@@ -761,10 +760,10 @@ bool GraphConnectedComponents<GraphType>::IsBiConnected( const GraphType & g ) c
   parent[ nodes[0] ] = nullptr ;
 
   size_t cur_time = 0 ;
-  bool has_cp = HasCutPoint( nodes[0] , cur_time , used , discovery_time , lowest_time , parent ) ;
+  const bool has_cp = HasCutPoint( nodes[0] , cur_time , used , discovery_time , lowest_time , parent ) ;
 
-  return !has_cp /* No cut points */ && 
-         (used.size() == nodes.size() /* Connected */) ;
+  return !has_cp /* No cut points */ &&
+         ( used.size() == nodes.size() /* Connected */ ) ;
 }
 
 /**
