@@ -64,7 +64,7 @@ GraphType GraphSpanningTree<GraphType>::MST( const GraphType & g )
   // Build initial forest (each nodes is it's own representant)
   UnionFind forest_representant;
   forest_representant.InitSets( nodes.size() ) ;
-  std::map< node_type * , int > representant_id ; // Map from nodes to integers
+  std::map< const node_type * , int > representant_id ; // Map from nodes to integers
   {
     int node_id = 0 ;
     for( auto it = nodes.begin() ; it != nodes.end() ; ++it, ++node_id )
@@ -94,16 +94,16 @@ GraphType GraphSpanningTree<GraphType>::MST( const GraphType & g )
     }
   }
 
-  std::vector< edge_type * > output_edge ;
+  std::vector< const edge_type * > output_edge ;
   // Now compute minimum spanning tree
   while( nb_tree > 1 && ! e_queue.Empty() )
   {
     queue_node_type * min_edge_node = e_queue.FindMin() ;
     e_queue.DeleteMin() ;
-    edge_type * cur_edge = e_queue.GetData( min_edge_node ) ;
+    const edge_type * cur_edge = e_queue.GetData( min_edge_node ) ;
 
-    node_type * start_node = cur_edge->Source() ;
-    node_type * end_node = cur_edge->Destination() ;
+    const node_type * start_node = cur_edge->Source() ;
+    const node_type * end_node = cur_edge->Destination() ;
 
     const int id_start = representant_id[ start_node ] ;
     const int id_end = representant_id[ end_node ] ;
@@ -127,7 +127,7 @@ GraphType GraphSpanningTree<GraphType>::MST( const GraphType & g )
   // Here, every representant should point to the same node, if not, that's because we have not a connected graph
   GraphType res ;
   // Build the node
-  std::map< node_type * , node_type *> map_node ;
+  std::map< const node_type * , node_type *> map_node ;
   for( auto it = nodes.begin() ; it != nodes.end() ; ++it )
   {
     map_node[ *it ] = res.AddNode( ( *it )->Data() ) ;
@@ -136,10 +136,10 @@ GraphType GraphSpanningTree<GraphType>::MST( const GraphType & g )
   // Build the edge
   for( auto it = output_edge.begin() ; it != output_edge.end() ; ++it )
   {
-    edge_type * cur_edge = *it;
+    const edge_type * cur_edge = *it;
 
-    node_type * start_node = cur_edge->Source() ;
-    node_type * end_node = cur_edge->Destination() ;
+    const node_type * start_node = cur_edge->Source() ;
+    const node_type * end_node = cur_edge->Destination() ;
 
     res.AddEdge( map_node[ start_node ] , map_node[ end_node ] , cur_edge->Data() ) ;
   }
@@ -164,7 +164,7 @@ GraphType GraphSpanningTree<GraphType>::MST( const GraphType & g ,
   // Build initial forest (each nodes is it's own representant)
   UnionFind forest_representant;
   forest_representant.InitSets( nodes.size() ) ;
-  std::map< node_type * , int > representant_id ; // Map from nodes to integers
+  std::map< const node_type * , int > representant_id ; // Map from nodes to integers
   {
     int node_id = 0 ;
     for( auto it = nodes.begin() ; it != nodes.end() ; ++it, ++node_id )
@@ -179,7 +179,7 @@ GraphType GraphSpanningTree<GraphType>::MST( const GraphType & g ,
   PairingHeap<WeightType, edge_type*> e_queue( edge_w.size() ) ;
   typedef typename PairingHeap<WeightType, edge_type*>::node_type queue_node_type ;
 
-  std::map< edge_type *, bool> already_added_edge ; // Ensure edge is added only once
+  std::map< const edge_type *, bool> already_added_edge ; // Ensure edge is added only once
 
 
   for( auto it = nodes.begin() ; it < nodes.end() ; ++it )
@@ -202,16 +202,16 @@ GraphType GraphSpanningTree<GraphType>::MST( const GraphType & g ,
     }
   }
 
-  std::vector< edge_type * > output_edge ;
+  std::vector< const edge_type * > output_edge ;
   // Now compute minimum spanning tree
   while( nb_tree > 1 && ! e_queue.Empty() )
   {
     queue_node_type * min_edge_node = e_queue.FindMin() ;
     e_queue.DeleteMin() ;
-    edge_type * cur_edge = e_queue.GetData( min_edge_node ) ;
+    const edge_type * cur_edge = e_queue.GetData( min_edge_node ) ;
 
-    node_type * start_node = cur_edge->Source() ;
-    node_type * end_node = cur_edge->Destination() ;
+    const node_type * start_node = cur_edge->Source() ;
+    const node_type * end_node = cur_edge->Destination() ;
 
     const int id_start = representant_id[ start_node ] ;
     const int id_end = representant_id[ end_node ] ;
@@ -235,7 +235,7 @@ GraphType GraphSpanningTree<GraphType>::MST( const GraphType & g ,
   // Here, every representant should point to the same node, if not, that's because we have not a connected graph
   GraphType res ;
   // Build the node
-  std::map< node_type * , node_type *> map_node ;
+  std::map< const node_type * , node_type *> map_node ;
   for( auto it = nodes.begin() ; it != nodes.end() ; ++it )
   {
     map_node[ *it ] = res.AddNode( ( *it )->Data() ) ;
@@ -244,10 +244,10 @@ GraphType GraphSpanningTree<GraphType>::MST( const GraphType & g ,
   // Build the edge
   for( auto it = output_edge.begin() ; it != output_edge.end() ; ++it )
   {
-    edge_type * cur_edge = *it;
+    const edge_type * cur_edge = *it;
 
-    node_type * start_node = cur_edge->Source() ;
-    node_type * end_node = cur_edge->Destination() ;
+    const node_type * start_node = cur_edge->Source() ;
+    const node_type * end_node = cur_edge->Destination() ;
 
     res.AddEdge( map_node[ start_node ] , map_node[ end_node ] , cur_edge->Data() ) ;
   }

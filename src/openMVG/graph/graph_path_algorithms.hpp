@@ -33,7 +33,7 @@ class GraphShortestPath
     * @note In this function, edge_data is used as path weight
     * @note As defined in the Dijkstra algorithm edge_weights must be positive
     */
-    std::vector< edge_type * > ShortestPathDijkstra( const GraphType & g , node_type * from_node , node_type * to_node ) const ;
+    std::vector< edge_type * > ShortestPathDijkstra( const GraphType & g , const node_type * from_node , const node_type * to_node ) const ;
 
 
     /**
@@ -46,7 +46,7 @@ class GraphShortestPath
     * @note In this function, edge_data is used as path weight
     * @note As opposed to the Dijkstra algorithm negative weights are allowed
     */
-    std::vector< edge_type * > ShortestPathBellmanFord( const GraphType & g , node_type * from_node , node_type * to_node , bool * has_negative_cyle = nullptr ) const ;
+    std::vector< edge_type * > ShortestPathBellmanFord( const GraphType & g , const node_type * from_node , const node_type * to_node , bool * has_negative_cyle = nullptr ) const ;
 
   private:
 };
@@ -62,22 +62,22 @@ class GraphShortestPath
 */
 template< typename GraphType>
 std::vector< typename GraphShortestPath<GraphType>::edge_type * > GraphShortestPath<GraphType>::ShortestPathDijkstra( const GraphType & g ,
-    typename GraphShortestPath<GraphType>::node_type * from_node ,
-    typename GraphShortestPath<GraphType>::node_type * to_node ) const
+    const typename GraphShortestPath<GraphType>::node_type * from_node ,
+    const typename GraphShortestPath<GraphType>::node_type * to_node ) const
 {
   // Store the best edge to get to a specified node
-  std::unordered_map< node_type * , edge_type * > best_from ;
+  std::unordered_map< const node_type * , edge_type * > best_from ;
   // List nodes allready processed
-  std::unordered_map< node_type * , bool > proceed ;
+  std::unordered_map< const node_type * , bool > proceed ;
 
   const std::vector< node_type * > & nodes = g.Nodes() ;
 
   // Store minimum distance to a specified node
   typedef typename edge_type::edge_data_type w_type ;
-  PairingHeap< typename edge_type::edge_data_type , node_type * > min_dist( nodes.size() ) ;
-  typedef typename PairingHeap< typename edge_type::edge_data_type , node_type * >::node_type q_node_type ;
+  PairingHeap< typename edge_type::edge_data_type , const node_type * > min_dist( nodes.size() ) ;
+  typedef typename PairingHeap< typename edge_type::edge_data_type , const node_type * >::node_type q_node_type ;
   // Get relation between a graph node and it's node in the priority queue
-  std::unordered_map< node_type * , q_node_type * > node_map ;
+  std::unordered_map< const node_type * , q_node_type * > node_map ;
 
   // Append the first node
   q_node_type * corresp = min_dist.Insert( w_type( 0 ) , from_node ) ;
@@ -103,7 +103,7 @@ std::vector< typename GraphShortestPath<GraphType>::edge_type * > GraphShortestP
     min_dist.DeleteMin() ;
 
     const w_type cur_min_dist = min_dist.GetKey( cur_min_node ) ;
-    node_type * cur_node = min_dist.GetData( cur_min_node ) ;
+    const node_type * cur_node = min_dist.GetData( cur_min_node ) ;
 
     auto & neigh = cur_node->Neighbors() ;
 
@@ -111,7 +111,7 @@ std::vector< typename GraphShortestPath<GraphType>::edge_type * > GraphShortestP
 
     for( auto it = neigh.begin() ; it != neigh.end() ; ++it )
     {
-      node_type * opp = ( *it )->Opposite( cur_node ) ;
+      const node_type * opp = ( *it )->Opposite( cur_node ) ;
 
       // Process only nodes that are still in the queue
       if( ! proceed.count( opp ) )
@@ -144,7 +144,7 @@ std::vector< typename GraphShortestPath<GraphType>::edge_type * > GraphShortestP
   {
     // Get edges list by following the reverse path
     std::deque< edge_type * > tmp ;
-    node_type * cur_node = to_node ;
+    node_type * cur_node = const_cast<node_type*>( to_node ) ;
     while( cur_node != from_node )
     {
       // Add the edge
@@ -173,16 +173,16 @@ std::vector< typename GraphShortestPath<GraphType>::edge_type * > GraphShortestP
 */
 template< typename GraphType>
 std::vector< typename GraphShortestPath<GraphType>::edge_type * > GraphShortestPath<GraphType>::ShortestPathBellmanFord( const GraphType & g ,
-    typename GraphShortestPath<GraphType>::node_type * from_node ,
-    typename GraphShortestPath<GraphType>::node_type * to_node ,
+    const typename GraphShortestPath<GraphType>::node_type * from_node ,
+    const typename GraphShortestPath<GraphType>::node_type * to_node ,
     bool * has_negative_cycle ) const
 {
   typedef typename edge_type::edge_data_type w_type ;
 
   // Minimum distance to get from from_node to this node
-  std::unordered_map< node_type * , w_type > min_distance ;
+  std::unordered_map< const node_type * , w_type > min_distance ;
   // Best predecessor to go from from_node to this node
-  std::unordered_map< node_type * , edge_type * > best_from ;
+  std::unordered_map< const node_type * , edge_type * > best_from ;
 
   const std::vector< node_type * > nodes = g.Nodes() ;
 
@@ -210,14 +210,14 @@ std::vector< typename GraphShortestPath<GraphType>::edge_type * > GraphShortestP
     // For all edges
     for( size_t id_node = 0 ; id_node < nodes.size() ; ++id_node )
     {
-      node_type * cur_node = nodes[ id_node ] ;
+      const node_type * cur_node = nodes[ id_node ] ;
       auto & neighs = cur_node->Neighbors() ;
 
       const w_type cur_min_dist = min_distance[ cur_node ] ;
 
       for( auto it = neighs.begin( ) ; it != neighs.end() ; ++it )
       {
-        node_type * opp = ( *it )->Opposite( cur_node ) ;
+        const node_type * opp = ( *it )->Opposite( cur_node ) ;
         const w_type new_dist = SafeAdd( min_distance[ cur_node ] , ( *it )->Data() ) ;
         if( new_dist < min_distance[ opp ] )
         {
@@ -237,11 +237,11 @@ std::vector< typename GraphShortestPath<GraphType>::edge_type * > GraphShortestP
   }
   for( size_t id_node = 0 ; id_node < nodes.size() && ! cycle ; ++id_node )
   {
-    node_type * cur_node = nodes[ id_node ] ;
+    const node_type * cur_node = nodes[ id_node ] ;
     auto & neighs = cur_node->Neighbors() ;
     for( auto it = neighs.begin( ) ; it != neighs.end() ; ++it )
     {
-      node_type * opp = ( *it )->Opposite( cur_node ) ;
+      const node_type * opp = ( *it )->Opposite( cur_node ) ;
       const w_type new_dist = SafeAdd( min_distance[ cur_node ], ( *it )->Data() ) ;
       if( new_dist < min_distance[ opp ] )
       {
@@ -267,7 +267,7 @@ std::vector< typename GraphShortestPath<GraphType>::edge_type * > GraphShortestP
   {
     // Get edges list by following the reverse path
     std::deque< edge_type * > tmp ;
-    node_type * cur_node = to_node ;
+    node_type * cur_node = const_cast<node_type*>( to_node ) ;
     while( cur_node != from_node )
     {
       // Add the edge
