@@ -70,7 +70,7 @@ struct GraphConnectedComponents
     * @note cut points are nodes that if removed makes a connected graph unconnected
     * @return list of cut points
     */
-    std::vector< node_type * > GetCutPoints( const GraphType & g ) const ;
+    std::vector< const node_type * > GetCutPoints( const GraphType & g ) const ;
 
     /**
     * @brief Test if graph has cut points
@@ -110,7 +110,7 @@ struct GraphConnectedComponents
     * @param from_node Input node
     * @param[in,out] used map used to tell if a node has already been visited
     */
-    void IsConnectedHelper( node_type * from_node , std::unordered_map<node_type*, bool> & used ) const ;
+    void IsConnectedHelper( const node_type * from_node , std::unordered_map<const node_type*, bool> & used ) const ;
 
     /**
     * @brief Get CC helper
@@ -120,7 +120,7 @@ struct GraphConnectedComponents
     * @note This do a DFS search to explore all nodes reachable from from_node
     * @note At the end of the process, all nodes belonging to the same CC as from_node are found
     */
-    void GetCC( const GraphType & g , node_type * from_node , std::unordered_map<node_type*, bool> & used ) const ;
+    void GetCC( const GraphType & g , const node_type * from_node , std::unordered_map<const node_type*, bool> & used ) const ;
 
     /**
     * @brief Get CC Node count helper
@@ -131,7 +131,7 @@ struct GraphConnectedComponents
     * @note This do a DFS search to count how many nodes can be reached from from_node
     * @note from_node is counted in the result
     */
-    size_t GetCCNodeCount( const GraphType & g , node_type * from_node , std::unordered_map<node_type*, bool> & used ) const ;
+    size_t GetCCNodeCount( const GraphType & g , const node_type * from_node , std::unordered_map<const node_type*, bool> & used ) const ;
 
     /**
     * @brief Get CC Copy helper
@@ -147,10 +147,10 @@ struct GraphConnectedComponents
     * @note Deep copy is only on the structure of the graph, if data of the nodes and/or the edges are pointers, we only to a shallow copy
     */
     void GetCCCopy( const GraphType & g ,
-                    node_type * from_node ,
-                    std::unordered_map<node_type*, bool> & used ,
-                    std::unordered_map<node_type*, node_type*> & map_node ,
-                    std::unordered_map<edge_type*, edge_type*> & map_edge ,
+                    const node_type * from_node ,
+                    std::unordered_map<const node_type*, bool> & used ,
+                    std::unordered_map<const node_type*, node_type*> & map_node ,
+                    std::unordered_map<const edge_type*, edge_type*> & map_edge ,
                     GraphType & cur_graph ) const ;
 
     /**
@@ -163,13 +163,13 @@ struct GraphConnectedComponents
     * @param[in,out] lowest_time lowest time to see a node during DFS
     * @param[out] is_cp indicate if a node is a cut point
     */
-    void GetCutPoints( node_type * from_node ,
+    void GetCutPoints( const node_type * from_node ,
                        size_t & current_time ,
-                       std::unordered_map<node_type*, bool> & used ,
-                       std::unordered_map<node_type*, size_t> & discovery_time ,
-                       std::unordered_map<node_type*, size_t> & lowest_time ,
-                       std::unordered_map<node_type*, node_type*> & parent ,
-                       std::unordered_map<node_type*, bool> & is_cp ) const ;
+                       std::unordered_map<const node_type*, bool> & used ,
+                       std::unordered_map<const node_type*, size_t> & discovery_time ,
+                       std::unordered_map<const node_type*, size_t> & lowest_time ,
+                       std::unordered_map<const node_type*, const node_type*> & parent ,
+                       std::unordered_map<const node_type*, bool> & is_cp ) const ;
 
     /**
     * @brief Utility function used to tell if graph starting from from_node has a cut point
@@ -181,12 +181,12 @@ struct GraphConnectedComponents
     * @param[in,out] lowest_time lowest time to see a node during DFS
     * @param[out] is_cp indicate if a node is a cut point
     */
-    bool HasCutPoint( node_type * from_node ,
+    bool HasCutPoint( const node_type * from_node ,
                       size_t & current_time ,
-                      std::unordered_map<node_type*, bool> & used ,
-                      std::unordered_map<node_type*, size_t> & discovery_time ,
-                      std::unordered_map<node_type*, size_t> & lowest_time ,
-                      std::unordered_map<node_type*, node_type*> & parent ) const;
+                      std::unordered_map<const node_type*, bool> & used ,
+                      std::unordered_map<const node_type*, size_t> & discovery_time ,
+                      std::unordered_map<const node_type*, size_t> & lowest_time ,
+                      std::unordered_map<const node_type*, const node_type*> & parent ) const;
 
 } ;
 
@@ -202,20 +202,22 @@ std::vector< typename GraphConnectedComponents<GraphType>::node_type * > GraphCo
   const std::vector< node_type * > & nodes = g.Nodes() ;
   std::vector< node_type * > res ;
 
-  int nb_left = nodes.size() ;
+  size_t nb_left = nodes.size() ;
+  size_t last_start = 0 ;
 
   if( nodes.size() > 0 )
   {
-    std::unordered_map<node_type *, bool> used ;
+    std::unordered_map<const node_type *, bool> used ;
 
     while( nb_left > 0 )
     {
       // Look for an unused node and start from it
-      int id = 0 ;
+      size_t id = last_start ;
       while( used.count( nodes[id] ) != 0 )
       {
         ++id ;
       }
+      last_start = id ;
 
       // Computes CC from this node
       res.push_back( nodes[id] ) ;
@@ -238,8 +240,8 @@ std::vector< typename GraphConnectedComponents<GraphType>::node_type * > GraphCo
 */
 template< typename GraphType >
 void GraphConnectedComponents<GraphType>::GetCC( const GraphType & g ,
-    typename GraphConnectedComponents<GraphType>::node_type * from_node ,
-    std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type*, bool> & used ) const
+    const typename GraphConnectedComponents<GraphType>::node_type * from_node ,
+    std::unordered_map<const typename GraphConnectedComponents<GraphType>::node_type*, bool> & used ) const
 {
   used[ from_node ] = true ;
 
@@ -249,7 +251,7 @@ void GraphConnectedComponents<GraphType>::GetCC( const GraphType & g ,
   for( auto it_neigh = neighs.begin() ; it_neigh != neighs.end() ; ++it_neigh )
   {
     const edge_type * cur_edge = *it_neigh ;
-    node_type * opp = cur_edge->Opposite( from_node ) ;
+    const node_type * opp = cur_edge->Opposite( from_node ) ;
 
     if( ! used.count( opp ) )
     {
@@ -269,7 +271,7 @@ void GraphConnectedComponents<GraphType>::GetCC( const GraphType & g ,
 * @note from_node is counted in the result
 */
 template< typename GraphType >
-size_t GraphConnectedComponents<GraphType>::GetCCNodeCount( const GraphType & g , typename GraphConnectedComponents<GraphType>::node_type * from_node , std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type*, bool> & used ) const
+size_t GraphConnectedComponents<GraphType>::GetCCNodeCount( const GraphType & g , const typename GraphConnectedComponents<GraphType>::node_type * from_node , std::unordered_map<const typename GraphConnectedComponents<GraphType>::node_type*, bool> & used ) const
 {
   used[ from_node ] = true ;
 
@@ -280,7 +282,7 @@ size_t GraphConnectedComponents<GraphType>::GetCCNodeCount( const GraphType & g 
   for( auto it_neigh = neighs.begin() ; it_neigh != neighs.end() ; ++it_neigh )
   {
     const edge_type * cur_edge = *it_neigh ;
-    node_type * opp = cur_edge->Opposite( from_node ) ;
+    const node_type * opp = cur_edge->Opposite( from_node ) ;
 
     if( ! used.count( opp ) )
     {
@@ -303,21 +305,23 @@ std::vector< size_t > GraphConnectedComponents<GraphType>::GetCCNodeCount( const
   const std::vector< node_type * > & nodes = g.Nodes() ;
   std::vector< size_t > res ;
 
-  int nb_left = nodes.size() ;
+  size_t nb_left = nodes.size() ;
+  size_t last_start = 0 ;
 
   if( nodes.size() > 0 )
   {
-    std::unordered_map<node_type *, bool> used ;
+    std::unordered_map<const node_type *, bool> used ;
 
     // Loop until some nodes haven't been found
     while( nb_left > 0 )
     {
       // Look for an unused node and start from it
-      int id = 0 ;
+      size_t id = last_start ;
       while( used.count( nodes[id] ) != 0 )
       {
         ++id ;
       }
+      last_start = id ;
 
       // Computes CC from this node and returns it's size
       res.push_back( GetCCNodeCount( g , nodes[id] , used ) ) ;
@@ -344,21 +348,23 @@ typename GraphConnectedComponents<GraphType>::node_type * GraphConnectedComponen
   size_t cur_max_cc_size = 0 ;
 
 
-  int nb_left = nodes.size() ;
+  size_t nb_left = nodes.size() ;
+  size_t last_start = 0 ;
 
   if( nodes.size() > 0 )
   {
-    std::unordered_map<node_type *, bool> used ;
+    std::unordered_map<const node_type *, bool> used ;
 
     // Loop until some nodes haven't been found
     while( nb_left > 0 )
     {
       // Look for an unused node and start from it
-      int id = 0 ;
+      size_t id = last_start ;
       while( used.count( nodes[id] ) != 0 )
       {
         ++id ;
       }
+      last_start = id ;
 
       // Computes CC from this node and returns it's size
       const size_t cc_size = GetCCNodeCount( g , nodes[id] , used ) ;
@@ -394,10 +400,10 @@ typename GraphConnectedComponents<GraphType>::node_type * GraphConnectedComponen
 */
 template< typename GraphType >
 void GraphConnectedComponents<GraphType>::GetCCCopy( const GraphType & g ,
-    typename GraphConnectedComponents<GraphType>::node_type * from_node ,
-    std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type*, bool> & used ,
-    std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type*, typename GraphConnectedComponents<GraphType>::node_type*> & map_node ,
-    std::unordered_map<typename GraphConnectedComponents<GraphType>::edge_type*, typename GraphConnectedComponents<GraphType>::edge_type*> & map_edge ,
+    const typename GraphConnectedComponents<GraphType>::node_type * from_node ,
+    std::unordered_map<const typename GraphConnectedComponents<GraphType>::node_type*, bool> & used ,
+    std::unordered_map<const typename GraphConnectedComponents<GraphType>::node_type*, typename GraphConnectedComponents<GraphType>::node_type*> & map_node ,
+    std::unordered_map<const typename GraphConnectedComponents<GraphType>::edge_type*, typename GraphConnectedComponents<GraphType>::edge_type*> & map_edge ,
     GraphType & cur_graph ) const
 {
   used[ from_node ] = true ;
@@ -409,8 +415,8 @@ void GraphConnectedComponents<GraphType>::GetCCCopy( const GraphType & g ,
   auto & neighs = from_node->Neighbors() ;
   for( auto it_neigh = neighs.begin() ; it_neigh != neighs.end() ; ++it_neigh )
   {
-    edge_type * cur_edge = *it_neigh ;
-    node_type * opp = cur_edge->Opposite( from_node ) ;
+    const edge_type * cur_edge = *it_neigh ;
+    const node_type * opp = cur_edge->Opposite( from_node ) ;
 
     // The node hasn't been processed, do it then we'll add the edge
     if( ! used.count( opp ) )
@@ -442,23 +448,25 @@ std::vector< GraphType > GraphConnectedComponents<GraphType>::GetCCCopy( const G
 
   const std::vector< node_type * > & nodes = g.Nodes() ;
 
-  int nb_left = nodes.size() ;
+  size_t nb_left = nodes.size() ;
+  size_t last_start = 0 ;
 
   if( nodes.size() > 0 )
   {
-    std::unordered_map<node_type *, bool> used ;
-    std::unordered_map<node_type * , node_type * > map_node ;
-    std::unordered_map<edge_type * , edge_type * > map_edge ;
+    std::unordered_map<const node_type *, bool> used ;
+    std::unordered_map<const node_type * , node_type * > map_node ;
+    std::unordered_map<const edge_type * , edge_type * > map_edge ;
 
     // Loop until some nodes haven't been found
     while( nb_left > 0 )
     {
       // Look for an unused node and start from it
-      int id = 0 ;
+      size_t id = last_start ;
       while( used.count( nodes[id] ) != 0 )
       {
         ++id ;
       }
+      last_start = id ;
 
       // Computes CC from this node and it's corresponding graph
       GraphType tmp ;
@@ -482,21 +490,21 @@ std::vector< GraphType > GraphConnectedComponents<GraphType>::GetCCCopy( const G
 * @return list of cut points
 */
 template< typename GraphType >
-std::vector< typename GraphConnectedComponents<GraphType>::node_type * > GraphConnectedComponents<GraphType>::GetCutPoints( const GraphType & g ) const
+std::vector< const typename GraphConnectedComponents<GraphType>::node_type * > GraphConnectedComponents<GraphType>::GetCutPoints( const GraphType & g ) const
 {
   if( g.NbNode() == 0 )
   {
-    std::vector< node_type * > res ;
+    std::vector< const node_type * > res ;
     return res ;
   }
 
   const std::vector< node_type * > & nodes = g.Nodes() ;
 
-  std::unordered_map< node_type * , bool > used ;
-  std::unordered_map< node_type * , size_t > discovery_time ; // Time of discovery in DFS search of all nodes
-  std::unordered_map< node_type * , size_t > lowest_time ; // lowest_time of any vertex reachable from a given vertex
-  std::unordered_map< node_type * , node_type * > parent ; // Given a node get it's parent in the DFS tree
-  std::unordered_map< node_type * , bool > is_cp ; // Indicate if a node is a cut point
+  std::unordered_map< const node_type * , bool > used ;
+  std::unordered_map< const node_type * , size_t > discovery_time ; // Time of discovery in DFS search of all nodes
+  std::unordered_map< const node_type * , size_t > lowest_time ; // lowest_time of any vertex reachable from a given vertex
+  std::unordered_map< const node_type * , const node_type * > parent ; // Given a node get it's parent in the DFS tree
+  std::unordered_map< const node_type * , bool > is_cp ; // Indicate if a node is a cut point
 
   // Start from first node -> it's the root of the tree so no parent
   parent[ nodes[0] ] = nullptr ;
@@ -504,8 +512,8 @@ std::vector< typename GraphConnectedComponents<GraphType>::node_type * > GraphCo
   size_t cur_time = 0 ;
   GetCutPoints( nodes[0] , cur_time , used , discovery_time , lowest_time , parent , is_cp ) ;
 
-  std::vector< node_type * > res ;
-  for( auto it = is_cp.cbegin() ; it != is_cp.end() ; ++it )
+  std::vector< const node_type * > res ;
+  for( auto it = is_cp.cbegin() ; it != is_cp.cend() ; ++it )
   {
     res.push_back( it->first ) ;
   }
@@ -523,13 +531,13 @@ std::vector< typename GraphConnectedComponents<GraphType>::node_type * > GraphCo
 * @param[out] result List of resulting cut nodes
 */
 template< typename GraphType >
-void GraphConnectedComponents<GraphType>::GetCutPoints( typename GraphConnectedComponents<GraphType>::node_type * from_node ,
+void GraphConnectedComponents<GraphType>::GetCutPoints( const typename GraphConnectedComponents<GraphType>::node_type * from_node ,
     size_t & current_time ,
-    std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type *, bool> & used ,
-    std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type *, size_t> & discovery_time ,
-    std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type *, size_t> & lowest_time ,
-    std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type *, typename GraphConnectedComponents<GraphType>::node_type *> & parent ,
-    std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type *, bool> & is_cp ) const
+    std::unordered_map<const typename GraphConnectedComponents<GraphType>::node_type *, bool> & used ,
+    std::unordered_map<const typename GraphConnectedComponents<GraphType>::node_type *, size_t> & discovery_time ,
+    std::unordered_map<const typename GraphConnectedComponents<GraphType>::node_type *, size_t> & lowest_time ,
+    std::unordered_map<const typename GraphConnectedComponents<GraphType>::node_type *, const typename GraphConnectedComponents<GraphType>::node_type *> & parent ,
+    std::unordered_map<const typename GraphConnectedComponents<GraphType>::node_type *, bool> & is_cp ) const
 {
   used[ from_node ] = true ;
   discovery_time[ from_node ] = current_time ;
@@ -544,7 +552,7 @@ void GraphConnectedComponents<GraphType>::GetCutPoints( typename GraphConnectedC
 
   for( auto it_neigh = neighs.begin() ; it_neigh != neighs.end() ; ++it_neigh )
   {
-    node_type * opp = ( *it_neigh )->Opposite( from_node ) ;
+    const node_type * opp = ( *it_neigh )->Opposite( from_node ) ;
 
     if( used.count( opp ) )
     {
@@ -593,12 +601,12 @@ void GraphConnectedComponents<GraphType>::GetCutPoints( typename GraphConnectedC
 * @param[out] is_cp indicate if a node is a cut point
 */
 template< typename GraphType >
-bool GraphConnectedComponents<GraphType>::HasCutPoint( typename GraphConnectedComponents<GraphType>::node_type * from_node ,
+bool GraphConnectedComponents<GraphType>::HasCutPoint( const typename GraphConnectedComponents<GraphType>::node_type * from_node ,
     size_t & current_time ,
-    std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type*, bool> & used ,
-    std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type*, size_t> & discovery_time ,
-    std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type*, size_t> & lowest_time ,
-    std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type*, typename GraphConnectedComponents<GraphType>::node_type*> & parent ) const
+    std::unordered_map<const typename GraphConnectedComponents<GraphType>::node_type*, bool> & used ,
+    std::unordered_map<const typename GraphConnectedComponents<GraphType>::node_type*, size_t> & discovery_time ,
+    std::unordered_map<const typename GraphConnectedComponents<GraphType>::node_type*, size_t> & lowest_time ,
+    std::unordered_map<const typename GraphConnectedComponents<GraphType>::node_type*, const typename GraphConnectedComponents<GraphType>::node_type*> & parent ) const
 {
   used[ from_node ] = true ;
   discovery_time[ from_node ] = current_time ;
@@ -613,7 +621,7 @@ bool GraphConnectedComponents<GraphType>::HasCutPoint( typename GraphConnectedCo
 
   for( auto it_neigh = neighs.begin() ; it_neigh != neighs.end() ; ++it_neigh )
   {
-    node_type * opp = ( *it_neigh )->Opposite( from_node ) ;
+    const node_type * opp = ( *it_neigh )->Opposite( from_node ) ;
 
     if( used.count( opp ) )
     {
@@ -673,10 +681,10 @@ bool GraphConnectedComponents<GraphType>::HasCutPoint( const GraphType & g ) con
 
   const std::vector< node_type * > & nodes = g.Nodes() ;
 
-  std::unordered_map< node_type * , bool > used ;
-  std::unordered_map< node_type * , size_t > discovery_time ; // Time of discovery in DFS search of all nodes
-  std::unordered_map< node_type * , size_t > lowest_time ; // lowest_time of any vertex reachable from a given vertex
-  std::unordered_map< node_type * , node_type * > parent ; // Given a node get it's parent in the DFS tree
+  std::unordered_map< const node_type * , bool > used ;
+  std::unordered_map< const node_type * , size_t > discovery_time ; // Time of discovery in DFS search of all nodes
+  std::unordered_map< const node_type * , size_t > lowest_time ; // lowest_time of any vertex reachable from a given vertex
+  std::unordered_map< const node_type * , const node_type * > parent ; // Given a node get it's parent in the DFS tree
 
   // Start from first node -> it's the root of the tree so no parent
   parent[ nodes[0] ] = nullptr ;
@@ -693,7 +701,7 @@ bool GraphConnectedComponents<GraphType>::HasCutPoint( const GraphType & g ) con
 * @param[in,out] used map used to tell if a node has already been visited
 */
 template< typename GraphType >
-void GraphConnectedComponents<GraphType>::IsConnectedHelper( typename GraphConnectedComponents<GraphType>::node_type * from_node , std::unordered_map<typename GraphConnectedComponents<GraphType>::node_type*, bool> & used ) const
+void GraphConnectedComponents<GraphType>::IsConnectedHelper( const typename GraphConnectedComponents<GraphType>::node_type * from_node , std::unordered_map<const typename GraphConnectedComponents<GraphType>::node_type*, bool> & used ) const
 {
   used[ from_node ] = true ;
 
@@ -701,7 +709,7 @@ void GraphConnectedComponents<GraphType>::IsConnectedHelper( typename GraphConne
 
   for( auto it_neigh = neighs.begin() ; it_neigh != neighs.end() ; ++it_neigh )
   {
-    node_type * opp = ( *it_neigh )->Opposite( from_node ) ;
+    const node_type * opp = ( *it_neigh )->Opposite( from_node ) ;
 
     if( !used.count( opp ) )
     {
@@ -719,7 +727,7 @@ void GraphConnectedComponents<GraphType>::IsConnectedHelper( typename GraphConne
 template< typename GraphType >
 bool GraphConnectedComponents<GraphType>::IsConnected( const GraphType & g ) const
 {
-  std::unordered_map<node_type*, bool> used ;
+  std::unordered_map<const node_type*, bool> used ;
   const std::vector< node_type * > & nodes = g.Nodes() ;
 
   if( nodes.size() == 0 )
@@ -751,10 +759,10 @@ bool GraphConnectedComponents<GraphType>::IsBiConnected( const GraphType & g ) c
 
   const std::vector< node_type * > & nodes = g.Nodes() ;
 
-  std::unordered_map< node_type * , bool > used ;
-  std::unordered_map< node_type * , size_t > discovery_time ; // Time of discovery in DFS search of all nodes
-  std::unordered_map< node_type * , size_t > lowest_time ; // lowest_time of any vertex reachable from a given vertex
-  std::unordered_map< node_type * , node_type * > parent ; // Given a node get it's parent in the DFS tree
+  std::unordered_map< const node_type * , bool > used ;
+  std::unordered_map< const node_type * , size_t > discovery_time ; // Time of discovery in DFS search of all nodes
+  std::unordered_map< const node_type * , size_t > lowest_time ; // lowest_time of any vertex reachable from a given vertex
+  std::unordered_map< const node_type * , const node_type * > parent ; // Given a node get it's parent in the DFS tree
 
   // Start from first node -> it's the root of the tree so no parent
   parent[ nodes[0] ] = nullptr ;
@@ -778,7 +786,7 @@ std::vector< GraphType > GraphConnectedComponents<GraphType>::GetBiConnectedComp
   GraphType tmp = g ;
 
   // Remove cut points
-  std::vector< node_type * > cut_nodes = GetCutPoints( tmp ) ;
+  std::vector< const node_type * > cut_nodes = GetCutPoints( tmp ) ;
   for( size_t id_node = 0 ; id_node < cut_nodes.size() ; ++id_node )
   {
     tmp.RemoveNode( cut_nodes[ id_node ] ) ;

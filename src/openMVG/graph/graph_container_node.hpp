@@ -12,6 +12,7 @@
 
 #include <deque>
 #include <algorithm>
+#include <unordered_map>
 
 namespace openMVG
 {
@@ -91,7 +92,7 @@ class GraphNode
     /**
     * @brief Indicate if the node has multiple edges linking to the same node
     */
-    bool HasMultipleLinks( void ) ;
+    bool HasMultipleLinks( void ) const ;
 
   private:
 
@@ -232,16 +233,16 @@ size_t GraphNode<NodeData, EdgeData>::RemoveLoops( void )
 * @brief Indicate if the node has multiple edges linking to the same node
 */
 template< typename NodeData , typename EdgeData>
-bool GraphNode<NodeData, EdgeData>::HasMultipleLinks( void )
+bool GraphNode<NodeData, EdgeData>::HasMultipleLinks( void ) const
 {
-  std::map< type * , bool > found ;
+  std::unordered_map< const type * , bool > found ;
 
   for( auto it = m_adjacency_list.begin() ; it != m_adjacency_list.end() ; ++it )
   {
-    const edge_type * cur_edge = *it ;
-    type * const opp = cur_edge->Opposite( this ) ;
+    const edge_type * const cur_edge = *it ;
+    const type * const opp = cur_edge->Opposite( this ) ;
 
-    if( found.count( opp ) )
+    if( found.find( opp ) != found.end() )
     {
       return true ;
     }

@@ -187,7 +187,7 @@ TEST( graphConnectedComponent , cutPoints )
   UndirectedGraph<>::edge_type * e45 = g.AddEdge( n4 , n5 ) ;
 
   GraphConnectedComponents< graph_type > cc_solver ;
-  std::vector< UndirectedGraph<>::node_type * > cuts = cc_solver.GetCutPoints( g ) ;
+  std::vector< const UndirectedGraph<>::node_type * > cuts = cc_solver.GetCutPoints( g ) ;
 
   EXPECT_EQ( 3 , cuts.size() ) ;
 
