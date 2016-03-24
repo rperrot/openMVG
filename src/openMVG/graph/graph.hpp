@@ -27,6 +27,8 @@
 
 #include "openMVG/graph/graph_path_algorithms.hpp"
 
+#include "openMVG/graph/graph_IO.hpp"
+
 
 namespace openMVG
 {

@@ -15,7 +15,16 @@ namespace graph
 /**
  * @brief Class containing no data (for minimum storage)
  */
-struct NullData {};
+struct NullData
+{
+  // Ensure serialization
+  template <typename Archive>
+  void serialize( Archive & ar )
+  {
+    // Do nothing
+  }
+
+};
 
 
 

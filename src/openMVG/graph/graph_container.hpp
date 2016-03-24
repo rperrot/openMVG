@@ -194,7 +194,145 @@ class UndirectedGraph
     */
     bool IsSimple( void ) ;
 
+    /**
+    * @brief Cereal save data
+    */
+    template<class Archive>
+    void save( Archive & ar ) const
+    {
+      ar( m_nb_edge ) ;
 
+      // Map between a node and it's ID
+      std::unordered_map< node_type * , uint64_t > map_nodes ;
+
+      // Map between an edge and it's ID
+      std::unordered_map< edge_type * , uint64_t > map_edges ;
+
+      uint64_t cur_id_node = 0 ;
+      uint64_t cur_id_edge = 0 ;
+
+      /* Computes maps between nodes and elements */
+      for( size_t id_node = 0 ; id_node < m_nodes.size() ; ++id_node )
+      {
+        map_nodes[ m_nodes[ id_node ] ] = cur_id_node++ ;
+
+        auto & neighs = m_nodes[ id_node ]->Neighbors() ;
+
+        for( auto it = neighs.begin() ; it != neighs.end() ; ++it )
+        {
+          if( map_edges.count( *it ) == 0 )
+          {
+            map_edges[ *it ] = cur_id_edge++ ;
+          }
+        }
+      }
+
+      // Save number of nodes and edges
+      ar( cur_id_node ) ;
+      ar( cur_id_edge ) ;
+
+      // Save nodes
+      for( size_t id_node = 0 ; id_node < m_nodes.size() ; ++id_node )
+      {
+        // Save ID
+        ar( map_nodes[ m_nodes[ id_node ] ] ) ;
+
+        // Save Data
+        ar( m_nodes[ id_node ]->Data() ) ;
+      }
+
+      // Save edges
+      std::unordered_map< edge_type * , bool > edge_written ;
+      for( size_t id_node = 0 ; id_node < m_nodes.size() ; ++id_node )
+      {
+        auto & neighs = m_nodes[ id_node ]->Neighbors() ;
+
+        for( auto it = neighs.begin() ; it != neighs.end() ; ++it )
+        {
+          // Do not write multiple times an edge
+          if( edge_written.count( *it ) != 0 )
+          {
+            continue ;
+          }
+
+          // Save ID
+          ar( map_edges[ *it ] ) ;
+
+          // Save Data
+          ar( ( *it )->Data() ) ;
+
+          // Save Source ID
+          ar( map_nodes[ ( *it )->Source() ] ) ;
+
+          // Save Dest ID
+          ar( map_nodes[ ( *it )->Destination() ] ) ;
+
+          edge_written[ *it ] = true ;
+        }
+      }
+    }
+
+    /**
+    * @brief Cereal load data
+    */
+    template<class Archive>
+    void load( Archive & ar )
+    {
+      m_nb_edge = 0 ;
+
+      // Load number of edges
+      size_t nb_edge_stored ;
+      ar( nb_edge_stored ) ;
+
+      uint64_t nb_edge ;
+      uint64_t nb_node ;
+
+      // Load number of nodes
+      ar( nb_node ) ;
+      // Load number of edges
+      ar( nb_edge ) ;
+
+      std::unordered_map< uint64_t , node_type * > map_nodes ;
+      std::unordered_map< uint64_t , edge_type * > map_edge ;
+
+      // Load all nodes
+      for( uint64_t id_node = 0 ; id_node < nb_node ; ++id_node )
+      {
+        // Load ID
+        uint64_t cur_id ;
+        ar( cur_id ) ;
+
+        // Load data
+        NodeData cur_node_data ;
+        ar( cur_node_data ) ;
+
+        // Create and store mapping
+        map_nodes[ cur_id ] = AddNode( cur_node_data ) ;
+      }
+
+      // Load all edges
+      for( uint64_t id_edge = 0 ; id_edge < nb_edge ; ++id_edge )
+      {
+        // Load ID
+        uint64_t cur_id ;
+        ar( cur_id ) ;
+
+        // Load data
+        EdgeData cur_edge_data ;
+        ar( cur_edge_data ) ;
+
+        // Load source and destination IDs
+        uint64_t source_id ;
+        uint64_t dest_id ;
+
+        ar( source_id ) ;
+        ar( dest_id ) ;
+
+        // Build edge data
+        map_edge[ cur_id ] = AddEdge( map_nodes[ source_id ] , map_nodes[ dest_id ] , cur_edge_data ) ;
+      }
+
+    }
 
   private:
 
