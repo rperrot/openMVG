@@ -125,7 +125,7 @@ std::vector< typename GraphShortestPath<GraphType>::edge_type * > GraphShortestP
       if( ! proceed.count( opp ) )
       {
         // Compute distance from from_node to opp using this edge
-        const w_type dist_opp_with_it = cur_min_dist + ( *it )->Data() ;
+        const w_type dist_opp_with_it = SafeAdd( cur_min_dist , ( *it )->Data() ) ;
 
         q_node_type * opp_node_in_pqueue = node_map[ opp ] ;
 
