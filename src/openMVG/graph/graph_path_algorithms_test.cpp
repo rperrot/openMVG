@@ -10,7 +10,7 @@
 
 using namespace openMVG::graph ;
 
-TEST( graphPathSearching , testDjikstra )
+TEST( graphPathSearching , testDijkstra )
 {
   typedef UndirectedGraph<std::string, int> graph_type ;
   typedef graph_type::node_type node_type ;
@@ -76,6 +76,39 @@ TEST( graphPathSearching , testDjikstra )
   cur = cur_edge->Opposite( cur ) ;
   EXPECT_EQ( 5 , cur_edge->Data() ) ;
   EXPECT_EQ( nT , cur ) ;
+}
+
+TEST( graphPathSearching , testDijkstraEmptyGraph )
+{
+  typedef UndirectedGraph<std::string, int> graph_type ;
+  typedef graph_type::node_type node_type ;
+  typedef graph_type::edge_type edge_type ;
+
+  graph_type g ;
+
+  GraphShortestPath<graph_type> path_solver ;
+
+  std::vector< edge_type * > path = path_solver.ShortestPathDijkstra( g , nullptr , nullptr ) ;
+
+  EXPECT_EQ( 0 , path.size() ) ;
+}
+
+TEST( graphPathSearching , testDijkstraUnconnected )
+{
+  typedef UndirectedGraph<std::string, int> graph_type ;
+  typedef graph_type::node_type node_type ;
+  typedef graph_type::edge_type edge_type ;
+
+  graph_type g ;
+
+  node_type * n1 = g.AddNode( "A" ) ;
+  node_type * n2 = g.AddNode( "B" ) ;
+
+  GraphShortestPath<graph_type> path_solver ;
+
+  std::vector< edge_type * > path = path_solver.ShortestPathDijkstra( g , nullptr , nullptr ) ;
+
+  EXPECT_EQ( 0 , path.size() ) ;
 }
 
 TEST( graphPathSearching , testBellmanFord )
@@ -186,6 +219,41 @@ TEST( graphPathSearching , testBellmanFordNegCycle )
 
   EXPECT_EQ( 0 , shortest_path.size() ) ;
   EXPECT_EQ( true , has_neg_cycle ) ;
+}
+
+TEST( graphPathSearching , testBellmanFordEmptyGraph )
+{
+  typedef UndirectedGraph<std::string, int> graph_type ;
+  typedef graph_type::node_type node_type ;
+  typedef graph_type::edge_type edge_type ;
+
+  graph_type g ;
+
+  GraphShortestPath<graph_type> path_solver ;
+
+  std::vector< edge_type * > path = path_solver.ShortestPathBellmanFord( g , nullptr , nullptr ) ;
+
+  EXPECT_EQ( 0 , path.size() ) ;
+}
+
+TEST( graphPathSearching , testBellmanFordUnconnected )
+{
+  typedef UndirectedGraph<std::string, int> graph_type ;
+  typedef graph_type::node_type node_type ;
+  typedef graph_type::edge_type edge_type ;
+
+  graph_type g ;
+
+  node_type * n1 = g.AddNode( "A" ) ;
+  node_type * n2 = g.AddNode( "B" ) ;
+
+  GraphShortestPath<graph_type> path_solver ;
+
+  bool has_neg_cycle ;
+  std::vector< edge_type * > path = path_solver.ShortestPathBellmanFord( g , n1 , n2 , &has_neg_cycle ) ;
+
+  EXPECT_EQ( 0 , path.size() ) ;
+  EXPECT_EQ( false , has_neg_cycle ) ;
 }
 
 

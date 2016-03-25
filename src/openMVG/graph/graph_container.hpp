@@ -111,6 +111,13 @@ class UndirectedGraph
     */
     size_t NbEdge( void ) const ;
 
+    /**
+    * @brief Test if a specific node belongs to the graph
+    * @note Usefull when node has been deleted or not created in this graph
+    * @retval true If this node exists in the graph
+    * @retval false If this node does'nt exist in the graph
+    */
+    bool Contains( const node_type * node ) const ;
 
     /**
     * @brief Tests if there is a path (of any length) that can go from source to dest
@@ -562,6 +569,24 @@ size_t UndirectedGraph<NodeData, EdgeData>::NbEdge( void ) const
 {
   return m_nb_edge ;
 }
+
+/**
+ * @brief Test if a specific node belongs to the graph
+ * @note Usefull when node has been deleted or not created in this graph
+ * @retval true If this node exists in the graph
+ * @retval false If this node does'nt exist in the graph
+ */
+template< typename NodeData, typename EdgeData >
+bool UndirectedGraph<NodeData, EdgeData>::Contains( const node_type * node ) const
+{
+  bool exists = false ;
+  for( size_t id_node = 0 ; id_node < m_nodes.size() && ! exists ; ++id_node )
+  {
+    exists = ( node == m_nodes[ id_node ] ) ;
+  }
+  return exists ;
+}
+
 
 // Indicate if there exist a path between two nodes
 template< typename NodeData, typename EdgeData >

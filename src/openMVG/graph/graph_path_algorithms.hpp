@@ -65,6 +65,14 @@ std::vector< typename GraphShortestPath<GraphType>::edge_type * > GraphShortestP
     const typename GraphShortestPath<GraphType>::node_type * from_node ,
     const typename GraphShortestPath<GraphType>::node_type * to_node ) const
 {
+  // Nodes don't belongs to the graph
+  if( ! g.Contains( from_node ) || ! g.Contains( to_node ) )
+  {
+    std::vector< edge_type * > res ;
+    return res ;
+  }
+
+
   // Store the best edge to get to a specified node
   std::unordered_map< const node_type * , edge_type * > best_from ;
   // List nodes allready processed
@@ -177,6 +185,19 @@ std::vector< typename GraphShortestPath<GraphType>::edge_type * > GraphShortestP
     const typename GraphShortestPath<GraphType>::node_type * to_node ,
     bool * has_negative_cycle ) const
 {
+  // Nodes don't belongs to the graph
+  if( ! g.Contains( from_node ) || ! g.Contains( to_node ) )
+  {
+    if( has_negative_cycle )
+    {
+      *has_negative_cycle = false ;
+    }
+
+    std::vector< edge_type * > res ;
+    return res ;
+  }
+
+
   typedef typename edge_type::edge_data_type w_type ;
 
   // Minimum distance to get from from_node to this node
