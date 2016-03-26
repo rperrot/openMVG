@@ -95,8 +95,8 @@ TEST( PairingHeap , DeleteMin )
 
 TEST( PairingHeap , MaxHeap )
 {
-  PairingHeap<int,float,std::greater<int>> heap( 10 , std::greater<int>() ) ;
-  
+  PairingHeap<int, float, std::greater<int>> heap( 10 , std::greater<int>() ) ;
+
   heap.Insert( 10 , 3.14152 ) ;
   heap.Insert( 11 , 2.718 ) ;
   heap.Insert( 9 , 6.674 ) ;
