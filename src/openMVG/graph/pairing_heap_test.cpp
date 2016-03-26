@@ -93,6 +93,45 @@ TEST( PairingHeap , DeleteMin )
   EXPECT_EQ( NULL , heap.FindMin() ) ;
 }
 
+TEST( PairingHeap , MaxHeap )
+{
+  PairingHeap<int,float,std::greater<int>> heap( 10 , std::greater<int>() ) ;
+  
+  heap.Insert( 10 , 3.14152 ) ;
+  heap.Insert( 11 , 2.718 ) ;
+  heap.Insert( 9 , 6.674 ) ;
+  heap.Insert( 1 , 6.626 ) ;
+  heap.Insert( -1 , 6.022 ) ;
+  heap.Insert( 5 , 8.314 ) ;
+
+  EXPECT_EQ( 6 , heap.Size() ) ;
+  EXPECT_EQ( 11 , heap.GetKey( heap.FindMin() ) ) ;
+
+  heap.DeleteMin() ;
+  EXPECT_EQ( 5 , heap.Size() ) ;
+  EXPECT_EQ( 10 , heap.GetKey( heap.FindMin() ) ) ;
+
+  heap.DeleteMin() ;
+  EXPECT_EQ( 4 , heap.Size() ) ;
+  EXPECT_EQ( 9 , heap.GetKey( heap.FindMin() ) ) ;
+
+  heap.DeleteMin() ;
+  EXPECT_EQ( 3 , heap.Size() ) ;
+  EXPECT_EQ( 5 , heap.GetKey( heap.FindMin() ) ) ;
+
+  heap.DeleteMin() ;
+  EXPECT_EQ( 2 , heap.Size() ) ;
+  EXPECT_EQ( 1 , heap.GetKey( heap.FindMin() ) ) ;
+
+  heap.DeleteMin() ;
+  EXPECT_EQ( 1 , heap.Size() ) ;
+  EXPECT_EQ( -1 , heap.GetKey( heap.FindMin() ) ) ;
+
+  heap.DeleteMin() ;
+  EXPECT_EQ( true , heap.Empty() ) ;
+  EXPECT_EQ( NULL , heap.FindMin() ) ;
+}
+
 
 /* ************************************************************************* */
 int main()

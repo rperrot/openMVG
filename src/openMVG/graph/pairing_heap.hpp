@@ -49,10 +49,13 @@ struct PairingNode
 * DecreaseKey() -> Amortized O(ln ln n)
 * Note this theorical complexity is less than Fibonacci trees but in practice PH is faster due to simpler structure
 */
-template< typename KeyType, typename DataType >
+template< typename KeyType, typename DataType, typename Compare = std::less<KeyType> >
 class PairingHeap
 {
   public:
+
+    /// Type of the functor to use
+    typedef Compare key_compare ;
 
     /// Type of the internal nodes
     typedef PairingNode<KeyType, DataType> node_type ;
@@ -60,10 +63,11 @@ class PairingHeap
     /**
     * @brief Create a new heap
     * @param max_nb_elt Maximum number of element to be inserted in the heap
+    * @param comp Functor class used to compare keys
     * @note We do not support unlimited element in the heap,
     * practically this should never be an issue, since it's often used in graph algorithms and bounded by the number of nodes/edges
     */
-    PairingHeap( const int max_nb_elt ) ;
+    PairingHeap( const int max_nb_elt , const key_compare & comp = key_compare() ) ;
 
     /**
     * @brief Dtor
@@ -135,6 +139,8 @@ class PairingHeap
 
   private:
 
+    key_compare m_comp ;
+
     unsigned long m_nb_elt ;
 
     PairingNode<KeyType, DataType> * m_nodes ;
@@ -151,8 +157,8 @@ class PairingHeap
 * @param b a heap
 * @return a pointer to the root of the new heap
 */
-template< typename KeyType, typename DataType>
-static inline PairingNode<KeyType, DataType> * Merge( PairingNode<KeyType, DataType> * a , PairingNode<KeyType, DataType> * b )
+template< typename KeyType, typename DataType, typename Compare>
+static inline PairingNode<KeyType, DataType> * Merge( PairingNode<KeyType, DataType> * a , PairingNode<KeyType, DataType> * b , const Compare & key_comparator )
 {
   // Limit cases, some of the node is nullptr
   if( a == nullptr )
@@ -170,7 +176,7 @@ static inline PairingNode<KeyType, DataType> * Merge( PairingNode<KeyType, DataT
   }
 
   // Find which node is the parent of the other
-  const bool b_min = b->m_key < a->m_key ;
+  const bool b_min = key_comparator( b->m_key , a->m_key ) ;
   PairingNode<KeyType, DataType> * parent = ( b_min ) ? b : a ;
   PairingNode<KeyType, DataType> * child = ( b_min ) ? a : b ;
 
@@ -200,8 +206,8 @@ static inline PairingNode<KeyType, DataType> * Merge( PairingNode<KeyType, DataT
 // 2nd) Takes all the pairs from right to left, merge then in one heap
 // return the root node of the final heap
 // head may be the first child of an element to remove
-template< typename KeyType, typename DataType>
-static inline PairingNode<KeyType, DataType> * TwoPassMerging( PairingNode<KeyType, DataType> * head )
+template< typename KeyType, typename DataType, typename Compare>
+static inline PairingNode<KeyType, DataType> * TwoPassMerging( PairingNode<KeyType, DataType> * head , const Compare & key_comparator )
 {
   if( head == nullptr )
   {
@@ -225,7 +231,7 @@ static inline PairingNode<KeyType, DataType> * TwoPassMerging( PairingNode<KeyTy
       next = b->m_next; // Store the next element to process
 
       // Merge the two elements and make a link to join them
-      PairingNode<KeyType, DataType> * tmp = Merge( a , b );
+      PairingNode<KeyType, DataType> * tmp = Merge( a , b , key_comparator );
       tmp->m_prev = tail ;
       tail = tmp ;
     }
@@ -249,7 +255,7 @@ static inline PairingNode<KeyType, DataType> * TwoPassMerging( PairingNode<KeyTy
     next = tail->m_prev ;
 
     // Merge consecutives elements in a heap
-    res = Merge( res , tail ) ;
+    res = Merge( res , tail , key_comparator ) ;
 
     // Update tail to work on the previous (ie: left) element
     tail = next ;
@@ -264,12 +270,14 @@ static inline PairingNode<KeyType, DataType> * TwoPassMerging( PairingNode<KeyTy
 /**
 * @brief Create a new heap
 * @param max_nb_elt Maximum number of element to be inserted in the heap
+* @param comp Functor class used to compare keys
 * @note We do not support unlimited element in the heap,
 * practically this should never be an issue, since it's often used in graph algorithms and bounded by the number of nodes/edges
 */
-template< typename KeyType, typename DataType >
-PairingHeap<KeyType, DataType>::PairingHeap( const int max_nb_elt )
-  : m_nb_elt( 0 )
+template< typename KeyType, typename DataType, typename Compare>
+PairingHeap<KeyType, DataType, Compare>::PairingHeap( const int max_nb_elt , const key_compare & comp )
+  : m_nb_elt( 0 ) ,
+    m_comp( comp )
 {
   m_nodes = new PairingNode<KeyType, DataType>[ max_nb_elt ] ;
 
@@ -285,8 +293,8 @@ PairingHeap<KeyType, DataType>::PairingHeap( const int max_nb_elt )
 /**
 * @brief Dtor
 */
-template< typename KeyType, typename DataType >
-PairingHeap<KeyType, DataType>::~PairingHeap( void )
+template< typename KeyType, typename DataType, typename Compare>
+PairingHeap<KeyType, DataType, Compare>::~PairingHeap( void )
 {
   delete[] m_nodes ;
 }
@@ -297,8 +305,8 @@ PairingHeap<KeyType, DataType>::~PairingHeap( void )
 * @param elt Node to query
 * @return key associated to the node
 */
-template< typename KeyType, typename DataType >
-KeyType PairingHeap<KeyType, DataType>::GetKey( PairingNode<KeyType, DataType> * elt )
+template< typename KeyType, typename DataType, typename Compare>
+KeyType PairingHeap<KeyType, DataType, Compare>::GetKey( PairingNode<KeyType, DataType> * elt )
 {
   return elt->m_key ;
 }
@@ -309,8 +317,8 @@ KeyType PairingHeap<KeyType, DataType>::GetKey( PairingNode<KeyType, DataType> *
 * @param elt Node to query
 * @return Data associated to the node
 */
-template< typename KeyType, typename DataType >
-DataType PairingHeap<KeyType, DataType>::GetData( PairingNode<KeyType, DataType> * elt )
+template< typename KeyType, typename DataType, typename Compare>
+DataType PairingHeap<KeyType, DataType, Compare>::GetData( PairingNode<KeyType, DataType> * elt )
 {
   return elt->m_value ;
 }
@@ -322,8 +330,8 @@ DataType PairingHeap<KeyType, DataType>::GetData( PairingNode<KeyType, DataType>
 * @param data Data of the new element
 * @return a pointer to The newly created element
 */
-template< typename KeyType, typename DataType >
-PairingNode<KeyType, DataType> * PairingHeap<KeyType, DataType>::Insert( const KeyType key , const DataType data )
+template< typename KeyType, typename DataType, typename Compare>
+PairingNode<KeyType, DataType> * PairingHeap<KeyType, DataType, Compare>::Insert( const KeyType key , const DataType data )
 {
   PairingNode<KeyType, DataType> * res = m_avail_nodes.top() ;
   m_avail_nodes.pop() ;
@@ -336,7 +344,7 @@ PairingNode<KeyType, DataType> * PairingHeap<KeyType, DataType>::Insert( const K
   res->m_next = nullptr ;
 
   // Insert element in the tree
-  m_root = Merge( m_root , res ) ;
+  m_root = Merge( m_root , res , m_comp ) ;
 
   m_nb_elt++;
 
@@ -349,8 +357,8 @@ PairingNode<KeyType, DataType> * PairingHeap<KeyType, DataType>::Insert( const K
 * @return Pointer to the heap element with minimum value
 * @note If heap is empty, return nullptr
 */
-template< typename KeyType, typename DataType >
-PairingNode<KeyType, DataType> * PairingHeap<KeyType, DataType>::FindMin( )
+template< typename KeyType, typename DataType, typename Compare>
+PairingNode<KeyType, DataType> * PairingHeap<KeyType, DataType, Compare>::FindMin( )
 {
   return m_root ;
 }
@@ -359,8 +367,8 @@ PairingNode<KeyType, DataType> * PairingHeap<KeyType, DataType>::FindMin( )
  * @brief Delete element with minimum key value
  * @note If heap is empty, do nothing
  */
-template< typename KeyType, typename DataType >
-void PairingHeap<KeyType, DataType>::DeleteMin( void )
+template< typename KeyType, typename DataType, typename Compare>
+void PairingHeap<KeyType, DataType, Compare>::DeleteMin( void )
 {
   Delete( m_root ) ;
 }
@@ -370,8 +378,8 @@ void PairingHeap<KeyType, DataType>::DeleteMin( void )
 * @return number of element in the heap
 * @note This is the currently active element in the heap, not the maximum size
 */
-template< typename KeyType, typename DataType >
-unsigned long PairingHeap<KeyType, DataType>::Size( void )
+template< typename KeyType, typename DataType, typename Compare>
+unsigned long PairingHeap<KeyType, DataType, Compare>::Size( void )
 {
   return m_nb_elt ;
 }
@@ -382,8 +390,8 @@ unsigned long PairingHeap<KeyType, DataType>::Size( void )
 * @param elt Element to decrease
 * @param key the new key value
 */
-template< typename KeyType, typename DataType >
-void PairingHeap<KeyType, DataType>::DecreaseKey( PairingNode<KeyType, DataType> * elt , const KeyType key )
+template< typename KeyType, typename DataType, typename Compare>
+void PairingHeap<KeyType, DataType, Compare>::DecreaseKey( PairingNode<KeyType, DataType> * elt , const KeyType key )
 {
   // 0 -> Update key
   elt->m_key = key ;
@@ -408,7 +416,7 @@ void PairingHeap<KeyType, DataType>::DecreaseKey( PairingNode<KeyType, DataType>
     }
 
     // Update the heap by merging the element and the root
-    m_root = Merge( m_root , elt ) ;
+    m_root = Merge( m_root , elt , m_comp ) ;
   }
 
 }
@@ -419,14 +427,14 @@ void PairingHeap<KeyType, DataType>::DecreaseKey( PairingNode<KeyType, DataType>
 * @param elt Element to remove
 * @note After removal, pointed value has no meaning
 */
-template< typename KeyType, typename DataType >
-void PairingHeap<KeyType, DataType>::Delete( PairingNode<KeyType, DataType> * elt )
+template< typename KeyType, typename DataType, typename Compare>
+void PairingHeap<KeyType, DataType, Compare>::Delete( PairingNode<KeyType, DataType> * elt )
 {
   // Do we remove the minimum element
   if( elt == m_root )
   {
     // Just merge the children of the root to form a heap
-    m_root = TwoPassMerging( m_root->m_child ) ;
+    m_root = TwoPassMerging( m_root->m_child , m_comp ) ;
   }
   else
   {
@@ -450,7 +458,7 @@ void PairingHeap<KeyType, DataType>::Delete( PairingNode<KeyType, DataType> * el
 
     // We've removed the element, but we did not ensure it's still a heap
     // -> Merge the heap with the children of the element we removed
-    m_root = Merge( m_root , TwoPassMerging( elt->m_child ) ) ;
+    m_root = Merge( m_root , TwoPassMerging( elt->m_child , m_comp ) , m_comp ) ;
   }
 
   m_avail_nodes.push( elt ) ;
@@ -463,8 +471,8 @@ void PairingHeap<KeyType, DataType>::Delete( PairingNode<KeyType, DataType> * el
 * @retval true if the heap is empty
 * @retval false if the heap contains at least one element
 */
-template< typename KeyType, typename DataType >
-bool PairingHeap<KeyType, DataType>::Empty( void ) const
+template< typename KeyType, typename DataType, typename Compare>
+bool PairingHeap<KeyType, DataType, Compare>::Empty( void ) const
 {
   return m_nb_elt == 0 ;
 }
