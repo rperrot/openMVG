@@ -51,10 +51,12 @@ class SettingTab : public QWidget
     QLabel * m_feature_type_label ;
     QLabel * m_feature_mode_label ;
     QLabel * m_pipeline_type_label ;
+    QLabel * m_camera_model_label ;
 
     QComboBox * m_combo_feature_type ;
     QComboBox * m_combo_feature_setting ;
     QComboBox * m_combo_pipeline_type ;
+    QComboBox * m_combo_camera_model ;
 } ;
 
 } // namespace SfMGui

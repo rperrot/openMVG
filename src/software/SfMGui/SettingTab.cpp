@@ -27,18 +27,26 @@ void SettingTab::BuildInterface( void )
   m_feature_type_label = new QLabel( "Type" ) ;
   m_feature_mode_label = new QLabel( "Quality" ) ;
   m_pipeline_type_label = new QLabel( "Type" ) ;
+  m_camera_model_label = new QLabel( "Model" ) ;
 
   m_combo_feature_type = new QComboBox( this ) ;
   m_combo_feature_setting = new QComboBox( this ) ;
   m_combo_pipeline_type = new QComboBox( this ) ;
+  m_combo_camera_model = new QComboBox( this ) ;
 
+  QGroupBox * groupCamera = new QGroupBox( "Camera" , this ) ;
   QGroupBox * groupFeatures = new QGroupBox( "Features" , this ) ;
   QGroupBox * groupPipeline = new QGroupBox( "Pipeline" , this ) ;
 
   QVBoxLayout * mainLayout = new QVBoxLayout ;
 
+  QGridLayout * cameraLayout = new QGridLayout ;
   QGridLayout * featureLayout = new QGridLayout ;
   QGridLayout * pipelineLayout = new QGridLayout ;
+
+  cameraLayout->addWidget( m_camera_model_label , 0 , 0 ) ;
+  cameraLayout->addWidget( m_combo_camera_model , 0 , 1 ) ;
+  groupCamera->setLayout( cameraLayout ) ;
 
   featureLayout->addWidget( m_feature_type_label , 0 , 0 ) ;
   featureLayout->addWidget( m_combo_feature_type , 0 , 1 ) ;
@@ -50,6 +58,7 @@ void SettingTab::BuildInterface( void )
   pipelineLayout->addWidget( m_combo_pipeline_type , 0 , 1 ) ;
   groupPipeline->setLayout( pipelineLayout ) ;
 
+  mainLayout->addWidget( groupCamera ) ;
   mainLayout->addWidget( groupFeatures ) ;
   mainLayout->addWidget( groupPipeline ) ;
   mainLayout->addStretch( ) ;
@@ -84,6 +93,14 @@ void SettingTab::FillSettings( void )
        pipeline_type = SettingIterator<PipelineType>::next( pipeline_type ) )
   {
     m_combo_pipeline_type->addItem( ToString( pipeline_type ).c_str() ) ;
+  }
+
+  // Camera model
+  for( auto camera_model = SettingIterator<CameraModelType>::begin() ;
+       camera_model != SettingIterator<CameraModelType>::end() ;
+       camera_model = SettingIterator<CameraModelType>::next( camera_model ) )
+  {
+    m_combo_camera_model->addItem( ToString( camera_model ).c_str() ) ;
   }
 
   SfMSettings default_settings ;
@@ -132,6 +149,17 @@ void SettingTab::SetSettings( const SfMSettings & set )
     }
   }
 
+  // Camera model type
+  const std::string camera_model = ToString( set.m_camera_model ) ;
+  for( int i = 0 ; i < m_combo_camera_model->count() ; ++i )
+  {
+    if( m_combo_camera_model->itemText( i ).toStdString() == camera_model )
+    {
+      m_combo_camera_model->setCurrentIndex( i ) ;
+      break ;
+    }
+  }
+
 }
 
 /**
@@ -143,12 +171,14 @@ SfMSettings SettingTab::GetSettings( void ) const
   const std::string feat_type = m_combo_feature_type->currentText().toStdString() ;
   const std::string feat_mode = m_combo_feature_setting->currentText().toStdString() ;
   const std::string pipeline_type = m_combo_pipeline_type->currentText().toStdString() ;
+  const std::string camera_model = m_combo_camera_model->currentText().toStdString() ;
 
   SfMSettings res ;
 
   FromString( feat_type , res.m_feat_type ) ;
   FromString( feat_mode , res.m_feat_mode ) ;
   FromString( pipeline_type , res.m_pipeline_type ) ;
+  FromString( camera_model , res.m_camera_model ) ;
 
   return res ;
 }

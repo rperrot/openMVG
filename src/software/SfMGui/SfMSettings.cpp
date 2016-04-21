@@ -83,6 +83,39 @@ std::string ToString( const PipelineType & pipeline_type )
 }
 
 /**
+* @brief Get string corresponding to a camera model type
+* @return string relative to this camera model
+*/
+std::string ToString( const CameraModelType & camera_model )
+{
+  switch( camera_model )
+  {
+    case CameraModelType::CAMERA_MODEL_PINHOLE :
+    {
+      return "Pinhole" ;
+    }
+    case CameraModelType::CAMERA_MODEL_PINHOLE_RADIAL_1 :
+    {
+      return "Radial 1" ;
+    }
+    case CameraModelType::CAMERA_MODEL_PINHOLE_RADIAL_3 :
+    {
+      return "Radial 3" ;
+    }
+    case CameraModelType::CAMERA_MODEL_PINHOLE_BROWN :
+    {
+      return "Brown" ;
+    }
+    case CameraModelType::CAMERA_MODEL_PINHOLE_FISHEYE :
+    {
+      return "Fisheye" ;
+    }
+    default:
+      return "" ;
+  }
+}
+
+/**
 * @brief Get Feature type from a string
 * @param sFeat_type string containing the feature type
 * @param[out] feat_type Feature type
@@ -150,13 +183,48 @@ void FromString( const std::string & sPipeline_type , PipelineType & pipeline_ty
 }
 
 /**
+* @brief Get CameraModelType type from a string
+* @param sCamera_model string containing the camera model type
+* @param[out] camera_model Camera model type
+*/
+void FromString( const std::string & sCamera_model , CameraModelType & camera_model )
+{
+  if( sCamera_model == "Pinhole" )
+  {
+    camera_model = CameraModelType::CAMERA_MODEL_PINHOLE ;
+  }
+  else if( sCamera_model == "Radial 1" )
+  {
+    camera_model = CameraModelType::CAMERA_MODEL_PINHOLE_RADIAL_1 ;
+  }
+  else if( sCamera_model == "Radial 3" )
+  {
+    camera_model = CameraModelType::CAMERA_MODEL_PINHOLE_RADIAL_3 ;
+  }
+  else if( sCamera_model == "Brown" )
+  {
+    camera_model = CameraModelType::CAMERA_MODEL_PINHOLE_BROWN ;
+  }
+  else if( sCamera_model == "Fisheye" )
+  {
+    camera_model = CameraModelType::CAMERA_MODEL_PINHOLE_FISHEYE ;
+  }
+  else
+  {
+    std::cerr << "Error - Unknown camera model type : " << sCamera_model << std::endl ;
+  }
+}
+
+
+/**
 * @brief Ctr
 * @note Make default settings
 */
 SfMSettings::SfMSettings( void )
   : m_feat_type( FeatureType::FEATURE_TYPE_SIFT ) ,
     m_feat_mode( FeatureMode::FEATURE_MODE_NORMAL ) ,
-    m_pipeline_type( PipelineType::PIPELINE_TYPE_GLOBAL )
+    m_pipeline_type( PipelineType::PIPELINE_TYPE_GLOBAL ) ,
+    m_camera_model( CameraModelType::CAMERA_MODEL_PINHOLE_RADIAL_3 )
 {
 
 }

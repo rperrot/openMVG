@@ -44,6 +44,20 @@ enum class PipelineType : std::int8_t
 } ;
 
 /**
+* @brief Settings for camera model type
+*/
+enum class CameraModelType : std::int8_t
+{
+  CAMERA_MODEL_PINHOLE = 0 ,
+  CAMERA_MODEL_PINHOLE_RADIAL_1 ,
+  CAMERA_MODEL_PINHOLE_RADIAL_3 ,
+  CAMERA_MODEL_PINHOLE_BROWN ,
+  CAMERA_MODEL_PINHOLE_FISHEYE ,
+
+  CAMERA_MODEL_UNKNOWN
+} ;
+
+/**
 * @brief Get string corresponding to a feature type
 * @return string relative to this feature type
 */
@@ -60,6 +74,12 @@ std::string ToString( const FeatureMode & feat_mode ) ;
 * @return string relative to this pipeline type
 */
 std::string ToString( const PipelineType & pipeline_type ) ;
+
+/**
+* @brief Get string corresponding to a camera model type
+* @return string relative to this camera model
+*/
+std::string ToString( const CameraModelType & camera_model ) ;
 
 /**
 * @brief Get Feature type from a string
@@ -82,6 +102,12 @@ void FromString( const std::string & sFeat_mode , FeatureMode & feat_mode ) ;
 */
 void FromString( const std::string & sPipeline_type , PipelineType & pipeline_type ) ;
 
+/**
+* @brief Get CameraModelType type from a string
+* @param sCamera_model string containing the camera model type
+* @param[out] camera_model Camera model type
+*/
+void FromString( const std::string & sCamera_model , CameraModelType & camera_model ) ;
 
 /**
 * @brief Structure managing all settings for whole SfM process
@@ -130,6 +156,8 @@ struct SfMSettings
   /// Pipeline to use
   PipelineType m_pipeline_type ;
 
+  /// Camera model to use
+  CameraModelType m_camera_model ;
 } ;
 
 
@@ -233,6 +261,31 @@ struct SettingIterator<PipelineType>
     {
       int8_t val = static_cast<int8_t>( feat ) ;
       return static_cast<PipelineType>( val + 1 ) ;
+    }
+} ;
+
+/**
+* @brief Specialization for CameraModelType
+*/
+template<>
+struct SettingIterator<CameraModelType>
+{
+  public:
+
+    static CameraModelType begin()
+    {
+      return CameraModelType::CAMERA_MODEL_PINHOLE;
+    }
+
+    static CameraModelType end()
+    {
+      return CameraModelType::CAMERA_MODEL_UNKNOWN;
+    }
+
+    static CameraModelType next( const CameraModelType & feat )
+    {
+      int8_t val = static_cast<int8_t>( feat ) ;
+      return static_cast<CameraModelType>( val + 1 ) ;
     }
 } ;
 
