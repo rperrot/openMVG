@@ -27,6 +27,11 @@ class MainWindow : public QMainWindow
     */
     MainWindow( void ) ;
 
+    /**
+    * @brief Reset interface to default settings
+    */
+    void Reset( void ) ;
+
   public slots:
 
     /**

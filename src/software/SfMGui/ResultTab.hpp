@@ -21,6 +21,11 @@ class ResultTab : public QWidget
     */
     ResultTab( QWidget * parent = nullptr ) ;
 
+    /**
+    * @brief Reset view
+    */
+    void Reset( void ) ;
+
   private:
 
     /**

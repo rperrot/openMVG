@@ -2,7 +2,7 @@
 ###
 # Intrinsic image analysis and SfM_Data container initialization
 ###
-ADD_EXECUTABLE(openMVG_main_SfMInit_ImageListing main_SfMInit_ImageListing.cpp)
+ADD_EXECUTABLE(openMVG_main_SfMInit_ImageListing main_SfMInit_ImageListing.cpp SfMInitImageListingHelper.cpp SfMInitImageListingHelper.hpp )
 TARGET_LINK_LIBRARIES(openMVG_main_SfMInit_ImageListing
   openMVG_system
   openMVG_image

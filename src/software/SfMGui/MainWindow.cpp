@@ -18,6 +18,16 @@ MainWindow::MainWindow( void )
 }
 
 /**
+* @brief Reset interface to default settings
+*/
+void MainWindow::Reset( void )
+{
+  m_image_tab->Reset() ;
+  m_setting_tab->Reset() ;
+  m_result_tab->Reset() ;
+}
+
+/**
 * @brief Build all interface widgets
 */
 void MainWindow::BuildInterface( void )

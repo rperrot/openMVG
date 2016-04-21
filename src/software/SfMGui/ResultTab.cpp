@@ -24,5 +24,14 @@ void ResultTab::BuildInterface( void )
 
 }
 
+/**
+ * @brief Reset view
+ */
+void ResultTab::Reset( void )
+{
+
+}
+
+
 } // namespace SfMGui
 } // namespace openMVG

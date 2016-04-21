@@ -36,6 +36,11 @@ class SettingTab : public QWidget
     */
     SfMSettings GetSettings( void ) const ;
 
+    /**
+    * @brief Reset setting to default value
+    */
+    void Reset( void ) ;
+
   private:
 
     /**

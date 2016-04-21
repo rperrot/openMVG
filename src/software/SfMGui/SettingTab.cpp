@@ -183,6 +183,15 @@ SfMSettings SettingTab::GetSettings( void ) const
   return res ;
 }
 
+/**
+* @brief Reset setting to default value
+*/
+void SettingTab::Reset( void )
+{
+  SfMSettings sett ;
+  SetSettings( sett ) ;
+}
+
 
 } // namespace SfMGui
 } // namespace openMVG

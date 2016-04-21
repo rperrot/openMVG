@@ -36,6 +36,11 @@ class ImageTab : public QWidget
     */
     void AddRow( const std::string & imagePath , const std::string & imageName , const int image_width , const int image_height , const float focal ) ;
 
+    /**
+    * @brief Clear view
+    */
+    void Reset( void ) ;
+
   signals:
 
     void hasTriggeredAddSingleImage() ;

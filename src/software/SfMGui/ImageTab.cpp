@@ -41,7 +41,9 @@ void ImageTab::BuildInterface( void )
   m_tbl_widget->setHorizontalHeaderLabels( tableHeader ) ;
 
   m_btn_add_image = new QPushButton( "Add image" ) ;
-  m_btn_add_folder = new QPushButton( "Add folder" ) ;
+  m_btn_add_image->setEnabled( false ) ;
+
+  m_btn_add_folder = new QPushButton( "Input folder" ) ;
 
   btnLayout->addWidget( m_btn_add_image ) ;
   btnLayout->addWidget( m_btn_add_folder ) ;
@@ -121,6 +123,14 @@ void ImageTab::AddRow( const std::string & imagePath , const std::string & image
   m_tbl_widget->setItem( cur_nb_row , 3 , itemImageHeight ) ;
   m_tbl_widget->setItem( cur_nb_row , 4 , itemImageFocal ) ;
   m_tbl_widget->setItem( cur_nb_row , 5 , itemImageDelete ) ;
+}
+
+/**
+ * @brief Clear view
+ */
+void ImageTab::Reset( void )
+{
+  m_tbl_widget->clear() ;
 }
 
 
