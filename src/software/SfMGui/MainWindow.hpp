@@ -4,9 +4,13 @@
 #include "software/SfMGui/ImageTab.hpp"
 #include "software/SfMGui/ResultTab.hpp"
 #include "software/SfMGui/SettingTab.hpp"
+#include "software/SfMGui/SfMProject.hpp"
 
 #include <QMainWindow>
 #include <QTabWidget>
+#include <QLineEdit>
+#include <QLabel>
+#include <QPushButton>
 
 
 namespace openMVG
@@ -44,7 +48,19 @@ class MainWindow : public QMainWindow
     */
     void onAddFolder( void ) ;
 
+    /**
+    * @brief Action to be executed when user select input images
+    */
+    void onSelectInputImages( void ) ;
+
+    /**
+    * @brief Action to be executed when user select project folder
+    */
+    void onSelectOutputProjectFolder( void ) ;
+
   private:
+
+    void DoProjectCreation( void ) ;
 
     /**
     * @brief Build all interface widgets
@@ -61,7 +77,22 @@ class MainWindow : public QMainWindow
     */
     void MakeConnections( void ) ;
 
+    /// The project
+    std::shared_ptr< SfMProject > m_project ;
 
+    /// Input folder
+    QPushButton * m_input_folder_button ;
+    QLabel * m_input_folder_label ;
+    QLineEdit * m_input_folder_text ;
+
+
+    /// Project folder
+    QPushButton * m_project_folder_button ;
+    QLabel * m_project_folder_label ;
+    QLineEdit * m_project_folder_text ;
+
+
+    /// Container for everything
     QTabWidget * m_tabwidget ;
 
     /// Tab widget used to manage the images

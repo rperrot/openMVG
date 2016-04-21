@@ -31,7 +31,7 @@ ImageTab::ImageTab( QWidget * parent )
 void ImageTab::BuildInterface( void )
 {
   QHBoxLayout * mainLayout = new QHBoxLayout ;
-  QVBoxLayout * btnLayout = new QVBoxLayout ;
+  //  QVBoxLayout * btnLayout = new QVBoxLayout ;
 
   m_tbl_widget = new QTableWidget( this ) ;
   // image | width | height | focal
@@ -40,17 +40,18 @@ void ImageTab::BuildInterface( void )
   tableHeader << "Image" << "Name" << "Width" << "Height" << "Focal" << "Delete" ;
   m_tbl_widget->setHorizontalHeaderLabels( tableHeader ) ;
 
+  /*
   m_btn_add_image = new QPushButton( "Add image" ) ;
   m_btn_add_image->setEnabled( false ) ;
 
-  m_btn_add_folder = new QPushButton( "Input folder" ) ;
+  m_btn_add_folder = new QPushButton( "New project" ) ;
 
   btnLayout->addWidget( m_btn_add_image ) ;
   btnLayout->addWidget( m_btn_add_folder ) ;
   btnLayout->addStretch( ) ;
-
+  */
   mainLayout->addWidget( m_tbl_widget ) ;
-  mainLayout->addLayout( btnLayout ) ;
+  //  mainLayout->addLayout( btnLayout ) ;
 
   setLayout( mainLayout ) ;
 }
@@ -60,8 +61,10 @@ void ImageTab::BuildInterface( void )
 */
 void ImageTab::MakeConnections( void )
 {
+  /*
   connect( m_btn_add_image , SIGNAL( clicked() ) , this , SLOT( onTriggerAddSingleImage() ) ) ;
   connect( m_btn_add_folder , SIGNAL( clicked() ) , this , SLOT( onTriggerAddFolder() ) ) ;
+  */
 }
 
 /**

@@ -36,7 +36,8 @@ class SfMProject
     /**
     * @brief Open an image folder (replace existing images)
     */
-    bool OpenImageFolder( const std::string & filename , const std::string & sensor_width_database_path ) ;
+    bool OpenImageFolder( const std::string & filename ,
+                          const std::string & sensor_width_database_path ) ;
 
     /**
     * @brief Remove everyting done in the project
@@ -100,6 +101,8 @@ class SfMProject
     * @retval true on success
     */
     bool BuildProjectStructure( const std::string & input_folder ) ;
+
+    bool ValidProjectStructure( const std::string & input_folder ) ;
 
     /// Root project folder
     std::string m_project_folder ;

@@ -167,6 +167,16 @@ struct SfMSettings
 
   /// Camera model to use
   CameraModelType m_camera_model ;
+
+
+  template < typename Archive >
+  void serialize( Archive & ar )
+  {
+    ar( m_feat_type ) ;
+    ar( m_feat_mode ) ;
+    ar( m_pipeline_type ) ;
+    ar( m_camera_model ) ;
+  }
 } ;
 
 

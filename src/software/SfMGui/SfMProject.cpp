@@ -9,7 +9,10 @@
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
+#include <cereal/archives/json.hpp>
+
 #include <iostream>
+#include <fstream>
 
 using namespace stlplus ;
 using namespace openMVG::sfm ;
@@ -27,8 +30,9 @@ namespace SfMGui
 SfMProject::SfMProject( const std::string & input_folder )
   : m_project_root_path( input_folder )
 {
-  if( ! folder_exists( input_folder ) )
+  if( ! folder_exists( input_folder ) || ! ValidProjectStructure( input_folder ) )
   {
+    // Directory structure is not valid
     BuildProjectStructure( input_folder ) ;
   }
   else
@@ -42,8 +46,11 @@ SfMProject::SfMProject( const std::string & input_folder )
       Load( m_sfm_data , sfm_data_path , ALL ) ;
     }
 
-    // TODO : load project structure
-    // TODO : load project settings
+    std::ifstream file( folder_append_separator( input_folder ) + "project.json" ) ;
+    cereal::JSONInputArchive archive( file )  ;
+
+    archive( m_project_root_path ) ;
+    archive( m_settings ) ;
   }
 }
 
@@ -64,6 +71,11 @@ bool SfMProject::Save( void )
 
   // TODO : save project structure
   // TODO : save project settings
+  std::ofstream file( folder_append_separator( m_project_root_path ) + "project.json" ) ;
+  cereal::JSONOutputArchive archive( file ) ;
+
+  archive( m_project_root_path ) ;
+  archive( m_settings ) ;
 
   return true ;
 }
@@ -75,13 +87,16 @@ bool SfMProject::Save( void )
 */
 bool SfMProject::SaveAs( const std::string & path )
 {
-  BuildProjectStructure( path ) ;
-
-  // Copy project to new path
-
+  if( ! BuildProjectStructure( path ) )
+  {
+    return false ;
+  }
 
   // Update new root
   m_project_root_path = path ;
+
+  // Save
+  return Save( ) ;
 }
 
 
@@ -118,8 +133,8 @@ bool SfMProject::OpenImageFolder( const std::string & image_folder , const std::
   {
     return false ;
   }
-  
-  // Save SfM data 
+
+  // Save SfM data
   if( ! Save() )
   {
     return false ;
@@ -208,7 +223,7 @@ bool SfMProject::BuildProjectStructure( const std::string & input_folder )
   {
     if( ! folder_create( input_folder ) )
     {
-      std::cerr << "Could not create \"" << input_folder << "\" folder" << std::endl ;
+      std::cerr << "Could not create \"" << input_folder << "\" folder (input) " << std::endl ;
       return false ;
     }
   }
@@ -219,7 +234,7 @@ bool SfMProject::BuildProjectStructure( const std::string & input_folder )
   {
     if( ! folder_create( gui_folder ) )
     {
-      std::cerr << "Could not create \"" << gui_folder << "\" folder" << std::endl ;
+      std::cerr << "Could not create \"" << gui_folder << "\" folder (gui)" << std::endl ;
       return false ;
     }
   }
@@ -230,7 +245,7 @@ bool SfMProject::BuildProjectStructure( const std::string & input_folder )
   {
     if( ! folder_create( thumbnail_folder ) )
     {
-      std::cerr << "Could not create \"" << thumbnail_folder << "\" folder" << std::endl ;
+      std::cerr << "Could not create \"" << thumbnail_folder << "\" folder (thumbnail)" << std::endl ;
       return false ;
     }
   }
@@ -241,12 +256,44 @@ bool SfMProject::BuildProjectStructure( const std::string & input_folder )
   {
     if( ! folder_create( sfm_folder ) )
     {
-      std::cerr << "Could not create \"" << sfm_folder << "\" folder" << std::endl ;
+      std::cerr << "Could not create \"" << sfm_folder << "\" folder (sfm)" << std::endl ;
       return false ;
     }
   }
   return true ;
 }
+
+bool SfMProject::ValidProjectStructure( const std::string & input_folder )
+{
+  if( ! folder_exists( input_folder ) )
+  {
+    return false ;
+  }
+  // gui folder
+  const std::string gui_folder = folder_append_separator( input_folder ) + "gui" ;
+  if( ! folder_exists( gui_folder ) )
+  {
+    return false ;
+  }
+
+  // gui/thumbnails folder
+  const std::string thumbnail_folder = folder_append_separator( gui_folder ) + "thumbnails" ;
+  if( ! folder_exists( thumbnail_folder ) )
+  {
+    return false ;
+  }
+
+  // sfm folder
+  const std::string sfm_folder = folder_append_separator( input_folder ) + "sfm" ;
+  if( ! folder_exists( sfm_folder ) )
+  {
+    return false ;
+  }
+
+  return true ;
+
+}
+
 
 } // namespace SfMGui
 } // namespace openMVG
