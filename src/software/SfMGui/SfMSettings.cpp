@@ -7,6 +7,42 @@ namespace openMVG
 namespace SfMGui
 {
 
+/**
+* @brief Convert SfMGui enum to openMVG enum
+* @param src SfMGui intrinsic
+* @return openMVG intrinsic
+*/
+openMVG::cameras::EINTRINSIC ConvertToEINTRINSIC( const CameraModelType & src )
+{
+  switch( src )
+  {
+    case CameraModelType::CAMERA_MODEL_PINHOLE :
+    {
+      return openMVG::cameras::PINHOLE_CAMERA ;
+    }
+    case CameraModelType::CAMERA_MODEL_PINHOLE_RADIAL_1 :
+    {
+      return openMVG::cameras::PINHOLE_CAMERA_RADIAL1 ;
+    }
+    case CameraModelType::CAMERA_MODEL_PINHOLE_RADIAL_3 :
+    {
+      return openMVG::cameras::PINHOLE_CAMERA_RADIAL3 ;
+    }
+    case CameraModelType::CAMERA_MODEL_PINHOLE_BROWN :
+    {
+      return openMVG::cameras::PINHOLE_CAMERA_BROWN ;
+    }
+    case CameraModelType::CAMERA_MODEL_PINHOLE_FISHEYE :
+    {
+      return openMVG::cameras::PINHOLE_CAMERA_FISHEYE ;
+    }
+    default:
+    {
+      return openMVG::cameras::PINHOLE_CAMERA_END ;
+    }
+  }
+}
+
 
 /**
 * @brief Get string corresponding to a feature type

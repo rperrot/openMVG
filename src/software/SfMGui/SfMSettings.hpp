@@ -4,6 +4,8 @@
 #include <string>
 #include <cstdint>
 
+#include "openMVG/cameras/cameras.hpp"
+
 namespace openMVG
 {
 namespace SfMGui
@@ -56,6 +58,13 @@ enum class CameraModelType : std::int8_t
 
   CAMERA_MODEL_UNKNOWN
 } ;
+
+/**
+* @brief Convert SfMGui enum to openMVG enum
+* @param src SfMGui intrinsic
+* @return openMVG intrinsic
+*/
+openMVG::cameras::EINTRINSIC ConvertToEINTRINSIC( const CameraModelType & src ) ;
 
 /**
 * @brief Get string corresponding to a feature type
