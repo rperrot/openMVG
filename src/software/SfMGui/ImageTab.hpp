@@ -3,7 +3,7 @@
 
 #include <QWidget>
 #include <QPushButton>
-#include <QTableView>
+#include <QTableWidget>
 
 namespace openMVG
 {
@@ -15,6 +15,8 @@ namespace SfMGui
 */
 class ImageTab : public QWidget
 {
+    Q_OBJECT
+
   public:
 
     /**
@@ -23,6 +25,42 @@ class ImageTab : public QWidget
     */
     ImageTab( QWidget * parent = nullptr ) ;
 
+    /**
+    * @brief Add a new row to the view
+    * @param imagePath Path of the image to be displayed in the table
+    * @param imageName Name of the image to be displayed
+    * @param image_width Width (in pixel) of the input image
+    * @param image_height Height (in pixel) of the input image
+    * @param focal Focal length of the input image
+    * @note imagePath is idealy a path to the thumbnail
+    */
+    void AddRow( const std::string & imagePath , const std::string & imageName , const int image_width , const int image_height , const float focal ) ;
+
+  signals:
+
+    void hasTriggeredAddSingleImage() ;
+    void hasTriggeredAddFolder();
+    void hasTriggeredRowDelete( const int row ) ;
+
+  public slots:
+
+    /**
+    * @brief Action to be executed when user want to add a signle image
+    */
+    void onTriggerAddSingleImage( ) ;
+
+    /**
+    * @brief Action to be executed when user want to add a new folder
+    */
+    void onTriggerAddFolder( ) ;
+
+    /**
+    * @brief Action to be executed when user want to delete a row
+    * @param row to be deleted
+    */
+    void onWantToDeleteRow( const int row ) ;
+
+
   private:
 
     /**
@@ -30,8 +68,14 @@ class ImageTab : public QWidget
     */
     void BuildInterface( void ) ;
 
+    /**
+    * @brief Make connections betweens widgets elements
+    */
+    void MakeConnections( void ) ;
+
     /// List of all images
-    QTableView * m_tbl_view ;
+    QTableWidget * m_tbl_widget ;
+
 
     /// Btn used to add a single image to the list
     QPushButton * m_btn_add_image ;

@@ -19,11 +19,25 @@ namespace SfMGui
 */
 class MainWindow : public QMainWindow
 {
+    Q_OBJECT
+
   public:
     /**
     * @brief Default constructor
     */
     MainWindow( void ) ;
+
+  public slots:
+
+    /**
+    * @brief Action to be executed when user wants to add an image
+    */
+    void onAddImage( void ) ;
+
+    /**
+    * @brief Action to be executed when user wants to add a folder of images
+    */
+    void onAddFolder( void ) ;
 
   private:
 

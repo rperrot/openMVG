@@ -1,5 +1,7 @@
 #include "software/SfMGui/MainWindow.hpp"
 
+#include <iostream>
+
 namespace openMVG
 {
 namespace SfMGui
@@ -49,8 +51,38 @@ void MainWindow::BuildMenus( void )
 */
 void MainWindow::MakeConnections( void )
 {
+  // ImageTab -> MainWindow
+  connect( m_image_tab , SIGNAL( hasTriggeredAddSingleImage() ) , this , SLOT( onAddImage() ) ) ;
+  connect( m_image_tab , SIGNAL( hasTriggeredAddFolder() ) , this , SLOT( onAddFolder( ) ) ) ;
 
+  // MainWindow -> ImageTab
 }
+
+
+/**
+* @brief Action to be executed when user wants to add an image
+*/
+void MainWindow::onAddImage( void )
+{
+
+#ifdef SFMGUI_DEBUG_INTERFACE
+  std::cerr << __func__ << std::endl ;
+#endif
+  // Open dialog to select an image
+}
+
+
+/**
+* @brief Action to be executed when user wants to add a folder of images
+*/
+void MainWindow::onAddFolder( void )
+{
+#ifdef SFMGUI_DEBUG_INTERFACE
+  std::cerr << __func__ << std::endl ;
+#endif
+  // Open dialog to select a folder
+}
+
 
 } // namespace SfMGui
 } // namespace openMVG

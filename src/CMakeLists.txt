@@ -24,6 +24,8 @@ OPTION(OpenMVG_BUILD_EXAMPLES "Build OpenMVG samples applications." ON)
 OPTION(OpenMVG_BUILD_OPENGL_EXAMPLES "Build OpenMVG openGL examples" OFF)
 OPTION(OpenMVG_BUILD_COVERAGE "Enable code coverage generation (gcc only)" OFF)
 OPTION(OpenMVG_USE_OPENMP "Enable OpenMP parallelization" ON)
+OPTION(OpenMVG_BUILD_GUI "Build Structure From Motion GUI" OFF)
+
 # ==============================================================================
 # Opencv is not used by openMVG but some samples show how to use openCV
 #  and openMVG simultaneously
@@ -133,7 +135,7 @@ IF(OpenMVG_USE_OPENMP)
     IF (NOT MSVC)
       IF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         # for those using the clang with OpenMP support
-        LIST(APPEND OPENMVG_LIBRARY_DEPENDENCIES iomp)
+        LIST(APPEND OPENMVG_LIBRARY_DEPENDENCIES omp)
       ELSE()
         LIST(APPEND OPENMVG_LIBRARY_DEPENDENCIES gomp)
       ENDIF()

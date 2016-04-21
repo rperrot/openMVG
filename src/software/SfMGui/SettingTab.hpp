@@ -1,6 +1,8 @@
 #ifndef _OPENMVG_SFMGUI_SETTING_TAB_HPP_
 #define _OPENMVG_SFMGUI_SETTING_TAB_HPP_
 
+#include "software/SfMGui/SfMSettings.hpp"
+
 #include <QWidget>
 #include <QComboBox>
 #include <QLabel>
@@ -21,6 +23,18 @@ class SettingTab : public QWidget
     * @brief Ctr
     */
     SettingTab( QWidget * parent = nullptr ) ;
+
+    /**
+    * @brief Set all settings
+    * @param set New settings
+    */
+    void SetSettings( const SfMSettings & set ) ;
+
+    /**
+    * @brief Get all settings
+    * @return Get settings
+    */
+    SfMSettings GetSettings( void ) const ;
 
   private:
 
