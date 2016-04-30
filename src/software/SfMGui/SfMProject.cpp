@@ -34,6 +34,7 @@ SfMProject::SfMProject( const std::string & input_folder )
   {
     // Directory structure is not valid
     BuildProjectStructure( input_folder ) ;
+    m_has_unsaved_changes = true ;
   }
   else
   {
@@ -46,11 +47,14 @@ SfMProject::SfMProject( const std::string & input_folder )
       Load( m_sfm_data , sfm_data_path , ALL ) ;
     }
 
-    std::ifstream file( folder_append_separator( input_folder ) + "project.json" ) ;
-    cereal::JSONInputArchive archive( file )  ;
-
-    archive( m_project_root_path ) ;
-    archive( m_settings ) ;
+    const std::string project_file_path = folder_append_separator( input_folder ) + "project.json" ;
+    if( file_exists( project_file_path ) )
+    {
+      std::ifstream file( project_file_path ) ;
+      cereal::JSONInputArchive archive( file )  ;
+      archive( m_settings ) ;
+    }
+    m_has_unsaved_changes = false ;
   }
 }
 
@@ -69,13 +73,13 @@ bool SfMProject::Save( void )
     return false ;
   }
 
-  // TODO : save project structure
-  // TODO : save project settings
   std::ofstream file( folder_append_separator( m_project_root_path ) + "project.json" ) ;
   cereal::JSONOutputArchive archive( file ) ;
 
   archive( m_project_root_path ) ;
   archive( m_settings ) ;
+
+  m_has_unsaved_changes = false ;
 
   return true ;
 }
@@ -127,7 +131,6 @@ bool SfMProject::OpenImageFolder( const std::string & image_folder , const std::
     }
   }
 
-
   // Create SFM data for all images
   if( ! FillSfMImageData( m_sfm_data , image_folder , vec_image , error_report_stream , e_User_camera_model , vec_database ) )
   {
@@ -152,9 +155,30 @@ void SfMProject::Reset( void )
   SfM_Data dummy ;
   m_sfm_data = dummy ;
 
-  // Reset directory structure
-  folder_delete( m_project_root_path ) ;
+  // 1   - Reset directory structure
+  // 1.1 - Remove project file
+  const std::string project_filename = create_filespec( m_project_root_path , "project.json" ) ;
+  if( file_exists( project_filename ) )
+  {
+    file_delete( project_filename ) ;
+  }
+  // 1.2 - Remove contents of gui folder if it exists
+  const std::string gui_folder = GetGUIFolder() ;
+  if( folder_exists( gui_folder ) )
+  {
+    folder_delete( gui_folder , true ) ;
+  }
+  // 1.3 - Remove contents of sfm folder if it exists
+  const std::string sfm_folder = GetSFMFolder() ;
+  if( folder_exists( sfm_folder ) )
+  {
+    folder_delete( sfm_folder , true ) ;
+  }
+
+
+  // 2 - Rebuild a clean structure
   BuildProjectStructure( m_project_root_path ) ;
+  m_has_unsaved_changes = true ;
 }
 
 /**
@@ -190,7 +214,12 @@ std::string SfMProject::GetSFMFolder( void ) const
 */
 void SfMProject::SetSettings( const SfMSettings & set )
 {
+  if( m_settings != set )
+  {
+    return ;
+  }
   m_settings = set ;
+  m_has_unsaved_changes = true ;
 }
 
 /**
@@ -201,6 +230,23 @@ SfMSettings SfMProject::GetSettings( void ) const
 {
   return m_settings ;
 }
+
+/**
+* @brief Compute SfM
+*/
+void SfMProject::ComputeSfM( void )
+{
+
+}
+
+/**
+* @brief Export to MVE subdirectory
+*/
+void SfMProject::ExportToMVE( void )
+{
+
+}
+
 
 /**
 * @brief Given input images, generate thumbnails
@@ -291,8 +337,16 @@ bool SfMProject::ValidProjectStructure( const std::string & input_folder )
   }
 
   return true ;
-
 }
+
+/**
+* @brief Test if
+*/
+bool SfMProject::HasUnsavedChanges( void ) const
+{
+  return m_has_unsaved_changes ;
+}
+
 
 
 } // namespace SfMGui

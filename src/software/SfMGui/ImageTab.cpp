@@ -40,18 +40,7 @@ void ImageTab::BuildInterface( void )
   tableHeader << "Image" << "Name" << "Width" << "Height" << "Focal" << "Delete" ;
   m_tbl_widget->setHorizontalHeaderLabels( tableHeader ) ;
 
-  /*
-  m_btn_add_image = new QPushButton( "Add image" ) ;
-  m_btn_add_image->setEnabled( false ) ;
-
-  m_btn_add_folder = new QPushButton( "New project" ) ;
-
-  btnLayout->addWidget( m_btn_add_image ) ;
-  btnLayout->addWidget( m_btn_add_folder ) ;
-  btnLayout->addStretch( ) ;
-  */
   mainLayout->addWidget( m_tbl_widget ) ;
-  //  mainLayout->addLayout( btnLayout ) ;
 
   setLayout( mainLayout ) ;
 }
@@ -61,10 +50,7 @@ void ImageTab::BuildInterface( void )
 */
 void ImageTab::MakeConnections( void )
 {
-  /*
-  connect( m_btn_add_image , SIGNAL( clicked() ) , this , SLOT( onTriggerAddSingleImage() ) ) ;
-  connect( m_btn_add_folder , SIGNAL( clicked() ) , this , SLOT( onTriggerAddFolder() ) ) ;
-  */
+
 }
 
 /**
@@ -137,25 +123,6 @@ void ImageTab::Reset( void )
 }
 
 
-
-
-void ImageTab::onTriggerAddSingleImage( )
-{
-#ifdef SFMGUI_DEBUG_INTERFACE
-  std::cerr << __func__ << std::endl ;
-#endif
-  // Re-emit signal to the main window
-  emit hasTriggeredAddSingleImage() ;
-}
-
-void ImageTab::onTriggerAddFolder( )
-{
-#ifdef SFMGUI_DEBUG_INTERFACE
-  std::cerr << __func__ << std::endl ;
-#endif
-  // Re-emit signal to the main window
-  emit hasTriggeredAddFolder() ;
-}
 
 /**
 * @brief Action to be executed when user want to delete a row

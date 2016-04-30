@@ -3,6 +3,9 @@
 #include <QFileDialog>
 #include <QGridLayout>
 #include <QGroupBox>
+#include <QMenuBar>
+#include <QApplication>
+#include <QMessageBox>
 
 #include <iostream>
 
@@ -42,11 +45,13 @@ void MainWindow::BuildInterface( void )
   m_input_folder_button = new QPushButton( "Select" ) ;
   m_input_folder_label = new QLabel( "Input images folder" );
   m_input_folder_text = new QLineEdit ;
+  m_input_folder_text->setEnabled( false ) ;
 
   /// Project folder
   m_project_folder_button = new QPushButton( "Select" ) ;
   m_project_folder_label = new QLabel( "Output project folder" ) ;
   m_project_folder_text = new QLineEdit ;
+  m_project_folder_text->setEnabled( false ) ;
 
   QGroupBox * basicbox = new QGroupBox( "Basic settings" ) ;
 
@@ -91,7 +96,54 @@ void MainWindow::BuildInterface( void )
 */
 void MainWindow::BuildMenus( void )
 {
+  m_file_menu = new QMenu( "File" ) ;
 
+  m_new_project = m_file_menu->addAction( "New project" ) ;
+  m_new_project->setShortcuts( QKeySequence::New ) ;
+  m_new_project->setStatusTip( "Start a new project" ) ;
+
+  m_open_project = m_file_menu->addAction( "Open project" ) ;
+  m_open_project->setShortcuts( QKeySequence::Open ) ;
+  m_open_project->setStatusTip( "Open a project" ) ;
+
+  m_save_project = m_file_menu->addAction( "Save project" ) ;
+  m_save_project->setShortcuts( QKeySequence::Save ) ;
+  m_save_project->setStatusTip( "Save a project" ) ;
+
+  m_save_project_as = m_file_menu->addAction( "Save project as" ) ;
+  m_save_project_as->setShortcuts( QKeySequence::SaveAs ) ;
+  m_save_project_as->setStatusTip( "Save a project to a new directory" ) ;
+
+  m_close_project = m_file_menu->addAction( "Close project" ) ;
+  m_close_project->setShortcuts( QKeySequence::Close ) ;
+  m_close_project->setStatusTip( "Close project" ) ;
+
+  m_quit = m_file_menu->addAction( "Quit" ) ;
+  m_quit->setMenuRole( QAction::QuitRole ) ;
+  m_quit->setShortcuts( QKeySequence::Quit ) ;
+  m_quit->setStatusTip( "Quit application" ) ;
+
+
+  m_configuration_menu = new QMenu( "Settings" ) ;
+  m_load_default_configuration = m_configuration_menu->addAction( "Load default" ) ;
+
+  m_project_menu = new QMenu( "Project" ) ;
+  m_select_input_images_directory = m_project_menu->addAction( "Select input directory" ) ;
+  m_reload_input_directory = m_project_menu->addAction( "Reload input directory" ) ;
+  m_project_menu->addSeparator() ;
+  m_compute_sfm = m_project_menu->addAction( "Compute SfM" ) ;
+  m_project_menu->addSeparator() ;
+  m_export_to_mve = m_project_menu->addAction( "Export to MVE" ) ;
+
+  m_help_menu = new QMenu( "Help" ) ;
+  m_help_rtfm = m_help_menu->addAction( "Help" ) ;
+
+  QMenuBar * mbar = menuBar() ;
+
+  mbar->addMenu( m_file_menu ) ;
+  mbar->addMenu( m_configuration_menu ) ;
+  mbar->addMenu( m_project_menu ) ;
+  mbar->addMenu( m_help_menu ) ;
 }
 
 /**
@@ -107,8 +159,27 @@ void MainWindow::MakeConnections( void )
 
 
   // MainWindow -> MainWindow
-  connect( m_input_folder_button , SIGNAL( clicked() ) , this , SLOT( onSelectInputImages() ) ) ;
-  connect( m_project_folder_button , SIGNAL( clicked() ) , this , SLOT( onSelectOutputProjectFolder() ) ) ;
+  connect( m_input_folder_button , SIGNAL( triggered() ) , this , SLOT( onSelectInputImages() ) ) ;
+  connect( m_project_folder_button , SIGNAL( triggered() ) , this , SLOT( onSelectOutputProjectFolder() ) ) ;
+
+  // Menus
+  // Menu - File
+  connect( m_new_project , SIGNAL( triggered() ) , this , SLOT( onMenuNewProject() ) ) ;
+  connect( m_open_project , SIGNAL( triggered() ) , this , SLOT( onMenuOpenProject() ) ) ;
+  connect( m_save_project , SIGNAL( triggered() ) , this , SLOT( onMenuSaveProject() ) ) ;
+  connect( m_save_project_as , SIGNAL( triggered() ) , this , SLOT( onMenuSaveAsProject() ) ) ;
+  connect( m_close_project , SIGNAL( triggered() ) , this , SLOT( onMenuCloseProject() ) ) ;
+  connect( m_quit , SIGNAL( triggered() ) , this , SLOT( onMenuQuit() ) ) ;
+
+  // Menu - Settings
+  connect( m_load_default_configuration , SIGNAL( triggered() ) , this , SLOT( onMenuSettingLoadDefault() ) ) ;
+  // Menu - Project
+  connect( m_select_input_images_directory , SIGNAL( triggered() ) , this , SLOT( onMenuProjectLoadImageDir() ) ) ;
+  //  connect( m_reload_input_directory , SIGNAL( triggered() ) , this , SLOT( onMenuProjectReloadImageDir() ) ) ;
+  connect( m_compute_sfm , SIGNAL( triggered() ) , this , SLOT( onMenuProjectComputeSfM() ) ) ;
+  connect( m_export_to_mve , SIGNAL( triggered() ) , this , SLOT( onMenuProjectExportToMVE() ) ) ;
+  // Menu - Help
+  connect( m_help_rtfm , SIGNAL( triggered() ) , this , SLOT( onMenuHelp() ) ) ;
 }
 
 
@@ -177,8 +248,51 @@ void MainWindow::onSelectOutputProjectFolder( void )
     m_project_folder_text->setText( folder ) ;
     DoProjectCreation() ;
   }
+}
 
+/**
+* @brief Save or close an unsaved project
+* @retval true If project saved or closed
+* @retval false If project unsaved or user give up close/save
+* @retval true If project has not unsaved changes
+*/
+bool MainWindow::SaveOrClose( void )
+{
+  if( ! m_project )
+  {
+    return true ;
+  }
+  else
+  {
+    if( m_project->HasUnsavedChanges() )
+    {
+      // Dialog to say if project should be saved ?
+      int reply = QMessageBox::question( this , "Save changes" , "Do you want to save project changes" , QMessageBox::Save  , QMessageBox::Discard , QMessageBox::Cancel ) ;
 
+      if( reply == QMessageBox::Save )
+      {
+        // Save changes
+        m_project->Save() ;
+        return true ;
+      }
+      else if( reply == QMessageBox::Discard )
+      {
+        // Don't save changes
+        m_project = nullptr ;
+        return true ;
+      }
+      else // == Cancel
+      {
+        // Cancel operation
+        return false ;
+      }
+    }
+    else
+    {
+      m_project = nullptr ;
+      return true ;
+    }
+  }
 }
 
 void MainWindow::DoProjectCreation( void )
@@ -200,8 +314,159 @@ void MainWindow::DoProjectCreation( void )
   }
 }
 
+/**
+* @brief Acction executed when user create a new project
+*/
+void MainWindow::onMenuNewProject( void )
+{
+  if( SaveOrClose( ) )
+  {
+    m_project = nullptr ;
+    Reset() ;
+  }
+
+  // Creation dialog
+}
 
 
+/**
+* @brief Acction executed when user want to open a project
+*/
+void MainWindow::onMenuOpenProject( void )
+{
+  if( SaveOrClose() )
+  {
+    // open dialog
+    std::string project_path ;
+
+    // if ok to load
+    m_project = std::make_shared< SfMProject >( project_path ) ;
+  }
+}
+
+
+/**
+* @brief Acction executed when user want to save a project
+*/
+void MainWindow::onMenuSaveProject( void )
+{
+  if( m_project )
+  {
+    m_project->Save() ;
+  }
+}
+
+
+/**
+* @brief Acction executed when user want to save a project to a new directory
+*/
+void MainWindow::onMenuSaveAsProject( void )
+{
+  if( m_project )
+  {
+    // Save Folder dialog
+    std::string new_project_path ;
+
+    // If valid dialog
+    m_project->SaveAs( new_project_path ) ;
+  }
+}
+
+
+/**
+* @brief Acction executed when user create want to close a project
+*/
+void MainWindow::onMenuCloseProject( void )
+{
+  if( SaveOrClose( ) )
+  {
+    m_project = nullptr ;
+    Reset() ;
+  }
+}
+
+
+/**
+* @brief Acction executed when user want to quit application
+*/
+void MainWindow::onMenuQuit( void )
+{
+  if( SaveOrClose() )
+  {
+    QApplication::quit() ;
+  }
+}
+
+
+/**
+* @brief Acction executed when user want to load default settings
+*/
+void MainWindow::onMenuSettingLoadDefault( void )
+{
+  if( m_project )
+  {
+    SfMSettings default_settings ;
+    m_project->SetSettings( default_settings ) ;
+  }
+}
+
+
+/**
+* @brief Acction executed when user want to Load an image dir
+*/
+void MainWindow::onMenuProjectLoadImageDir( void )
+{
+  if( m_project )
+  {
+    // Open folder dialog
+    std::string input_image_path ;
+    std::string camera_sensor_database_file_path ;
+
+    // If ok
+    m_project->OpenImageFolder( input_image_path , camera_sensor_database_file_path ) ;
+  }
+}
+
+
+/**
+* @brief Acction executed when user want to ReLoad an image dir
+*/
+void MainWindow::onMenuProjectReloadImageDir( void )
+{
+  // Todo ?
+}
+
+
+/**
+* @brief Acction executed when user want to compute SfM
+*/
+void MainWindow::onMenuProjectComputeSfM( void )
+{
+  if( m_project )
+  {
+    m_project->ComputeSfM( ) ;
+  }
+}
+
+
+/**
+* @brief Acction executed when user want to export project to MVE format
+*/
+void MainWindow::onMenuProjectExportToMVE( void )
+{
+  if( m_project )
+  {
+    m_project->ExportToMVE( ) ;
+  }
+}
+
+/**
+* @brief Action executed when user want some help (but why ?)
+*/
+void MainWindow::onMenuHelp( void )
+{
+
+}
 
 
 } // namespace SfMGui

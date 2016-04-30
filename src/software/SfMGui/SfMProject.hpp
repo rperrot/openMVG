@@ -40,6 +40,11 @@ class SfMProject
                           const std::string & sensor_width_database_path ) ;
 
     /**
+    * @brief Test if
+    */
+    bool HasUnsavedChanges( void ) const ;
+
+    /**
     * @brief Remove everyting done in the project
     */
     void Reset( void ) ;
@@ -79,14 +84,17 @@ class SfMProject
     */
     SfMSettings GetSettings( void ) const ;
 
-  private:
+    /**
+    * @brief Compute SfM
+    */
+    void ComputeSfM( void ) ;
 
-    /// Root project path
-    std::string m_project_root_path ;
-    /// SfM Data
-    openMVG::sfm::SfM_Data m_sfm_data ;
-    /// SfM Settings
-    SfMSettings m_settings ;
+    /**
+    * @brief Export to MVE subdirectory
+    */
+    void ExportToMVE( void ) ;
+
+  private:
 
     /**
     * @brief Given input images, generate thumbnails
@@ -104,12 +112,17 @@ class SfMProject
 
     bool ValidProjectStructure( const std::string & input_folder ) ;
 
+
+    /// Root project path
+    std::string m_project_root_path ;
+    /// SfM Data
+    openMVG::sfm::SfM_Data m_sfm_data ;
+    /// SfM Settings
+    SfMSettings m_settings ;
     /// Root project folder
     std::string m_project_folder ;
-
-    /// Project file
-    std::string m_project_file ;
-
+    /// test if something has been change since last save
+    bool m_has_unsaved_changes ;
 } ;
 }
 }

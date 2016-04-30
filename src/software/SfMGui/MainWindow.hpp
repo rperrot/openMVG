@@ -12,6 +12,8 @@
 #include <QLabel>
 #include <QPushButton>
 
+#include <QMenu>
+#include <QAction>
 
 namespace openMVG
 {
@@ -58,7 +60,87 @@ class MainWindow : public QMainWindow
     */
     void onSelectOutputProjectFolder( void ) ;
 
+
+    /**
+    * @brief Action executed when user create a new project
+    */
+    void onMenuNewProject( void ) ;
+
+
+    /**
+    * @brief Action executed when user want to open a project
+    */
+    void onMenuOpenProject( void ) ;
+
+
+    /**
+    * @brief Action executed when user want to save a project
+    */
+    void onMenuSaveProject( void ) ;
+
+
+    /**
+    * @brief Action executed when user want to save a project to a new directory
+    */
+    void onMenuSaveAsProject( void ) ;
+
+
+    /**
+    * @brief Action executed when user create want to close a project
+    */
+    void onMenuCloseProject( void ) ;
+
+
+    /**
+    * @brief Action executed when user want to quit application
+    */
+    void onMenuQuit( void ) ;
+
+
+    /**
+    * @brief Action executed when user want to load default settings
+    */
+    void onMenuSettingLoadDefault( void ) ;
+
+
+    /**
+    * @brief Action executed when user want to Load an image dir
+    */
+    void onMenuProjectLoadImageDir( void ) ;
+
+
+    /**
+    * @brief Action executed when user want to ReLoad an image dir
+    */
+    void onMenuProjectReloadImageDir( void ) ;
+
+
+    /**
+    * @brief Action executed when user want to compute SfM
+    */
+    void onMenuProjectComputeSfM( void ) ;
+
+
+    /**
+    * @brief Action executed when user want to export project to MVE format
+    */
+    void onMenuProjectExportToMVE( void ) ;
+
+    /**
+    * @brief Action executed when user want some help (but why ?)
+    */
+    void onMenuHelp( void ) ;
+
+
   private:
+
+    /**
+    * @brief Save or close an unsaved project
+    * @retval true If project saved or closed
+    * @retval false If project unsaved or user give up close/save
+    * @retval true If project has not unsaved changes
+    */
+    bool SaveOrClose( void ) ;
 
     void DoProjectCreation( void ) ;
 
@@ -103,6 +185,28 @@ class MainWindow : public QMainWindow
 
     /// Tab widget used to show the result of the SfM process
     ResultTab * m_result_tab ;
+
+
+    /// Menus
+    QMenu * m_file_menu ;
+    QAction * m_new_project ;
+    QAction * m_open_project ;
+    QAction * m_save_project ;
+    QAction * m_save_project_as ;
+    QAction * m_close_project ;
+    QAction * m_quit ;
+
+    QMenu * m_configuration_menu ;
+    QAction * m_load_default_configuration ;
+
+    QMenu * m_project_menu ;
+    QAction * m_select_input_images_directory ;
+    QAction * m_reload_input_directory ;
+    QAction * m_compute_sfm ;
+    QAction * m_export_to_mve ;
+
+    QMenu * m_help_menu ;
+    QAction * m_help_rtfm ;
 
 };
 } // namespace SfMGui

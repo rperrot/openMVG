@@ -7,6 +7,19 @@ namespace openMVG
 namespace SfMGui
 {
 
+bool operator==( const SfMSettings & s1 , const SfMSettings & s2 )
+{
+  return ( s1.m_camera_model == s2.m_camera_model ) &&
+         ( s1.m_feat_type == s2.m_feat_type ) &&
+         ( s1.m_feat_mode == s2.m_feat_mode ) &&
+         ( s1.m_pipeline_type == s2.m_pipeline_type ) ;
+}
+bool operator!=( const SfMSettings & s1 , const SfMSettings & s2 )
+{
+  return ! ( s1 == s2 ) ;
+}
+
+
 /**
 * @brief Convert SfMGui enum to openMVG enum
 * @param src SfMGui intrinsic

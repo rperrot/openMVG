@@ -43,21 +43,10 @@ class ImageTab : public QWidget
 
   signals:
 
-    void hasTriggeredAddSingleImage() ;
-    void hasTriggeredAddFolder();
     void hasTriggeredRowDelete( const int row ) ;
 
   public slots:
 
-    /**
-    * @brief Action to be executed when user want to add a signle image
-    */
-    void onTriggerAddSingleImage( ) ;
-
-    /**
-    * @brief Action to be executed when user want to add a new folder
-    */
-    void onTriggerAddFolder( ) ;
 
     /**
     * @brief Action to be executed when user want to delete a row

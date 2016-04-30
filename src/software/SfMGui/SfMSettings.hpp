@@ -168,6 +168,8 @@ struct SfMSettings
   /// Camera model to use
   CameraModelType m_camera_model ;
 
+  friend bool operator==( const SfMSettings & s1 , const SfMSettings & s2 ) ;
+  friend bool operator!=( const SfMSettings & s1 , const SfMSettings & s2 ) ;
 
   template < typename Archive >
   void serialize( Archive & ar )
@@ -178,6 +180,9 @@ struct SfMSettings
     ar( m_camera_model ) ;
   }
 } ;
+
+bool operator==( const SfMSettings & s1 , const SfMSettings & s2 ) ;
+bool operator!=( const SfMSettings & s1 , const SfMSettings & s2 ) ;
 
 
 /**
