@@ -82,6 +82,7 @@ bool FillSfMImageData( openMVG::sfm::SfM_Data & data ,
                        const bool show_progress_bar )
 {
 
+  data.s_root_path = sImageDir;
   Views & views = data.views;
   Intrinsics & intrinsics = data.intrinsics;
 

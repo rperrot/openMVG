@@ -6,6 +6,7 @@
 #include "software/SfMGui/SettingTab.hpp"
 #include "software/SfMGui/SfMProject.hpp"
 
+
 #include <QMainWindow>
 #include <QTabWidget>
 #include <QLineEdit>
@@ -65,7 +66,6 @@ class MainWindow : public QMainWindow
     * @brief Action executed when user create a new project
     */
     void onMenuNewProject( void ) ;
-
 
     /**
     * @brief Action executed when user want to open a project

@@ -101,7 +101,7 @@ void ImageTab::AddRow( const std::string & imagePath , const std::string & image
   // Image delete icon
   QTableWidgetItem * itemImageDelete = new QTableWidgetItem ;
   const std::string exe_path = QCoreApplication::applicationDirPath().toStdString() ;
-  itemImageDelete->setIcon( QIcon( ( exe_path + "/ressources/circle-x.svg" ).c_str()  ) )  ;
+  itemImageDelete->setIcon( QIcon( ( exe_path + "/resources/circle-x.svg" ).c_str()  ) )  ;
   itemImageDelete->setFlags( Qt::ItemIsSelectable | Qt::ItemIsEnabled ) ;
   itemImageDelete->setTextAlignment( Qt::AlignCenter ) ;
 
@@ -120,6 +120,11 @@ void ImageTab::AddRow( const std::string & imagePath , const std::string & image
 void ImageTab::Reset( void )
 {
   m_tbl_widget->clear() ;
+
+  m_tbl_widget->setColumnCount( 6 ) ;
+  QStringList tableHeader ;
+  tableHeader << "Image" << "Name" << "Width" << "Height" << "Focal" << "Delete" ;
+  m_tbl_widget->setHorizontalHeaderLabels( tableHeader ) ;
 }
 
 

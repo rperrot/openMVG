@@ -1,5 +1,8 @@
 #include "software/SfMGui/MainWindow.hpp"
 
+#include "software/SfMGui/ProjectCreationWizard.hpp"
+
+
 #include <QFileDialog>
 #include <QGridLayout>
 #include <QGroupBox>
@@ -9,7 +12,11 @@
 
 #include <iostream>
 
-// #define SFMGUI_DEBUG_INTERFACE 1
+#define SFMGUI_DEBUG_INTERFACE 1
+
+#ifdef SFMGUI_DEBUG_INTERFACE
+  #include <QDebug>
+#endif
 
 namespace openMVG
 {
@@ -58,10 +65,10 @@ void MainWindow::BuildInterface( void )
   QGridLayout * basicLayout = new QGridLayout ;
   basicLayout->addWidget( m_input_folder_label , 0 , 0 ) ;
   basicLayout->addWidget( m_input_folder_text , 0 , 1 ) ;
-  basicLayout->addWidget( m_input_folder_button , 0 , 2 ) ;
+  //  basicLayout->addWidget( m_input_folder_button , 0 , 2 ) ;
   basicLayout->addWidget( m_project_folder_label , 1 , 0 ) ;
   basicLayout->addWidget( m_project_folder_text , 1 , 1 ) ;
-  basicLayout->addWidget( m_project_folder_button , 1 , 2 ) ;
+  //  basicLayout->addWidget( m_project_folder_button , 1 , 2 ) ;
 
   basicbox->setLayout( basicLayout ) ;
 
@@ -152,15 +159,15 @@ void MainWindow::BuildMenus( void )
 void MainWindow::MakeConnections( void )
 {
   // ImageTab -> MainWindow
-  connect( m_image_tab , SIGNAL( hasTriggeredAddSingleImage() ) , this , SLOT( onAddImage() ) ) ;
-  connect( m_image_tab , SIGNAL( hasTriggeredAddFolder() ) , this , SLOT( onAddFolder( ) ) ) ;
+  // connect( m_image_tab , SIGNAL( hasTriggeredAddSingleImage() ) , this , SLOT( onAddImage() ) ) ;
+  // connect( m_image_tab , SIGNAL( hasTriggeredAddFolder() ) , this , SLOT( onAddFolder( ) ) ) ;
 
   // MainWindow -> ImageTab
 
 
   // MainWindow -> MainWindow
-  connect( m_input_folder_button , SIGNAL( triggered() ) , this , SLOT( onSelectInputImages() ) ) ;
-  connect( m_project_folder_button , SIGNAL( triggered() ) , this , SLOT( onSelectOutputProjectFolder() ) ) ;
+  connect( m_input_folder_button , SIGNAL( clicked() ) , this , SLOT( onSelectInputImages() ) ) ;
+  connect( m_project_folder_button , SIGNAL( clicked() ) , this , SLOT( onSelectOutputProjectFolder() ) ) ;
 
   // Menus
   // Menu - File
@@ -188,9 +195,8 @@ void MainWindow::MakeConnections( void )
 */
 void MainWindow::onAddImage( void )
 {
-
 #ifdef SFMGUI_DEBUG_INTERFACE
-  std::cerr << __func__ << std::endl ;
+  qDebug() << __func__ ;
 #endif
   // Open dialog to select an image
 }
@@ -202,8 +208,9 @@ void MainWindow::onAddImage( void )
 void MainWindow::onAddFolder( void )
 {
 #ifdef SFMGUI_DEBUG_INTERFACE
-  std::cerr << __func__ << std::endl ;
+  qDebug() << __func__ ;
 #endif
+
   // Open dialog to select a folder
 
   QString folder = QFileDialog::getExistingDirectory( this , "Open input images" , QDir::homePath() , QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks )  ;
@@ -220,7 +227,7 @@ void MainWindow::onAddFolder( void )
 void MainWindow::onSelectInputImages( void )
 {
 #ifdef SFMGUI_DEBUG_INTERFACE
-  std::cerr << __func__ << std::endl ;
+  qDebug() << __func__ ;
 #endif
 
   QString folder = QFileDialog::getExistingDirectory( this , "Open input images" , QDir::homePath() , QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks )  ;
@@ -238,7 +245,7 @@ void MainWindow::onSelectInputImages( void )
 void MainWindow::onSelectOutputProjectFolder( void )
 {
 #ifdef SFMGUI_DEBUG_INTERFACE
-  std::cerr << __func__ << std::endl ;
+  qDebug() << __func__ ;
 #endif
 
   QString folder = QFileDialog::getExistingDirectory( this , "Select output folder" , QDir::homePath() , QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks )  ;
@@ -258,6 +265,10 @@ void MainWindow::onSelectOutputProjectFolder( void )
 */
 bool MainWindow::SaveOrClose( void )
 {
+#ifdef SFMGUI_DEBUG_INTERFACE
+  qDebug() << __func__ ;
+#endif
+
   if( ! m_project )
   {
     return true ;
@@ -297,6 +308,10 @@ bool MainWindow::SaveOrClose( void )
 
 void MainWindow::DoProjectCreation( void )
 {
+#ifdef SFMGUI_DEBUG_INTERFACE
+  qDebug() << __func__ ;
+#endif
+
   const QString input_path = m_input_folder_text->text() ;
   const QString project_path = m_project_folder_text->text() ;
 
@@ -319,6 +334,10 @@ void MainWindow::DoProjectCreation( void )
 */
 void MainWindow::onMenuNewProject( void )
 {
+#ifdef SFMGUI_DEBUG_INTERFACE
+  qDebug() << __func__ ;
+#endif
+
   if( SaveOrClose( ) )
   {
     m_project = nullptr ;
@@ -326,7 +345,22 @@ void MainWindow::onMenuNewProject( void )
   }
 
   // Creation dialog
+  ProjectCreationWizard creationWizard( this ) ;
+  int res = creationWizard.exec() ;
+  if( res == QDialog::Accepted )
+  {
+    std::string camera_sensor_database_file_path ;
+    const std::string input_image_path = creationWizard.GetInputImageFolder() ;
+    const std::string output_project_path = creationWizard.GetOutputProjectFolder() ;
+
+    m_project = std::make_shared<SfMProject>( output_project_path );
+    m_project->OpenImageFolder( input_image_path , camera_sensor_database_file_path ) ;
+
+    m_input_folder_text->setText( QString( input_image_path.c_str() ) ) ;
+    m_project_folder_text->setText( QString( output_project_path.c_str() ) ) ;
+  }
 }
+
 
 
 /**
@@ -334,6 +368,10 @@ void MainWindow::onMenuNewProject( void )
 */
 void MainWindow::onMenuOpenProject( void )
 {
+#ifdef SFMGUI_DEBUG_INTERFACE
+  qDebug() << __func__ ;
+#endif
+
   if( SaveOrClose() )
   {
     // open dialog
@@ -350,6 +388,10 @@ void MainWindow::onMenuOpenProject( void )
 */
 void MainWindow::onMenuSaveProject( void )
 {
+#ifdef SFMGUI_DEBUG_INTERFACE
+  qDebug() << __func__ ;
+#endif
+
   if( m_project )
   {
     m_project->Save() ;
@@ -362,6 +404,10 @@ void MainWindow::onMenuSaveProject( void )
 */
 void MainWindow::onMenuSaveAsProject( void )
 {
+#ifdef SFMGUI_DEBUG_INTERFACE
+  qDebug() << __func__ ;
+#endif
+
   if( m_project )
   {
     // Save Folder dialog
@@ -378,6 +424,10 @@ void MainWindow::onMenuSaveAsProject( void )
 */
 void MainWindow::onMenuCloseProject( void )
 {
+#ifdef SFMGUI_DEBUG_INTERFACE
+  qDebug() << __func__ ;
+#endif
+
   if( SaveOrClose( ) )
   {
     m_project = nullptr ;
@@ -391,6 +441,10 @@ void MainWindow::onMenuCloseProject( void )
 */
 void MainWindow::onMenuQuit( void )
 {
+#ifdef SFMGUI_DEBUG_INTERFACE
+  qDebug() << __func__ ;
+#endif
+
   if( SaveOrClose() )
   {
     QApplication::quit() ;
@@ -403,6 +457,10 @@ void MainWindow::onMenuQuit( void )
 */
 void MainWindow::onMenuSettingLoadDefault( void )
 {
+#ifdef SFMGUI_DEBUG_INTERFACE
+  qDebug() << __func__ ;
+#endif
+
   if( m_project )
   {
     SfMSettings default_settings ;
@@ -416,6 +474,10 @@ void MainWindow::onMenuSettingLoadDefault( void )
 */
 void MainWindow::onMenuProjectLoadImageDir( void )
 {
+#ifdef SFMGUI_DEBUG_INTERFACE
+  qDebug() << __func__ ;
+#endif
+
   if( m_project )
   {
     // Open folder dialog
@@ -433,7 +495,10 @@ void MainWindow::onMenuProjectLoadImageDir( void )
 */
 void MainWindow::onMenuProjectReloadImageDir( void )
 {
-  // Todo ?
+#ifdef SFMGUI_DEBUG_INTERFACE
+  qDebug() << __func__ ;
+#endif
+
 }
 
 
@@ -442,6 +507,10 @@ void MainWindow::onMenuProjectReloadImageDir( void )
 */
 void MainWindow::onMenuProjectComputeSfM( void )
 {
+#ifdef SFMGUI_DEBUG_INTERFACE
+  qDebug() << __func__ ;
+#endif
+
   if( m_project )
   {
     m_project->ComputeSfM( ) ;
@@ -454,6 +523,10 @@ void MainWindow::onMenuProjectComputeSfM( void )
 */
 void MainWindow::onMenuProjectExportToMVE( void )
 {
+#ifdef SFMGUI_DEBUG_INTERFACE
+  qDebug() << __func__ ;
+#endif
+
   if( m_project )
   {
     m_project->ExportToMVE( ) ;
@@ -465,6 +538,9 @@ void MainWindow::onMenuProjectExportToMVE( void )
 */
 void MainWindow::onMenuHelp( void )
 {
+#ifdef SFMGUI_DEBUG_INTERFACE
+  qDebug() << __func__ ;
+#endif
 
 }
 
