@@ -4,15 +4,18 @@ set(CMAKE_AUTOMOC ON)
 
 FIND_PACKAGE( Qt5Widgets REQUIRED )
 
-set( SFMGUI_SOURCES ImageTab.cpp MainWindow.cpp ProjectCreationWizard.cpp ProjectCreationWizardInputPage.cpp ProjectCreationWizardOutputPage.cpp ResultTab.cpp SettingTab.cpp SfMProject.cpp SfMSettings.cpp )
-set( SFMGUI_HEADERS ImageTab.hpp MainWindow.hpp ProjectCreationWizard.hpp ProjectCreationWizardInputPage.hpp ProjectCreationWizardOutputPage.hpp ResultTab.hpp SettingTab.hpp SfMProject.hpp SfMSettings.hpp )
+set( SFMGUI_SOURCES ImageTab.cpp MainWindow.cpp ProjectCreationWizard.cpp ProjectCreationWizardInputPage.cpp ProjectCreationWizardOutputPage.cpp ProjectCreatorThread.cpp ResultTab.cpp SettingTab.cpp SfMProject.cpp SfMSettings.cpp )
+set( SFMGUI_HEADERS ImageTab.hpp MainWindow.hpp ProjectCreationWizard.hpp ProjectCreationWizardInputPage.hpp ProjectCreationWizardOutputPage.hpp ProjectCreatorThread.hpp ResultTab.hpp SettingTab.hpp SfMProject.hpp SfMSettings.hpp )
+
+set( SFMGUI_DEPS_SOURCES dependencies/waitingspinnerwidget.cpp )
+set( SFMGUI_DEPS_HEADERS dependencies/waitingspinnerwidget.h )
 
 set( SFM_HELPERS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/../SfM/SfMInitImageListingHelper.cpp )
 set( SFM_HELPERS_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/../SfM/SfMInitImageListingHelper.hpp )
                     
 IF( APPLE )
   
-  add_executable( SfMGui MACOSX_BUNDLE main.cpp ${SFMGUI_SOURCES} ${SFMGUI_HEADERS} ${SFM_HELPERS_SOURCES} ${SFM_HELPERS_HEADERS} )
+  add_executable( SfMGui MACOSX_BUNDLE main.cpp ${SFMGUI_SOURCES} ${SFMGUI_HEADERS} ${SFM_HELPERS_SOURCES} ${SFM_HELPERS_HEADERS} ${SFMGUI_DEPS_SOURCES} ${SFMGUI_DEPS_HEADERS} )
   target_link_libraries( SfMGui Qt5::Widgets stlplus openMVG_sfm openMVG_image easyexif )
 
   # copy resources folder into destination folder 
@@ -30,7 +33,7 @@ IF( APPLE )
 
 ELSE( APPLE )
 
-  add_executable( SfMGui WIN32 main.cpp ${SFMGUI_SOURCES} ${SFMGUI_HEADERS} ${SFM_HELPERS_SOURCES} ${SFM_HELPERS_HEADERS} )
+  add_executable( SfMGui WIN32 main.cpp ${SFMGUI_SOURCES} ${SFMGUI_HEADERS} ${SFM_HELPERS_SOURCES} ${SFM_HELPERS_HEADERS} ${SFMGUI_DEPS_SOURCES} ${SFMGUI_DEPS_HEADERS} )
   target_link_libraries( SfMGui Qt5::Widgets stlplus openMVG_sfm openMVG_image easyexif )
 
   # copy resources folder into destination folder 

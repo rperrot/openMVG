@@ -5,7 +5,9 @@
 #include "software/SfMGui/ResultTab.hpp"
 #include "software/SfMGui/SettingTab.hpp"
 #include "software/SfMGui/SfMProject.hpp"
+#include "software/SfMGui/ProjectCreatorThread.hpp"
 
+#include "software/SfMGui/dependencies/waitingspinnerwidget.h"
 
 #include <QMainWindow>
 #include <QTabWidget>
@@ -131,6 +133,10 @@ class MainWindow : public QMainWindow
     */
     void onMenuHelp( void ) ;
 
+    /**
+    * @brief Signal emmited when a project is created
+    */
+    void onProjectCreated(  std::shared_ptr< SfMProject > pro  ) ;
 
   private:
 
@@ -207,6 +213,10 @@ class MainWindow : public QMainWindow
 
     QMenu * m_help_menu ;
     QAction * m_help_rtfm ;
+
+    // Worker thread and it's waiting dialog
+    WaitingSpinnerWidget * m_spinner ;
+    ProjectCreator * m_project_creator ;
 
 };
 } // namespace SfMGui

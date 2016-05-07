@@ -2,6 +2,7 @@
 
 #include "openMVG/cameras/cameras.hpp"
 #include "openMVG/sfm/sfm_data_io.hpp"
+#include "openMVG/image/image.hpp"
 
 #include "openMVG/exif/sensor_width_database/ParseDatabase.hpp"
 
@@ -143,6 +144,8 @@ bool SfMProject::OpenImageFolder( const std::string & image_folder , const std::
     return false ;
   }
 
+  GenerateThumbnails() ;
+
   return true ;
 }
 
@@ -209,6 +212,111 @@ std::string SfMProject::GetSFMFolder( void ) const
 }
 
 /**
+* @brief Get number of input images
+* @return Number of input image
+*/
+unsigned int SfMProject::NbInputImage( void ) const
+{
+  return static_cast<unsigned int>( m_sfm_data.views.size() ) ;
+}
+
+/**
+* @brief Get Full image path for a given id
+* @param id Id of the image to get
+* @retval empty string if id is out of range
+* @retval full path for a given image id
+*/
+std::string SfMProject::FullImagePath( const unsigned int id ) const
+{
+  if( m_sfm_data.views.count( id ) )
+  {
+    const std::string root_path = m_sfm_data.s_root_path ;
+    const std::string local_path = m_sfm_data.views.at( id )->s_Img_path ;
+    return folder_append_separator( root_path ) + local_path ;
+  }
+  else
+  {
+    return "" ;
+  }
+}
+
+/**
+* @brief Get thumbnail path for a given id
+* @param id If of the image to get
+* @retval empty string if id is out of range
+* @retval thumbnail path for a given image id
+*/
+std::string SfMProject::ThumbnailPath( const unsigned int id ) const
+{
+  if( m_sfm_data.views.count( id ) )
+  {
+    const std::string thumb_path = GetThumbailFolder() ;
+    return m_map_image_to_thumbnail.at( FullImagePath( id ) ) ;
+  }
+  else
+  {
+    return "" ;
+  }
+}
+
+
+/**
+* @brief Get Local name of the image
+* @param id Id of the image to get
+* @retval empty string if id is out of range
+* @retval local name of the given image id
+*/
+std::string SfMProject::ImageName( const unsigned int id ) const
+{
+  if( m_sfm_data.views.count( id ) )
+  {
+    return m_sfm_data.views.at( id )->s_Img_path ;
+  }
+  else
+  {
+    return "" ;
+  }
+}
+
+
+/**
+* @brief Get image width
+* @param id Id of the image to get
+* @retval -1 if id is out of range
+* @retval Width (in pixel) of image
+*/
+int SfMProject::ImageWidth( const unsigned int id ) const
+{
+  if( m_sfm_data.views.count( id ) )
+  {
+    return m_sfm_data.views.at( id )->ui_width ;
+  }
+  else
+  {
+    return -1 ;
+  }
+}
+
+/**
+* @brief Get image height
+* @param id Id of the image to get
+* @retval -1 if id is out of range
+* @retval Height (in pixel) of image
+*/
+int SfMProject::ImageHeight( const unsigned int id ) const
+{
+  if( m_sfm_data.views.count( id ) )
+  {
+    return m_sfm_data.views.at( id )->ui_height ;
+  }
+  else
+  {
+    return -1 ;
+  }
+}
+
+
+/**
 * @brief Set current project settings
 * @param set new settings
 */
@@ -253,7 +361,20 @@ void SfMProject::ExportToMVE( void )
 */
 void SfMProject::GenerateThumbnails( void )
 {
+  for( auto it_view = m_sfm_data.views.begin() ; it_view != m_sfm_data.views.end() ; ++it_view )
+  {
+    const std::string full_path = FullImagePath( it_view->first ) ;
+    const std::string local_path = filename_part( it_view->second->s_Img_path ) ;
+    const std::string thumb_path = folder_append_separator( GetThumbailFolder() ) + local_path ;
+    m_map_image_to_thumbnail[ full_path ] = thumb_path ;
 
+    openMVG::image::Image< openMVG::image::RGBColor > in_img , thumb_img ;
+    openMVG::image::Sampler2d< openMVG::image::SamplerSpline64 > sampler ;
+    ReadImage( full_path.c_str() , &in_img ) ;
+
+    openMVG::image::GenericResize( in_img , 128 , 128 , true , sampler , thumb_img ) ;
+    WriteImage( thumb_path.c_str() , thumb_img ) ;
+  }
 }
 
 /**

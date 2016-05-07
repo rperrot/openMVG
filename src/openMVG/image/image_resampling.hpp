@@ -74,6 +74,52 @@ void GenericRessample( const Image & src ,
   }
 }
 
+template< typename Image, typename RessamplingFunctor>
+void GenericResize( const Image & src , 
+                    const int output_width , 
+                    const int output_height , 
+                    const bool preserve_ratio , 
+                    const RessamplingFunctor & sampling_func ,
+                    Image & out )
+{
+  const int input_width  = src.Width() ; 
+  const int input_height = src.Height() ; 
+  
+  int real_width = output_width ;
+  int real_height = output_height ;
+  
+  if( preserve_ratio )
+  {
+    if( input_width > input_height )
+    {
+      // input_width maps to real_width, so adjust height in accordance 
+      const float ratio = static_cast<float>( input_height ) / static_cast<float>( input_width ) ; 
+      real_height = static_cast<int>( ratio * static_cast<float>( output_height ) ) ; 
+    } 
+    else 
+    {
+      // input_height maps to real_height, so adjust with in accordance 
+      const float ratio = static_cast<float>( input_width ) / static_cast<float>( input_height ) ; 
+      real_width = static_cast<int>( ratio * static_cast<float>( output_width ) ) ; 
+    }
+  }    
+  // Compute sampling position 
+  std::vector< std::pair< float , float > > sampling_pos ; 
+  
+  for( int id_row = 0 ; id_row < real_height ; ++id_row )
+  {
+    for( int id_col = 0 ; id_col < real_width ; ++id_col )
+    {
+      const float y = static_cast<float>(id_row) / static_cast<float>(real_height) * static_cast<float>(input_height) ;
+      const float x = static_cast<float>(id_col) / static_cast<float>(real_width) * static_cast<float>(input_width) ;      
+      sampling_pos.push_back( std::make_pair( y , x ) ) ; 
+    }
+  }        
+  
+  // Now ressample 
+  GenericRessample( src , sampling_pos , real_width , real_height , sampling_func , out ) ; 
+}
+
 } // namespace image
 } // namespace openMVG
 

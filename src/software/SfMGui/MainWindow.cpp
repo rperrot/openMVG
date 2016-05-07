@@ -2,6 +2,7 @@
 
 #include "software/SfMGui/ProjectCreationWizard.hpp"
 
+#include "software/SfMGui/dependencies/waitingspinnerwidget.h"
 
 #include <QFileDialog>
 #include <QGridLayout>
@@ -349,12 +350,24 @@ void MainWindow::onMenuNewProject( void )
   int res = creationWizard.exec() ;
   if( res == QDialog::Accepted )
   {
-    std::string camera_sensor_database_file_path ;
+    // Progress
+    m_spinner = new WaitingSpinnerWidget( Qt::ApplicationModal , this , true , true ) ;
+    m_spinner->start() ;
+
+    //    std::string camera_sensor_database_file_path ;
     const std::string input_image_path = creationWizard.GetInputImageFolder() ;
     const std::string output_project_path = creationWizard.GetOutputProjectFolder() ;
 
+    m_project_creator = new ProjectCreator( output_project_path , input_image_path ) ;
+
+    connect( m_project_creator , SIGNAL( finished( std::shared_ptr< SfMProject > ) ) , this , SLOT( onProjectCreated( std::shared_ptr< SfMProject > ) ) ) ;
+
+    m_project_creator->start() ;
+
+    /*
     m_project = std::make_shared<SfMProject>( output_project_path );
     m_project->OpenImageFolder( input_image_path , camera_sensor_database_file_path ) ;
+    */
 
     m_input_folder_text->setText( QString( input_image_path.c_str() ) ) ;
     m_project_folder_text->setText( QString( output_project_path.c_str() ) ) ;
@@ -542,6 +555,29 @@ void MainWindow::onMenuHelp( void )
   qDebug() << __func__ ;
 #endif
 
+}
+
+/**
+* @brief Signal emmited when a project is created
+*/
+void MainWindow::onProjectCreated( std::shared_ptr< SfMProject > pro )
+{
+  m_project = pro ;
+  delete m_project_creator ;
+
+  // Set image from input list
+  for( int id_image = 0 ; id_image < m_project->NbInputImage() ; ++id_image )
+  {
+    const std::string full_path = m_project->ThumbnailPath( id_image ) ;
+    const std::string img_name = m_project->ImageName( id_image ) ;
+    const int img_width = m_project->ImageWidth( id_image ) ;
+    const int img_height = m_project->ImageHeight( id_image ) ;
+    const float img_focal = 0.0 ;
+
+    m_image_tab->AddRow( full_path , full_path , img_width , img_height , img_focal ) ;
+  }
+  m_spinner->stop() ;
+  delete m_spinner ;
 }
 
 

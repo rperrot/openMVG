@@ -69,8 +69,49 @@ class SfMProject
 
     /**
     * @brief Get number of input images
+    * @return Number of input image
     */
-    int NbInputImage( void ) const ;
+    unsigned int NbInputImage( void ) const ;
+
+    /**
+    * @brief Get Full image path for a given id
+    * @param id Id of the image to get
+    * @retval empty string if id is out of range
+    * @retval full path for a given image id
+    */
+    std::string FullImagePath( const unsigned int id ) const ;
+
+    /**
+    * @brief Get thumbnail path for a given id
+    * @param id If of the image to get
+    * @retval empty string if id is out of range
+    * @retval thumbnail path for a given image id
+    */
+    std::string ThumbnailPath( const unsigned int id ) const ;
+
+    /**
+    * @brief Get Local name of the image
+    * @param id Id of the image to get
+    * @retval empty string if id is out of range
+    * @retval local name of the given image id
+    */
+    std::string ImageName( const unsigned int id ) const ;
+
+    /**
+    * @brief Get image width
+    * @param id Id of the image to get
+    * @retval -1 if id is out of range
+    * @retval Width (in pixel) of image
+    */
+    int ImageWidth( const unsigned int id ) const ;
+
+    /**
+    * @brief Get image height
+    * @param id Id of the image to get
+    * @retval -1 if id is out of range
+    * @retval Height (in pixel) of image
+    */
+    int ImageHeight( const unsigned int id ) const ;
 
     /**
     * @brief Set current project settings
@@ -113,6 +154,7 @@ class SfMProject
     bool ValidProjectStructure( const std::string & input_folder ) ;
 
 
+
     /// Root project path
     std::string m_project_root_path ;
     /// SfM Data
@@ -121,6 +163,8 @@ class SfMProject
     SfMSettings m_settings ;
     /// Root project folder
     std::string m_project_folder ;
+    /// Map between full image name to thumbail name
+    std::map< std::string , std::string > m_map_image_to_thumbnail ;
     /// test if something has been change since last save
     bool m_has_unsaved_changes ;
 } ;

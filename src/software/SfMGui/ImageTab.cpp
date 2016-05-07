@@ -35,9 +35,10 @@ void ImageTab::BuildInterface( void )
 
   m_tbl_widget = new QTableWidget( this ) ;
   // image | width | height | focal
-  m_tbl_widget->setColumnCount( 6 ) ;
+  m_tbl_widget->setColumnCount( 5 ) ;
+  m_tbl_widget->setIconSize( QSize( 64 , 64 ) ) ;
   QStringList tableHeader ;
-  tableHeader << "Image" << "Name" << "Width" << "Height" << "Focal" << "Delete" ;
+  tableHeader << "Image" << "Name" << "Width" << "Height" << "Focal" ; // << "Delete" ;
   m_tbl_widget->setHorizontalHeaderLabels( tableHeader ) ;
 
   mainLayout->addWidget( m_tbl_widget ) ;
@@ -99,11 +100,13 @@ void ImageTab::AddRow( const std::string & imagePath , const std::string & image
   itemImageFocal->setTextAlignment( Qt::AlignCenter ) ;
 
   // Image delete icon
+  /*
   QTableWidgetItem * itemImageDelete = new QTableWidgetItem ;
   const std::string exe_path = QCoreApplication::applicationDirPath().toStdString() ;
   itemImageDelete->setIcon( QIcon( ( exe_path + "/resources/circle-x.svg" ).c_str()  ) )  ;
   itemImageDelete->setFlags( Qt::ItemIsSelectable | Qt::ItemIsEnabled ) ;
   itemImageDelete->setTextAlignment( Qt::AlignCenter ) ;
+  */
 
   // Add all items to the view
   m_tbl_widget->setItem( cur_nb_row , 0 , itemImageThumb ) ;
@@ -111,7 +114,7 @@ void ImageTab::AddRow( const std::string & imagePath , const std::string & image
   m_tbl_widget->setItem( cur_nb_row , 2 , itemImageWidth ) ;
   m_tbl_widget->setItem( cur_nb_row , 3 , itemImageHeight ) ;
   m_tbl_widget->setItem( cur_nb_row , 4 , itemImageFocal ) ;
-  m_tbl_widget->setItem( cur_nb_row , 5 , itemImageDelete ) ;
+  // m_tbl_widget->setItem( cur_nb_row , 5 , itemImageDelete ) ;
 }
 
 /**
@@ -121,9 +124,9 @@ void ImageTab::Reset( void )
 {
   m_tbl_widget->clear() ;
 
-  m_tbl_widget->setColumnCount( 6 ) ;
+  m_tbl_widget->setColumnCount( 5 ) ;
   QStringList tableHeader ;
-  tableHeader << "Image" << "Name" << "Width" << "Height" << "Focal" << "Delete" ;
+  tableHeader << "Image" << "Name" << "Width" << "Height" << "Focal" ; // << "Delete" ;
   m_tbl_widget->setHorizontalHeaderLabels( tableHeader ) ;
 }
 
