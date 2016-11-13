@@ -258,6 +258,40 @@ Image<T1> operator-( const Image<T1> & imgA , const Image<T1> & imgB )
   return Image<T1>( imgA.Image<T1>::operator-( imgB ) ) ;
 }
 
+// Cereal 
+template< typename Archive , typename T >
+void save( Archive & ar , const Image<T> & img )
+{
+  ar( img.Width() ) ;
+  ar( img.Height() ) ; 
+  for( int y = 0 ; y < img.Height() ; ++y )
+  {
+    for( int x = 0 ; x < img.Width() ; ++x )
+    {
+      ar( img( y , x ) ) ;
+    }
+  }
+}
+
+template< typename Archive , typename T >
+void load( Archive & ar , Image<T> & img )
+{
+  int w , h ;
+  ar( w ) ;
+  ar( h ) ; 
+
+  img = Image<T>( w , h ) ; 
+
+  for( int y = 0 ; y < img.Height() ; ++y )
+  {
+    for( int x = 0 ; x < img.Width() ; ++x )
+    {
+      ar( img( y , x ) ) ; 
+    }
+  }
+}
+
+
 } // namespace image
 } // namespace openMVG
 

@@ -75,6 +75,39 @@ void GenericRessample( const Image & src ,
   }
 }
 
+
+// Scale image by a power of 2 
+// if scale = 0 -> keep the same size 
+// if scale = 1 -> scale each dimension by 2 
+// if scale = k -> scale each dimension by 2^k 
+template <typename Image , typename RessamplingFunctor>
+void Rescale( const Image & src , 
+              const int scale , 
+              const RessamplingFunctor & sampling_func ,
+              Image & out )
+{
+    // Compute new dimensions 
+    int nb = 1.0 ; 
+    for( int i = 0 ; i < scale ; ++i )
+    {
+      nb *= 2 ; 
+    }
+    const int out_width  = src.Width() / nb ;
+    const int out_height = src.Height() / nb ; 
+
+    std::vector< std::pair< float , float > > sampling_pos ; 
+    for( int id_row = 0 ; id_row < out_height ; ++id_row )
+    {
+      for( int id_col = 0 ; id_col < out_width ; ++id_col )
+      {
+        sampling_pos.push_back( std::make_pair( static_cast<float>( id_row * nb ) , 
+                                                static_cast<float>( id_col * nb ) ) ) ; 
+      }
+    }
+
+    GenericRessample( src , sampling_pos , out_width , out_height , sampling_func , out ) ;
+}
+
 } // namespace image
 } // namespace openMVG
 

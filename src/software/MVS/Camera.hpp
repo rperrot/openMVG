@@ -1,0 +1,262 @@
+#ifndef _OPENMVG_MVS_CAMERA_HPP_
+#define _OPENMVG_MVS_CAMERA_HPP_
+
+#include "DepthMapComputationParameters.hpp"
+
+#include "openMVG/numeric/numeric.h"
+#include "openMVG/sfm/sfm_data.hpp"
+
+#include <utility>
+
+namespace MVS
+{
+  struct Camera
+  {
+    /**
+    * @brief Ctr
+    */
+    Camera( void ) ;
+
+    /**
+    * @brief Load camera from serialization file
+    * @param path Path where the data are
+    */
+    Camera( const std::string & path ) ;
+
+    /**
+    * @brief Save binary data to a path
+    * @param path Path where data is saved
+    * @retval true if save is OK
+    * @retval false if save has an error
+    */
+    bool Save( const std::string & path ) ;
+
+    /**
+    * @brief Load binary data to a path
+    * @param path Path where data is saved
+    * @retval true if load is OK
+    * @retval false if load has an error
+    */
+    bool Load( const std::string & path ) ;
+
+    /**
+    * @brief Get 3d point for a 2d position and it's depth
+    * @param x postion in x value
+    * @param y position in y value
+    * @param depth Depth value
+    * @return 3d point at given pixel postion at given depth
+    */
+    openMVG::Vec3 UnProject( const double x , const double y , const double depth ) const ;
+
+    /**
+    * @brief Get 3d point for a 2d position and it's depth
+    * @param x postion in x value
+    * @param y position in y value
+    * @param depth Depth value
+    * @return 3d point at given pixel postion at given depth
+    * @note this function is like UnProject but works considering camera at origin
+    */
+    openMVG::Vec3 UnProjectLocal( const double x , const double y , const double depth ) const ;
+
+    /**
+    * @brief Convert disparity and depth
+    * @param d Depth/disparity
+    * @return Disparity/Depth
+    */
+    double DepthDisparityConversion( const double d ) const ;
+
+    /**
+    * @brief Convert disparity and depth
+    * @param d Depth/Disparity
+    * @param baseline Camera baseline
+    * @return Disparity/Depth
+    */
+    double DepthDisparityConversion( const double d , const double baseline ) const ;
+
+    /**
+    * @brief Get depth value for given 3d point
+    * @return Depth for given point
+    */
+    double Depth( const openMVG::Vec3 & pt ) const ;
+
+    /**
+    * @brief Get a 3d point at depth=1
+    * @param x pixel x-position
+    * @param y pixel y-position
+    * @return 3d point width depth = 1
+    */
+    openMVG::Vec3 Get3dPoint( const double x , const double y ) const ;
+
+    /**
+    * @brief Get a view direction through a pixel
+    * @param x pixel x-position
+    * @param y pixel y-position
+    * @return View direction passing through a pixel
+    */
+    openMVG::Vec3 GetViewVector( const double x , const double y ) const ;
+
+
+    // Intrinsic
+    openMVG::Mat3 m_K ;
+    openMVG::Mat3 m_K_inv ;
+
+    // Rotation
+    openMVG::Mat3 m_R ;
+    // Translation
+    openMVG::Vec3 m_t ;
+    // Center
+    openMVG::Vec3 m_C ;
+
+    // Projection matrix
+    openMVG::Mat34 m_P ;
+    // Inverse of rotational part of Projection matrix
+    openMVG::Mat3 m_M_inv ;
+
+    // source image
+    std::string m_img_path ;
+
+    // Intrinsic
+    openMVG::cameras::IntrinsicBase * m_intrinsic ;
+
+    // Dimensions (width,height) of image
+    std::pair< int , int > m_cam_dims ;
+
+    // (2D position and 3d point)
+    std::vector< std::pair< openMVG::Vec2 , openMVG::Vec3 > > m_ground_truth ;
+
+    // Minimum depth value
+    double m_min_depth ;
+    // Maximum depth value
+    double m_max_depth ;
+
+    /**
+    * @brief Compute Ray (origin, direction), given a 2d pixel
+    */
+    std::pair< openMVG::Vec3 , openMVG::Vec3 > GetRay( const openMVG::Vec2 & x ) const ;
+
+    // baseline
+    double m_min_baseline ;
+    double m_max_baseline ;
+    std::vector< double > m_baseline ;
+    double m_mean_baseline ;
+
+    // List of neighbors cameras
+    std::vector<int> m_view_neighbors ;
+  } ;
+
+  /*
+   * @param K Input intrinsic matrix
+   * @brief scale factor ( 1 -> No change, else / 2^scale )
+   * @param K input intrinsic
+   * @param scale Scale factor
+   * @return Scaled intrinsic
+   */
+  openMVG::Mat3 ScaleK( const openMVG::Mat3 & K , const int scale ) ;
+
+
+  /*
+  * @brief Compute stereo rig motion, assuming cam1 is the reference
+  * @param cam1 First camera
+  * @param cam2 Second camera
+  * @return Stereo rig from first to second (rotation,translation)
+  */
+  std::pair< openMVG::Mat3 , openMVG::Vec3 > RelativeMotion( const Camera & cam1 , const Camera & cam2 ) ;
+
+  /**
+  * Extract camera informations from sfm_data
+  * @param sfm_data Input data
+  * @param params Parameters
+  */
+  std::vector< Camera > LoadCameras( const openMVG::sfm::SfM_Data & sfm_data , const DepthMapComputationParameters & params ) ;
+
+  /**
+  * @brief Compute homography induced by a given stereo rig and a plane
+  * @param R Rotation from reference (at origin) and the second camera
+  * @param t Translation vector (from origin to second)
+  * @param K Intrinsic matrix of origin
+  * @param Kp Intrinsic matrix of second
+  * @param n Plane normal
+  * @param d depth (relative to the origin)
+  * @return Homography
+  */
+  openMVG::Mat3 HomographyTransformation( const openMVG::Mat3 & R ,
+                                          const openMVG::Vec3 & t ,
+                                          const openMVG::Mat3 & K ,
+                                          const openMVG::Mat3 & Kp ,
+                                          const openMVG::Vec3 & n ,
+                                          const double d ) ;
+
+  /**
+  * @brief Compute homography induced by a given stereo rig and a plane
+  * @param R Rotation from reference (at origin) and the second camera
+  * @param t Translation vector (from origin to second)
+  * @param cam_ref Camera (origin)
+  * @param cam_other Camera (second)
+  * @param pl Plane (normal and parameter)
+  * @return Homography
+  */
+  openMVG::Mat3 HomographyTransformation( const openMVG::Mat3 & R ,
+                                          const openMVG::Vec3 & t ,
+                                          const MVS::Camera & cam_ref ,
+                                          const MVS::Camera & cam_other ,
+                                          const openMVG::Vec4 & pl ) ;
+
+
+  /*
+  * @brief Compute depth value for plane a a specified position
+  * @param cam Camera
+  * @param n Plane normal
+  * @param d Plane parameter
+  * @param x Pixel x position
+  * @param y Pixel y position
+  * @return depth
+  */
+  static inline double DepthFromPlane( const MVS::Camera & cam , const openMVG::Vec3 & n , const double d , const double x , const double y )
+  {
+    const double fx = cam.m_K( 0 , 0 ) ;
+    const double fy = cam.m_K( 1 , 1 ) ;
+    const double alpha = fx / fy ;
+
+    const double u = cam.m_K( 0 , 2 ) ;
+    const double v = cam.m_K( 1 , 2 ) ;
+
+    return -d * fx / ( n[0] * ( x - u ) + n[1] * ( y - v ) * alpha + n[2] * fx ) ;
+  }
+
+  /**
+  * @brief Compute plane parameter
+  * @param cam Camera
+  * @param id_row pixel x position
+  * @param id_col pixel y position
+  * @param depth Depth value
+  * @param n Normal
+  * @return Plane parameter
+  */
+  static inline double GetPlaneD( const MVS::Camera & cam ,
+                                  const int id_row , const int id_col , const double depth ,
+                                  const openMVG::Vec3 & n )
+  {
+    openMVG::Vec3 pt ;
+    pt[0] = depth * id_col - cam.m_P( 0 , 3 ) ;
+    pt[1] = depth * id_row - cam.m_P( 1 , 3 ) ;
+    pt[2] = depth - cam.m_P( 2 , 3 ) ;
+
+    openMVG::Vec3 ptX = cam.m_M_inv * pt ;
+
+    return - ptX.dot( n ) ;
+  }
+
+  /**
+  * @brief Compute depth value at specified pixel position using a plane
+  * @param plane Plane paramater
+  * @param id_row Y-coordinate of the pixel
+  * @param id_col X-coordinate of the pixel
+  * @param cam Camera
+  * @return depth value at specified pixel
+  * @note This computes intersection between ray through the pixel and the plane, then get final depth
+  */
+  double ComputeDepth( const openMVG::Vec4 & plane , const int id_row , const int id_col , const Camera & cam ) ;
+
+}
+
+#endif

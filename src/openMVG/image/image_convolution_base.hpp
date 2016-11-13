@@ -23,10 +23,10 @@ namespace image
 template<class T1, class T2> inline
 void conv_buffer_( T1* buffer, const T2* kernel, int rsize, int ksize )
 {
-  for ( size_t i = 0; i < rsize; ++i )
+  for ( int i = 0; i < rsize; ++i )
   {
     T2 sum( 0 );
-    for ( size_t j = 0; j < ksize; ++j )
+    for ( int j = 0; j < ksize; ++j )
     {
       sum += buffer[i + j] * kernel[j];
     }
