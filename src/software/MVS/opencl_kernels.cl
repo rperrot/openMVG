@@ -71,15 +71,15 @@ float matching_cost_gx_gy( const float Ip , const float Gpx , const float Gpy ,
 * @param b A 3x3 matrix 
 * @param[out] A 3x3 matrix, result of the product of a and b 
 */
-void mat_mul_33( const float a[9] , const float b[9] ,
-                 float out[9] ) ;
+void mat_mul_33( const float * a , const float * b ,
+                 float * out ) ;
 
 /**
 * @brief Scale a matrix by a scalar factor 
 * @param[in,out] out 3x3 matrix to scale 
 * @param factor Scaling factor 
 */
-void mat_scale_in_33( float out[9] , const float factor ) ;
+void mat_scale_in_33( float * out , const float factor ) ;
 
 /**
 * @brief Cwise addition of two matrix 
@@ -87,7 +87,7 @@ void mat_scale_in_33( float out[9] , const float factor ) ;
 * @param b A 3x3 matrix 
 * @param[out] out Result of a+b 
 */
-void mat_add_33( const float a[9] , const float b[9] , float out[9] ) ;
+void mat_add_33( const float * a , const float * b , float * out ) ;
 
 /**
 * @brief Cwise subtraction of two matrix 
@@ -95,7 +95,7 @@ void mat_add_33( const float a[9] , const float b[9] , float out[9] ) ;
 * @param b A 3x3 matrix 
 * @param[out] out Result of a-b 
 */
-void mat_sub_33( const float a[9] , const float b[9] , float out[9] ) ;
+void mat_sub_33( const float * a , const float * b , float * out ) ;
 
 /**
 * @brief Matrix multiplication of two vectors 
@@ -103,7 +103,7 @@ void mat_sub_33( const float a[9] , const float b[9] , float out[9] ) ;
 * @param b a Row vector 
 * @param[out] Result of matrix multiplication of a and b 
 */
-void mat_outer_product_33( const float a[3] , const float b[3] , float out[9] ) ;
+void mat_outer_product_33( const float * a , const float * b , float * out ) ;
 
 /**
 * @brief Compute homography given a stereo rig and an a plane 
@@ -121,7 +121,7 @@ void compute_homography( const float * R ,
                          const float * Kother ,
                          const float * plane_n ,
                          const float plane_d ,
-                         float H[9] ) ;
+                         float *H  ) ;
 
 /**
 * @param Sort an array 
@@ -525,8 +525,8 @@ void compute_pixel_cost_NCC_indiv( const int2 pos ,
         return ; 
       }
 
-      const float v1 = read_imagef( intens_P , sampler , p ).r ; 
-      const float v2 = read_imagef( intens_Q , sampler , q ).r ; 
+      const float v1 = read_imagef( intens_P , sampler , p ).x ; 
+      const float v2 = read_imagef( intens_Q , sampler , q ).x ; 
 
       sum1 += v1 ;
       sum2 += v2 ; 
@@ -757,7 +757,7 @@ __kernel void compute_pixel_cost_indiv_PM( const int2 pos ,
   compute_homography( R , t , Kref_inv , Kother , plane_n , plane_d , H ) ;
 
   // Now compute cost 
-  const float Ic = read_imagef( intens_P , sampler , pos ).r * 255.0f ; 
+  const float Ic = read_imagef( intens_P , sampler , pos ).x * 255.0f ; 
 
   float res = 0.0f ; 
   for( int y = pos.y - half_w ; y <= pos.y + half_w ; y += WINDOW_INCREMENT )
@@ -783,11 +783,11 @@ __kernel void compute_pixel_cost_indiv_PM( const int2 pos ,
       const int p_idx = y * p_width + x ; 
       const int q_idx = q.y * q_width + q.x ; 
 
-      const float Ip = read_imagef( intens_P , sampler , p ).r * 255.0f ;
+      const float Ip = read_imagef( intens_P , sampler , p ).x * 255.0f ;
       const float Gpx = grad_P[ p_idx * 4 ] ;
       const float Gpy = grad_P[ p_idx * 4 + 1 ] ;
       
-      const float Iq = read_imagef( intens_Q , sampler , q ).r * 255.0f ;
+      const float Iq = read_imagef( intens_Q , sampler , q ).x * 255.0f ;
       const float Gqx = grad_Q[ q_idx * 4 ] ;
       const float Gqy = grad_Q[ q_idx * 4 + 1 ] ; 
 
