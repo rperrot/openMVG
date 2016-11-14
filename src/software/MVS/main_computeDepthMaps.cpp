@@ -12,6 +12,7 @@
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
+#include <chrono>
 #include <iostream>
 #include <random>
 
@@ -273,7 +274,7 @@ int main( int argc , char ** argv )
   int kMaxViewSelectionNb = 9 ; // Maximum of neighbors for view selection
   int kMaxViewPerCost = 3 ; //
 
-  MVS::cost_metric kMetric = MVS::COST_METRIC_PM ;
+  MVS::cost_metric kMetric = MVS::COST_METRIC_NCC ;
 
   cmd.add( make_option( 'i', sSfM_Data_Filename, "input_file" ) ) ;
   cmd.add( make_option( 'o', sOutDir, "outdir" ) ) ;
@@ -301,8 +302,8 @@ int main( int argc , char ** argv )
   }
   else
   {
-    std::cerr << "Unknown metric (PM of NCC are the only vlid choices)" << std::endl ;
-    std::cerr << "Switch back to PM metric " << std::endl ;
+    std::cerr << "Unknown metric (PM of NCC are the only valid choices)" << std::endl ;
+    std::cerr << "Switch back to NCC metric " << std::endl ;
   }
 
   std::cout << "You called " << std::endl ;

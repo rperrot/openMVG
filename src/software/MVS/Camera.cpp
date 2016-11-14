@@ -275,8 +275,7 @@ namespace MVS
         const Camera & cur_cam = cams[ id_cam ] ;
         const openMVG::Vec3 cur_dir = cur_cam.GetRay( openMVG::Vec2( cur_cam.m_cam_dims.first / 2 , cur_cam.m_cam_dims.second / 2 ) ).second ;
 
-        const double cos_angle = ref_dir.dot( cur_dir ) ;
-        const double angle = std::acos( cos_angle ) ;
+        const double angle = AngleBetween( cur_dir , ref_dir ) ; 
 
         if( angle > aRadMin && angle < aRadMax )
         {

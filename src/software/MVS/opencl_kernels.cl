@@ -152,13 +152,13 @@ void compute_pixel_cost_NCC_indiv( const int2 pos ,
                                       read_only image2d_t intens_P , 
                                       read_only image2d_t intens_Q , 
                                       // The planes 
-                                      global float * planes_n , 
-                                      global float * planes_d , 
+                                      const global float * planes_n , 
+                                      const global float * planes_d , 
                                       // The stereo rig 
-                                      global float * _R ,
-                                      global float * _t ,
-                                      global float * _Kref_inv ,
-                                      global float * _Kother , 
+                                      const global float * _R ,
+                                      const global float * _t ,
+                                      const global float * _Kref_inv ,
+                                      const global float * _Kother , 
                                       // The output cost image 
                                       global float * outCost ) ;
 
@@ -439,13 +439,13 @@ void compute_pixel_cost_NCC_indiv( const int2 pos ,
                                       read_only image2d_t intens_P , 
                                       read_only image2d_t intens_Q , 
                                       // The planes 
-                                      global float * planes_n , 
-                                      global float * planes_d , 
+                                      const global float * planes_n , 
+                                      const global float * planes_d , 
                                       // The stereo rig 
-                                      global float * _R ,
-                                      global float * _t ,
-                                      global float * _Kref_inv ,
-                                      global float * _Kother , 
+                                      const global float * _R ,
+                                      const global float * _t ,
+                                      const global float * _Kref_inv ,
+                                      const global float * _Kother , 
                                       // The output cost image 
                                       global float * outCost )
 {
@@ -560,13 +560,13 @@ __kernel void compute_pixel_cost_NCC_red( global int * delta_pos ,
                                           read_only image2d_t intens_P , 
                                           read_only image2d_t intens_Q , 
                                           // The planes 
-                                          global float * planes_n , 
-                                          global float * planes_d , 
+                                          const global float * planes_n , 
+                                          const global float * planes_d , 
                                           // The stereo rig 
-                                          global float * _R ,
-                                          global float * _t ,
-                                          global float * _Kref_inv ,
-                                          global float * _Kother , 
+                                          const global float * _R ,
+                                          const global float * _t ,
+                                          const global float * _Kref_inv ,
+                                          const global float * _Kother , 
                                           // The output cost image 
                                           global float * outCost )
 {
@@ -606,13 +606,13 @@ __kernel void compute_pixel_cost_NCC_black( global int * delta_pos ,
                                             read_only image2d_t intens_P , 
                                             read_only image2d_t intens_Q , 
                                             // The planes 
-                                            global float * planes_n , 
-                                            global float * planes_d , 
+                                            const global float * planes_n , 
+                                            const global float * planes_d , 
                                             // The stereo rig 
-                                            global float * _R ,
-                                            global float * _t ,
-                                            global float * _Kref_inv ,
-                                            global float * _Kother , 
+                                            const global float * _R ,
+                                            const global float * _t ,
+                                            const global float * _Kref_inv ,
+                                            const global float * _Kother , 
                                             // The output cost image 
                                             global float * outCost )
 {
@@ -1242,7 +1242,7 @@ __kernel void compute_new_plane( global float * rnds , global float * cur_depth 
   */
 
   const float4 dir   = compute_view_direction( camP , camMinv , camPos , pos ) ;
-  float4 new_n = UniformSampleConeAroundNormal( u1 , u2 , cos_theta_max , -dir ) ;  
+  float4 new_n = UniformSampleConeAroundNormal( u1 , u2 , cos_theta_max , cur_n ) ;  
   // float4 new_n = normalize( cur_n + (float4)( dx , dy , dz , 0.0f ) ) ;
 
   /*
