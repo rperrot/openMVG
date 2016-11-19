@@ -95,10 +95,20 @@ namespace MVS
     */
     openMVG::Vec3 GetViewVector( const double x , const double y ) const ;
 
+    /**
+    * @brief Get intrinsic matrix at a specified scale
+    * @param scale The requested scale
+    * @return The intrinsic at specified scale
+    */
+    openMVG::Mat3 GetK( const int scale = 0 ) ;
 
-    // Intrinsic
+    // Intrinsic (at user specific scale)
     openMVG::Mat3 m_K ;
     openMVG::Mat3 m_K_inv ;
+
+    // Intrinsic with scale
+    std::vector< openMVG::Mat3 > m_K_scaled ;
+    std::vector< openMVG::Mat3 > m_K_inv_scaled ;
 
     // Rotation
     openMVG::Mat3 m_R ;
@@ -193,13 +203,15 @@ namespace MVS
   * @param cam_ref Camera (origin)
   * @param cam_other Camera (second)
   * @param pl Plane (normal and parameter)
+  * @param scale Scale of the computation
   * @return Homography
   */
   openMVG::Mat3 HomographyTransformation( const openMVG::Mat3 & R ,
                                           const openMVG::Vec3 & t ,
                                           const MVS::Camera & cam_ref ,
                                           const MVS::Camera & cam_other ,
-                                          const openMVG::Vec4 & pl ) ;
+                                          const openMVG::Vec4 & pl ,
+                                          const int scale ) ;
 
 
   /*

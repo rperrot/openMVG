@@ -391,14 +391,12 @@ int main( int argc , char ** argv )
   CmdLine cmd;
 
   std::string sInOutDir = "" ;
-  std::string sOutPly = "" ;
   double fe = 0.1 ;
   double fa = 30.0 ;
   int fcomp = 3 ;
   int scale = 1 ;
 
   cmd.add( make_option( 'i', sInOutDir, "input_dir" ) ) ;
-  cmd.add( make_option( 'o', sOutPly, "output_ply" ) ) ;
   cmd.add( make_option( 'e', fe , "depth_threshold" ) ) ;
   cmd.add( make_option( 'a', fa , "angle_threshold" ) ) ;
   cmd.add( make_option( 'c', fcomp , "minimum_view" ) ) ;
@@ -430,7 +428,7 @@ int main( int argc , char ** argv )
   // [ Pass 3 : remove duplicate points ? (if not done in pass2) ]
 
   // Final pass : save the point cloud
-  pcl.ExportToPly( sOutPly , true ) ;
+  pcl.ExportToPly( params.GetModelPath() , true ) ;
 
 
   return EXIT_SUCCESS ;

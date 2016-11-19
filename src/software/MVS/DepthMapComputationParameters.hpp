@@ -28,6 +28,7 @@ namespace MVS
 
   struct DepthMapComputationParameters
   {
+    // Default values for some costs
     static const double MAX_COST_NCC ;
     static const double MAX_COST_PM ;
 
@@ -92,6 +93,13 @@ namespace MVS
     * @brief Get cost metric used to compute pixel score
     */
     cost_metric Metric( void ) const ;
+
+    /**
+    * @brief Given a metric get the corresponding maximum score
+    * @param metric the current metric
+    * @return the maximum score for the given metric
+    */
+    static double MetricMaxCostValue( const cost_metric metric ) ;
 
     /**
     * @brief Get scale of the computation( 0 for original size)
@@ -202,6 +210,13 @@ namespace MVS
     * @return Path of the depth image for the given camera
     */
     std::string GetDepthPath( const int id ) const ;
+
+
+    /**
+     * @brief Get output model directory
+     * @return Path of the output directory
+     */
+    std::string GetModelDirectory( void ) const ;
 
     /// Scale of the computation
     int m_scale ;

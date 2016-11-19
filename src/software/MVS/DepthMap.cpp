@@ -549,10 +549,10 @@ namespace MVS
   * @brief Set ground truth depth for known points
   * @param cam Camera in which ground truth are known
   */
-  void DepthMap::SetGroundTruthDepth( const Camera & cam , const DepthMapComputationParameters & params )
+  void DepthMap::SetGroundTruthDepth( const Camera & cam , const DepthMapComputationParameters & params , const int scale )
   {
     int div = 1 ;
-    for( int i = 0 ; i < params.Scale() ; ++i )
+    for( int i = 0 ; i < scale ; ++i )
     {
       div *= 2 ;
     }
@@ -565,6 +565,124 @@ namespace MVS
       m_depth( y , x ) = openMVG::Depth( cam.m_R , cam.m_t , cur_obs.second ) ;
     }
   }
+
+  /**
+   * @brief Scale up depth map
+   * @return A scaled up depth map
+   * @note Unknown Depth values are interpolated using neighboring depth values
+   * @warning Cost value should be recomputed from scratch because interpolation may be wrong
+   */
+  DepthMap DepthMap::Upscale( const int target_height , const int target_width ) const
+  {
+    DepthMap res( target_height , target_width ) ;
+
+    /*
+    X1,X2,X3,X4 are the existing values
+
+     X1  B  X2
+     A   C  _
+     X3  _  X4
+
+     * Three scenarii :
+
+     A -> Value is ( X1 + X3 ) / 2
+     B -> Value is ( X1 + X2 ) / 2
+     C -> Value is ( X1 + X2 + X3 + X4 ) / 4
+    */
+
+    // Interpolate values
+    for( int id_row = 0 ; id_row < res.m_cost.Height() ; ++id_row )
+    {
+      for( int id_col = 0 ; id_col < res.m_cost.Width() ; ++id_col )
+      {
+        if( id_row % 2 == 0 && id_col % 2 == 0 )
+        {
+          const int src_row   = Clamp( id_row / 2 , 0 , m_cost.Height() - 1 ) ;
+          const int src_col = Clamp( id_col / 2 , 0 , m_cost.Width() - 1 ) ;
+
+          // Copy the value
+          res.m_cost( id_row , id_col ) = m_cost( src_row , src_col ) ;
+          res.m_depth( id_row , id_col ) = m_depth( src_row , src_col ) ;
+          res.m_plane( id_row , id_col ) = m_plane( src_row , src_col ) ;
+        }
+        else if( id_row % 2 == 0 )
+        {
+          // Case A
+          // Interpolate with left and right values
+          const int src_row   = Clamp( id_row / 2 , 0 , m_cost.Height() - 1 ) ;
+          const int src_col_1 = Clamp( id_col / 2 , 0 , m_cost.Width() - 1 ) ;
+          const int src_col_2 = Clamp( src_col_1 + 1 , 0 , m_cost.Width() - 1 ) ;
+
+          res.m_cost( id_row , id_col )    = ( m_cost( src_row , src_col_1 ) + m_cost( src_row , src_col_2 ) ) / 2.0 ;
+          res.m_depth( id_row , id_col )   = ( m_depth( src_row , src_col_1 ) + m_depth( src_row , src_col_2 ) ) / 2.0 ;
+
+          openMVG::Vec4 interpolated_plane = m_plane( src_row , src_col_1 ) + m_plane( src_row , src_col_2 ) ;
+          const openMVG::Vec3 interpolated_normal = openMVG::Vec3( interpolated_plane[0] , interpolated_plane[1] , interpolated_plane[2] ).normalized() ;
+          interpolated_plane[0] = interpolated_normal[0] ;
+          interpolated_plane[1] = interpolated_normal[1] ;
+          interpolated_plane[2] = interpolated_normal[2] ;
+          interpolated_plane[3] /= 2.0 ;
+
+          res.m_plane( id_row , id_col ) = interpolated_plane ;
+        }
+        else if( id_col % 2 == 0 )
+        {
+          // Case B
+          // Interpolate with top and bottom values
+          const int src_col = Clamp( id_col / 2 , 0 , m_cost.Width() - 1 ) ;
+          const int src_row_1 = Clamp( id_row / 2 , 0 , m_cost.Height() - 1 ) ;
+          const int src_row_2 = Clamp( src_row_1 + 1 , 0 , m_cost.Height() - 1 ) ;
+
+          res.m_cost( id_row , id_col )    = ( m_cost( src_row_1 , src_col ) + m_cost( src_row_2 , src_col ) ) / 2.0 ;
+          res.m_depth( id_row , id_col )   = ( m_depth( src_row_1 , src_col ) + m_depth( src_row_2 , src_col ) ) / 2.0 ;
+
+          openMVG::Vec4 interpolated_plane = m_plane( src_row_1 , src_col ) + m_plane( src_row_2 , src_col ) ;
+          const openMVG::Vec3 interpolated_normal = openMVG::Vec3( interpolated_plane[0] , interpolated_plane[1] , interpolated_plane[2] ).normalized() ;
+          interpolated_plane[0] = interpolated_normal[0] ;
+          interpolated_plane[1] = interpolated_normal[1] ;
+          interpolated_plane[2] = interpolated_normal[2] ;
+          interpolated_plane[3] /= 2.0 ;
+
+          res.m_plane( id_row , id_col ) = interpolated_plane ;
+        }
+        else
+        {
+          // Case C
+          // Interpolate with the four values
+          const int src_row_1 = Clamp( id_row / 2 , 0 , m_cost.Height() - 1 ) ;
+          const int src_row_2 = Clamp( src_row_1 + 1 , 0 , m_cost.Height() - 1 ) ;
+          const int src_col_1 = Clamp( id_col / 2 , 0 , m_cost.Width() - 1 ) ;
+          const int src_col_2 = Clamp( src_col_1 + 1 , 0 , m_cost.Width() - 1 ) ;
+
+          res.m_cost( id_row , id_col ) =
+            ( m_cost( src_row_1 , src_col_1 ) +
+              m_cost( src_row_1 , src_col_2 ) +
+              m_cost( src_row_2 , src_col_1 ) +
+              m_cost( src_row_2 , src_col_2 ) ) / 4.0 ;
+          res.m_depth( id_row , id_col ) =
+            ( m_depth( src_row_1 , src_col_1 ) +
+              m_depth( src_row_1 , src_col_2 ) +
+              m_depth( src_row_2 , src_col_1 ) +
+              m_depth( src_row_2 , src_col_2 ) ) / 4.0 ;
+
+          openMVG::Vec4 interpolated_plane = m_plane( src_row_1 , src_col_1 ) +
+                                             m_plane( src_row_1 , src_col_2 ) +
+                                             m_plane( src_row_2 , src_col_1 ) +
+                                             m_plane( src_row_2 , src_col_2 ) ;
+          const openMVG::Vec3 interpolated_normal = openMVG::Vec3( interpolated_plane[0] , interpolated_plane[1] , interpolated_plane[2] ).normalized() ;
+          interpolated_plane[0] = interpolated_normal[0] ;
+          interpolated_plane[1] = interpolated_normal[1] ;
+          interpolated_plane[2] = interpolated_normal[2] ;
+          interpolated_plane[3] /= 4.0 ;
+
+          res.m_plane( id_row , id_col ) = interpolated_plane ;
+        }
+      }
+    }
+
+    return res ;
+  }
+
 
 
 

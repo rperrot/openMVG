@@ -4,7 +4,7 @@
 #include "Util.hpp"
 
 #include <random>
-
+#include <array>
 
 namespace MVS
 {
@@ -24,11 +24,11 @@ namespace MVS
                               const Image & image_ref ,
                               const Image & image_other )
   {
-    static const int window = 11 ;
-    static const int half_w = window / 2 ;
+    static constexpr int window = 11 ;
+    static constexpr int half_w = window / 2 ;
 
-    std::vector< double > val_p( window * window ) ;
-    std::vector< double > val_q( window * window ) ;
+    std::array< double , window * window > val_p ;
+    std::array< double , window * window > val_q ;
 
     int id = 0 ;
     for( int y = id_row - half_w ; y <= id_row + half_w ; ++y )
@@ -182,7 +182,8 @@ namespace MVS
   * @param stereo_rig Stereo parameters (Rotation, translation) motion from first to second view
   * @param image_ref Image data of the first view
   * @param image_other Image data of the second view
-  * @parma params Computation parameters
+  * @param params Computation parameters
+  * @param scale Optionnal scale of the computation (if not specified , used the user specified resolution)
   */
   void ComputeImagePairCost( openMVG::image::Image<double> & cost ,
                              const openMVG::image::Image<openMVG::Vec4> & planes ,
@@ -191,7 +192,8 @@ namespace MVS
                              const std::pair< openMVG::Mat3 , openMVG::Vec3 > & stereo_rig ,
                              const Image & image_ref ,
                              const Image & image_other ,
-                             const DepthMapComputationParameters & params )
+                             const DepthMapComputationParameters & params ,
+                             const int scale )
   {
     double MAX_COST ;
     if( params.Metric() == COST_METRIC_NCC )
@@ -217,7 +219,8 @@ namespace MVS
                                 stereo_rig.second ,   // t
                                 reference_cam ,   // first camera
                                 other_cam ,       // second camera
-                                cur_plane ) ;
+                                cur_plane ,
+                                scale ) ;
 
         // Compute cost at this pixel
         if( cur_metric == COST_METRIC_PM )
@@ -250,7 +253,8 @@ namespace MVS
                                 const std::vector< std::pair< openMVG::Mat3 , openMVG::Vec3 > > & stereo_rig ,
                                 const Image & image_ref ,
                                 const std::vector< Image > & neigh_imgs ,
-                                const DepthMapComputationParameters & params )
+                                const DepthMapComputationParameters & params ,
+                                const int scale )
   {
     std::vector< openMVG::image::Image<double> > all_costs( reference_cam.m_view_neighbors.size() ) ;
 
@@ -262,7 +266,7 @@ namespace MVS
       const Camera & other_cam = cams[ id_neigh ] ;
       const std::pair< openMVG::Mat3 , openMVG::Vec3 > & cur_rig = stereo_rig[ id_cam ] ;
 
-      ComputeImagePairCost( all_costs[ id_cam ] , planes , reference_cam , other_cam , cur_rig , image_ref , neigh_imgs[ id_cam ] , params ) ;
+      ComputeImagePairCost( all_costs[ id_cam ] , planes , reference_cam , other_cam , cur_rig , image_ref , neigh_imgs[ id_cam ] , params , scale ) ;
     }
 
     double MAX_COST ;
@@ -336,7 +340,8 @@ namespace MVS
                                const std::vector< std::pair< openMVG::Mat3 , openMVG::Vec3 > > & stereo_rig ,
                                const Image & image_ref ,
                                const std::vector< Image > & neigh_imgs ,
-                               const DepthMapComputationParameters & params )
+                               const DepthMapComputationParameters & params ,
+                               const int scale )
   {
     double MAX_COST ;
     if( params.Metric() == COST_METRIC_NCC )
@@ -354,6 +359,9 @@ namespace MVS
 
     std::vector< double > costs( reference_cam.m_view_neighbors.size() ) ;
 
+    // Get reference intrinsic
+    const openMVG::Mat3 & reference_K = ( scale == -1 ) ? reference_cam.m_K : reference_cam.m_K_scaled[ scale ] ;
+
     // Compute cost for all camera
     for( size_t id_cam = 0 ; id_cam < reference_cam.m_view_neighbors.size() ; ++id_cam )
     {
@@ -361,10 +369,13 @@ namespace MVS
       const Camera & cur_cam = cams[ id_neigh ] ;
       const std::pair< openMVG::Mat3 , openMVG::Vec3 > & cur_rig = stereo_rig[ id_cam ] ;
 
+      // Get neigh intrinsic matrix
+      const openMVG::Mat3 & cur_K = ( scale == -1 ) ? cur_cam.m_K : cur_cam.m_K_scaled[ scale ] ;
+
       const openMVG::Mat3 H = HomographyTransformation( cur_rig.first ,     // R
                               cur_rig.second ,    // t
                               reference_cam.m_K , // first camera
-                              cur_cam.m_K ,       // second camera
+                              cur_K ,       // second camera
                               cur_normal ,        // plane normal
                               cur_d ) ;           // plane parameter
 
@@ -435,6 +446,42 @@ namespace MVS
 
     // 1 - Compute cost
     ComputeMultipleViewCost( costs , planes , reference_cam , cams , stereo_rig , image_ref , neigh_imgs , params ) ;
+
+    // 2 - Store back cost
+    for( int id_row = 0 ; id_row < image_ref.Height() ; ++id_row )
+    {
+      for( int id_col = 0 ; id_col < image_ref.Width() ; ++id_col )
+      {
+        map.Cost( id_row , id_col , costs( id_row , id_col ) ) ;
+      }
+    }
+  }
+
+  /**
+  * @brief Compute initial cost at a specific scale
+  * @param map The depth map of the reference image
+  * @param reference_cam The reference view camera
+  * @param cams Array of neighboring cameras
+  * @param stereo_rig Array of all motions between reference and it's neighbors
+  * @param image_ref Reference image
+  * @param neigh_imgs Neighboring images
+  * @param params Computation parameters
+  * @param scale Scale of the computation
+  */
+  void ComputeCost( DepthMap & map ,
+                    const Camera & reference_cam ,
+                    const std::vector< Camera > & cams ,
+                    const std::vector< std::pair< openMVG::Mat3 , openMVG::Vec3 > > & stereo_rig ,
+                    const Image & image_ref ,
+                    const std::vector< Image > & neigh_imgs ,
+                    const DepthMapComputationParameters & params ,
+                    const int scale )
+  {
+    openMVG::image::Image<double> costs ;
+    const openMVG::image::Image<openMVG::Vec4> & planes = map.Planes() ;
+
+    // 1 - Compute cost
+    ComputeMultipleViewCost( costs , planes , reference_cam , cams , stereo_rig , image_ref , neigh_imgs , params , scale ) ;
 
     // 2 - Store back cost
     for( int id_row = 0 ; id_row < image_ref.Height() ; ++id_row )
@@ -553,6 +600,114 @@ namespace MVS
     }
   }
 
+
+  /**
+  * @brief Perform propagation using Red or Black scheme at specific scale
+  * @param[in,out] map The depth map to optimize
+  * @param id_start 0 if propagate Red , 1 if propagate Black
+  * @param cam Reference camera
+  * @param cams Neighboring cameras
+  * @param stereo_rig Array of motion between reference and it's neighbors
+  * @param image_ref Image data of the reference view
+  * @param params neigh_imgs Neighboring images
+  * @param params Computation parameters
+  * @param scale Scale of the computation
+  */
+  void Propagate( DepthMap & map , const int id_start ,
+                  const Camera & cam ,
+                  const std::vector< Camera > & cams ,
+                  const std::vector< std::pair< openMVG::Mat3 , openMVG::Vec3 > > & stereo_rig ,
+                  const Image & image_ref ,
+                  const std::vector< Image > & neigh_imgs ,
+                  const DepthMapComputationParameters & params ,
+                  const int scale )
+  {
+    // (x,y)
+    /*
+     *   |   |   |   |   |   | X |   |   |   |   |   |
+     *   |   |   |   |   |   |   |   |   |   |   |   |
+     *   |   |   |   |   |   | X |   |   |   |   |   |
+     *   |   |   |   |   | X |   | X |   |   |   |   |
+     *   |   |   |   | X |   | X |   | X |   |   |   |
+     *   | X |   | X |   | X | O | X |   | X |   | X |
+     *   |   |   |   | X |   | X |   | X |   |   |   |
+     *   |   |   |   |   | X |   | X |   |   |   |   |
+     *   |   |   |   |   |   | X |   |   |   |   |   |
+     *   |   |   |   |   |   |   |   |   |   |   |   |
+     *   |   |   |   |   |   | X |   |   |   |   |   |
+     */
+    const int neighs_idx[20][2] =
+    {
+      {0, -5} ,
+
+      {0, -3} ,
+
+      { -1, -2} ,
+      {1, -2} ,
+
+      { -2, -1} ,
+      {0, -1} ,
+      {2, -1} ,
+
+      { -5, 0} ,
+      { -3, 0} ,
+      { -1, 0} ,
+      {1, 0} ,
+      {3, 0} ,
+      {5, 0} ,
+
+      { -2, 1} ,
+      {0, 1} ,
+      {2, 1} ,
+
+      { -1, 2} ,
+      {1, 2} ,
+
+      {0, 3} ,
+
+      {0, 5}
+    } ;
+
+    #pragma omp parallel for
+    for( int id_row = 0 ; id_row < map.Height() ; ++id_row )
+    {
+      const int pad = ( id_row % 2 == 0 ) ? id_start : ( id_start + 1 ) % 2 ;
+      for( int id_col = pad ; id_col < map.Width() ; id_col += 2  )
+      {
+        // Get neighbors using
+        for( int id_n = 0 ; id_n < 20 ; ++id_n )
+        {
+          const int x = id_col + neighs_idx[ id_n ][ 0 ] ;
+          const int y = id_row + neighs_idx[ id_n ][ 1 ] ;
+
+          if( map.Inside( y , x ) )
+          {
+            // Compute cost at given pixel using the other planes
+            const openMVG::Vec4 & plane      = map.Plane( y , x ) ;
+            const openMVG::Vec3 plane_n( plane[0] , plane[1] , plane[2] ) ;
+            const double plane_d           = plane[3] ;
+
+            // Given the depth, compute the d value of the plane (ie intersection between ray and the plane)
+            const double new_cost = ComputeMultiViewCost( id_row , id_col , plane_n , plane_d , cam , cams , stereo_rig , image_ref , neigh_imgs , params , scale ) ;
+
+            if( new_cost < map.Cost( id_row , id_col ) )
+            {
+              // Copy cost
+              map.Cost( id_row , id_col , new_cost ) ;
+              // Copy plane
+              map.Plane( id_row , id_col , plane ) ;
+
+              // Compute current depth at this pixel
+              const double z = ComputeDepth( plane , id_row , id_col , cam ) ;
+              map.Depth( id_row , id_col , z ) ;
+            }
+          }
+        }
+      }
+    }
+  }
+
+
   /**
   * @brief Perform plane refinement
   * @param map Depth map to refine
@@ -563,7 +718,7 @@ namespace MVS
   * @param params Computation parameters
   */
   void Refinement( DepthMap & map ,
-                   Camera & cam ,
+                   const Camera & cam ,
                    const std::vector< Camera > & cams ,
                    const std::vector< std::pair< openMVG::Mat3 , openMVG::Vec3 > > & stereo_rig ,
                    const Image & image_ref ,
@@ -580,6 +735,9 @@ namespace MVS
 
     std::uniform_real_distribution<double> distrib_01( 0.0 , 1.0 ) ;
 
+    // TODO: use another value (more data oriented)
+    const double disparity_threshold = 0.01 ;
+
 
     #pragma omp parallel for
     for( int id_row = 0 ; id_row < map.Height() ; ++id_row )
@@ -594,7 +752,7 @@ namespace MVS
         double delta_disparity = max_disparity / 2.0 ;
         double delta_N = 1.0 ;
 
-        while( delta_disparity > 0.01 )
+        while( delta_disparity > disparity_threshold )
         {
           const double u1 = distrib_01( rng ) ;
           const double u2 = distrib_01( rng ) ;
@@ -633,6 +791,104 @@ namespace MVS
 
           // Compute cost
           const double new_cost = ComputeMultiViewCost( id_row , id_col , new_n , d_plane , cam , cams , stereo_rig , image_ref , neigh_imgs , params ) ;
+
+          if( new_cost < map.Cost( id_row , id_col ) )
+          {
+            // Update value
+            map.Cost( id_row , id_col , new_cost ) ;
+            map.Plane( id_row , id_col , openMVG::Vec4( new_n[0] , new_n[1] , new_n[2] , d_plane ) ) ;
+            map.Depth( id_row , id_col , new_d ) ;
+          }
+
+          // Halve the range
+          delta_disparity /= 2.0 ;
+          delta_N /= 2.0 ;
+        }
+      }
+    }
+  }
+
+  /**
+  * @brief Perform plane refinement at specific scale
+  * @param map Depth map to refine
+  * @param cam Reference camera
+  * @param cams Array of all neighboring cameras
+  * @param stereo_rig Array of motion between reference and its neighbors
+  * @param image_ref Image data of the reference view
+  * @param params Computation parameters
+  */
+  void Refinement( DepthMap & map ,
+                   const Camera & cam ,
+                   const std::vector< Camera > & cams ,
+                   const std::vector< std::pair< openMVG::Mat3 , openMVG::Vec3 > > & stereo_rig ,
+                   const Image & image_ref ,
+                   const std::vector< Image > & neigh_imgs ,
+                   const DepthMapComputationParameters & params ,
+                   const int scale )
+  {
+    // Initialize RNG
+    std::mt19937_64 rng ;
+    std::random_device device;
+    std::seed_seq seq{device(), device(), device(), device()};
+    rng.seed( seq ) ;
+
+    std::uniform_real_distribution<double> distrib_01( 0.0 , 1.0 ) ;
+
+    // TODO: use another value (more data oriented)
+    const double disparity_threshold = 0.01 ;
+
+    #pragma omp parallel for
+    for( int id_row = 0 ; id_row < map.Height() ; ++id_row )
+    {
+      for( int id_col = 0 ; id_col < map.Width() ; ++id_col )
+      {
+        openMVG::Vec3 cam_dir = cam.GetViewVector( id_col , id_row ) ;  //  cam.GetRay( openMVG::Vec2( id_col , id_row ) ).second ;
+
+        const double min_disparity = cam.DepthDisparityConversion( cam.m_max_depth ) ;
+        const double max_disparity = cam.DepthDisparityConversion( cam.m_min_depth ) ;
+
+        double delta_disparity = max_disparity / 2.0 ;
+        double delta_N = 1.0 ;
+
+        while( delta_disparity > disparity_threshold )
+        {
+          const double u1 = distrib_01( rng ) ;
+          const double u2 = distrib_01( rng ) ;
+          const double u3 = distrib_01( rng ) ;
+          const double u4 = distrib_01( rng ) ;
+
+
+          // Compute new depth :
+          const openMVG::Vec4 & plane = map.Plane( id_row , id_col ) ;
+          const openMVG::Vec3 cur_n( plane[0] , plane[1] , plane[2] ) ;
+          const double        cur_d = map.Depth( id_row , id_col ) ;
+          const double        cur_disp = cam.DepthDisparityConversion( cur_d ) ;
+
+          const double min_delta  = - std::min( delta_disparity , cur_disp + min_disparity ) ;
+          const double max_delta  = std::min( delta_disparity , max_disparity - cur_disp ) ;
+          const double delta_disp = u1 * ( max_delta - min_delta ) + min_delta ;
+          const double new_disp   = Clamp( cur_disp + delta_disp , min_disparity , max_disparity ) ;
+          const double new_d      = cam.DepthDisparityConversion( new_disp ) ;
+
+          // Compute new normal
+          const double r1 = ( u2 * delta_N * 2.0 ) - delta_N ;
+          const double r2 = ( u3 * delta_N * 2.0 ) - delta_N ;
+          const double r3 = ( u4 * delta_N * 2.0 ) - delta_N ;
+
+          openMVG::Vec3 new_n = cur_n + openMVG::Vec3( r1 , r2 , r3 ) ;
+          new_n = new_n.normalized() ;
+
+          // Handle vector in same range of the view vector
+          if( cam_dir.dot( new_n ) > 0.0 )
+          {
+            new_n = - new_n ;
+          }
+
+          // Compute plane d
+          const double d_plane    = GetPlaneD( cam , id_row , id_col , new_d , new_n ) ;
+
+          // Compute cost
+          const double new_cost = ComputeMultiViewCost( id_row , id_col , new_n , d_plane , cam , cams , stereo_rig , image_ref , neigh_imgs , params , scale ) ;
 
           if( new_cost < map.Cost( id_row , id_col ) )
           {

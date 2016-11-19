@@ -65,6 +65,8 @@ namespace MVS
     {
       ar( m_K ) ;
       ar( m_K_inv ) ;
+      ar( m_K_scaled ) ;
+      ar( m_K_inv_scaled ) ;
       ar( m_R ) ;
       ar( m_t ) ;
       ar( m_C ) ;
@@ -106,6 +108,8 @@ namespace MVS
     {
       ar( m_K ) ;
       ar( m_K_inv ) ;
+      ar( m_K_scaled ) ;
+      ar( m_K_inv_scaled ) ;
       ar( m_R ) ;
       ar( m_t ) ;
       ar( m_C ) ;
@@ -172,6 +176,15 @@ namespace MVS
         Camera tmp ;
         tmp.m_K = K ;
         tmp.m_K_inv = K.inverse() ;
+
+        // Compute some intrinsic matrix from scale = 0 to scale = 6 ( maybe enough ? )
+        for( int scale = 0 ; scale < 5 ; ++scale )
+        {
+          const openMVG::Mat3 cur_K = ScaleK( cam->K() , scale ) ;
+          tmp.m_K_scaled.push_back( cur_K ) ;
+          tmp.m_K_inv_scaled.push_back( cur_K.inverse() ) ;
+        }
+
         tmp.m_R = rotation ;
         tmp.m_t = translation ;
         tmp.m_C = center ;
@@ -244,12 +257,14 @@ namespace MVS
       }
     }
 
+    /*
     for( size_t i = 0 ; i < cams.size() ; ++i )
     {
       const Camera & cur_cam = cams[i] ;
 
       std::cerr << "depth : " << cur_cam.m_min_depth << "," << cur_cam.m_max_depth << std::endl ;
     }
+    */
 
     // Compute neighbors (todo: use a more robust scheme) - shen, goesle, bailer, ...
     const double aRadMin = openMVG::D2R( params.MinimumViewAngle() ) ;
@@ -275,7 +290,7 @@ namespace MVS
         const Camera & cur_cam = cams[ id_cam ] ;
         const openMVG::Vec3 cur_dir = cur_cam.GetRay( openMVG::Vec2( cur_cam.m_cam_dims.first / 2 , cur_cam.m_cam_dims.second / 2 ) ).second ;
 
-        const double angle = AngleBetween( cur_dir , ref_dir ) ; 
+        const double angle = AngleBetween( cur_dir , ref_dir ) ;
 
         if( angle > aRadMin && angle < aRadMax )
         {
@@ -324,8 +339,10 @@ namespace MVS
       cur_ref.m_mean_baseline = sum / static_cast<double>( cur_ref.m_baseline.size() ) ;
 
 
+      /*
       std::cerr << "Baseline range : " << cur_ref.m_min_baseline << " -  " << cur_ref.m_max_baseline << std::endl ;
       std::cerr << " -> " << cur_ref.m_mean_baseline << std::endl ;
+      */
     }
 
     return cams ;
@@ -418,10 +435,13 @@ namespace MVS
                                           const openMVG::Vec3 & t ,
                                           const MVS::Camera & cam_ref ,
                                           const MVS::Camera & cam_other ,
-                                          const openMVG::Vec4 & pl )
+                                          const openMVG::Vec4 & pl ,
+                                          const int scale )
   {
+    const openMVG::Mat3 other_K   = ( scale == -1 ) ? cam_other.m_K   : cam_other.m_K_scaled[ scale ] ;
+    const openMVG::Mat3 ref_K_inv = ( scale == -1 ) ? cam_ref.m_K_inv : cam_ref.m_K_inv_scaled[ scale ] ;
     const openMVG::Vec3 n( pl[0] , pl[1] , pl[2] );
-    return cam_other.m_K * ( R - ( t * n.transpose() ) / pl[3] ) * cam_ref.m_K_inv ;
+    return other_K * ( R - ( t * n.transpose() ) / pl[3] ) * ref_K_inv ;
   }
 
 
@@ -480,6 +500,17 @@ namespace MVS
   {
     return ( Get3dPoint( x , y ) - m_C ).normalized() ;
   }
+
+  /**
+  * @brief Get intrinsic matrix at a specified scale
+  * @param scale The requested scale
+  * @return The intrinsic at specified scale
+  */
+  openMVG::Mat3 Camera::GetK( const int scale )
+  {
+    return m_K_scaled[ scale ] ;
+  }
+
 
   double ComputeDepth( const openMVG::Vec4 & plane , const int id_row , const int id_col , const Camera & cam )
   {

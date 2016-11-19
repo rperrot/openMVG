@@ -62,6 +62,28 @@ namespace MVS
   }
 
   /**
+  * @brief Given a metric get the corresponding maximum score
+  * @param metric the current metric
+  * @return the maximum score for the given metric
+  */
+  double DepthMapComputationParameters::MetricMaxCostValue( const cost_metric metric )
+  {
+    switch( metric )
+    {
+      case COST_METRIC_NCC :
+      {
+        return MAX_COST_NCC ;
+      }
+      case COST_METRIC_PM:
+      {
+        return MAX_COST_PM ;
+      }
+    }
+    return std::numeric_limits<double>::max() ;
+  }
+
+
+  /**
   * @brief Get scale of the computation( 0 for original size)
   * @return scale of the computation
   */
@@ -228,5 +250,16 @@ namespace MVS
 
     return stlplus::create_filespec( camera_path , str.str() ) ;
   }
+
+  /**
+   * @brief Get output model path
+   * @return Path of the output model
+   */
+  std::string DepthMapComputationParameters::GetModelDirectory( void ) const
+  {
+    const std::string base = WorkingDirectory() ;
+    return stlplus::create_filespec( base , "model" ) ;
+  }
+
 
 }

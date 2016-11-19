@@ -43,6 +43,7 @@ namespace MVS
                       const std::vector< Camera > & cams ,
                       const std::vector< std::pair< openMVG::Mat3 , openMVG::Vec3 > > & stereo_rig ,
                       const DepthMapComputationParameters & params ,
+                      const int scale ,
                       cl_mem & Ip , cl_mem & Gp , cl_mem & Kinv , cl_mem & planes_n , cl_mem & planes_d ,
                       OpenCLWrapper & wrapper ,
                       cl_kernel & cost_kernel_full ,
@@ -82,6 +83,33 @@ namespace MVS
 
 
   /**
+  * @brief Compute cost of full depth map using OpenCL at specified scale
+  * @param map Depth map
+  * @param reference_cam Reference camera
+  * @param cams Neighboring cameras
+  * @param stereo_rig Array of motion between reference and neighboring images
+  * @param image_ref Reference image data
+  * @param params Computation parameters
+  * @param wrapper OpenCL helper object
+  * @param cost_kernel Kernel used to compute cost
+  * @param append_cost_kernel Kernel used to append current cost to the all cost array
+  * @param sort_and_store_cost_kernel Kernel used to sort costs and compute final value
+  */
+  void ComputeCost( DepthMap & map ,
+                    const Camera & reference_cam ,
+                    const std::vector< Camera > & cams ,
+                    const std::vector< std::pair< openMVG::Mat3 , openMVG::Vec3 > > & stereo_rig ,
+                    const Image & image_ref ,
+                    const std::vector< Image > & neigh_imgs ,
+                    const DepthMapComputationParameters & params ,
+                    const int scale ,
+                    OpenCLWrapper & wrapper ,
+                    cl_kernel cost_kernel ,
+                    cl_kernel append_cost_kernel ,
+                    cl_kernel sort_and_store_cost_kernel ) ;
+
+
+  /**
   * @brief Perform propagation using OpenCL
   */
   void Propagate( DepthMap & map , const int id_start ,
@@ -98,6 +126,24 @@ namespace MVS
                   cl_kernel & update_plane_wrt_cost_kernel , // Update planes based on cost
                   cl_kernel & compute_pixel_depth_kernel ) ; // Compute pixel depth value
 
+  /**
+  * @brief Perform propagation using OpenCL at specified scale
+  */
+  void Propagate( DepthMap & map , const int id_start ,
+                  Camera & reference_cam ,
+                  const std::vector< Camera > & cams ,
+                  const std::vector< std::pair< openMVG::Mat3 , openMVG::Vec3 > > & stereo_rig ,
+                  const Image & image_ref ,
+                  const std::vector< Image > & neigh_imgs ,
+                  const DepthMapComputationParameters & params ,
+                  const int scale ,
+                  OpenCLWrapper & wrapper ,
+                  cl_kernel & kernel_red , // Compute cost
+                  cl_kernel & kernel_black , // Compute cost
+                  cl_kernel & append_cost_kernel , // Append cost
+                  cl_kernel & sort_and_store_cost_kernel , // Sort and compute real cost
+                  cl_kernel & update_plane_wrt_cost_kernel , // Update planes based on cost
+                  cl_kernel & compute_pixel_depth_kernel ) ; // Compute pixel depth value
 
   /**
   * @brief Perform refinement using opencl
@@ -120,6 +166,37 @@ namespace MVS
                    const std::vector< std::pair< openMVG::Mat3 , openMVG::Vec3 > > & stereo_rig ,
                    const Image & image_ref ,
                    const DepthMapComputationParameters & params ,
+                   OpenCLWrapper & wrapper ,
+                   cl_kernel & kernel_full , // Compute cost
+                   cl_kernel & append_cost_kernel , // Append cost
+                   cl_kernel & sort_and_store_cost_kernel , // Sort and compute real cost
+                   cl_kernel & update_plane_wrt_cost2_kernel , // Update planes based on cost
+                   cl_kernel & compute_new_plane_kernel ) ; // Compute new planes
+
+
+  /**
+  * @brief Perform refinement using opencl
+  * @param map Depth map to refine
+  * @param cam Reference camera
+  * @param cams Array of all neighboring cameras
+  * @param stereo_rig Array of motion between reference and its neighbors
+  * @param image_ref Image data of the reference view
+  * @param params Computation parameters
+  * @param wrapper OpenCL helper object
+  * @param kernel_full Kernel to compute cost
+  * @param append_cost_kernel Kernel used to append cost to all costs
+  * @param sort_and_store_cost_kernel Kernel used to sort all costs and compute final cost
+  * @param update_plane_wrt_cost2_kernel Kernel used to update planes
+  * @param compute_new_plane_kernel Kernel used to compute planes parameters
+  */
+  void Refinement( DepthMap & map ,
+                   Camera & cam ,
+                   const std::vector< Camera > & cams ,
+                   const std::vector< std::pair< openMVG::Mat3 , openMVG::Vec3 > > & stereo_rig ,
+                   const Image & image_ref ,
+                   const std::vector< Image > & neigh_imgs ,
+                   const DepthMapComputationParameters & params ,
+                   const int scale ,
                    OpenCLWrapper & wrapper ,
                    cl_kernel & kernel_full , // Compute cost
                    cl_kernel & append_cost_kernel , // Append cost

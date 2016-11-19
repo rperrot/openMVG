@@ -162,6 +162,20 @@ namespace MVS
   */
   std::vector< Image > LoadNeighborImages( const Camera & reference_cam ,
       const DepthMapComputationParameters & params ) ;
+
+
+  /**
+   * @brief Load neighbor images at a specific scale
+   * @param reference_cam Reference camera
+   * @param all_cams All cameras
+   * @param params The computation parameters
+   * @param scale Scale of the requested images
+   * @return a vector of neighboring images
+   */
+  std::vector< Image > LoadNeighborImages( const Camera & reference_cam ,
+      const std::vector< Camera > & all_cams ,
+      const DepthMapComputationParameters & params ,
+      const int scale = -1 ) ;
 }
 
 #endif

@@ -148,6 +148,31 @@ namespace MVS
     return stlplus::create_filespec( cam_dir , str.str() ) ;
   }
 
+  /**
+   * @brief Get output model directory
+   * @return Path of the output directory
+   */
+  std::string DepthMapFusionComputationParameters::GetModelDirectory( void ) const
+  {
+    const std::string base = WorkingDirectory() ;
+    return stlplus::create_filespec( base , "model" ) ;
+  }
+
+
+  /**
+   * @brief Get model name
+   * @return model name for the current scale
+   */
+  std::string DepthMapFusionComputationParameters::GetModelPath( void ) const
+  {
+    const std::string model_folder = GetModelDirectory() ;
+
+    std::stringstream str ;
+    str << "model_" << m_scale << ".ply" ;
+
+    return stlplus::create_filespec( model_folder , str.str() ) ;
+  }
+
 
   /**
   * @brief Get depth threshold for two depth to be considered as equal

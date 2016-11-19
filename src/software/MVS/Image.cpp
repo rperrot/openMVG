@@ -14,42 +14,6 @@
 namespace MVS
 {
 
-  /*
-  static inline openMVG::image::Image<openMVG::image::RGBColor> Rescale( const openMVG::image::Image<openMVG::image::RGBColor> & img , const int scale )
-  {
-
-  }
-
-  static inline openMVG::image::Image<unsigned char> Rescale( const openMVG::image::Image<unsigned char> & img , const int scale )
-  {
-    // Compute new width
-    int nb = 1.0 ;
-    for( int i = 0 ; i < scale ; ++i )
-    {
-      nb *= 2 ;
-    }
-
-    const int out_width  = img.Width() / nb ;
-    const int out_height = img.Height() / nb ;
-    std::vector< std::pair< float , float > > sampling_pos ;
-    for( int id_row = 0 ; id_row < out_height ; ++id_row )
-    {
-      for( int id_col = 0 ; id_col < out_width ; ++id_col )
-      {
-        sampling_pos.push_back( std::make_pair( static_cast<float>( id_row * nb ) ,
-                                                static_cast<float>( id_col * nb ) ) ) ;
-      }
-    }
-
-    const openMVG::image::Sampler2d<openMVG::image::SamplerSpline16> sampler ;
-
-    openMVG::image::Image<unsigned char> out ;
-    openMVG::image::GenericRessample( img , sampling_pos , out_width , out_height , sampler , out ) ;
-    return out ;
-  }
-  */
-
-
   /**
     * @brief load an augmented image from a file
     * @param path Path of the image to load
@@ -100,8 +64,6 @@ namespace MVS
         m_gradient( y , x ) = grad ;
       }
     }
-
-    // m_gradient.array() = ( Dx.array().square() + Dy.array().square() ).sqrt() ;
   }
 
   /**
@@ -403,8 +365,7 @@ namespace MVS
   * @param params The computation parameters
   * @return a vector of neighboring images
   */
-  std::vector< Image > LoadNeighborImages( const Camera & reference_cam ,
-      const DepthMapComputationParameters & params )
+  std::vector< Image > LoadNeighborImages( const Camera & reference_cam , const DepthMapComputationParameters & params )
   {
     std::vector< Image > neigh_imgs ;
     for( size_t id_neigh = 0 ; id_neigh < reference_cam.m_view_neighbors.size() ; ++id_neigh )
@@ -419,5 +380,33 @@ namespace MVS
 
     return neigh_imgs ;
   }
+
+  /**
+   * @brief Load neighbor images at a specific scale
+   * @param reference_cam Reference camera
+   * @param all_cams All cameras
+   * @param params The computation parameters
+   * @param scale Scale of the requested images
+   * @return a vector of neighboring images
+   */
+  std::vector< Image > LoadNeighborImages( const Camera & reference_cam ,
+      const std::vector< Camera > & all_cams ,
+      const DepthMapComputationParameters & params ,
+      const int scale )
+  {
+    std::vector< Image > neigh_imgs ;
+    for( size_t id_neigh = 0 ; id_neigh < reference_cam.m_view_neighbors.size() ; ++id_neigh )
+    {
+      const int real_id = reference_cam.m_view_neighbors[ id_neigh ] ;
+      const Camera & neigh_cam = all_cams[ real_id ] ;
+      const std::string img_path = neigh_cam.m_img_path ;
+
+      // Load image and convert at specific scale
+      neigh_imgs.push_back( Image( img_path , scale , neigh_cam.m_intrinsic ) ) ;
+    }
+
+    return neigh_imgs ;
+  }
+
 
 }

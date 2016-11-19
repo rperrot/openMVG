@@ -227,7 +227,16 @@ namespace MVS
       * @brief Set ground truth depth for known points
       * @param cam Camera in which ground truth are known
       */
-      void SetGroundTruthDepth( const Camera & cam , const DepthMapComputationParameters & params ) ;
+      void SetGroundTruthDepth( const Camera & cam , const DepthMapComputationParameters & params , const int scale ) ;
+
+      /**
+      * @brief Scale up depth map
+      * @param target_width Target width (may not be half size but half size / 2)
+      * @param target_height Target height
+      * @return A scaled up depth map
+      * @note Unknown Depth values are interpolated using neighboring depth values
+      */
+      DepthMap Upscale( const int target_height , const int target_width ) const ;
 
     private:
 

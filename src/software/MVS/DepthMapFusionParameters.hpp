@@ -104,9 +104,21 @@ namespace MVS
       /**
       * @brief Get path to the filtered camera depth map file
       * @param id_cam Id of the camera to get
-      * @reeturn Filtered depth path for the given camera
+      * @return Filtered depth path for the given camera
       */
       std::string GetFilteredDepthPath( const int id_cam ) const ;
+
+      /**
+       * @brief Get output model directory
+       * @return Path of the output directory
+      */
+      std::string GetModelDirectory( void ) const ;
+
+      /**
+      * @brief Get model name
+      * @return model name for the current scale
+      */
+      std::string GetModelPath( void ) const ;
 
       /**
       * @brief Get depth threshold for two depth to be considered as equal
