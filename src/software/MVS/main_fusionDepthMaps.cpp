@@ -65,7 +65,9 @@ void FilterDepthMap( const MVS::Camera & reference_cam ,
         if( other_cam_pos[0] < 0 ||
             other_cam_pos[1] < 0 ||
             other_cam_pos[0] >= other_dm.Width() ||
-            other_cam_pos[1] >= other_dm.Height() )
+            other_cam_pos[1] >= other_dm.Height() ||
+            std::isinf( other_cam_pos[0] ) || std::isinf( other_cam_pos[1] ) ||
+            std::isnan( other_cam_pos[0] ) || std::isnan( other_cam_pos[1] ) )
         {
           continue ;
         }
@@ -85,7 +87,7 @@ void FilterDepthMap( const MVS::Camera & reference_cam ,
         const double angle_between = MVS::AngleBetween( cur_normal , other_normal ) ;
 
         if( fabs( delta_disparity ) < params.DepthThreshold() &&
-            angle_between < params.AngleThreshold() )
+            angle_between < params.AngleThreshold() && cur_normal.dot( other_normal ) > 0.0 )
         {
           ++ nb_view( y , x ) ;
         }

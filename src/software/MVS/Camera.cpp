@@ -292,7 +292,7 @@ namespace MVS
 
         const double angle = AngleBetween( cur_dir , ref_dir ) ;
 
-        if( angle > aRadMin && angle < aRadMax )
+        if( angle > aRadMin && angle < aRadMax && cur_dir.dot( ref_dir ) > 0.0 )
         {
           putative_list.push_back( id_cam ) ;
         }
@@ -392,25 +392,6 @@ namespace MVS
     return m_K( 0 , 0 ) * baseline / d ;
   }
 
-
-  openMVG::Mat3 OuterProduct( const openMVG::Vec3 & a , const openMVG::Vec3 & b )
-  {
-    openMVG::Mat3 res ;
-
-    res( 0 , 0 ) = a[0] * b[0] ;
-    res( 0 , 1 ) = a[0] * b[1] ;
-    res( 0 , 2 ) = a[0] * b[2] ;
-
-    res( 1 , 0 ) = a[1] * b[0] ;
-    res( 1 , 1 ) = a[1] * b[1] ;
-    res( 1 , 2 ) = a[1] * b[2] ;
-
-    res( 2 , 0 ) = a[2] * b[0] ;
-    res( 2 , 1 ) = a[2] * b[1] ;
-    res( 2 , 2 ) = a[2] * b[2] ;
-
-    return res ;
-  }
 
   /**
   * @brief Compute homography induced by a given stereo rig and a plane

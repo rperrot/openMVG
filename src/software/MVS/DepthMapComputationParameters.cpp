@@ -2,6 +2,7 @@
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
+#include <limits>
 #include <sstream>
 
 namespace MVS

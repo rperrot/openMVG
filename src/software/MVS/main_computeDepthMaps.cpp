@@ -120,6 +120,7 @@ static inline std::string GetRefinementNormalName( const int iteration , const i
 void PrepareOutputDirectory( const std::vector< MVS::Camera > & cams ,
                              const MVS::DepthMapComputationParameters & params )
 {
+  std::cout << "Preparing output directory" << std::endl ;
   const std::string outDirPath = params.WorkingDirectory() ;
   if( ! stlplus::is_folder( outDirPath ) )
   {
@@ -180,8 +181,16 @@ void PrepareOutputDirectory( const std::vector< MVS::Camera > & cams ,
 
     cur_img.Save( color_path , grayscale_path , gradient_path ) ;
   }
+  std::cout << "Preparation done" << std::endl ;
 }
 
+/**
+* @brief Compute depth map using a multiple scale approach
+* @param cam the camera corresponding to the depth map to compute
+* @param cams List of all cameras in the scene
+* @param start_scale Scale of the begginging process
+* @param out_path Path where to save the depth map
+*/
 void ComputeMultipleScaleDepthMap( MVS::Camera & cam ,
                                    const std::vector< MVS::Camera > & cams ,
                                    const MVS::DepthMapComputationParameters & params ,
@@ -210,10 +219,12 @@ void ComputeMultipleScaleDepthMap( MVS::Camera & cam ,
 
   // Initialize depth map
   MVS::DepthMap map( imgs_dims[ start_scale ].first , imgs_dims[ start_scale ].second ) ;
+
+  // Add 20% of the range
   const double min_disparity = cam.DepthDisparityConversion( cam.m_max_depth * 1.2 ) ;
   const double max_disparity = cam.DepthDisparityConversion( cam.m_min_depth * 0.8 ) ;
 
-  map.RandomizePlanes( cam , min_disparity , max_disparity ) ; // Add 30% of the range
+  map.RandomizePlanes( cam , min_disparity , max_disparity ) ;
   map.SetGroundTruthDepth( cam , params , start_scale ) ;
 
   // Compute relative motion between current camera and it's neighbors
