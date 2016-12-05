@@ -1,5 +1,7 @@
 #include "DepthMapComputationParameters.hpp"
 
+#include "Image.hpp"
+
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include <limits>
@@ -10,6 +12,10 @@ namespace MVS
 
   const double DepthMapComputationParameters::MAX_COST_NCC = 2.0 ;
   const double DepthMapComputationParameters::MAX_COST_PM = 10e6 ;
+  const double DepthMapComputationParameters::MAX_COST_CENSUS = 10e4 ;
+
+
+
 
 
   /**
@@ -78,6 +84,10 @@ namespace MVS
       case COST_METRIC_PM:
       {
         return MAX_COST_PM ;
+      }
+      case COST_METRIC_CENSUS:
+      {
+        return MAX_COST_CENSUS ;
       }
     }
     return std::numeric_limits<double>::max() ;
@@ -231,6 +241,22 @@ namespace MVS
 
     return stlplus::create_filespec( camera_path , str.str() ) ;
   }
+
+  /**
+  * @brief Get census image path
+  * @param id Id of the image to get
+  * @return Path of the census image for the given camera
+  */
+  std::string DepthMapComputationParameters::GetCensusPath( const int id ) const
+  {
+    const std::string camera_path = GetCameraDirectory( id ) ;
+    std::stringstream str ;
+
+    str << "census_" << m_scale << ".bin" ;
+
+    return stlplus::create_filespec( camera_path , str.str() ) ;
+  }
+
 
   std::string DepthMapComputationParameters::GetCameraPath( const int id ) const
   {

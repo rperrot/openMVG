@@ -153,11 +153,18 @@ namespace MVS
       cl_mem CreateBuffer( const openMVG::image::Image<openMVG::Vec4> & img ) ;
 
       /**
+      * @brief Create a buffer object (not an image buffer object) from an image
+      */
+      cl_mem CreateBuffer( const openMVG::image::Image<unsigned long long> & img ) ;
+
+      /**
       * @brief Read an image from device to host
       * @param img_obj Device image object
       * @param[out] img Host image object
       */
       void ReadImage( cl_mem img_obj , openMVG::image::Image<float> & img ) ;
+
+
 
       /**
       * @brief Clear memory associated with openCL buffer

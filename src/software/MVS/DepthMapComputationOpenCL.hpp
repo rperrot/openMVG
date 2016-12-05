@@ -44,7 +44,7 @@ namespace MVS
                       const std::vector< std::pair< openMVG::Mat3 , openMVG::Vec3 > > & stereo_rig ,
                       const DepthMapComputationParameters & params ,
                       const int scale ,
-                      cl_mem & Ip , cl_mem & Gp , cl_mem & Kinv , cl_mem & planes_n , cl_mem & planes_d ,
+                      cl_mem & Ip , cl_mem & Gp , cl_mem & Census , cl_mem & Kinv , cl_mem & planes_n , cl_mem & planes_d ,
                       OpenCLWrapper & wrapper ,
                       cl_kernel & cost_kernel_full ,
                       cl_kernel & cost_kernel_red ,

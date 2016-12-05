@@ -1,5 +1,6 @@
 #define MAX_COST_PM 10e6 
 #define MAX_COST_NCC 2.0f 
+#define MAX_COST_CENSUS 10e4
 
 #define WINDOW_INCREMENT 2 
 #define WINDOW_SIZE 15
@@ -433,7 +434,307 @@ void compute_homography( const float * R ,
   mat_mul_33( Kother , tmp , H ) ; 
 }
 
+/*
+// Compute census transform of an image 
+__kernel census_transform( read_only image2d_t intens , 
+                           global * unsigned long outCensus ) 
+{
+  const sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
 
+  const int width = get_image_width( intens ) ;
+  const int height = get_image_height( intens ) ;
+
+  const int2 pos = (int2)( get_global_id(0) , get_global_id(1) ) ;
+  const int pixel_idx = pos.y * width + pos.x ; 
+
+  if( pos.x < 0 || pos.y < 0 || pos.x >= width || pos.y >= height )
+  {
+    return ; 
+  }
+
+  const int half_w = 4 ; // 9 x 7 window for a 64 bit string 
+  const int half_h = 3 ; // 
+
+  float center = read_imagef( intens , sampler , pos ).x ; 
+
+  unsigned long distance = 0 ; 
+
+  for( int y = pos.y - half_h ; y <= pos.y + half_h ; ++y ) 
+  {
+    for( int x = pos.x - half_w ; x <= pos.x + half_w ; ++x )
+    {
+      if( y == pos.y && x == pos.x )
+      {
+        continue ; 
+      }
+
+      const unsigned long val = read_imagef( intens , sampler , (int2)( x , y ) ).x < center ; 
+
+      distance <<= 1 ;
+      distance |= val & 0x1 ;      
+    }
+  }
+  outCensus[ pixel_idx ] = distance ; 
+}
+*/
+
+// Compute value to a probabilistic value 
+float proba( const float value , const float lambda )
+{
+  return 1.0f - exp( - value / lambda ) ; 
+}
+
+// Weight for pixels 
+float w( const float delta_col , 
+         const float delta_dist , 
+         const float lambda_color , 
+         const float lambda_dist )
+{
+  return exp( -( delta_col / lambda_color + delta_dist / lambda_dist ) ) ; 
+}
+
+// Census 
+void compute_pixel_cost_Census_indiv( const int2 pos , 
+                                      const int2 delta_pos , // Delta position to get the plane 
+                                      read_only image2d_t intens_P , 
+                                      read_only image2d_t intens_Q , 
+                                      const global unsigned long * census_P , 
+                                      const global unsigned long * census_Q , 
+                                      // The planes 
+                                      const global float * planes_n , 
+                                      const global float * planes_d , 
+                                      // The stereo rig 
+                                      const global float * _R ,
+                                      const global float * _t ,
+                                      const global float * _Kref_inv ,
+                                      const global float * _Kother , 
+                                      // The output cost image 
+                                      global float * outCost )
+{
+  const sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
+  const int window_size = WINDOW_SIZE ; 
+  const int half_w = window_size / 2 ;
+  
+  const int p_width = get_image_width( intens_P ) ;
+  const int p_height = get_image_height( intens_P ) ;
+
+  const int q_width = get_image_width( intens_Q ) ;
+  const int q_height = get_image_height( intens_Q ) ; 
+
+  // Position of the pixel to compute (x,y)
+  // Index in the input/output arrays 
+  const int pixel_idx = pos.y * p_width + pos.x ; 
+  const int2 plane_pos = pos + delta_pos ;
+  const int plane_idx = plane_pos.y * p_width + plane_pos.x ; 
+
+  if( plane_pos.x < 0 || plane_pos.y < 0 || plane_pos.x >= p_width || plane_pos.y >= p_height )
+  {
+    outCost[ pixel_idx ] = MAX_COST_CENSUS ; 
+    return ; 
+  }
+
+  // Compute homography for this pixel 
+  float H[9] ;
+  float plane_n[3] ;
+  const float plane_d = planes_d[ plane_idx ] ;
+  float R[9] , t[3] , Kref_inv[9] , Kother[9] ;
+  // Copy matrices from global to private memory  
+  R[0] = _R[0] ; R[1] = _R[1] ; R[2] = _R[2] ;
+  R[3] = _R[3] ; R[4] = _R[4] ; R[5] = _R[5] ;
+  R[6] = _R[6] ; R[7] = _R[7] ; R[8] = _R[8] ; 
+  //
+  t[0] = _t[0] ; t[1] = _t[1] ; t[2] = _t[2] ;
+  //
+  Kref_inv[0] = _Kref_inv[0] ; Kref_inv[1] = _Kref_inv[1] ; Kref_inv[2] = _Kref_inv[2] ;
+  Kref_inv[3] = _Kref_inv[3] ; Kref_inv[4] = _Kref_inv[4] ; Kref_inv[5] = _Kref_inv[5] ;
+  Kref_inv[6] = _Kref_inv[6] ; Kref_inv[7] = _Kref_inv[7] ; Kref_inv[8] = _Kref_inv[8] ; 
+  // 
+  Kother[0] = _Kother[0] ; Kother[1] = _Kother[1] ; Kother[2] = _Kother[2] ;
+  Kother[3] = _Kother[3] ; Kother[4] = _Kother[4] ; Kother[5] = _Kother[5] ;
+  Kother[6] = _Kother[6] ; Kother[7] = _Kother[7] ; Kother[8] = _Kother[8] ; 
+
+  plane_n[0] = planes_n[ 3 * plane_idx ] ;
+  plane_n[1] = planes_n[ 3 * plane_idx + 1 ] ;
+  plane_n[2] = planes_n[ 3 * plane_idx + 2 ] ; 
+
+  compute_homography( R , t , Kref_inv , Kother , plane_n , plane_d , H ) ;
+
+
+  // Constants for computation 
+  const float lambda_census = 30.0f ; 
+  const float lambda_ad     = 10.0f ; 
+  const float tau = 60.0f ; 
+
+  float total_cost   = 0.0 ; 
+
+  for( int y = pos.y - half_w ; y <= pos.y + half_w ; y += WINDOW_INCREMENT )
+  {
+    for( int x = pos.x - half_w ; x <= pos.x + half_w ; x += WINDOW_INCREMENT )
+    {
+      const int2 p = (int2)( x , y ); 
+      
+      if( p.x < 0 || p.x >= p_width || p.y < 0 || p.y >= p_height )
+        {
+          outCost[ pixel_idx ] = MAX_COST_CENSUS ; 
+          return ; 
+        }
+
+      const int2 q = pixel_position( p , H ) ; 
+
+      if( q.x < 0 || q.x >= q_width || q.y < 0 || q.y >= q_height )
+      {
+        outCost[ pixel_idx ] = MAX_COST_CENSUS ; 
+        return ; 
+      }
+      const int q_pixel_idx = q.y * q_width + q.x ; 
+
+      const float cur_color_p = read_imagef( intens_P , sampler , p ).x ;
+      const float cur_color_q = read_imagef( intens_Q , sampler , q ).x ; 
+
+      // AD cost 
+      const float cur_ad = min( tau , 255.0f * fabs( cur_color_p - cur_color_q ) ) ;
+      // Census cost 
+      const int cur_census = popcount( census_P[ pixel_idx ] ^ census_Q[ q_pixel_idx ] ) ;
+
+      total_cost += ( proba( cur_census , lambda_census ) + proba( cur_ad , lambda_ad ) ) ;
+    }
+  }
+
+  outCost[ pixel_idx ] = total_cost ;
+}
+
+
+__kernel void compute_pixel_cost_Census_red( global int * delta_pos ,
+                                          read_only image2d_t intens_P , 
+                                          read_only image2d_t intens_Q , 
+                                          const global unsigned long * census_P , 
+                                          const global unsigned long * census_Q , 
+                                          // The planes 
+                                          const global float * planes_n , 
+                                          const global float * planes_d , 
+                                          // The stereo rig 
+                                          const global float * _R ,
+                                          const global float * _t ,
+                                          const global float * _Kref_inv ,
+                                          const global float * _Kother , 
+                                          // The output cost image 
+                                          global float * outCost )
+{
+  const int2 pos = (int2)( get_global_id(0) , get_global_id(1) ) ;
+  // Handle out of image size 
+  const int width = get_image_width( intens_P ) ;
+  const int height = get_image_height( intens_P ) ;
+
+  if( pos.x >= width || pos.y >= height || pos.x < 0 || pos.y < 0 )
+  {
+    return ; 
+  }
+
+
+  /*
+     X . X 
+     . X . 
+     X . X 
+  */
+
+  const bool do_computation = ( pos.y % 2 == 0 && pos.x % 2 == 0 ) || 
+                              ( pos.y % 2 == 1 && pos.x % 2 == 1 ) ;
+
+  if( do_computation )
+  {
+    const int2 dp = (int2)( delta_pos[0] , delta_pos[1] ) ; 
+    compute_pixel_cost_Census_indiv( pos , dp , intens_P , intens_Q , census_P , census_Q , planes_n , planes_d , _R , _t , _Kref_inv , _Kother , outCost ) ;
+  }
+  else 
+  {
+    outCost[ pos.y * width + pos.x ] = MAX_COST_CENSUS ;     
+  }
+}
+
+
+__kernel void compute_pixel_cost_Census_black( global int * delta_pos , 
+                                            read_only image2d_t intens_P , 
+                                            read_only image2d_t intens_Q , 
+                                            const global unsigned long * census_P , 
+                                            const global unsigned long * census_Q , 
+                                            // The planes 
+                                            const global float * planes_n , 
+                                            const global float * planes_d , 
+                                            // The stereo rig 
+                                            const global float * _R ,
+                                            const global float * _t ,
+                                            const global float * _Kref_inv ,
+                                            const global float * _Kother , 
+                                            // The output cost image 
+                                            global float * outCost )
+{
+  const int2 pos = (int2)( get_global_id(0) , get_global_id(1) ) ;
+
+  // Handle out of image size 
+  const int width = get_image_width( intens_P ) ;
+  const int height = get_image_height( intens_P ) ;
+
+  if( pos.x >= width || pos.y >= height || pos.x < 0 || pos.y < 0 )
+  {
+    return ; 
+  }
+
+  /*
+     . X . 
+     X . X 
+     . X . 
+  */
+  const bool do_computation = ( pos.y % 2 == 0 && pos.x % 2 == 1 ) || 
+                              ( pos.y % 2 == 1 && pos.x % 2 == 0 ) ;
+
+  if( do_computation )
+  {
+    const int2 dp = (int2)( delta_pos[0] , delta_pos[1] ) ; 
+    compute_pixel_cost_Census_indiv( pos , dp , intens_P , intens_Q , census_P , census_Q , planes_n , planes_d , _R , _t , _Kref_inv , _Kother , outCost ) ;
+  }
+  else 
+  {
+    outCost[ pos.y * width + pos.x ] = MAX_COST_CENSUS ;     
+  }
+}
+
+
+__kernel void compute_pixel_cost_Census( read_only image2d_t intens_P , 
+                                      read_only image2d_t intens_Q , 
+                                      const global unsigned long * census_P , 
+                                      const global unsigned long * census_Q , 
+                                      // The planes 
+                                      global float * planes_n , 
+                                      global float * planes_d , 
+                                      // The stereo rig 
+                                      global float * _R ,
+                                      global float * _t ,
+                                      global float * _Kref_inv ,
+                                      global float * _Kother , 
+                                      // The output cost image 
+                                      global float * outCost )
+{
+  const int2 pos = (int2)( get_global_id(0) , get_global_id(1) ) ;
+
+  // Handle out of image size 
+  const int width = get_image_width( intens_P ) ;
+  const int height = get_image_height( intens_P ) ;
+
+  // Handle out of image size 
+  if( pos.x >= width || pos.y >= height || pos.x < 0 || pos.y < 0 )
+  {
+    return ; 
+  }
+  const int2 delta_pos = (int2)( 0 , 0 ) ; 
+
+  compute_pixel_cost_Census_indiv( pos , delta_pos , intens_P , intens_Q , census_P , census_Q ,
+                                planes_n , planes_d , 
+                                _R , _t , _Kref_inv , _Kother , outCost ) ;
+}
+
+
+
+/// NCC 
 void compute_pixel_cost_NCC_indiv( const int2 pos , 
                                    const int2 delta_pos , // Delta position to get the plane 
                                       read_only image2d_t intens_P , 
@@ -1207,7 +1508,9 @@ __kernel void compute_new_plane( global float * rnds , global float * cur_depth 
   const float u1 = rnds[ pixel_idx_4 ] ;
   const float u2 = rnds[ pixel_idx_4 + 1 ] ;
   const float u3 = rnds[ pixel_idx_4 + 2 ] ;
+  /*
   const float u4 = rnds[ pixel_idx_4 + 3 ] ;
+  */
   // The camera projection matrix 
   const float camP[12] = { _camP[0] , _camP[1] , _camP[2] , _camP[3] , 
                            _camP[4] , _camP[5] , _camP[6] , _camP[7] ,
@@ -1242,7 +1545,7 @@ __kernel void compute_new_plane( global float * rnds , global float * cur_depth 
   */
 
   const float4 dir   = compute_view_direction( camP , camMinv , camPos , pos ) ;
-  float4 new_n = UniformSampleConeAroundNormal( u1 , u2 , cos_theta_max , cur_n ) ;  
+  float4 new_n = UniformSampleConeAroundNormal( u2 , u3 , cos_theta_max , cur_n ) ;  
   // float4 new_n = normalize( cur_n + (float4)( dx , dy , dz , 0.0f ) ) ;
 
   /*

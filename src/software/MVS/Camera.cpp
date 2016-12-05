@@ -71,7 +71,9 @@ namespace MVS
       ar( m_t ) ;
       ar( m_C ) ;
       ar( m_P ) ;
+      ar( m_P_scaled ) ;
       ar( m_M_inv ) ;
+      ar( m_M_inv_scaled ) ;
       ar( m_img_path ) ;
       ar( m_cam_dims ) ;
       ar( m_ground_truth ) ;
@@ -114,7 +116,9 @@ namespace MVS
       ar( m_t ) ;
       ar( m_C ) ;
       ar( m_P ) ;
+      ar( m_P_scaled ) ;
       ar( m_M_inv ) ;
+      ar( m_M_inv_scaled ) ;
       ar( m_img_path ) ;
       ar( m_cam_dims ) ;
       ar( m_ground_truth ) ;
@@ -193,6 +197,14 @@ namespace MVS
         tmp.m_intrinsic = const_cast<openMVG::cameras::IntrinsicBase *>( intrinsic ) ;
         openMVG::P_From_KRt( tmp.m_K , tmp.m_R , tmp.m_t , &tmp.m_P ) ;
 
+        for( int scale = 0 ; scale < 5 ; ++scale )
+        {
+          const openMVG::Mat3 & cur_K = tmp.m_K_scaled[ scale ] ;
+          openMVG::Mat34 P ;
+          openMVG::P_From_KRt( cur_K , tmp.m_R , tmp.m_t , &P ) ;
+          tmp.m_P_scaled.push_back( P ) ;
+        }
+
         openMVG::Mat3 M ;
         for( int i = 0 ; i < 3 ; ++i )
         {
@@ -202,6 +214,21 @@ namespace MVS
           }
         }
         tmp.m_M_inv = M.inverse() ;
+
+        for( int scale = 0 ; scale < 5 ; ++scale )
+        {
+          const openMVG::Mat34 & P = tmp.m_P_scaled[ scale ] ;
+          for( int i = 0 ; i < 3 ; ++i )
+          {
+            for( int j = 0 ; j < 3 ; ++j )
+            {
+              M( i , j ) = P( i , j ) ;
+            }
+          }
+
+          tmp.m_M_inv_scaled.push_back( M.inverse() ) ;
+        }
+
 
         cams.push_back( tmp ) ;
         map_view_id[ view ] = id ;
@@ -256,15 +283,6 @@ namespace MVS
         }
       }
     }
-
-    /*
-    for( size_t i = 0 ; i < cams.size() ; ++i )
-    {
-      const Camera & cur_cam = cams[i] ;
-
-      std::cerr << "depth : " << cur_cam.m_min_depth << "," << cur_cam.m_max_depth << std::endl ;
-    }
-    */
 
     // Compute neighbors (todo: use a more robust scheme) - shen, goesle, bailer, ...
     const double aRadMin = openMVG::D2R( params.MinimumViewAngle() ) ;
@@ -382,9 +400,10 @@ namespace MVS
            m_P( 2 , 3 ) ;
   }
 
-  double Camera::DepthDisparityConversion( const double d ) const
+  double Camera::DepthDisparityConversion( const double d , const int scale ) const
   {
-    return m_K( 0, 0 ) * m_mean_baseline / d ;
+    const openMVG::Mat3 & K = ( scale == -1 ) ? m_K : m_K_scaled[ scale ] ;
+    return K( 0, 0 ) * m_mean_baseline / d ;
   }
 
   double Camera::DepthDisparityConversion( const double d , const double baseline ) const
@@ -427,21 +446,6 @@ namespace MVS
 
 
   /*
-  openMVG::Mat3 HomographyTransformation( const openMVG::Mat3 & Ri , const openMVG::Vec3 & Ci , const openMVG::Mat3 Ki ,
-                                        const openMVG::Mat3 & Rj , const openMVG::Vec3 & Cj , const openMVG::Mat3 Kj ,
-                                        const openMVG::Vec3 & n , const double d )
-  {
-  return Kj * ( Rj * Ri.inverse() - ( Rj * ( Ci - Cj ) * n.transpose() ) / d ) * Ki.inverse() ;
-  }
-
-  openMVG::Mat3 HomographyTransformation( const Camera & ci , const Camera & cj , const openMVG::Vec3 & n , const double d )
-  {
-  return HomographyTransformation( ci.m_R , ci.m_C , ci.m_K , cj.m_R , cj.m_C , cj.m_K , n , d ) ;
-  }
-  */
-
-
-  /*
    * @param K Input intrinsic matrix
    * @brief scale factor ( 1 -> No change, else / 2^scale )
    */
@@ -466,20 +470,23 @@ namespace MVS
     return res ;
   }
 
-  openMVG::Vec3 Camera::Get3dPoint( const double x , const double y ) const
+  openMVG::Vec3 Camera::Get3dPoint( const double x , const double y , const int scale ) const
   {
     openMVG::Vec3 pt ;
 
-    pt[0] = x - m_P( 0 , 3 ) ;
-    pt[1] = y - m_P( 1 , 3 ) ;
-    pt[2] = 1.0 - m_P( 2 , 3 ) ;
+    const openMVG::Mat34 & P    = ( scale == -1 ) ? m_P : m_P_scaled[ scale ] ;
+    const openMVG::Mat3 & M_inv = ( scale == -1 ) ? m_M_inv : m_M_inv_scaled[ scale ] ;
 
-    return m_M_inv * pt ;
+    pt[0] = x - P( 0 , 3 ) ;
+    pt[1] = y - P( 1 , 3 ) ;
+    pt[2] = 1.0 - P( 2 , 3 ) ;
+
+    return M_inv * pt ;
   }
 
-  openMVG::Vec3 Camera::GetViewVector( const double x , const double y ) const
+  openMVG::Vec3 Camera::GetViewVector( const double x , const double y , const int scale ) const
   {
-    return ( Get3dPoint( x , y ) - m_C ).normalized() ;
+    return ( Get3dPoint( x , y , scale ) - m_C ).normalized() ;
   }
 
   /**
@@ -493,7 +500,7 @@ namespace MVS
   }
 
 
-  double ComputeDepth( const openMVG::Vec4 & plane , const int id_row , const int id_col , const Camera & cam )
+  double ComputeDepth( const openMVG::Vec4 & plane , const int id_row , const int id_col , const Camera & cam , const int scale )
   {
     const openMVG::Vec3 plane_n( plane[0] , plane[1] , plane[2] ) ;
     const double plane_d = plane[3] ;
@@ -516,7 +523,7 @@ namespace MVS
     return Clamp( openMVG::Depth( cam.m_R , cam.m_t , ptX ) , cam.m_min_depth , cam.m_max_depth ) ;
 #else
 
-    return Clamp( DepthFromPlane( cam , plane_n , plane_d , id_col , id_row ) , 0.0 , cam.m_max_depth * 1.3 ) ;
+    return Clamp( DepthFromPlane( cam , plane_n , plane_d , id_col , id_row , scale ) , 0.0 , cam.m_max_depth * 1.3 ) ;
 #endif
   }
 

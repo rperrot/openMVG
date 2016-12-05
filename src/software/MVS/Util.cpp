@@ -1,11 +1,24 @@
 #include "Util.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <fstream>
+#include <locale>
 #include <iostream>
 
 namespace MVS
 {
+  /**
+  * @brief Convert a string to a lowercase form
+  */
+  std::string to_lower( const std::string & str )
+  {
+    std::string res = str ;
+    std::transform( str.begin(), str.end(), res.begin(), ::tolower ) ;
+    return res ;
+  }
+
+
   std::string GetFileContent( const std::string &path )
   {
     std::ifstream file( path ) ;

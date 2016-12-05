@@ -23,6 +23,12 @@ namespace MVS
     */
     Camera( const std::string & path ) ;
 
+    Camera( const Camera & cam ) = default ;
+    Camera( Camera && cam ) = default ;
+
+    Camera & operator=( const Camera & src ) = default ;
+    Camera & operator=( Camera && src ) = default;
+
     /**
     * @brief Save binary data to a path
     * @param path Path where data is saved
@@ -63,7 +69,7 @@ namespace MVS
     * @param d Depth/disparity
     * @return Disparity/Depth
     */
-    double DepthDisparityConversion( const double d ) const ;
+    double DepthDisparityConversion( const double d , const int scale = -1 ) const ;
 
     /**
     * @brief Convert disparity and depth
@@ -85,7 +91,7 @@ namespace MVS
     * @param y pixel y-position
     * @return 3d point width depth = 1
     */
-    openMVG::Vec3 Get3dPoint( const double x , const double y ) const ;
+    openMVG::Vec3 Get3dPoint( const double x , const double y , const int scale = -1 ) const ;
 
     /**
     * @brief Get a view direction through a pixel
@@ -93,7 +99,7 @@ namespace MVS
     * @param y pixel y-position
     * @return View direction passing through a pixel
     */
-    openMVG::Vec3 GetViewVector( const double x , const double y ) const ;
+    openMVG::Vec3 GetViewVector( const double x , const double y , const int scale = -1 ) const ;
 
     /**
     * @brief Get intrinsic matrix at a specified scale
@@ -119,8 +125,12 @@ namespace MVS
 
     // Projection matrix
     openMVG::Mat34 m_P ;
+    std::vector< openMVG::Mat34 > m_P_scaled ;
+
+
     // Inverse of rotational part of Projection matrix
     openMVG::Mat3 m_M_inv ;
+    std::vector< openMVG::Mat3 > m_M_inv_scaled ;
 
     // source image
     std::string m_img_path ;
@@ -223,14 +233,20 @@ namespace MVS
   * @param y Pixel y position
   * @return depth
   */
-  static inline double DepthFromPlane( const MVS::Camera & cam , const openMVG::Vec3 & n , const double d , const double x , const double y )
+  static inline double DepthFromPlane( const MVS::Camera & cam ,
+                                       const openMVG::Vec3 & n ,
+                                       const double d ,
+                                       const double x , const double y ,
+                                       const int scale = -1 )
   {
-    const double fx = cam.m_K( 0 , 0 ) ;
-    const double fy = cam.m_K( 1 , 1 ) ;
+    const openMVG::Mat3 & K = ( scale == -1 ) ? cam.m_K : cam.m_K_scaled[ scale ] ;
+
+    const double fx = K( 0 , 0 ) ;
+    const double fy = K( 1 , 1 ) ;
     const double alpha = fx / fy ;
 
-    const double u = cam.m_K( 0 , 2 ) ;
-    const double v = cam.m_K( 1 , 2 ) ;
+    const double u = K( 0 , 2 ) ;
+    const double v = K( 1 , 2 ) ;
 
     return -d * fx / ( n[0] * ( x - u ) + n[1] * ( y - v ) * alpha + n[2] * fx ) ;
   }
@@ -246,14 +262,17 @@ namespace MVS
   */
   static inline double GetPlaneD( const MVS::Camera & cam ,
                                   const int id_row , const int id_col , const double depth ,
-                                  const openMVG::Vec3 & n )
+                                  const openMVG::Vec3 & n , const int scale = -1 )
   {
-    openMVG::Vec3 pt ;
-    pt[0] = depth * id_col - cam.m_P( 0 , 3 ) ;
-    pt[1] = depth * id_row - cam.m_P( 1 , 3 ) ;
-    pt[2] = depth - cam.m_P( 2 , 3 ) ;
+    const openMVG::Mat34 & P = ( scale == -1 ) ? cam.m_P : cam.m_P_scaled[ scale ] ;
+    const openMVG::Mat3 & M_inv = ( scale == -1 ) ? cam.m_M_inv : cam.m_M_inv_scaled[ scale ] ;
 
-    openMVG::Vec3 ptX = cam.m_M_inv * pt ;
+    openMVG::Vec3 pt ;
+    pt[0] = depth * id_col - P( 0 , 3 ) ;
+    pt[1] = depth * id_row - P( 1 , 3 ) ;
+    pt[2] = depth - P( 2 , 3 ) ;
+
+    openMVG::Vec3 ptX = M_inv * pt ;
 
     return - ptX.dot( n ) ;
   }
@@ -267,7 +286,7 @@ namespace MVS
   * @return depth value at specified pixel
   * @note This computes intersection between ray through the pixel and the plane, then get final depth
   */
-  double ComputeDepth( const openMVG::Vec4 & plane , const int id_row , const int id_col , const Camera & cam ) ;
+  double ComputeDepth( const openMVG::Vec4 & plane , const int id_row , const int id_col , const Camera & cam , const int scale = -1 ) ;
 
 }
 

@@ -1,5 +1,6 @@
 #include "Camera.hpp"
 #include "DepthMap.hpp"
+#include "DepthMapComputationCommon.hpp"
 #include "DepthMapComputationCPU.hpp"
 #include "DepthMapComputationOpenCL.hpp"
 #include "DepthMapComputationParameters.hpp"
@@ -18,7 +19,7 @@
 
 #define MULTISCALE
 #define USE_OPENCL
-// #define EXPORT_INTERMEDIATE_RESULT
+#define EXPORT_INTERMEDIATE_RESULT
 
 
 #ifdef EXPORT_INTERMEDIATE_RESULT
@@ -112,6 +113,8 @@ static inline std::string GetRefinementNormalName( const int iteration , const i
 #endif
 
 
+
+
 /**
 * @brief Create directory structure for the project
 * @param cams The list of input cameras
@@ -172,14 +175,18 @@ void PrepareOutputDirectory( const std::vector< MVS::Camera > & cams ,
       }
     }
 
+    const MVS::ImageLoadType load_type = MVS::ComputeLoadType( params.Metric() ) ;
+
+
     // Create images and save it
-    MVS::Image cur_img( cams[ id_cam ].m_img_path , params.Scale() , cams[ id_cam ].m_intrinsic ) ;
+    MVS::Image cur_img( cams[ id_cam ].m_img_path , params.Scale() , cams[ id_cam ].m_intrinsic , load_type ) ;
     // Grayscale path
     const std::string color_path     = params.GetColorPath( id_cam ) ;
     const std::string grayscale_path = params.GetGrayscalePath( id_cam ) ;
     const std::string gradient_path  = params.GetGradientPath( id_cam ) ;
+    const std::string census_path    = params.GetCensusPath( id_cam ) ;
 
-    cur_img.Save( color_path , grayscale_path , gradient_path ) ;
+    cur_img.Save( color_path , grayscale_path , gradient_path , census_path , load_type ) ;
   }
   std::cout << "Preparation done" << std::endl ;
 }
@@ -235,28 +242,33 @@ void ComputeMultipleScaleDepthMap( MVS::Camera & cam ,
   }
 
   const double MAX_COST = MVS::DepthMapComputationParameters::MetricMaxCostValue( params.Metric() ) ;
+  const MVS::ImageLoadType load_type = MVS::ComputeLoadType( params.Metric() ) ;
 
 #ifdef USE_OPENCL
   // Build openCL object
   MVS::OpenCLWrapper clWObject( MVS::OpenCLWrapper::OPENCL_DEVICE_GPU ) ;
-  std::string cl_kernel_path   = std::string( MVS_BUILD_DIR ) + std::string( "/opencl_kernels.cl" ) ;
-  cl_program cl_pgm            = clWObject.CreateProgramFromSource( MVS::GetFileContent( cl_kernel_path ) ) ;
-  cl_kernel krn_cost_pm        = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_PM" ) ;
-  cl_kernel krn_cost_ncc       = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_NCC" ) ;
-  cl_kernel krn_sum_kernel     = clWObject.GetKernelFromName( cl_pgm , "store_costs" ) ;
-  cl_kernel krn_sort_n_store   = clWObject.GetKernelFromName( cl_pgm , "sort_and_store_costs" ) ;
-  cl_kernel krn_cost_ncc_red   = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_NCC_red" ) ;
-  cl_kernel krn_cost_ncc_black = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_NCC_black" ) ;
-  cl_kernel krn_cost_pm_red    = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_PM_red" ) ;
-  cl_kernel krn_cost_pm_black  = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_PM_black" ) ;
-  cl_kernel krn_update_planes  = clWObject.GetKernelFromName( cl_pgm , "update_plane_wrt_cost" ) ;
-  cl_kernel krn_compute_depth  = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_depth" ) ;
-  cl_kernel krn_update_planes2 = clWObject.GetKernelFromName( cl_pgm , "update_plane_wrt_cost2" ) ;
-  cl_kernel krn_compute_planes = clWObject.GetKernelFromName( cl_pgm , "compute_new_plane" ) ;
+  std::string cl_kernel_path      = std::string( MVS_BUILD_DIR ) + std::string( "/opencl_kernels.cl" ) ;
+  cl_program cl_pgm               = clWObject.CreateProgramFromSource( MVS::GetFileContent( cl_kernel_path ) ) ;
+  cl_kernel krn_cost_pm           = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_PM" ) ;
+  cl_kernel krn_cost_ncc          = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_NCC" ) ;
+  cl_kernel krn_cost_census       = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_Census" ) ;
+  cl_kernel krn_sum_kernel        = clWObject.GetKernelFromName( cl_pgm , "store_costs" ) ;
+  cl_kernel krn_sort_n_store      = clWObject.GetKernelFromName( cl_pgm , "sort_and_store_costs" ) ;
+  cl_kernel krn_cost_ncc_red      = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_NCC_red" ) ;
+  cl_kernel krn_cost_ncc_black    = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_NCC_black" ) ;
+  cl_kernel krn_cost_pm_red       = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_PM_red" ) ;
+  cl_kernel krn_cost_pm_black     = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_PM_black" ) ;
+  cl_kernel krn_cost_census_red   = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_Census_red" ) ;
+  cl_kernel krn_cost_census_black = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_Census_black" ) ;
+  cl_kernel krn_update_planes     = clWObject.GetKernelFromName( cl_pgm , "update_plane_wrt_cost" ) ;
+  cl_kernel krn_compute_depth     = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_depth" ) ;
+  cl_kernel krn_update_planes2    = clWObject.GetKernelFromName( cl_pgm , "update_plane_wrt_cost2" ) ;
+  cl_kernel krn_compute_planes    = clWObject.GetKernelFromName( cl_pgm , "compute_new_plane" ) ;
 
   cl_kernel krn_cost_full ;
   cl_kernel krn_cost_red ;
   cl_kernel krn_cost_black ;
+
 
   // Get the correct kernels
   switch( params.Metric() )
@@ -275,17 +287,28 @@ void ComputeMultipleScaleDepthMap( MVS::Camera & cam ,
       krn_cost_black = krn_cost_pm_black ;
       break ;
     }
+    case MVS::COST_METRIC_CENSUS :
+    {
+      krn_cost_full  = krn_cost_census ;
+      krn_cost_red   = krn_cost_census_red ;
+      krn_cost_black = krn_cost_census_black ;
+      break ;
+    }
   }
 #endif
 
-  for( int scale = start_scale ; scale >= params.Scale() ; --scale )
+  // One more for the last step
+  const int nb_step[] = { 4 , 3 , 3 } ;
+
+  int index = 0 ;
+  for( int scale = start_scale ; scale >= params.Scale() ; --scale , ++index )
   {
     // Compute depth map at given scale
     std::cout << "Depth map computation at scale : " << scale << std::endl ;
 
     // 0 - Load image and its neighboring images at specified scale
-    const MVS::Image reference_image         = MVS::Image( cam.m_img_path , scale , cam.m_intrinsic ) ;
-    const std::vector< MVS::Image > neigh_imgs = LoadNeighborImages( cam , cams , params , scale ) ;
+    const MVS::Image reference_image         = MVS::Image( cam.m_img_path , scale , cam.m_intrinsic , load_type ) ;
+    const std::vector< MVS::Image > neigh_imgs = LoadNeighborImages( cam , cams , params , scale , load_type ) ;
 
     // 1 - Compute Initial cost
     auto start_time = std::chrono::high_resolution_clock::now() ;
@@ -309,7 +332,7 @@ void ComputeMultipleScaleDepthMap( MVS::Camera & cam ,
               << std::endl ;
 
     // 2 - Propagate - Refine
-    for( int id_step = 0 ; id_step < 3 ; ++id_step )
+    for( int id_step = 0 ; id_step < nb_step[ index ] ; ++id_step )
     {
       // 2-1 Propagate
       start_time = std::chrono::high_resolution_clock::now() ;
@@ -393,19 +416,22 @@ void ComputeDepthMap( MVS::Camera & cam ,
 #ifdef USE_OPENCL
   MVS::OpenCLWrapper clWObject( MVS::OpenCLWrapper::OPENCL_DEVICE_GPU ) ;
   std::string cl_kernel_path   = std::string( MVS_BUILD_DIR ) + std::string( "/opencl_kernels.cl" ) ;
-  cl_program cl_pgm            = clWObject.CreateProgramFromSource( MVS::GetFileContent( cl_kernel_path ) ) ;
-  cl_kernel krn_cost_pm        = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_PM" ) ;
-  cl_kernel krn_cost_ncc       = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_NCC" ) ;
-  cl_kernel krn_sum_kernel     = clWObject.GetKernelFromName( cl_pgm , "store_costs" ) ;
-  cl_kernel krn_sort_n_store   = clWObject.GetKernelFromName( cl_pgm , "sort_and_store_costs" ) ;
-  cl_kernel krn_cost_ncc_red   = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_NCC_red" ) ;
-  cl_kernel krn_cost_ncc_black = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_NCC_black" ) ;
-  cl_kernel krn_cost_pm_red    = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_PM_red" ) ;
-  cl_kernel krn_cost_pm_black  = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_PM_black" ) ;
-  cl_kernel krn_update_planes  = clWObject.GetKernelFromName( cl_pgm , "update_plane_wrt_cost" ) ;
-  cl_kernel krn_compute_depth  = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_depth" ) ;
-  cl_kernel krn_update_planes2 = clWObject.GetKernelFromName( cl_pgm , "update_plane_wrt_cost2" ) ;
-  cl_kernel krn_compute_planes = clWObject.GetKernelFromName( cl_pgm , "compute_new_plane" ) ;
+  cl_program cl_pgm               = clWObject.CreateProgramFromSource( MVS::GetFileContent( cl_kernel_path ) ) ;
+  cl_kernel krn_cost_pm           = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_PM" ) ;
+  cl_kernel krn_cost_ncc          = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_NCC" ) ;
+  cl_kernel krn_cost_census       = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_Census" ) ;
+  cl_kernel krn_sum_kernel        = clWObject.GetKernelFromName( cl_pgm , "store_costs" ) ;
+  cl_kernel krn_sort_n_store      = clWObject.GetKernelFromName( cl_pgm , "sort_and_store_costs" ) ;
+  cl_kernel krn_cost_ncc_red      = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_NCC_red" ) ;
+  cl_kernel krn_cost_ncc_black    = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_NCC_black" ) ;
+  cl_kernel krn_cost_pm_red       = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_PM_red" ) ;
+  cl_kernel krn_cost_pm_black     = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_PM_black" ) ;
+  cl_kernel krn_cost_census_red   = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_Census_red" ) ;
+  cl_kernel krn_cost_census_black = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_Census_black" ) ;
+  cl_kernel krn_update_planes     = clWObject.GetKernelFromName( cl_pgm , "update_plane_wrt_cost" ) ;
+  cl_kernel krn_compute_depth     = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_depth" ) ;
+  cl_kernel krn_update_planes2    = clWObject.GetKernelFromName( cl_pgm , "update_plane_wrt_cost2" ) ;
+  cl_kernel krn_compute_planes    = clWObject.GetKernelFromName( cl_pgm , "compute_new_plane" ) ;
 
   cl_kernel krn_cost_full ;
   cl_kernel krn_cost_red ;
@@ -426,6 +452,13 @@ void ComputeDepthMap( MVS::Camera & cam ,
       krn_cost_full  = krn_cost_pm ;
       krn_cost_red   = krn_cost_pm_red ;
       krn_cost_black = krn_cost_pm_black ;
+      break ;
+    }
+    case MVS::COST_METRIC_CENSUS :
+    {
+      krn_cost_full  = krn_cost_census ;
+      krn_cost_red   = krn_cost_census_red ;
+      krn_cost_black = krn_cost_census_black ;
       break ;
     }
   }
@@ -565,7 +598,7 @@ int main( int argc , char ** argv )
   int kMaxViewSelectionNb = 9 ; // Maximum of neighbors for view selection
   int kMaxViewPerCost = 3 ; //
 
-  MVS::cost_metric kMetric = MVS::COST_METRIC_NCC ;
+  MVS::cost_metric kMetric = MVS::COST_METRIC_CENSUS ;
 
   cmd.add( make_option( 'i', sSfM_Data_Filename, "input_file" ) ) ;
   cmd.add( make_option( 'o', sOutDir, "outdir" ) ) ;
@@ -583,25 +616,32 @@ int main( int argc , char ** argv )
 
   cmd.process( argc, argv );
 
-  if( sCostMetric == "ncc" || sCostMetric == "NCC" )
+  std::cerr << "metric : " << sCostMetric << std::endl ;
+  std::cerr << "to_lower : " << MVS::to_lower( sCostMetric ) << std::endl ;
+
+  if( MVS::to_lower( sCostMetric ) == "ncc" )
   {
     kMetric = MVS::COST_METRIC_NCC ;
   }
-  else if( sCostMetric == "pm" || sCostMetric == "PM" )
+  else if( MVS::to_lower( sCostMetric ) == "pm" )
   {
     kMetric = MVS::COST_METRIC_PM ;
+  }
+  else if( MVS::to_lower( sCostMetric ) == "census" )
+  {
+    kMetric = MVS::COST_METRIC_CENSUS ;
   }
   else
   {
     std::cerr << "Unknown metric (PM of NCC are the only valid choices)" << std::endl ;
-    std::cerr << "Switch back to NCC metric " << std::endl ;
+    std::cerr << "Switch back to census metric " << std::endl ;
   }
 
   std::cout << "You called " << std::endl ;
   std::cout << "input                   : " << sSfM_Data_Filename << std::endl ;
   std::cout << "outdir                  : " << sOutDir << std::endl ;
   std::cout << "scale                   : " << kScale << std::endl ;
-  std::cout << "metric                  : " << ( ( kMetric == MVS::COST_METRIC_PM ) ? "PM " : "NCC" ) << std::endl ;
+  std::cout << "metric                  : " << ( ( kMetric == MVS::COST_METRIC_PM ) ? "PM " : ( kMetric == MVS::COST_METRIC_CENSUS ) ? "census" : "NCC" ) << std::endl ;
   std::cout << "alpha                   : " << kAlpha << std::endl ;
   std::cout << "Tau I                   : " << kTauCol << std::endl ;
   std::cout << "Tau G                   : " << kTauGrad << std::endl ;
@@ -644,6 +684,7 @@ int main( int argc , char ** argv )
     const std::string color_path     = params.GetColorPath( id_cam ) ;
     const std::string grayscale_path = params.GetGrayscalePath( id_cam ) ;
     const std::string gradient_path  = params.GetGradientPath( id_cam ) ;
+    const std::string census_path    = params.GetCensusPath( id_cam ) ;
 
     cams[ id_cam ].Save( cur_cam_path ) ;
 
@@ -654,7 +695,8 @@ int main( int argc , char ** argv )
 #ifdef MULTISCALE
       ComputeMultipleScaleDepthMap( cams[ id_cam ] , cams , params , params.Scale() + 2 , cur_depth_path ) ;
 #else
-      const MVS::Image cur_image( color_path , grayscale_path , gradient_path ) ;
+      const MVS::ImageLoadType load_type = MVS::ComputeLoadType( params.Metric() ) ;
+      const MVS::Image cur_image( color_path , grayscale_path , gradient_path , census_path , load_type ) ;
       ComputeDepthMap( cams[ id_cam ] , cams , params , cur_image , cur_depth_path ) ;
 #endif
     }

@@ -3,6 +3,7 @@
 
 #include "openMVG/numeric/numeric.h"
 
+#include <bitset>
 #include <cmath>
 #include <string>
 
@@ -21,6 +22,33 @@
 
 namespace MVS
 {
+  /**
+  * @brief Convert a string to a lowercase form
+  */
+  std::string to_lower( const std::string & str ) ;
+
+  // Count the number of bit set to one
+  // @see wikipedia page hamming_weight
+  // @todo enable popcnt on CPU that supports it
+  static inline int popcount( const unsigned long long val )
+  {
+    return std::bitset< 64 >( val ).count() ;
+    /*
+    static const unsigned long m1  = 0x5555555555555555; //binary: 0101...
+    static const unsigned long m2  = 0x3333333333333333; //binary: 00110011..
+    static const unsigned long m4  = 0x0f0f0f0f0f0f0f0f; //binary:  4 zeros,  4 ones ...
+
+    unsigned long x = val ;
+    x -= (x >> 1) & m1;             //put count of each 2 bits into those 2 bits
+    x = (x & m2) + ((x >> 2) & m2); //put count of each 4 bits into those 4 bits
+    x = (x + (x >> 4)) & m4;        //put count of each 8 bits into those 8 bits
+    x += x >>  8;  //put count of each 16 bits into their lowest 8 bits
+    x += x >> 16;  //put count of each 32 bits into their lowest 8 bits
+    x += x >> 32;  //put count of each 64 bits into their lowest 8 bits
+    return x & 0x7f;
+    */
+  }
+
   /**
   * @brief Clamp value in a given range
   * @param val Value to clamp

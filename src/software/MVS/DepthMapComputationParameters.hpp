@@ -22,7 +22,9 @@ namespace MVS
   {
     COST_METRIC_NCC ,
     COST_METRIC_PM ,
+    COST_METRIC_CENSUS
   } ;
+
 
 
 
@@ -31,6 +33,7 @@ namespace MVS
     // Default values for some costs
     static const double MAX_COST_NCC ;
     static const double MAX_COST_PM ;
+    static const double MAX_COST_CENSUS ;
 
     /**
     * @brief Ctr
@@ -196,6 +199,14 @@ namespace MVS
     * @return Path of the gradient image for the given camera
     */
     std::string GetGradientPath( const int id ) const ;
+
+
+    /**
+    * @brief Get census image path
+    * @param id Id of the image to get
+    * @return Path of the census image for the given camera
+    */
+    std::string GetCensusPath( const int id ) const ;
 
     /**
     * @brief Get camera path

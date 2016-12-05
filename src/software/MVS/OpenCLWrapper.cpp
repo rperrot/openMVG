@@ -451,6 +451,35 @@ namespace MVS
     return res ;
   }
 
+  /**
+   * @brief Create a buffer object (not an image buffer object) from an image
+   */
+  cl_mem OpenCLWrapper::CreateBuffer( const openMVG::image::Image<unsigned long long> & img )
+  {
+    cl_int err ;
+    cl_mem_flags flags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR ;
+
+    cl_ulong * tmp_data = new cl_ulong[ img.Width() * img.Height() ] ;
+    int index = 0 ;
+    for( int y = 0 ; y < img.Height() ; ++y )
+    {
+      for( int x = 0 ; x < img.Width() ; ++x )
+      {
+        tmp_data[ index ] = img( y , x ) ;
+        ++index ;
+      }
+    }
+
+    cl_mem res = clCreateBuffer( m_context , flags , img.Width() * img.Height() * sizeof( cl_ulong ) , ( void* ) tmp_data , &err ) ;
+    if( err != CL_SUCCESS )
+    {
+      std::cerr << "Could not create buffer with Image<Vec4>" << std::endl;
+    }
+    delete[] tmp_data ;
+
+    return res ;
+  }
+
 
 
   void OpenCLWrapper::ClearMemory( cl_mem mem_obj )

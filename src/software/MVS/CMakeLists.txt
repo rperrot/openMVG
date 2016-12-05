@@ -1,5 +1,3 @@
-ADD_DEFINITIONS( -g )
-
 IF(MSVC)
   SET(OPENMVG_SOFTWARE_MVS_BUILD_DIR "${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}")
 ELSE()
@@ -13,6 +11,7 @@ FIND_PACKAGE( OpenCL )
 # DEPTH MAP GENERATION 
 SET( OPENMVG_COMPUTE_DEPTH_MAPS_SOURCES Camera.cpp 
                                         DepthMap.cpp 
+                                        DepthMapComputationCommon.cpp 
                                         DepthMapComputationCPU.cpp 
                                         DepthMapComputationOpenCL.cpp
                                         DepthMapComputationParameters.cpp
@@ -25,6 +24,7 @@ SET( OPENMVG_COMPUTE_DEPTH_MAPS_SOURCES Camera.cpp
 
 SET( OPENMVG_COMPUTE_DEPTH_MAPS_HEADERS Camera.hpp 
                                         DepthMap.hpp 
+                                        DepthMapComputationCommon.hpp 
                                         DepthMapComputationCPU.hpp 
                                         DepthMapComputationOpenCL.hpp
                                         DepthMapComputationParameters.hpp

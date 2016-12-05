@@ -1,6 +1,8 @@
 #include "DepthMapComputationOpenCL.hpp"
 
 #include "Util.hpp"
+#include "DepthMapComputationCommon.hpp"
+
 
 #include <random>
 
@@ -40,7 +42,7 @@ namespace MVS
                       const std::vector< std::pair< openMVG::Mat3 , openMVG::Vec3 > > & stereo_rig ,
                       const DepthMapComputationParameters & params ,
                       const int scale ,
-                      cl_mem & Ip , cl_mem & Gp , cl_mem & Kinv , cl_mem & planes_n , cl_mem & planes_d ,
+                      cl_mem & Ip , cl_mem & Gp , cl_mem & CensusP , cl_mem & Kinv , cl_mem & planes_n , cl_mem & planes_d ,
                       OpenCLWrapper & wrapper ,
                       cl_kernel & cost_kernel_full ,
                       cl_kernel & cost_kernel_red ,
@@ -77,6 +79,7 @@ namespace MVS
     cl_mem delta_plane_idx ;
     bool has_delta_plane = false ;
     bool has_gradient = false ;
+    bool has_census = false ;
     switch( c_type )
     {
       case COST_COMPUTE_RED :
@@ -101,20 +104,25 @@ namespace MVS
       }
     }
 
-    cl_float max_cost = DepthMapComputationParameters::MAX_COST_NCC ;
+    cl_float max_cost = DepthMapComputationParameters::MetricMaxCostValue( params.Metric() ) ;
     switch( params.Metric() )
     {
       case COST_METRIC_NCC :
       {
         has_gradient = false ;
-        max_cost = DepthMapComputationParameters::MAX_COST_NCC ;
+        has_census = false ;
         break ;
       }
       case COST_METRIC_PM :
       {
         has_gradient = true ;
-        max_cost = DepthMapComputationParameters::MAX_COST_PM  ;
+        has_census = false ;
         break ;
+      }
+      case COST_METRIC_CENSUS :
+      {
+        has_gradient = false ;
+        has_census = true ;
       }
     }
 
@@ -130,9 +138,14 @@ namespace MVS
 
       cl_mem Iq = wrapper.CreateImage( other_img.Intensity() , OpenCLWrapper::OPENCL_IMAGE_READ_ONLY ) ;
       cl_mem Gq ;
+      cl_mem CensusQ ;
       if( has_gradient )
       {
         Gq = wrapper.CreateBuffer( other_img.Gradient() ) ;
+      }
+      if( has_census )
+      {
+        CensusQ = wrapper.CreateBuffer( other_img.Census() ) ;
       }
 
       cl_mem Kother = wrapper.CreateBuffer( ( scale == -1 ) ? cur_cam.m_K : cur_cam.m_K_scaled[ scale ] ) ;
@@ -156,6 +169,12 @@ namespace MVS
       {
         clSetKernelArg( cost_kernel , 2 + pad , sizeof( cl_mem ) , & Gp ) ;
         clSetKernelArg( cost_kernel , 3 + pad , sizeof( cl_mem ) , & Gq ) ;
+        pad += 2 ;
+      }
+      if( has_census )
+      {
+        clSetKernelArg( cost_kernel , 2 + pad , sizeof( cl_mem ) , & CensusP ) ;
+        clSetKernelArg( cost_kernel , 3 + pad , sizeof( cl_mem ) , & CensusQ ) ;
         pad += 2 ;
       }
 
@@ -190,6 +209,10 @@ namespace MVS
       if( has_gradient )
       {
         wrapper.ClearMemory( Gq ) ;
+      }
+      if( has_census )
+      {
+        wrapper.ClearMemory( CensusQ ) ;
       }
       wrapper.ClearMemory( Kother ) ;
       wrapper.ClearMemory( R ) ;
@@ -251,14 +274,20 @@ namespace MVS
     const std::pair<int, int> compute_size = std::make_pair( in_width , in_height ) ;
 
     // Load neighbor images
-    const std::vector< Image > neigh_imgs = LoadNeighborImages( reference_cam , params ) ;
+    const ImageLoadType load_type = ComputeLoadType( params.Metric() ) ;
+    const std::vector< Image > neigh_imgs = LoadNeighborImages( reference_cam , params , load_type ) ;
 
     // Get the initial images
     cl_mem Ip = wrapper.CreateImage( image_ref.Intensity() , OpenCLWrapper::OPENCL_IMAGE_READ_ONLY ) ;
     cl_mem Gp ;
+    cl_mem CensusP ;
     if( params.Metric() == COST_METRIC_PM )
     {
       Gp = wrapper.CreateBuffer( image_ref.Gradient() ) ;
+    }
+    if( params.Metric() == COST_METRIC_CENSUS )
+    {
+      CensusP = wrapper.CreateBuffer( image_ref.Census() ) ;
     }
     cl_mem Kinv = wrapper.CreateBuffer( openMVG::Mat3( reference_cam.m_K.inverse() ) ) ;
 
@@ -289,7 +318,7 @@ namespace MVS
     // Now compute cost
     cl_mem outCost = wrapper.CreateBuffer( nb_pixel * sizeof( cl_float ) , OpenCLWrapper::OPENCL_BUFFER_READ_WRITE ) ;
     ComputeCost( outCost , reference_cam , neigh_imgs , cams , stereo_rig , params , -1 ,
-                 Ip , Gp , Kinv , planes_n , planes_d , wrapper ,
+                 Ip , Gp , CensusP , Kinv , planes_n , planes_d , wrapper ,
                  cost_kernel , cost_kernel , cost_kernel ,
                  append_cost_kernel , sort_and_store_cost_kernel ,
                  compute_size ) ;
@@ -298,6 +327,10 @@ namespace MVS
     if( params.Metric() == COST_METRIC_PM )
     {
       wrapper.ClearMemory( Gp ) ;
+    }
+    if( params.Metric() == COST_METRIC_CENSUS )
+    {
+      wrapper.ClearMemory( CensusP ) ;
     }
     wrapper.ClearMemory( planes_d ) ;
     wrapper.ClearMemory( planes_n ) ;
@@ -358,9 +391,14 @@ namespace MVS
     // Get the initial images
     cl_mem Ip = wrapper.CreateImage( image_ref.Intensity() , OpenCLWrapper::OPENCL_IMAGE_READ_ONLY ) ;
     cl_mem Gp ;
+    cl_mem CensusP ;
     if( params.Metric() == COST_METRIC_PM )
     {
       Gp = wrapper.CreateBuffer( image_ref.Gradient() ) ;
+    }
+    if( params.Metric() == COST_METRIC_CENSUS )
+    {
+      CensusP = wrapper.CreateBuffer( image_ref.Census() ) ;
     }
     cl_mem Kinv = wrapper.CreateBuffer( openMVG::Mat3( reference_cam.m_K_inv_scaled[ scale ] ) ) ;
 
@@ -391,7 +429,7 @@ namespace MVS
     // Now compute cost
     cl_mem outCost = wrapper.CreateBuffer( nb_pixel * sizeof( cl_float ) , OpenCLWrapper::OPENCL_BUFFER_READ_WRITE ) ;
     ComputeCost( outCost , reference_cam , neigh_imgs , cams , stereo_rig , params , scale ,
-                 Ip , Gp , Kinv , planes_n , planes_d , wrapper ,
+                 Ip , Gp , CensusP , Kinv , planes_n , planes_d , wrapper ,
                  cost_kernel , cost_kernel , cost_kernel ,
                  append_cost_kernel , sort_and_store_cost_kernel ,
                  compute_size ) ;
@@ -400,6 +438,10 @@ namespace MVS
     if( params.Metric() == COST_METRIC_PM )
     {
       wrapper.ClearMemory( Gp ) ;
+    }
+    if( params.Metric() == COST_METRIC_CENSUS )
+    {
+      wrapper.ClearMemory( CensusP ) ;
     }
     wrapper.ClearMemory( planes_d ) ;
     wrapper.ClearMemory( planes_n ) ;
@@ -455,7 +497,8 @@ namespace MVS
     const std::pair< int , int > compute_size = std::make_pair( in_width , in_height ) ;
 
     // Load images for the neighbors
-    const std::vector< Image > neigh_imgs = LoadNeighborImages( reference_cam , params ) ;
+    const ImageLoadType load_type = ComputeLoadType( params.Metric() );
+    const std::vector< Image > neigh_imgs = LoadNeighborImages( reference_cam , params , load_type ) ;
 
     // (x,y)
     /*
@@ -506,9 +549,14 @@ namespace MVS
     // Get the initial images
     cl_mem Ip = wrapper.CreateImage( image_ref.Intensity() , OpenCLWrapper::OPENCL_IMAGE_READ_ONLY ) ;
     cl_mem Gp ;
+    cl_mem CensusP ;
     if( params.Metric() == COST_METRIC_PM )
     {
       Gp = wrapper.CreateBuffer( image_ref.Gradient() ) ;
+    }
+    if( params.Metric() == COST_METRIC_CENSUS )
+    {
+      CensusP = wrapper.CreateBuffer( image_ref.Census() ) ;
     }
     cl_mem Kinv = wrapper.CreateBuffer( openMVG::Mat3( reference_cam.m_K.inverse() ) ) ;
 
@@ -558,7 +606,7 @@ namespace MVS
       cl_mem delta_plane_idx = wrapper.CreateBuffer( delta_plane ) ;
 
       ComputeCost( cur_cost , reference_cam , neigh_imgs , cams , stereo_rig , params , -1 ,
-                   Ip , Gp , Kinv , best_plane_n , best_plane_d , wrapper ,
+                   Ip , Gp , CensusP , Kinv , best_plane_n , best_plane_d , wrapper ,
                    kernel_red /* unused */ , kernel_red , kernel_black ,
                    append_cost_kernel , sort_and_store_cost_kernel ,
                    compute_size , delta_plane , c_type , &all_costs ) ;
@@ -582,6 +630,10 @@ namespace MVS
     if( params.Metric() == COST_METRIC_PM )
     {
       wrapper.ClearMemory( Gp ) ;
+    }
+    if( params.Metric() == COST_METRIC_CENSUS )
+    {
+      wrapper.ClearMemory( CensusP ) ;
     }
 
 
@@ -717,9 +769,14 @@ namespace MVS
     // Get the initial images
     cl_mem Ip = wrapper.CreateImage( image_ref.Intensity() , OpenCLWrapper::OPENCL_IMAGE_READ_ONLY ) ;
     cl_mem Gp ;
+    cl_mem CensusP ;
     if( params.Metric() == COST_METRIC_PM )
     {
       Gp = wrapper.CreateBuffer( image_ref.Gradient() ) ;
+    }
+    if( params.Metric() == COST_METRIC_CENSUS )
+    {
+      CensusP = wrapper.CreateBuffer( image_ref.Census() ) ;
     }
     cl_mem Kinv = wrapper.CreateBuffer( openMVG::Mat3( reference_cam.m_K_inv_scaled[ scale ] ) ) ;
 
@@ -769,7 +826,7 @@ namespace MVS
       cl_mem delta_plane_idx = wrapper.CreateBuffer( delta_plane ) ;
 
       ComputeCost( cur_cost , reference_cam , neigh_imgs , cams , stereo_rig , params , scale ,
-                   Ip , Gp , Kinv , best_plane_n , best_plane_d , wrapper ,
+                   Ip , Gp , CensusP , Kinv , best_plane_n , best_plane_d , wrapper ,
                    kernel_red /* unused */ , kernel_red , kernel_black ,
                    append_cost_kernel , sort_and_store_cost_kernel ,
                    compute_size , delta_plane , c_type , &all_costs ) ;
@@ -793,6 +850,10 @@ namespace MVS
     if( params.Metric() == COST_METRIC_PM )
     {
       wrapper.ClearMemory( Gp ) ;
+    }
+    if( params.Metric() == COST_METRIC_CENSUS )
+    {
+      wrapper.ClearMemory( CensusP ) ;
     }
 
 
@@ -881,7 +942,8 @@ namespace MVS
                    cl_kernel & compute_new_plane_kernel ) // Compute new planes
   {
     // Load images for the neighbors
-    const std::vector< Image > neigh_imgs = LoadNeighborImages( cam , params ) ;
+    const ImageLoadType load_type = ComputeLoadType( params.Metric() ) ;
+    const std::vector< Image > neigh_imgs = LoadNeighborImages( cam , params , load_type ) ;
     const cl_int in_width  = image_ref.Width() ;
     const cl_int in_height = image_ref.Height() ;
     const cl_int nb_pixel  = in_width * in_height ;
@@ -905,8 +967,8 @@ namespace MVS
     const cl_float min_disparity_f = static_cast<cl_float>( min_disparity ) ;
     const cl_float max_disparity_f = static_cast<cl_float>( max_disparity ) ;
 
-    cl_float theta_max = 45.0f ;
-    cl_float cos_theta_max = std::cos( theta_max ) ;
+    cl_float theta_max = 60.0f ;
+    cl_float cos_theta_max = std::cos( openMVG::D2R( theta_max ) ) ;
     cl_float delta_disparity = max_disparity_f / 2.0f ;
 
     cl_mem P    = wrapper.CreateBuffer( cam.m_P ) ;
@@ -916,9 +978,14 @@ namespace MVS
 
     cl_mem Ip   = wrapper.CreateImage( image_ref.Intensity() , OpenCLWrapper::OPENCL_BUFFER_READ_ONLY ) ;
     cl_mem Gp ;
+    cl_mem CensusP ;
     if( params.Metric() == COST_METRIC_PM )
     {
       Gp = wrapper.CreateBuffer( image_ref.Gradient() ) ;
+    }
+    if( params.Metric() == COST_METRIC_CENSUS )
+    {
+      CensusP = wrapper.CreateBuffer( image_ref.Census() );
     }
 
     cl_float * cur_n = new cl_float[ nb_pixel * 3 ] ;
@@ -1012,7 +1079,7 @@ namespace MVS
 
       // Compute cost
       ComputeCost( tmp_cost , cam , neigh_imgs , cams , stereo_rig , params , -1 ,
-                   Ip , Gp , Kinv , out_plane_n , out_plane_d , wrapper ,
+                   Ip , Gp , CensusP , Kinv , out_plane_n , out_plane_d , wrapper ,
                    kernel_full , kernel_full , kernel_full ,
                    append_cost_kernel , sort_and_store_cost_kernel ,
                    compute_size , delta_plane , c_type , &all_costs ) ;
@@ -1035,7 +1102,7 @@ namespace MVS
       // Update parameters to compute new plane
       delta_disparity /= 2.f ;
       theta_max /= 2.f ;
-      cos_theta_max = std::cos( theta_max ) ;
+      cos_theta_max = std::cos( openMVG::D2R( theta_max ) ) ;
     }
     delete[] rng_numbers ;
     wrapper.ClearMemory( all_costs ) ;
@@ -1047,6 +1114,10 @@ namespace MVS
     if( params.Metric() == COST_METRIC_PM )
     {
       wrapper.ClearMemory( Gp ) ;
+    }
+    if( params.Metric() == COST_METRIC_CENSUS )
+    {
+      wrapper.ClearMemory( CensusP ) ;
     }
     wrapper.ClearMemory( Kinv ) ;
     wrapper.ClearMemory( cl_rng ) ;
@@ -1146,20 +1217,25 @@ namespace MVS
     const cl_float min_disparity_f = static_cast<cl_float>( min_disparity ) ;
     const cl_float max_disparity_f = static_cast<cl_float>( max_disparity ) ;
 
-    cl_float theta_max = 45.0f ;
-    cl_float cos_theta_max = std::cos( theta_max ) ;
+    cl_float theta_max =  60.0f ;
+    cl_float cos_theta_max = std::cos( openMVG::D2R( theta_max ) ) ;
     cl_float delta_disparity = max_disparity_f / 2.0f ;
 
-    cl_mem P    = wrapper.CreateBuffer( cam.m_P ) ;
-    cl_mem Minv = wrapper.CreateBuffer( cam.m_M_inv ) ;
+    cl_mem P    = wrapper.CreateBuffer( cam.m_P_scaled[ scale ] ) ;
+    cl_mem Minv = wrapper.CreateBuffer( cam.m_M_inv_scaled[ scale ] ) ;
     cl_mem C    = wrapper.CreateBuffer( cam.m_C ) ;
     cl_mem Kinv = wrapper.CreateBuffer( openMVG::Mat3( cam.m_K_inv_scaled[ scale ] ) ) ;
 
     cl_mem Ip   = wrapper.CreateImage( image_ref.Intensity() , OpenCLWrapper::OPENCL_BUFFER_READ_ONLY ) ;
     cl_mem Gp ;
+    cl_mem CensusP ;
     if( params.Metric() == COST_METRIC_PM )
     {
       Gp = wrapper.CreateBuffer( image_ref.Gradient() ) ;
+    }
+    if( params.Metric() == COST_METRIC_CENSUS )
+    {
+      CensusP = wrapper.CreateBuffer( image_ref.Census() ) ;
     }
 
     cl_float * cur_n = new cl_float[ nb_pixel * 3 ] ;
@@ -1253,7 +1329,7 @@ namespace MVS
 
       // Compute cost
       ComputeCost( tmp_cost , cam , neigh_imgs , cams , stereo_rig , params , scale ,
-                   Ip , Gp , Kinv , out_plane_n , out_plane_d , wrapper ,
+                   Ip , Gp , CensusP , Kinv , out_plane_n , out_plane_d , wrapper ,
                    kernel_full , kernel_full , kernel_full ,
                    append_cost_kernel , sort_and_store_cost_kernel ,
                    compute_size , delta_plane , c_type , &all_costs ) ;
@@ -1276,7 +1352,7 @@ namespace MVS
       // Update parameters to compute new plane
       delta_disparity /= 2.f ;
       theta_max /= 2.f ;
-      cos_theta_max = std::cos( theta_max ) ;
+      cos_theta_max = std::cos( openMVG::D2R( theta_max ) ) ;
     }
     delete[] rng_numbers ;
     wrapper.ClearMemory( all_costs ) ;
@@ -1288,6 +1364,10 @@ namespace MVS
     if( params.Metric() == COST_METRIC_PM )
     {
       wrapper.ClearMemory( Gp ) ;
+    }
+    if( params.Metric() == COST_METRIC_CENSUS )
+    {
+      wrapper.ClearMemory( CensusP ) ;
     }
     wrapper.ClearMemory( Kinv ) ;
     wrapper.ClearMemory( cl_rng ) ;
@@ -1332,5 +1412,4 @@ namespace MVS
     delete[] cur_d ;
     delete[] base_cost ;
   }
-
 }

@@ -45,6 +45,23 @@ namespace MVS
                              const Image & image_ref ,
                              const Image & image_other ) ;
 
+
+  /**
+  * @brief Compute cost value at specified pixel position
+  * @param id_row Y coordinate of the pixel
+  * @param id_col X coordinate of the pixel
+  * @param H Homography that maps points in first image to points in the second image
+  * @param params Computation parameters
+  * @param image_ref Image data of the first view
+  * @param image_other Image data of the second view
+  * @return Pixel cost using Census transform value
+  */
+  double ComputePixelCostCensus( const int id_row , const int id_col ,
+                                 const openMVG::Mat3 & H ,
+                                 const DepthMapComputationParameters & params ,
+                                 const Image & image_ref ,
+                                 const Image & image_other ) ;
+
   /**
   * @brief compute cost between two images
   * @param[out] cost Cost for all pixels
