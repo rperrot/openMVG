@@ -6,7 +6,7 @@
 
 namespace MVS
 {
-  // Given a metric, get the image to load/save
+  // Given a metric, get the images to load/save/compute 
   ImageLoadType ComputeLoadType( const cost_metric & metric ) ;
 }
 

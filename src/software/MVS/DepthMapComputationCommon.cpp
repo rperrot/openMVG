@@ -4,18 +4,24 @@ namespace MVS
 {
   ImageLoadType ComputeLoadType( const cost_metric & metric )
   {
-    if( metric == COST_METRIC_PM )
+    switch( metric )
     {
-      return ImageLoadType( IMAGE_GRAYSCALE | IMAGE_COLOR | IMAGE_GRADIENT ) ;
+      case COST_METRIC_PM :
+      {
+        return ImageLoadType( IMAGE_GRAYSCALE | IMAGE_COLOR | IMAGE_GRADIENT ) ;
+      }
+      case COST_METRIC_NCC:
+      {
+        return ImageLoadType( IMAGE_GRAYSCALE | IMAGE_COLOR ) ;
+      }
+      case COST_METRIC_CENSUS: 
+      {
+        return ImageLoadType( IMAGE_GRAYSCALE | IMAGE_COLOR | IMAGE_CENSUS ) ;
+      }
+      default: 
+      {
+        return IMAGE_ALL ;
+      }
     }
-    else if( metric == COST_METRIC_NCC )
-    {
-      return ImageLoadType( IMAGE_GRAYSCALE | IMAGE_COLOR ) ;
-    }
-    else if( metric == COST_METRIC_CENSUS )
-    {
-      return ImageLoadType( IMAGE_GRAYSCALE | IMAGE_COLOR | IMAGE_CENSUS ) ;
-    }
-    return IMAGE_ALL ;
   }
 }

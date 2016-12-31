@@ -124,6 +124,18 @@ namespace MVS
   * @param[out] y New y direction
   */
   void GenerateNormalizedFrame( const openMVG::Vec3 & n , openMVG::Vec3 & x , openMVG::Vec3 & y ) ;
+
+  /**
+  * @brief Computes Barycentric coordinates of P in triangle (A,B,C)
+  * @param A First point of the triangle 
+  * @param B Second point of the triangle 
+  * @param C Third point of the triangle 
+  * @param p point to compute
+  * @return (alpha,beta,gamma) The barycentric coordinates of P in (A,B,C)
+  * @note p is : alpha * A + beta * B + gamma * C  
+  */
+  openMVG::Vec3 BarycentricCoordinates( const openMVG::Vec3 & A , const openMVG::Vec3 & B , const openMVG::Vec3 & C ,
+                                        const openMVG::Vec3 & p ) ;
 }
 
 

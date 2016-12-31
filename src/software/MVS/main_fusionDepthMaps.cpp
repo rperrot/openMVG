@@ -10,255 +10,574 @@
 
 #include <cereal/archives/portable_binary.hpp>
 
-
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <sstream>
 
-void FilterDepthMap( const MVS::Camera & reference_cam ,
-                     MVS::DepthMap & map ,
-                     const size_t id_reference_cam ,
-                     const std::vector< std::string > & in_dm_paths ,
-                     const std::vector< MVS::Camera > & cams ,
-                     const MVS::DepthMapFusionComputationParameters & params )
+void InitBBox( openMVG::Vec3 &min, openMVG::Vec3 &max )
+{
+  min = openMVG::Vec3( std::numeric_limits<double>::max(),
+                       std::numeric_limits<double>::max(),
+                       std::numeric_limits<double>::max() );
+  max = openMVG::Vec3( -std::numeric_limits<double>::max(),
+                       -std::numeric_limits<double>::max(),
+                       -std::numeric_limits<double>::max() );
+}
+
+void UpdateBBox( openMVG::Vec3 &min, openMVG::Vec3 &max, const openMVG::Vec3 &pt )
+{
+  min[ 0 ] = std::min( pt[ 0 ], min[ 0 ] );
+  min[ 1 ] = std::min( pt[ 1 ], min[ 1 ] );
+  min[ 2 ] = std::min( pt[ 2 ], min[ 2 ] );
+
+  max[ 0 ] = std::max( pt[ 0 ], max[ 0 ] );
+  max[ 1 ] = std::max( pt[ 1 ], max[ 1 ] );
+  max[ 2 ] = std::max( pt[ 2 ], max[ 2 ] );
+}
+
+double GetSigma( const openMVG::Vec3 &min, const openMVG::Vec3 &max, const double perc = 0.1 )
+{
+  const double dx = max[ 0 ] - min[ 0 ];
+  const double dy = max[ 1 ] - min[ 1 ];
+  const double dz = max[ 2 ] - min[ 2 ];
+
+  const double max_axis = std::max( dx, std::max( dy, dz ) );
+
+  return perc * max_axis;
+}
+
+void ComputeWolffSigma( const std::vector<MVS::Camera> &          all_cams,
+                        const std::vector<std::string> &          all_dm_path,
+                        MVS::DepthMapFusionComputationParameters &params )
+{
+  openMVG::Vec3 b_min;
+  openMVG::Vec3 b_max;
+
+  InitBBox( b_min, b_max );
+
+  for ( size_t id_cam = 0; id_cam < all_cams.size(); ++id_cam )
+  {
+    const MVS::DepthMap dm( all_dm_path[ id_cam ] );
+    const MVS::Camera & cam = all_cams[ id_cam ];
+
+    for ( int y = 0; y < dm.Height(); ++y )
+    {
+      for ( int x = 0; x < dm.Height(); ++x )
+      {
+
+        if ( dm.Depth( y, x ) >= 0.0 )
+        {
+          const openMVG::Vec3 pt = cam.UnProject( x, y, dm.Depth( y, x ) );
+          UpdateBBox( b_min, b_max, pt );
+        }
+      }
+    }
+  }
+
+  params.SetSigma( GetSigma( b_min, b_max ) );
+}
+
+void FilterDepthMapWolff( const MVS::Camera &                             reference_cam,
+                          MVS::DepthMap &                                 map,
+                          const size_t                                    id_reference_cam,
+                          const std::vector<std::string> &                in_dm_paths,
+                          const std::vector<MVS::Camera> &                all_cams,
+                          const MVS::DepthMapFusionComputationParameters &params )
+{
+  // For each points
+  // - Project to each depth map to compute signed distance to surface
+  //
+  // For each point
+  // - Filter based on their
+
+  // Projected points for every pixels
+  openMVG::image::Image<openMVG::Vec3> projected_pts( map.Width(), map.Height() );
+
+  // Back project each points
+#pragma omp parallel for schedule(dynamic)
+  for ( int y = 0; y < map.Height(); ++y )
+  {
+    for ( int x = 0; x < map.Width(); ++x )
+    {
+      if ( map.Depth( y, x ) >= 0.0 )
+      {
+        projected_pts( y, x ) = reference_cam.UnProject( x, y, map.Depth( y, x ) );
+      }
+    }
+  }
+
+  // Compute mean signed distance for every points
+  openMVG::image::Image<double> sum_distance( map.Width(), map.Height() );
+  openMVG::image::Image<double> sum_weight( map.Width(), map.Height() );
+  openMVG::image::Image<size_t> nb_valid( map.Width(), map.Height() );
+
+  sum_distance.fill( 0.0 );
+  sum_weight.fill( 0.0 );
+  nb_valid.fill( 0 );
+
+  const double sigma = params.GetSigma(); // should be 1% of the max axis according to the paper
+
+  for ( size_t id_cam = 0; id_cam < all_cams.size(); ++id_cam )
+  {
+    const MVS::DepthMap other_dm( in_dm_paths[ id_cam ] );
+    const MVS::Camera & other_cam = all_cams[ id_cam ];
+
+    if ( id_cam == id_reference_cam )
+    {
+      #pragma omp parallel for schedule(dynamic)
+      for( int y = 0 ; y < map.Height() ; ++y )
+      {
+        for( int x = 0 ; x < map.Width() ; ++x )
+        {
+          // P a seen from cam
+          const openMVG::Vec3 &p = projected_pts( y, x );
+        
+          // Normal at P
+          const openMVG::Vec4 pl = map.Plane( y, x );
+          const openMVG::Vec3 n( pl[ 0 ], pl[ 1 ], pl[ 2 ] );
+
+          // sum_distance += 0 
+          sum_weight( y , x ) += std::fabs( n.dot( (p - reference_cam.m_C).normalized() ) ) ;
+          nb_valid( y , x ) += 1.0 ; 
+        }
+      }
+
+      continue;
+    }
+
+#pragma omp parallel for schedule(dynamic)
+    for ( int y = 0; y < map.Height(); ++y )
+    {
+      for ( int x = 0; x < map.Height(); ++x )
+      {
+        // Already filtered 
+        if ( map.Depth( y, x ) < 0.0 )
+        {
+          continue;
+        }
+        // Back project in this camera
+        const openMVG::Vec2 other_cam_pos = openMVG::Project( other_cam.m_P, projected_pts( y, x ) );
+        if ( other_cam_pos[ 0 ] < 0.0 ||
+             other_cam_pos[ 1 ] < 0.0 ||
+             other_cam_pos[ 0 ] >= other_cam.m_cam_dims.first - 1 ||
+             other_cam_pos[ 1 ] >= other_cam.m_cam_dims.second - 1 )
+        {
+          continue;
+        }
+
+        // P a seen from cam
+        const openMVG::Vec3 &p = projected_pts( y, x );
+        // It's current depth
+        const double z = other_cam.Depth( p );
+
+        // Normal at P
+        const openMVG::Vec4 pl = map.Plane( y, x );
+        const openMVG::Vec3 n( pl[ 0 ], pl[ 1 ], pl[ 2 ] );
+
+        // Weight for this pixel
+        const double wi = std::fabs( n.dot( (p - other_cam.m_C ).normalized() ) );
+
+        // Compute inverse barycentric coordinates
+        // - Computes the base triangle
+        const double dx = other_cam_pos[ 0 ] - std::floor( other_cam_pos[ 0 ] );
+        const double dy = other_cam_pos[ 1 ] - std::floor( other_cam_pos[ 1 ] );
+
+        /*
+        * Given a split : 
+
+        A --- B
+        |    /|
+        |   / |
+        |  /  |
+        | /   |
+        D --- C
+
+        Where : 
+        A : (0,1) 
+        B : (1,1)
+        C : (1,0) 
+        D : (0,0)
+        
+        Find in which triangle (A,B,D) (B,C,D) a point P (in square) is. 
+
+        Just compute the cross product : cr = ( B - D ) x ( P - D ) and test the Z value of cr :
+        if cr.z is negative, p is inside (B,C,D), if positive, it's in (A,B,D)        
+        
+        B - D = ( 1 , 1 , 0 ) 
+        P - D = ( x , y , 0 )
+
+        ( C - D ) ^ ( P - D ) = ( 0 , 0 , - x + y )
+        
+        so you only have to test the sign of - x + y 
+        */
+        const double cross = - dx + dy;
+        double       z_interp;
+        if ( cross > 0.0 )
+        {
+          // In ABD
+          const openMVG::Vec3 a( 0.0 , 1.0 , 0.0 );
+          const openMVG::Vec3 b( 1.0 , 1.0 , 0.0 );
+          const openMVG::Vec3 d( 0.0 , 0.0 , 0.0 );
+
+          const openMVG::Vec3 bary = openMVG::Vec3( 1.0 / 3.0 , 1.0 / 3.0 , 1.0 / 3.0 ) ; // MVS::BarycentricCoordinates( a, b, d, openMVG::Vec3( dx, dy, 0.0 ) );
+
+          // Compute interpolation of depth using three consecutive vertex
+          const double da = other_dm.Depth( other_cam_pos[ 1 ] + 1 , other_cam_pos[ 0 ] );
+          const double db = other_dm.Depth( other_cam_pos[ 1 ] + 1 , other_cam_pos[ 0 ] + 1 );
+          const double dd = other_dm.Depth( other_cam_pos[ 1 ] , other_cam_pos[ 0 ] );
+
+          z_interp = da * bary[ 0 ] + db * bary[ 1 ] + dd * bary[ 2 ];
+        }
+        else
+        {
+          // In BCD
+          const openMVG::Vec3 b( 1.0 , 1.0 , 0.0 );
+          const openMVG::Vec3 c( 1.0 , 0.0 , 0.0 );
+          const openMVG::Vec3 d( 0.0 , 0.0 , 0.0 );
+
+          const openMVG::Vec3 bary = openMVG::Vec3( 1.0 / 3.0 , 1.0 / 3.0 , 1.0 / 3.0 ) ; // MVS::BarycentricCoordinates( b, c, d, openMVG::Vec3( dx, dy, 0.0 ) );
+
+          const double db = other_dm.Depth( other_cam_pos[ 1 ] + 1 , other_cam_pos[ 0 ] + 1 );
+          const double dc = other_dm.Depth( other_cam_pos[ 1 ] , other_cam_pos[ 0 ] + 1 );
+          const double dd = other_dm.Depth( other_cam_pos[ 1 ] , other_cam_pos[ 0 ] );
+
+          z_interp = db * bary[ 0 ] + dc * bary[ 1 ] + dd * bary[ 2 ];
+        }
+
+        // Threshold on depth difference
+        const double di = z_interp - z;
+        const double activ      = ( ( -sigma ) < di ) ? 1.0 : 0.0; // ternary is unnecessary but for educative purpose
+
+        // Accumalate weight
+        sum_weight( y, x ) += wi * activ;
+
+        // Accumulate distance
+        sum_distance( y, x ) += activ * wi * std::min( sigma, di );
+
+        // Accumulate nb valid
+        nb_valid( y, x ) += ( ( -sigma ) < di ) && ( di < sigma ) ? 1.0 : 0.0 ;
+      }
+    }
+  }
+
+  // Point filtering
+  const double td = 0.1 * sigma;
+  const double tp = 0.2; // photometric unused now
+  const double tv = 7.5 * static_cast<double>( all_cams.size() ) / 100.0;
+
+#pragma omp parallel for schedule(dynamic)
+  for ( int y = 0; y < map.Height(); ++y )
+  {
+    for ( int x = 0; x < map.Width(); ++x )
+    {
+      if ( map.Depth( y, x ) < 0.0 )
+      {
+        continue;
+      }
+
+      const double d = sum_distance( y, x ) / sum_weight( y, x );
+
+      if ( !( -td < d && d < 0.0 && nb_valid( y, x ) > tv ) )
+      {
+        map.Depth( y, x, -1.0 );
+      }
+    }
+  }
+}
+
+void FilterDepthMap( const MVS::Camera &                             reference_cam,
+                     MVS::DepthMap &                                 map,
+                     const size_t                                    id_reference_cam,
+                     const std::vector<std::string> &                in_dm_paths,
+                     const std::vector<MVS::Camera> &                cams,
+                     const MVS::DepthMapFusionComputationParameters &params )
 {
   // Number of view per pixel
-  openMVG::image::Image<int> nb_view( map.Width() , map.Height() , true , 0 ) ;
+  openMVG::image::Image<int> nb_view( map.Width(), map.Height(), true, 0 );
   // inverse projected points
-  openMVG::image::Image< openMVG::Vec3 > projected_pts( map.Width() , map.Height() ) ;
+  openMVG::image::Image<openMVG::Vec3> projected_pts( map.Width(), map.Height() );
 
   // 1- project points in 3d
-  for( int y = 0 ; y < map.Height() ; ++y )
+#pragma omp parallel for schedule(dynamic)
+  for ( int y = 0; y < map.Height(); ++y )
   {
-    for( int x = 0 ; x < map.Width() ; ++x )
+    for ( int x = 0; x < map.Width(); ++x )
     {
-      projected_pts( y , x ) = reference_cam.UnProject( x , y , map.Depth( y , x ) ) ;
-      nb_view( y , x ) = 0 ;
+      projected_pts( y, x ) = reference_cam.UnProject( x, y, map.Depth( y, x ) );
+      nb_view( y, x )       = 0;
     }
   }
 
   // 2 - Inverse project points in the corresponding cameras
-  for( size_t id_cam = 0 ; id_cam < in_dm_paths.size() ; ++id_cam )
+  for ( size_t id_cam = 0; id_cam < in_dm_paths.size(); ++id_cam )
   {
-    if( id_cam == id_reference_cam )
+    if ( id_cam == id_reference_cam )
     {
-      continue ;
+      continue;
     }
 
-    MVS::DepthMap other_dm( in_dm_paths[ id_cam ] ) ;
-    const MVS::Camera & other_cam = cams[ id_cam ] ;
+    MVS::DepthMap      other_dm( in_dm_paths[ id_cam ] );
+    const MVS::Camera &other_cam = cams[ id_cam ];
 
-    const double baseline = ( other_cam.m_C - reference_cam.m_C ).norm() ;
+    const double baseline = ( other_cam.m_C - reference_cam.m_C ).norm();
 
     // Project all points in the given image
-    for( int y = 0 ; y < map.Height() ; ++y )
+#pragma omp parallel for schedule(dynamic)
+    for ( int y = 0; y < map.Height(); ++y )
     {
-      for( int x = 0 ; x < map.Width() ; ++x )
+      for ( int x = 0; x < map.Width(); ++x )
       {
         // Point is already valid, skip useless projection
-        if( nb_view( y , x ) >= params.NbMinimumView() )
+        if ( nb_view( y, x ) >= params.NbMinimumView() )
         {
-          continue ;
+          continue;
         }
 
-        const openMVG::Vec2 other_cam_pos   = openMVG::Project( other_cam.m_P , projected_pts( y , x ) ) ;
-        if( other_cam_pos[0] < 0 ||
-            other_cam_pos[1] < 0 ||
-            other_cam_pos[0] >= other_dm.Width() ||
-            other_cam_pos[1] >= other_dm.Height() ||
-            std::isinf( other_cam_pos[0] ) || std::isinf( other_cam_pos[1] ) ||
-            std::isnan( other_cam_pos[0] ) || std::isnan( other_cam_pos[1] ) )
+        const openMVG::Vec2 other_cam_pos = openMVG::Project( other_cam.m_P, projected_pts( y, x ) );
+        if ( other_cam_pos[ 0 ] < 0 ||
+             other_cam_pos[ 1 ] < 0 ||
+             other_cam_pos[ 0 ] >= other_dm.Width() ||
+             other_cam_pos[ 1 ] >= other_dm.Height() ||
+             std::isinf( other_cam_pos[ 0 ] ) || std::isinf( other_cam_pos[ 1 ] ) ||
+             std::isnan( other_cam_pos[ 0 ] ) || std::isnan( other_cam_pos[ 1 ] ) )
         {
-          continue ;
+          continue;
         }
 
-        const openMVG::Vec4 & cur_plane   = map.Plane( y , x ) ;
-        const openMVG::Vec4 & other_plane = other_dm.Plane( other_cam_pos[1] , other_cam_pos[0] ) ;
-        const openMVG::Vec3 cur_normal( cur_plane[0] , cur_plane[1] , cur_plane[2] ) ;
-        const openMVG::Vec3 other_normal( other_plane[0] , other_plane[1] , other_plane[2] ) ;
-        const double projected_depth = other_cam.Depth( projected_pts( y , x ) ) ;
-        const double other_depth     = other_dm.Depth( other_cam_pos[1] , other_cam_pos[0] ) ;
+        const openMVG::Vec4 &cur_plane   = map.Plane( y, x );
+        const openMVG::Vec4 &other_plane = other_dm.Plane( other_cam_pos[ 1 ], other_cam_pos[ 0 ] );
+        const openMVG::Vec3  cur_normal( cur_plane[ 0 ], cur_plane[ 1 ], cur_plane[ 2 ] );
+        const openMVG::Vec3  other_normal( other_plane[ 0 ], other_plane[ 1 ], other_plane[ 2 ] );
+        const double         projected_depth = other_cam.Depth( projected_pts( y, x ) );
+        const double         other_depth     = other_dm.Depth( other_cam_pos[ 1 ], other_cam_pos[ 0 ] );
 
-        const double projected_disparity = other_cam.DepthDisparityConversion( projected_depth , baseline ) ;
-        const double other_disparity     = other_cam.DepthDisparityConversion( other_depth , baseline ) ;
+        const double projected_disparity = other_cam.DepthDisparityConversion( projected_depth, baseline );
+        const double other_disparity     = other_cam.DepthDisparityConversion( other_depth, baseline );
 
-        const double delta_disparity         = projected_depth - other_depth ; //  projected_disparity - other_disparity ;
+        const double delta_disparity = projected_depth - other_depth; //  projected_disparity - other_disparity ;
 
-        const double angle_between = MVS::AngleBetween( cur_normal , other_normal ) ;
+        const double angle_between = MVS::AngleBetween( cur_normal, other_normal );
 
-        if( fabs( delta_disparity ) < params.DepthThreshold() &&
-            angle_between < params.AngleThreshold() && cur_normal.dot( other_normal ) > 0.0 )
+        if ( fabs( delta_disparity ) < params.DepthThreshold() &&
+             angle_between < params.AngleThreshold() && cur_normal.dot( other_normal ) > 0.0 )
         {
-          ++ nb_view( y , x ) ;
+          ++nb_view( y, x );
         }
       }
     }
   }
 
   // 2 - filter depending on the number of valid camera
-  for( int y = 0 ; y < map.Height() ; ++y )
+  for ( int y = 0; y < map.Height(); ++y )
   {
-    for( int x = 0 ; x < map.Width() ; ++x )
+    for ( int x = 0; x < map.Width(); ++x )
     {
-      if( nb_view( y , x ) < params.NbMinimumView() )
+      if ( nb_view( y, x ) < params.NbMinimumView() )
       {
-        map.Depth( y , x , -1.0 ) ;
+        map.Depth( y, x, -1.0 );
       }
     }
   }
 }
 
 // Filter a depth map by removing it's points
-void FilterDepthMaps( const std::vector< std::string > & in_dm_paths ,
-                      const std::vector< std::string > & in_cams_paths ,
-                      const std::vector< std::string > & out_dm_paths ,
-                      const MVS::DepthMapFusionComputationParameters & params )
+void FilterDepthMaps( const std::vector<std::string> &          in_dm_paths,
+                      const std::vector<std::string> &          in_cams_paths,
+                      const std::vector<std::string> &          out_dm_paths,
+                      MVS::DepthMapFusionComputationParameters &params )
 {
-  std::vector< MVS::Camera > all_cams ;
-  for( size_t id_cam = 0 ; id_cam < in_cams_paths.size() ; ++id_cam )
+  const bool use_wolfe = params.UseWolff() ;
+
+  std::vector<MVS::Camera> all_cams;
+  for ( size_t id_cam = 0; id_cam < in_cams_paths.size(); ++id_cam )
   {
-    all_cams.push_back( MVS::Camera( in_cams_paths[ id_cam ] ) ) ;
+    all_cams.push_back( MVS::Camera( in_cams_paths[ id_cam ] ) );
+  }
+ 
+  if ( use_wolfe )
+  {
+    ComputeWolffSigma( all_cams , in_dm_paths , params );
   }
 
-  for( size_t id_dm = 0 ; id_dm < in_dm_paths.size() ; ++id_dm )
+  for ( size_t id_dm = 0; id_dm < in_dm_paths.size(); ++id_dm )
   {
-    std::cout << "Filtering depth map : " << id_dm << std::endl ;
-    MVS::DepthMap in_dm( in_dm_paths[ id_dm ] ) ;
-    MVS::Camera & cur_cam = all_cams[ id_dm ] ;
+    std::cout << "Filtering depth map : " << id_dm << std::endl;
+    MVS::DepthMap in_dm( in_dm_paths[ id_dm ] );
+    MVS::Camera & cur_cam = all_cams[ id_dm ];
 
-    FilterDepthMap( cur_cam , in_dm , id_dm , in_dm_paths , all_cams , params ) ;
-    in_dm.Save( out_dm_paths[ id_dm ] ) ;
+    if ( use_wolfe )
+    {
+      FilterDepthMapWolff( cur_cam, in_dm, id_dm, in_dm_paths, all_cams, params );
+    }
+    else
+    {
+      FilterDepthMap( cur_cam, in_dm, id_dm, in_dm_paths, all_cams, params );
+    }
+    in_dm.Save( out_dm_paths[ id_dm ] );
   }
 }
 
-openMVG::image::Image<openMVG::image::RGBColor> ReadColorFile( const std::string & path )
+openMVG::image::Image<openMVG::image::RGBColor> ReadColorFile( const std::string &path )
 {
-  openMVG::image::Image<openMVG::image::RGBColor> res ;
+  openMVG::image::Image<openMVG::image::RGBColor> res;
 
-  std::ifstream in_color( path , std::ios::binary ) ;
-  if( ! in_color )
+  std::ifstream in_color( path, std::ios::binary );
+  if ( !in_color )
   {
     std::cerr << "Impossible to read the file " << std::endl;
-    return res ;
+    return res;
   }
 
-  cereal::PortableBinaryInputArchive ar_color( in_color ) ;
+  cereal::PortableBinaryInputArchive ar_color( in_color );
 
   try
   {
-    ar_color( res ) ;
+    ar_color( res );
   }
-  catch( ... )
+  catch ( ... )
   {
-    std::cerr << "Serialization impossible" << std::endl ;
+    std::cerr << "Serialization impossible" << std::endl;
   }
-  return res ;
+  return res;
 }
 
 MVS::PointCloud CreatePCLFromView( const MVS::Camera & cur_cam ,
                                    const MVS::DepthMap & cur_dm ,
                                    const size_t id_dm ,
-                                   const std::vector< std::string > & dm_paths ,
-                                   const std::vector< MVS::Camera > & all_cams ,
-                                   const MVS::DepthMapFusionComputationParameters & params )
+                                   const MVS::DepthMapFusionComputationParameters &params)
+{
+  const std::string                               color_path = params.GetColorPath( id_dm );
+  openMVG::image::Image<openMVG::image::RGBColor> cur_img    = ReadColorFile( color_path );
+
+  MVS::PointCloud res;
+  for ( int y = 0; y < cur_dm.Height(); ++y )
+  {
+    for ( int x = 0; x < cur_dm.Width(); ++x )
+    {
+      const double cur_depth = cur_dm.Depth( y, x );
+
+      if ( cur_depth > 0.0 )
+      {
+        const openMVG::Vec4 &          cur_plane = cur_dm.Plane( y, x );
+        const openMVG::Vec3            pt        = cur_cam.UnProject( x, y, cur_depth );
+        const openMVG::Vec3            n( cur_plane[ 0 ], cur_plane[ 1 ], cur_plane[ 2 ] );
+        const openMVG::image::RGBColor cur_col = cur_img( y, x );
+        const openMVG::Vec3            cur_color( cur_col.r() / 255.0, cur_col.g() / 255.0, cur_col.b() / 255.0 );
+
+        res.AddPoint( pt , n , cur_color ) ;
+      }
+    }
+  }
+
+  return res ; 
+}
+
+MVS::PointCloud CreatePCLFromView( const MVS::Camera &                             cur_cam,
+                                   const MVS::DepthMap &                           cur_dm,
+                                   const size_t                                    id_dm,
+                                   const std::vector<std::string> &                dm_paths,
+                                   const std::vector<MVS::Camera> &                all_cams,
+                                   const MVS::DepthMapFusionComputationParameters &params )
 {
 
-  openMVG::image::Image< MVS::PutativePoint > points( cur_dm.Width() , cur_dm.Height() ) ;
-  openMVG::image::Image< openMVG::Vec3 > base_points( cur_dm.Width() , cur_dm.Height() ) ;
+  openMVG::image::Image<MVS::PutativePoint> points( cur_dm.Width(), cur_dm.Height() );
+  openMVG::image::Image<openMVG::Vec3>      base_points( cur_dm.Width(), cur_dm.Height() );
 
   // set initial points
   {
-    const std::string color_path = params.GetColorPath( id_dm ) ;
-    openMVG::image::Image<openMVG::image::RGBColor> cur_img = ReadColorFile( color_path ) ;
+    const std::string                               color_path = params.GetColorPath( id_dm );
+    openMVG::image::Image<openMVG::image::RGBColor> cur_img    = ReadColorFile( color_path );
 
-    for( int y = 0 ; y < cur_dm.Height() ; ++y )
+#pragma omp parallel for schedule(dynamic)
+    for ( int y = 0; y < cur_dm.Height(); ++y )
     {
-      for( int x = 0 ; x < cur_dm.Width() ; ++x )
+      for ( int x = 0; x < cur_dm.Width(); ++x )
       {
-        const double cur_depth = cur_dm.Depth( y , x ) ;
+        const double cur_depth = cur_dm.Depth( y, x );
 
-        if( cur_depth > 0.0 )
+        if ( cur_depth > 0.0 )
         {
-          const openMVG::Vec4 & cur_plane = cur_dm.Plane( y , x ) ;
-          const openMVG::Vec3 pt = cur_cam.UnProject( x , y , cur_depth ) ;
-          const openMVG::Vec3 n( cur_plane[0] , cur_plane[1] , cur_plane[2] ) ;
-          const openMVG::image::RGBColor cur_col = cur_img( y , x ) ;
-          const openMVG::Vec3 cur_color( cur_col.r() / 255.0 , cur_col.g() / 255.0 , cur_col.b() / 255.0 ) ;
+          const openMVG::Vec4 &          cur_plane = cur_dm.Plane( y, x );
+          const openMVG::Vec3            pt        = cur_cam.UnProject( x, y, cur_depth );
+          const openMVG::Vec3            n( cur_plane[ 0 ], cur_plane[ 1 ], cur_plane[ 2 ] );
+          const openMVG::image::RGBColor cur_col = cur_img( y, x );
+          const openMVG::Vec3            cur_color( cur_col.r() / 255.0, cur_col.g() / 255.0, cur_col.b() / 255.0 );
 
-          points( y , x ).SetInitialPoint( pt , n , cur_color ) ;
-          base_points( y , x ) = pt ;
+          points( y, x ).SetInitialPoint( pt, n, cur_color );
+          base_points( y, x ) = pt;
         }
       }
     }
   }
 
   // Pass all cameras and get corresponding points
-  for( size_t id_cam = 0 ; id_cam < all_cams.size() ; ++id_cam )
+  for ( size_t id_cam = 0; id_cam < all_cams.size(); ++id_cam )
   {
-    if( id_cam == id_dm )
+    if ( id_cam == id_dm )
     {
-      continue ;
+      continue;
     }
 
-    MVS::DepthMap other_dm( dm_paths[ id_cam ] ) ;
-    const MVS::Camera & other_cam = all_cams[ id_cam ] ;
-    openMVG::image::Image<openMVG::image::RGBColor> other_img = ReadColorFile( params.GetColorPath( id_cam ) ) ;
+    MVS::DepthMap                                   other_dm( dm_paths[ id_cam ] );
+    const MVS::Camera &                             other_cam = all_cams[ id_cam ];
+    openMVG::image::Image<openMVG::image::RGBColor> other_img = ReadColorFile( params.GetColorPath( id_cam ) );
 
-    const double baseline = ( other_cam.m_C - cur_cam.m_C ).norm() ;
+    const double baseline = ( other_cam.m_C - cur_cam.m_C ).norm();
 
+    openMVG::image::Image<bool> used( other_dm.Width(), other_dm.Height(), true, false );
 
-    openMVG::image::Image<bool> used( other_dm.Width() , other_dm.Height() , true , false ) ;
-
-    for( int y = 0 ; y < cur_dm.Height() ; ++y )
+#pragma omp parallel for schedule(dynamic)
+    for ( int y = 0; y < cur_dm.Height(); ++y )
     {
-      for( int x = 0 ; x < cur_dm.Width() ; ++x )
+      for ( int x = 0; x < cur_dm.Width(); ++x )
       {
         // Current depth is not valid or already used
-        if( cur_dm.Depth( y , x ) < 0.0 )
+        if ( cur_dm.Depth( y, x ) < 0.0 )
         {
-          continue ;
+          continue;
         }
-        const openMVG::Vec2 other_cam_pos   = openMVG::Project( other_cam.m_P , base_points( y , x ) ) ;
-        if( other_cam_pos[0] < 0 || other_cam_pos[1] < 0 ||
-            other_cam_pos[0] >= other_dm.Width() ||
-            other_cam_pos[1] >= other_dm.Height() )
+        const openMVG::Vec2 other_cam_pos = openMVG::Project( other_cam.m_P, base_points( y, x ) );
+        if ( other_cam_pos[ 0 ] < 0 || other_cam_pos[ 1 ] < 0 ||
+             other_cam_pos[ 0 ] >= other_dm.Width() ||
+             other_cam_pos[ 1 ] >= other_dm.Height() )
         {
-          continue ;
+          continue;
         }
-        if( used( other_cam_pos[ 1 ] , other_cam_pos[ 0 ] ) )
+        if ( used( other_cam_pos[ 1 ], other_cam_pos[ 0 ] ) )
         {
-          continue ;
+          continue;
         }
 
-        const openMVG::Vec4 & cur_plane   = cur_dm.Plane( y , x ) ;
-        const openMVG::Vec4 & other_plane = other_dm.Plane( other_cam_pos[1] , other_cam_pos[0] ) ;
-        const openMVG::Vec3 cur_normal( cur_plane[0] , cur_plane[1] , cur_plane[2] ) ;
-        const openMVG::Vec3 other_normal( other_plane[0] , other_plane[1] , other_plane[2] ) ;
+        const openMVG::Vec4 &cur_plane   = cur_dm.Plane( y, x );
+        const openMVG::Vec4 &other_plane = other_dm.Plane( other_cam_pos[ 1 ], other_cam_pos[ 0 ] );
+        const openMVG::Vec3  cur_normal( cur_plane[ 0 ], cur_plane[ 1 ], cur_plane[ 2 ] );
+        const openMVG::Vec3  other_normal( other_plane[ 0 ], other_plane[ 1 ], other_plane[ 2 ] );
 
         // Projection
-        const double projected_depth = other_cam.Depth( base_points( y , x ) ) ;
+        const double projected_depth = other_cam.Depth( base_points( y, x ) );
         // Existing value
-        const double other_depth   = other_dm.Depth( other_cam_pos[1] , other_cam_pos[0] ) ;
+        const double other_depth = other_dm.Depth( other_cam_pos[ 1 ], other_cam_pos[ 0 ] );
 
-        if( other_depth < 0.0 )
+        if ( other_depth < 0.0 )
         {
-          continue ;
+          continue;
         }
-        const double projected_disparity = other_cam.DepthDisparityConversion( projected_depth , baseline ) ;
-        const double other_disparity     = other_cam.DepthDisparityConversion( other_depth , baseline ) ;
+        const double projected_disparity = other_cam.DepthDisparityConversion( projected_depth, baseline );
+        const double other_disparity     = other_cam.DepthDisparityConversion( other_depth, baseline );
 
-        const double delta_disparity         =  projected_depth - other_depth ; // projected_disparity - other_disparity ;
+        const double delta_disparity = projected_depth - other_depth; // projected_disparity - other_disparity ;
 
-        const double angle_between = MVS::AngleBetween( cur_normal , other_normal ) ;
+        const double angle_between = MVS::AngleBetween( cur_normal, other_normal );
 
-        if( fabs( delta_disparity ) < params.DepthThreshold() &&
-            angle_between < params.AngleThreshold() )
+        if ( fabs( delta_disparity ) < params.DepthThreshold() &&
+             angle_between < params.AngleThreshold() )
         {
-          const openMVG::image::RGBColor & cur_col = other_img( other_cam_pos[1] , other_cam_pos[0] ) ;
-          const openMVG::Vec3 other_color( cur_col.r() / 255.0 , cur_col.g() / 255.0 , cur_col.b() / 255.0 ) ;
-          used( other_cam_pos[1] , other_cam_pos[0] ) = true ;
-          const openMVG::Vec3 other_point = other_cam.UnProject( other_cam_pos[0] , other_cam_pos[1] , other_depth ) ;
-          points( y , x ).AddCandidate( other_point , other_normal , other_color ) ;
+          const openMVG::image::RGBColor &cur_col = other_img( other_cam_pos[ 1 ], other_cam_pos[ 0 ] );
+          const openMVG::Vec3             other_color( cur_col.r() / 255.0, cur_col.g() / 255.0, cur_col.b() / 255.0 );
+          used( other_cam_pos[ 1 ], other_cam_pos[ 0 ] ) = true;
+          const openMVG::Vec3 other_point = other_cam.UnProject( other_cam_pos[ 0 ], other_cam_pos[ 1 ], other_depth );
+          points( y, x ).AddCandidate( other_point, other_normal, other_color );
         }
       }
     }
@@ -266,172 +585,183 @@ MVS::PointCloud CreatePCLFromView( const MVS::Camera & cur_cam ,
     // Todo save the depth map in order to remove the points already used
   }
 
-  MVS::PointCloud res ;
-  for( int y = 0 ; y < cur_dm.Height() ; ++y )
+  MVS::PointCloud res;
+  for ( int y = 0; y < cur_dm.Height(); ++y )
   {
-    for( int x = 0 ; x < cur_dm.Width() ; ++x )
+    for ( int x = 0; x < cur_dm.Width(); ++x )
     {
-      if( points( y , x ).NbCandidate() >= params.NbMinimumView() )
+      if ( points( y, x ).NbCandidate() >= params.NbMinimumView() )
       {
-        const std::tuple< openMVG::Vec3 , openMVG::Vec3 , openMVG::Vec3 > cur_pt = points( y , x ).GetPoint() ;
-        res.AddPoint( std::get<0>( cur_pt ) , std::get<1>( cur_pt ) , std::get<2>( cur_pt ) ) ;
+        const std::tuple<openMVG::Vec3, openMVG::Vec3, openMVG::Vec3> cur_pt = points( y, x ).GetPoint();
+        res.AddPoint( std::get<0>( cur_pt ), std::get<1>( cur_pt ), std::get<2>( cur_pt ) );
       }
     }
   }
 
-  return res ;
+  return res;
 }
 
-
-MVS::PointCloud FusionDepthMap( const std::vector< std::string > & dm_paths ,
-                                const std::vector< std::string > & cam_paths ,
-                                const MVS::DepthMapFusionComputationParameters & params )
+MVS::PointCloud FusionDepthMap( const std::vector<std::string> &                dm_paths,
+                                const std::vector<std::string> &                cam_paths,
+                                const MVS::DepthMapFusionComputationParameters &params )
 {
-  std::vector< MVS::Camera > all_cams ;
-  for( size_t id_cam = 0 ; id_cam < cam_paths.size() ; ++id_cam )
+  const bool use_wolff = params.UseWolff() ; 
+
+  std::vector<MVS::Camera> all_cams;
+  for ( size_t id_cam = 0; id_cam < cam_paths.size(); ++id_cam )
   {
-    all_cams.push_back( MVS::Camera( cam_paths[ id_cam ] ) ) ;
+    all_cams.push_back( MVS::Camera( cam_paths[ id_cam ] ) );
   }
 
-  MVS::PointCloud pcloud ;
+  MVS::PointCloud pcloud;
 
-  for( size_t id_dm = 0 ; id_dm < cam_paths.size() ; ++id_dm )
+  for ( size_t id_dm = 0; id_dm < cam_paths.size(); ++id_dm )
   {
-    std::cout << "Fusion map : " << id_dm << std::endl ;
-    MVS::Camera & cur_camera = all_cams[ id_dm ] ;
-    MVS::DepthMap cur_dm( dm_paths[ id_dm ] ) ;
+    std::cout << "Fusion map : " << id_dm << std::endl;
+    MVS::Camera & cur_camera = all_cams[ id_dm ];
+    MVS::DepthMap cur_dm( dm_paths[ id_dm ] );
 
-    pcloud.Append( CreatePCLFromView( cur_camera , cur_dm , id_dm , dm_paths , all_cams , params ) ) ;
+    if( use_wolff )
+    {
+      pcloud.Append( CreatePCLFromView( cur_camera, cur_dm, id_dm, params ) );
+    }
+    else 
+    {
+      pcloud.Append( CreatePCLFromView( cur_camera, cur_dm, id_dm, dm_paths, all_cams, params ) );
+    }
   }
 
-  return pcloud ;
+  return pcloud;
 }
 
-
-std::vector< std::string > GetInputDepthMapsPaths( const std::string & base_path ,
-    const int scale ,
-    const MVS::DepthMapFusionComputationParameters & params )
+std::vector<std::string> GetInputDepthMapsPaths( const std::string &                             base_path,
+                                                 const int                                       scale,
+                                                 const MVS::DepthMapFusionComputationParameters &params )
 {
-  std::vector< std::string > res ;
-  const std::string depth = stlplus::create_filespec( base_path , "depth" ) ;
-  int id_cam = 0 ;
-  while( 1 )
+  std::vector<std::string> res;
+  const std::string        depth  = stlplus::create_filespec( base_path, "depth" );
+  int                      id_cam = 0;
+  while ( 1 )
   {
-    const std::string cur_cam_folder = params.GetCameraDirectory( id_cam ) ;
-    if( ! stlplus::folder_exists( cur_cam_folder ) )
+    const std::string cur_cam_folder = params.GetCameraDirectory( id_cam );
+    if ( !stlplus::folder_exists( cur_cam_folder ) )
     {
-      break ;
+      break;
     }
 
-    const std::string dm_path = params.GetDepthPath( id_cam ) ;
-    if( ! stlplus::file_exists( dm_path ) )
+    const std::string dm_path = params.GetDepthPath( id_cam );
+    if ( !stlplus::file_exists( dm_path ) )
     {
-      break ;
+      break;
     }
 
-    res.push_back( dm_path ) ;
+    res.push_back( dm_path );
 
-    ++id_cam ;
+    ++id_cam;
   }
 
-  return res ;
+  return res;
 }
 
-std::vector< std::string > GetInputCameraPaths( const std::string & base_path ,
-    const int scale ,
-    const MVS::DepthMapFusionComputationParameters & params )
+std::vector<std::string> GetInputCameraPaths( const std::string &                             base_path,
+                                              const int                                       scale,
+                                              const MVS::DepthMapFusionComputationParameters &params )
 {
-  std::vector< std::string > res ;
-  int id_cam = 0 ;
-  while( 1 )
+  std::vector<std::string> res;
+  int                      id_cam = 0;
+  while ( 1 )
   {
-    const std::string cur_cam_folder = params.GetCameraDirectory( id_cam ) ;
-    if( ! stlplus::folder_exists( cur_cam_folder ) )
+    const std::string cur_cam_folder = params.GetCameraDirectory( id_cam );
+    if ( !stlplus::folder_exists( cur_cam_folder ) )
     {
-      break ;
+      break;
     }
 
-    const std::string cam_path = params.GetCameraPath( id_cam ) ;
-    if( ! stlplus::file_exists( cam_path ) )
+    const std::string cam_path = params.GetCameraPath( id_cam );
+    if ( !stlplus::file_exists( cam_path ) )
     {
-      break ;
+      break;
     }
 
-    res.push_back( cam_path ) ;
+    res.push_back( cam_path );
 
-    ++id_cam ;
+    ++id_cam;
   }
 
-  return res ;
+  return res;
 }
 
-std::vector< std::string > GetOutputDepthMapsPaths( const std::string & base_path , const int scale , const MVS::DepthMapFusionComputationParameters & params )
+std::vector<std::string> GetOutputDepthMapsPaths( const std::string &base_path, const int scale, const MVS::DepthMapFusionComputationParameters &params )
 {
-  std::vector< std::string > res ;
-  const std::string depth = stlplus::create_filespec( base_path , "depth" ) ;
-  int id_cam = 0 ;
-  while( 1 )
+  std::vector<std::string> res;
+  const std::string        depth  = stlplus::create_filespec( base_path, "depth" );
+  int                      id_cam = 0;
+  while ( 1 )
   {
-    const std::string cur_cam_folder = params.GetCameraDirectory( id_cam ) ;
-    if( ! stlplus::folder_exists( cur_cam_folder ) )
+    const std::string cur_cam_folder = params.GetCameraDirectory( id_cam );
+    if ( !stlplus::folder_exists( cur_cam_folder ) )
     {
-      break ;
+      break;
     }
 
-    const std::string dm_path = params.GetFilteredDepthPath( id_cam ) ;
+    const std::string dm_path = params.GetFilteredDepthPath( id_cam );
 
-    res.push_back( dm_path ) ;
+    res.push_back( dm_path );
 
-    ++id_cam ;
+    ++id_cam;
   }
 
-  return res ;
+  return res;
 }
 
-int main( int argc , char ** argv )
+int main( int argc, char **argv )
 {
   CmdLine cmd;
 
-  std::string sInOutDir = "" ;
-  double fe = 0.1 ;
-  double fa = 30.0 ;
-  int fcomp = 3 ;
-  int scale = 1 ;
+  std::string sInOutDir = "";
+  double      fe        = 0.1;
+  double      fa        = 30.0;
+  int         fcomp     = 3;
+  int         scale     = 1;
 
-  cmd.add( make_option( 'i', sInOutDir, "input_dir" ) ) ;
-  cmd.add( make_option( 'e', fe , "depth_threshold" ) ) ;
-  cmd.add( make_option( 'a', fa , "angle_threshold" ) ) ;
-  cmd.add( make_option( 'c', fcomp , "minimum_view" ) ) ;
-  cmd.add( make_option( 's', scale , "scale" ) ) ;
+  cmd.add( make_option( 'i', sInOutDir, "input_dir" ) );
+  cmd.add( make_option( 'e', fe, "depth_threshold" ) );
+  cmd.add( make_option( 'a', fa, "angle_threshold" ) );
+  cmd.add( make_option( 'c', fcomp, "minimum_view" ) );
+  cmd.add( make_option( 's', scale, "scale" ) );
+  cmd.add( make_switch( 'w', "wolff" ) ) ;
 
   cmd.process( argc, argv );
 
+  std::cout << "You called fusion with parameters : " << std::endl;
+  std::cout << "In/Out path : " << sInOutDir << std::endl;
+  std::cout << "Max depth threshold (fe) : " << fe << std::endl;
+  std::cout << "Max angle threshold (fa) : " << fa << std::endl;
+  std::cout << "Minimum view (fcomp)     : " << fcomp << std::endl;
+  std::cout << "scale                    : " << scale << std::endl;
 
-  std::cout << "You called fusion with parameters : " << std::endl ;
-  std::cout << "In/Out path : " << sInOutDir << std::endl ;
-  std::cout << "Max depth threshold (fe) : " << fe << std::endl ;
-  std::cout << "Max angle threshold (fa) : " << fa << std::endl ;
-  std::cout << "Minimum view (fcomp)     : " << fcomp << std::endl ;
-  std::cout << "scale                    : " << scale << std::endl ;
+  MVS::DepthMapFusionComputationParameters params( sInOutDir, scale, fe, fa, fcomp );
 
-  MVS::DepthMapFusionComputationParameters params( sInOutDir , scale , fe , fa , fcomp ) ;
+  if( cmd.used( 'w' ) )
+  {
+    std::cout << "Set use Wolff" << std::endl ; 
+    params.SetUseWolff( true ) ; 
+  }
 
-  std::vector< std::string > in_depth_maps = GetInputDepthMapsPaths( sInOutDir , scale , params ) ;
-  std::vector< std::string > in_camera_paths = GetInputCameraPaths( sInOutDir , scale , params ) ;
-  std::vector< std::string > out_depth_maps = GetOutputDepthMapsPaths( sInOutDir , scale , params ) ;
-
+  std::vector<std::string> in_depth_maps   = GetInputDepthMapsPaths( sInOutDir, scale, params );
+  std::vector<std::string> in_camera_paths = GetInputCameraPaths( sInOutDir, scale, params );
+  std::vector<std::string> out_depth_maps  = GetOutputDepthMapsPaths( sInOutDir, scale, params );
 
   // Pass 1 : filter the depth map and remove some points
-  FilterDepthMaps( in_depth_maps , in_camera_paths , out_depth_maps , params ) ;
+  FilterDepthMaps( in_depth_maps, in_camera_paths, out_depth_maps, params );
 
   // Pass 2 : generate point cloud using the valid points
-  const MVS::PointCloud pcl = FusionDepthMap( out_depth_maps , in_camera_paths , params ) ;
+  const MVS::PointCloud pcl = FusionDepthMap( out_depth_maps, in_camera_paths, params );
 
   // [ Pass 3 : remove duplicate points ? (if not done in pass2) ]
 
   // Final pass : save the point cloud
-  pcl.ExportToPly( params.GetModelPath() , true ) ;
+  pcl.ExportToPly( params.GetModelPath(), true );
 
-
-  return EXIT_SUCCESS ;
+  return EXIT_SUCCESS;
 }

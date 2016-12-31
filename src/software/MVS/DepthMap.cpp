@@ -505,7 +505,7 @@ namespace MVS
    * @param cam The camera used to compute point position
    * @param cost_threshold Threshold to remove some points (point with cost above are discarted)
    */
-  void DepthMap::ExportToPly( const std::string & path , const Camera & cam , const double cost_threshold )
+  void DepthMap::ExportToPly( const std::string & path , const Camera & cam , const double cost_threshold , const int scale )
   {
     std::ofstream file( path ) ;
     if( ! file )
@@ -521,7 +521,7 @@ namespace MVS
       {
         if( m_cost( id_row , id_col ) < cost_threshold )
         {
-          pts.push_back( cam.UnProject( id_col , id_row , m_depth( id_row , id_col ) ) ) ;
+          pts.push_back( cam.UnProject( id_col , id_row , m_depth( id_row , id_col ) , scale ) ) ;
           ++nb_valid ;
         }
       }

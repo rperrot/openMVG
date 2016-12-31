@@ -52,7 +52,7 @@ namespace MVS
     * @param depth Depth value
     * @return 3d point at given pixel postion at given depth
     */
-    openMVG::Vec3 UnProject( const double x , const double y , const double depth ) const ;
+    openMVG::Vec3 UnProject( const double x , const double y , const double depth , const int scale = -1 ) const ;
 
     /**
     * @brief Get 3d point for a 2d position and it's depth
@@ -266,11 +266,14 @@ namespace MVS
   {
     const openMVG::Mat34 & P = ( scale == -1 ) ? cam.m_P : cam.m_P_scaled[ scale ] ;
     const openMVG::Mat3 & M_inv = ( scale == -1 ) ? cam.m_M_inv : cam.m_M_inv_scaled[ scale ] ;
+    const openMVG::Vec3 x( id_col , id_row , 1.0 ) ; 
 
-    openMVG::Vec3 pt ;
+    const openMVG::Vec3 pt = x * depth - P.col( 3 ) ;
+    /*
     pt[0] = depth * id_col - P( 0 , 3 ) ;
     pt[1] = depth * id_row - P( 1 , 3 ) ;
     pt[2] = depth - P( 2 , 3 ) ;
+    */
 
     openMVG::Vec3 ptX = M_inv * pt ;
 

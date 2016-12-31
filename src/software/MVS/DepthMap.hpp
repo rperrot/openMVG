@@ -221,7 +221,7 @@ namespace MVS
       * @param cam The camera used to compute point position
       * @param cost_threshold Threshold to remove some points (point with cost above are discarted)
       */
-      void ExportToPly( const std::string & path , const Camera & cam , const double cost_threshold = std::numeric_limits<double>::max() ) ;
+      void ExportToPly( const std::string & path , const Camera & cam , const double cost_threshold = std::numeric_limits<double>::max() , const int scale = -1 ) ;
 
       /**
       * @brief Set ground truth depth for known points

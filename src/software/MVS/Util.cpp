@@ -113,6 +113,52 @@ namespace MVS
   }
 
 
+  /**
+  * @brief Computes Barycentric coordinates of P in triangle (A,B,C)
+  * @param A First point of the triangle 
+  * @param B Second point of the triangle 
+  * @param C Third point of the triangle 
+  * @param p point to compute
+  * @return (alpha,beta,gamma) The barycentric coordinates of P in (A,B,C)
+  * @note p is : alpha * A + beta * B + gamma * C  
+  */
+  openMVG::Vec3 BarycentricCoordinates( const openMVG::Vec3 & A , const openMVG::Vec3 & B , const openMVG::Vec3 & C ,
+                                        const openMVG::Vec3 & p ) 
+  {
+    // Implementation given in Realtime collision detection 
+
+    const openMVG::Vec3 v0 = B - A ;
+    const openMVG::Vec3 v1 = C - A ;
+    const openMVG::Vec3 v2 = p - A ;
+
+    const double d00 = v0.dot(v0);
+    const double d01 = v0.dot(v1);
+    const double d11 = v1.dot(v1);
+    const double d20 = v2.dot(v0);
+    const double d21 = v2.dot(v1); 
+
+    const double denom = d00 * d11 - d01 * d01;
+
+    if( denom < - std::numeric_limits<double>::epsilon() ||
+        denom > std::numeric_limits<double>::epsilon() )
+        {
+          const double inv = 1.0 / denom ; 
+
+          const double alpha = (d11 * d20 - d01 * d21) * inv ; 
+          const double beta  = (d00 * d21 - d01 * d20) * inv ; 
+          const double gamma = 1.0 - alpha - beta ;
+
+          return openMVG::Vec3( alpha , beta , gamma ) ; 
+        }
+
+        else 
+        {
+          return openMVG::Vec3( 0 , 0 , 0 ) ; 
+        }
+  }
+
+
+
 }
 
 

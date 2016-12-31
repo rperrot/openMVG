@@ -19,7 +19,7 @@
 
 #define MULTISCALE
 #define USE_OPENCL
-#define EXPORT_INTERMEDIATE_RESULT
+// #define EXPORT_INTERMEDIATE_RESULT
 
 
 #ifdef EXPORT_INTERMEDIATE_RESULT
@@ -177,7 +177,6 @@ void PrepareOutputDirectory( const std::vector< MVS::Camera > & cams ,
 
     const MVS::ImageLoadType load_type = MVS::ComputeLoadType( params.Metric() ) ;
 
-
     // Create images and save it
     MVS::Image cur_img( cams[ id_cam ].m_img_path , params.Scale() , cams[ id_cam ].m_intrinsic , load_type ) ;
     // Grayscale path
@@ -322,7 +321,7 @@ void ComputeMultipleScaleDepthMap( MVS::Camera & cam ,
 #ifdef EXPORT_INTERMEDIATE_RESULT
     map.ExportCost( GetInitCostName( scale ) ) ;
     map.ExportToGrayscale( GetInitDepthName( scale ) ) ;
-    map.ExportToPly( GetInitPlyName( scale ) , cam , MAX_COST / 20.0 ) ;
+    map.ExportToPly( GetInitPlyName( scale ) , cam , MAX_COST / 20.0 , scale ) ;
     map.ExportNormal( GetInitNormalName( scale ) ) ;
 #endif
 

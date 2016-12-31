@@ -205,30 +205,18 @@ namespace MVS
           tmp.m_P_scaled.push_back( P ) ;
         }
 
-        openMVG::Mat3 M ;
-        for( int i = 0 ; i < 3 ; ++i )
         {
-          for( int j = 0 ; j < 3 ; ++j )
-          {
-            M( i , j ) = tmp.m_P( i , j ) ;
-          }
+          // Block of 3x3 starting at (0,0)
+          const openMVG::Mat3 M = tmp.m_P.block<3,3>( 0 , 0 ) ;
+          tmp.m_M_inv = M.inverse() ;
         }
-        tmp.m_M_inv = M.inverse() ;
 
         for( int scale = 0 ; scale < 5 ; ++scale )
         {
           const openMVG::Mat34 & P = tmp.m_P_scaled[ scale ] ;
-          for( int i = 0 ; i < 3 ; ++i )
-          {
-            for( int j = 0 ; j < 3 ; ++j )
-            {
-              M( i , j ) = P( i , j ) ;
-            }
-          }
-
+          const openMVG::Mat3 M = tmp.m_P_scaled[ scale ].block<3,3>( 0 , 0 ) ;
           tmp.m_M_inv_scaled.push_back( M.inverse() ) ;
         }
-
 
         cams.push_back( tmp ) ;
         map_view_id[ view ] = id ;
@@ -355,12 +343,6 @@ namespace MVS
         sum += cur_ref.m_baseline[ i ] ;
       }
       cur_ref.m_mean_baseline = sum / static_cast<double>( cur_ref.m_baseline.size() ) ;
-
-
-      /*
-      std::cerr << "Baseline range : " << cur_ref.m_min_baseline << " -  " << cur_ref.m_max_baseline << std::endl ;
-      std::cerr << " -> " << cur_ref.m_mean_baseline << std::endl ;
-      */
     }
 
     return cams ;
@@ -371,7 +353,7 @@ namespace MVS
    */
   std::pair< openMVG::Vec3 , openMVG::Vec3 > Camera::GetRay( const openMVG::Vec2 & x ) const
   {
-    const openMVG::Vec3 pt = m_R.transpose() * ( m_K.inverse() * openMVG::Vec3( x[0] , x[1] , 1.0 ) ) ;
+    const openMVG::Vec3 pt = m_R.transpose() * ( m_K_inv * openMVG::Vec3( x[0] , x[1] , 1.0 ) ) ;
     const openMVG::Vec3 dir = pt.normalized() ;
     return std::make_pair( m_C , dir ) ;
   }
@@ -379,9 +361,10 @@ namespace MVS
   /**
   * @brief Get 3d point for a 2d position and it's depth
   */
-  openMVG::Vec3 Camera::UnProject( const double x , const double y , const double depth ) const
+  openMVG::Vec3 Camera::UnProject( const double x , const double y , const double depth , const int scale ) const
   {
-    return m_C + m_R.transpose() * depth * ( m_K.inverse() * openMVG::Vec3( x , y , 1.0 ) ) ;
+    const openMVG::Mat3 & Kinv = ( scale == -1 ) ? m_K_inv : m_K_inv_scaled[ scale ] ; 
+    return m_C + m_R.transpose() * depth * ( Kinv * openMVG::Vec3( x , y , 1.0 ) ) ;
   }
 
   /**
@@ -389,7 +372,7 @@ namespace MVS
   */
   openMVG::Vec3 Camera::UnProjectLocal( const double x , const double y , const double depth ) const
   {
-    return depth * m_K.inverse() * openMVG::Vec3( x , y , 1.0 ) ;
+    return depth * m_K_inv * openMVG::Vec3( x , y , 1.0 ) ;
   }
 
   double Camera::Depth( const openMVG::Vec3 & pt ) const
@@ -526,6 +509,5 @@ namespace MVS
     return Clamp( DepthFromPlane( cam , plane_n , plane_d , id_col , id_row , scale ) , 0.0 , cam.m_max_depth * 1.3 ) ;
 #endif
   }
-
 
 }
