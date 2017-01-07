@@ -6,15 +6,15 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "openMVG/sfm/pipelines/global/sfm_global_engine_relative_motions.hpp"
-#include "third_party/htmlDoc/htmlDoc.hpp"
 
+#include "openMVG/graph/connectedComponent.hpp"
+#include "openMVG/multiview/essential.hpp"
 #include "openMVG/multiview/triangulation.hpp"
 #include "openMVG/multiview/triangulation_nview.hpp"
-#include "openMVG/graph/connectedComponent.hpp"
-#include "openMVG/system/timer.hpp"
 #include "openMVG/stl/stl.hpp"
-#include "openMVG/multiview/essential.hpp"
+#include "openMVG/system/timer.hpp"
 
+#include "third_party/htmlDoc/htmlDoc.hpp"
 #include "third_party/progress/progress.hpp"
 
 #ifdef _MSC_VER
@@ -406,7 +406,9 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Adjust()
       Optimize_Options(
         Intrinsic_Parameter_Type::NONE, // Intrinsics are held as constant
         Extrinsic_Parameter_Type::ADJUST_TRANSLATION, // Rotations are held as constant
-        Structure_Parameter_Type::ADJUST_ALL)
+        Structure_Parameter_Type::ADJUST_ALL,
+        Control_Point_Parameter(),
+        this->b_use_motion_prior_)
     );
   if (b_BA_Status)
   {
@@ -424,7 +426,9 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Adjust()
         Optimize_Options(
           Intrinsic_Parameter_Type::NONE, // Intrinsics are held as constant
           Extrinsic_Parameter_Type::ADJUST_ALL,
-          Structure_Parameter_Type::ADJUST_ALL)
+          Structure_Parameter_Type::ADJUST_ALL,
+          Control_Point_Parameter(),
+          this->b_use_motion_prior_)
       );
     if (b_BA_Status && !sLogging_file_.empty())
     {
@@ -442,7 +446,9 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Adjust()
         Optimize_Options(
           ReconstructionEngine::intrinsic_refinement_options_,
           Extrinsic_Parameter_Type::ADJUST_ALL,
-          Structure_Parameter_Type::ADJUST_ALL)
+          Structure_Parameter_Type::ADJUST_ALL,
+          Control_Point_Parameter(),
+          this->b_use_motion_prior_)
       );
     if (b_BA_Status && !sLogging_file_.empty())
     {
@@ -489,7 +495,9 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Adjust()
   const Optimize_Options ba_refine_options(
     ReconstructionEngine::intrinsic_refinement_options_,
     Extrinsic_Parameter_Type::ADJUST_ALL,  // adjust camera motion
-    Structure_Parameter_Type::ADJUST_ALL); // adjust scene structure
+    Structure_Parameter_Type::ADJUST_ALL,  // adjust scene structure
+    Control_Point_Parameter(),
+    this->b_use_motion_prior_);
 
   b_BA_Status = bundle_adjustment_obj.Adjust(sfm_data_, ba_refine_options);
   if (b_BA_Status && !sLogging_file_.empty())
@@ -511,7 +519,7 @@ void GlobalSfMReconstructionEngine_RelativeMotions::Compute_Relative_Rotations
   // Build the Relative pose graph from matches:
   //
   /// pairwise view relation between poseIds
-  typedef std::map< Pair, Pair_Set > PoseWiseMatches;
+  using PoseWiseMatches = std::map< Pair, Pair_Set >;
 
   // List shared correspondences (pairs) between poses
   PoseWiseMatches poseWiseMatches;

@@ -25,8 +25,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#include "openMVG/multiview/triangulation_nview.hpp"
 #include "openMVG/multiview/projection.hpp"
+#include "openMVG/multiview/triangulation_nview.hpp"
 
 namespace openMVG {
 
@@ -48,7 +48,7 @@ namespace openMVG {
       *X = X_and_alphas.head(4);
   }
 
-  typedef Eigen::Matrix<double, 2, 3> Mat23;
+  using Mat23 = Eigen::Matrix<double, 2, 3>;
   inline Mat23 SkewMatMinimal(const Vec2 &x) {
     Mat23 skew;
     skew <<
@@ -70,6 +70,25 @@ namespace openMVG {
       Nullspace(&design, X);
   }
 
+  void Triangulation::add
+  (
+    const Mat34& projMatrix,
+    const Vec2 & p
+  )
+  {
+    views.emplace_back( projMatrix, p );
+  }
+
+  size_t Triangulation::size() const
+  {
+    return views.size();
+  }
+
+  void Triangulation::clear()
+  {
+    views.clear();
+  }
+
   double Triangulation::error(const Vec3 &X) const
   {
     double squared_reproj_error = 0.0;
@@ -77,8 +96,7 @@ namespace openMVG {
     {
       const Mat34& PMat = views[i].first;
       const Vec2 & xy = views[i].second;
-      const Vec2 p = Project(PMat, X);
-      squared_reproj_error += (xy-p).norm();
+      squared_reproj_error += (xy - Project(PMat, X)).norm();
     }
     return squared_reproj_error;
   }
@@ -92,7 +110,7 @@ namespace openMVG {
     // Iterative weighted linear least squares
     Mat3 AtA;
     Vec3 Atb, X;
-    std::vector<double> weights(nviews,double(1.0));
+    Vec weights = Vec::Constant(nviews,1.0);
     for (int it=0;it<iter;++it)
     {
       AtA.fill(0.0);
@@ -103,7 +121,7 @@ namespace openMVG {
         const Vec2 & p = views[i].second;
         const double w = weights[i];
 
-        Vec3 v1,v2;
+        Vec3 v1, v2;
         for (int j=0;j<3;j++)
         {
           v1[j] = w * ( PMat(0,j) - p(0) * PMat(2,j) );
@@ -128,17 +146,16 @@ namespace openMVG {
       // Compute reprojection error, min and max depth, and update weights
       zmin = std::numeric_limits<double>::max();
       zmax = - std::numeric_limits<double>::max();
-      err = 0;
+      err = 0.0;
       for (int i=0;i<nviews;++i)
       {
         const Mat34& PMat = views[i].first;
         const Vec2 & p = views[i].second;
-        const Vec3 xProj = PMat * Vec4(X(0), X(1), X(2), 1.0);
+        const Vec3 xProj = PMat * X.homogeneous();
         const double z = xProj(2);
-        const Vec2 x = xProj.head<2>() / z;
-        if (z<zmin) zmin = z;
-        if (z>zmax) zmax = z;
-        err += (p-x).norm();
+        if (z < zmin) zmin = z;
+        else if (z > zmax) zmax = z;
+        err += (p - xProj.hnormalized()).norm(); // residual error
         weights[i] = 1.0 / z;
       }
     }
@@ -147,4 +164,3 @@ namespace openMVG {
 
 
 }  // namespace openMVG
-

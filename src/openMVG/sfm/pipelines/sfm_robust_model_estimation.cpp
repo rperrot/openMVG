@@ -7,10 +7,9 @@
 
 #include "openMVG/sfm/pipelines/sfm_robust_model_estimation.hpp"
 
-#include "openMVG/multiview/solver_essential_kernel.hpp"
 #include "openMVG/multiview/projection.hpp"
+#include "openMVG/multiview/solver_essential_kernel.hpp"
 #include "openMVG/multiview/triangulation.hpp"
-
 #include "openMVG/robust_estimation/robust_estimator_ACRansac.hpp"
 #include "openMVG/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
 
@@ -94,13 +93,12 @@ bool robustRelativePose
 )
 {
   // Use the 5 point solver to estimate E
-  typedef openMVG::essential::kernel::FivePointKernel SolverType;
+  using SolverType = openMVG::essential::kernel::FivePointKernel;
   // Define the AContrario adaptor
-  typedef ACKernelAdaptorEssential<
+  using KernelType = ACKernelAdaptorEssential<
       SolverType,
       openMVG::fundamental::kernel::EpipolarDistanceError,
-      Mat3>
-      KernelType;
+      Mat3>;
 
   KernelType kernel(x1, size_ima1.first, size_ima1.second,
                     x2, size_ima2.first, size_ima2.second, K1, K2);

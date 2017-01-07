@@ -26,15 +26,15 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#include <iostream>
-
-#include "openMVG/numeric/numeric.h"
 #include "openMVG/multiview/essential.hpp"
 #include "openMVG/multiview/projection.hpp"
 #include "openMVG/multiview/solver_essential_five_point.hpp"
+#include "openMVG/multiview/test_data_sets.hpp"
+#include "openMVG/numeric/numeric.h"
+
 #include "testing/testing.h"
 
-#include "openMVG/multiview/test_data_sets.hpp"
+#include <iostream>
 
 using namespace openMVG;
 
@@ -186,8 +186,8 @@ TEST(o2, Evaluation) {
 ///
 #define EXPECT_ESSENTIAL_MATRIX_PROPERTIES(E, expectedPrecision) { \
   EXPECT_NEAR(0, E.determinant(), expectedPrecision); \
-  Mat3 O = 2 * E * E.transpose() * E - (E * E.transpose()).trace() * E; \
-  Mat3 zero3x3 = Mat3::Zero(); \
+  const Mat3 O = 2 * E * E.transpose() * E - (E * E.transpose()).trace() * E; \
+  const Mat3 zero3x3 = Mat3::Zero(); \
   EXPECT_MATRIX_NEAR(zero3x3, O, expectedPrecision);\
 }
 

@@ -5,8 +5,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#ifndef OPENMVG_ROBUST_ESTIMATION_LMEDS_H_
-#define OPENMVG_ROBUST_ESTIMATION_LMEDS_H_
+#ifndef OPENMVG_ROBUST_ESTIMATION_LMEDS_HPP
+#define OPENMVG_ROBUST_ESTIMATION_LMEDS_HPP
 
 #include "openMVG/robust_estimation/rand_sampling.hpp"
 #include "openMVG/robust_estimation/robust_ransac_tools.hpp"
@@ -74,7 +74,7 @@ template <typename Kernel>
       const double median = *itMedian;
 
       // Store best solution
-      if(median < dBestMedian)
+      if (median < dBestMedian)
       {
         dBestMedian = median;
         if (model) (*model) = models[k];
@@ -97,7 +97,7 @@ template <typename Kernel>
   };
 
   // Evaluate the outlier threshold
-  if(outlierThreshold)
+  if (outlierThreshold)
   {
     const double sigma = ICDF[int((1.-outlierRatio)*20.)] *
       (1. + 5. / double(total_samples - min_samples));
@@ -110,4 +110,5 @@ template <typename Kernel>
 
 } // namespace robust
 } // namespace openMVG
-#endif // OPENMVG_ROBUST_ESTIMATION_LMEDS_H_
+
+#endif // OPENMVG_ROBUST_ESTIMATION_LMEDS_HPP

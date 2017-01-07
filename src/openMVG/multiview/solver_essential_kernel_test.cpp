@@ -27,11 +27,11 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "openMVG/multiview/essential.hpp"
-#include "openMVG/multiview/solver_essential_kernel.hpp"
 #include "openMVG/multiview/projection.hpp"
-#include "testing/testing.h"
-
+#include "openMVG/multiview/solver_essential_kernel.hpp"
 #include "openMVG/multiview/test_data_sets.hpp"
+
+#include "testing/testing.h"
 
 using namespace openMVG;
 
@@ -98,7 +98,7 @@ TEST(EightPointsRelativePose, EightPointsRelativePose_Kernel_IdFocal) {
 
 TEST(EightPointsRelativePose, EightPointsRelativePose_Kernel) {
 
-  typedef essential::kernel::EightPointKernel Kernel;
+  using Kernel = essential::kernel::EightPointKernel;
 
   int focal = 1000;
   int principal_Point = 500;
@@ -169,7 +169,7 @@ TEST(FivePointKernelTest, KernelError) {
         0, -.5, .8,  0, .8;
   x2 << 0,    0,  0, .8, .8,
         .1, -.4, .9,  .1, .9; // Y Translated camera.
-  typedef essential::kernel::FivePointKernel Kernel;
+  using Kernel = essential::kernel::FivePointKernel;
   Kernel kernel(x1,x2, Mat3::Identity(), Mat3::Identity());
 
   bool bOk = true;
@@ -189,7 +189,7 @@ TEST(FivePointKernelTest, KernelError) {
 
 TEST(FivePointKernelTest, FivePointsRelativePose_Kernel) {
 
-  typedef essential::kernel::FivePointKernel Kernel;
+  using Kernel = essential::kernel::FivePointKernel;
 
   int focal = 1000;
   int principal_Point = 500;
