@@ -20,5 +20,6 @@
 #include "openMVG/features/regions.hpp"
 #include "openMVG/features/regions_factory.hpp"
 #include "openMVG/features/tbmr/tbmr.hpp"
+#include "openMVG/features/saddle/saddle_detector.hpp"
 
 #endif // OPENMVG_FEATURES_HPP
