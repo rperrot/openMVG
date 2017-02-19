@@ -58,7 +58,7 @@ namespace features
       // 1.3 -> Accumulate
       for ( size_t id_pt = 0; id_pt < filteredPts.size(); ++id_pt )
       {
-        regions.push_back( SIOPointFeature( scale_x * filteredPts[ id_pt ].x(), scale_y * filteredPts[ id_pt ].y(), scale ) );
+        regions.emplace_back( SIOPointFeature( scale_x * filteredPts[ id_pt ].x(), scale_y * filteredPts[ id_pt ].y(), scale ) );
       }
 
       // 1.4 -> Final computation
@@ -72,7 +72,13 @@ namespace features
     }
   }
 
-  static inline bool validOuterRing( const std::vector<std::pair<unsigned char, int>> &arcs )
+  /**
+  * @brief Validate point based on outer ring test 
+  * @param arcs List of arcs in the outer ring (label, number of consecutive points)
+  * @retval true if outer ring is valid 
+  * @retval false if outer ring is not valid  
+  */
+  static inline bool validOuterRing( const std::vector<std::pair<unsigned char, unsigned char>> &arcs )
   {
     // valid if : exactly 2 consecutives arcs 0 2
     // arcs must be of length 2 to 8
@@ -95,13 +101,21 @@ namespace features
       return false;
     }
 
-    // test if arcs are at good length
-    int min_length[ 3 ] = {std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), std::numeric_limits<int>::max()};
-    int max_length[ 3 ] = {-std::numeric_limits<int>::max(), -std::numeric_limits<int>::max(), -std::numeric_limits<int>::max()};
-    for ( int i = 0; i < arcs.size(); ++i )
+    // test if arcs have good length
+    unsigned char min_length[ 3 ] =
+        {
+            std::numeric_limits<unsigned char>::max(),
+            std::numeric_limits<unsigned char>::max(),
+            std::numeric_limits<unsigned char>::max()};
+    unsigned char max_length[ 3 ] =
+        {
+            std::numeric_limits<unsigned char>::lowest(),
+            std::numeric_limits<unsigned char>::lowest(),
+            std::numeric_limits<unsigned char>::lowest()};
+    for ( size_t i = 0; i < arcs.size(); ++i )
     {
       const unsigned char type = arcs[ i ].first;
-      const int len            = arcs[ i ].second;
+      const unsigned char len  = arcs[ i ].second;
       min_length[ type ]       = std::min( min_length[ type ], len );
       max_length[ type ]       = std::max( max_length[ type ], len );
     }
@@ -115,7 +129,7 @@ namespace features
     }
 
     // finally make sure the arc are alternating
-    // Get the first arc
+    // Get the first arc index of type 0 or 2 (ie: ignore the first arcs with label 1)
     unsigned char prev_arc;
     int i = 0;
     for ( ; i < arcs.size(); ++i )
@@ -145,12 +159,17 @@ namespace features
     return true;
   }
 
+  /**
+  * @brief Compute arcs types and length given labels of each neighbors  
+  * @param labels Array of the labels of the neighbors
+  * @return Arcs [ie: array of (label type ,nb consecutive) ]
+  */
   template <size_t N>
-  static inline std::vector<std::pair<unsigned char, int>> computeArcsLengths( const std::array<unsigned char, N> &labels )
+  static inline std::vector<std::pair<unsigned char, unsigned char>> computeArcsLengths( const std::array<unsigned char, N> &labels )
   {
-    std::vector<std::pair<unsigned char, int>> arcs_lengths;
-    std::pair<unsigned char, int> cur_arc = std::make_pair( labels[ 0 ], 1 );
-    for ( int i = 1; i < labels.size(); ++i )
+    std::vector<std::pair<unsigned char, unsigned char>> arcs_lengths;
+    std::pair<unsigned char, unsigned char> cur_arc( labels[ 0 ], 1 );
+    for ( size_t i = 1; i < labels.size(); ++i )
     {
       if ( labels[ i ] == cur_arc.first )
       {
@@ -238,13 +257,13 @@ namespace features
           if ( cross_valid && diag_valid )
           {
             // Both -> Use the 8 values
-            Ip = stl::numeric_array<unsigned char, 8ul>::median( data.begin(), data.end() );
+            Ip = stl::numeric_array<unsigned char, 8>::median( data.begin(), data.end() );
           }
           else if ( cross_valid )
           {
             // Cross
-            const std::array<unsigned char, 4ul> tmp = {data[ 1 ], data[ 3 ], data[ 4 ], data[ 6 ]};
-            Ip = stl::numeric_array<unsigned char, 4ul>::median( data.begin(), data.end() );
+            const std::array<unsigned char, 4> tmp = {data[ 1 ], data[ 3 ], data[ 4 ], data[ 6 ]};
+            Ip = stl::numeric_array<unsigned char, 4>::median( data.begin(), data.end() );
           }
           else
           {
@@ -295,14 +314,14 @@ namespace features
 
           // 3 - Test if outer ring is valid
           // Compute length of arcs
-          const std::vector<std::pair<unsigned char, int>> arcs_lengths = computeArcsLengths( labels );
+          const std::vector<std::pair<unsigned char, unsigned char>> arcs_lengths = computeArcsLengths( labels );
 
           // Test if outer ring is valid
           if ( validOuterRing( arcs_lengths ) )
           {
             // add a point
-            pts.push_back( PointFeature( id_col, id_row ) );
-            Ips.push_back( Ip );
+            pts.emplace_back( PointFeature( id_col, id_row ) );
+            Ips.emplace_back( Ip );
           }
         }
       }
@@ -348,9 +367,8 @@ namespace features
         };
 
     // 0 - > Fill image with precomputed Ips
-    image::Image<int>
-        response_map( ima.Width(), ima.Height() );
-    response_map.fill( 0 );
+    image::Image<unsigned int>
+        response_map( ima.Width(), ima.Height() , true , 0 );
     for ( int id_pt = 0; id_pt < putatives.size(); ++id_pt )
     {
       const int id_row = putatives[ id_pt ].y();
@@ -436,7 +454,7 @@ namespace features
         dy /= static_cast<float>( sum_resp );
       }
 
-      filteredPts.push_back( PointFeature( static_cast<float>( id_col ) + dx, static_cast<float>( id_row ) + dy ) );
+      filteredPts.emplace_back( PointFeature( static_cast<float>( id_col ) + dx, static_cast<float>( id_row ) + dy ) );
     }
   }
 

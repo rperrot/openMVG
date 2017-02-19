@@ -71,6 +71,10 @@ namespace features
     /// Scale between two consecutives pyramid level
     double m_scaling;
     /// Espilon factor to decide if points is d/s/l
+    /* d : intensity above central pixel 
+     * s : intensity almost same as central pixel 
+     * l : intensity lower than central pixel 
+     */
     int m_epsilon;
   };
 

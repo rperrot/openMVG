@@ -55,7 +55,7 @@ TEST( saddle , sinboard )
     const SIOPointFeature & pt = pts[i];
     svgStream.drawCircle(pt.x(), pt.y(), 2.0 * pt.scale() , svgStyle().stroke("yellow", 2.0));
   }
-  std::string out_filename = "Saddle_Features.svg";
+  const std::string out_filename = "Saddle_Features.svg";
   std::ofstream svgFile( out_filename.c_str() );
   svgFile << svgStream.closeSvgFile().str();
   svgFile.close();
