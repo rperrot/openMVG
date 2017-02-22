@@ -27,7 +27,7 @@ namespace features
       * @param scaling Scale between two pyramid level 
       * @brief epsilon sensibility for classification af saddle points 
       */
-    SaddleDetector( const int nb_level = 6, const double scaling = 1.3, const int epsilon = 5 );
+    SaddleDetector( const int nb_level = 6, const double scaling = 1.3, const int epsilon = 1 );
 
     /**
       * @brief Detect saddle points in the given image 

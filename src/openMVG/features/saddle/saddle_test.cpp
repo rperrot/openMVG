@@ -41,7 +41,7 @@ TEST( saddle , sinboard )
   // Detect points 
   const int nb_level = 6 ;
   const double scale_factor = 1.3 ;
-  const int epsilon = 3 ; 
+  const int epsilon = 1 ; 
   SaddleDetector detector( nb_level , scale_factor , epsilon ) ; 
   std::vector<SIOPointFeature> pts ; 
   detector.detect( board , pts ) ; 
