@@ -97,6 +97,10 @@ add_subdirectory(easyexif)
 set(FAST_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/openMVG/third_party/fast)
 add_subdirectory(fast)
 
+# dominant set library 
+set(DOMSET_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/openMVG/third_party/domset )
+add_subdirectory(domset)
+
 ##
 # Install Header only libraries if necessary
 ##

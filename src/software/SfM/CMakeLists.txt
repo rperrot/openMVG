@@ -69,6 +69,20 @@ INSTALL(TARGETS openMVG_main_ListMatchingPairs DESTINATION bin/)
 SET_PROPERTY(TARGET openMVG_main_ComputeMatches PROPERTY FOLDER OpenMVG/software)
 INSTALL(TARGETS openMVG_main_ComputeMatches DESTINATION bin/)
 
+
+# compute clusters for a given sfm_data.bin 
+ADD_EXECUTABLE(openMVG_main_ComputeClusters main_ComputeClusters.cpp)
+TARGET_LINK_LIBRARIES(openMVG_main_ComputeClusters 
+  openMVG_system
+  openMVG_image
+  openMVG_features
+  openMVG_sfm
+  domset )
+
+set_property(TARGET openMVG_main_ComputeClusters PROPERTY FOLDER OpenMVG/software)
+install(TARGETS openMVG_main_ComputeClusters DESTINATION bin/)
+
+
 ###
 # SfM Pipelines
 # - Incremental/Sequential
