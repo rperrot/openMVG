@@ -9,6 +9,7 @@
 #define IO_READ_GT_HPP
 
 #include "openMVG/cameras/PinholeCamera.hpp"
+#include "openMVG/multiview/projection.hpp"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include <fstream>

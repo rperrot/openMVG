@@ -4,6 +4,7 @@
 ###
 add_executable(openMVG_main_SfM_Localization main_SfM_Localization.cpp)
 target_link_libraries(openMVG_main_SfM_Localization
+  openMVG_camera
   openMVG_system
   openMVG_image
   openMVG_features

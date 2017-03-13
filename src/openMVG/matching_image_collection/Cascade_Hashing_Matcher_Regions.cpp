@@ -210,7 +210,7 @@ void Match
         {
           map_PutativesMatches.insert(
             std::make_pair(
-              std::make_pair(I,J),
+              std::pair<IndexT,size_t>(I,J),
               std::move(vec_putative_matches)
             ));
         }

@@ -7,7 +7,7 @@
 #ifndef OPENMVG_GEOMETRY_POSE3_HPP
 #define OPENMVG_GEOMETRY_POSE3_HPP
 
-#include "openMVG/multiview/projection.hpp"
+#include "openMVG/numeric/numeric.h"
 #include <cereal/cereal.hpp> // Serialization
 
 namespace openMVG
@@ -36,64 +36,45 @@ class Pose3
     * @brief Default constructor
     * @note This defines a Null transform (aligned with cartesian frame, centered at origin)
     */
-    Pose3()
-      : rotation_( Mat3::Identity() ),
-        center_( Vec3::Zero() )
-    {
+    Pose3() ;
 
-    }
     /**
     * @brief Constructor
     * @param r Rotation
     * @param c Center
     */
-    Pose3( const Mat3& r, const Vec3& c ) : rotation_( r ), center_( c ) {}
+    Pose3( const Mat3& r, const Vec3& c ) ;
 
     /**
     * @brief Get Rotation matrix
     * @return Rotation matrix
     */
-    const Mat3& rotation() const
-    {
-      return rotation_;
-    }
+    const Mat3& rotation() const ;
 
     /**
     * @brief Get Rotation matrix
     * @return Rotation matrix
     */
-    Mat3& rotation()
-    {
-      return rotation_;
-    }
+    Mat3& rotation() ;
 
     /**
     * @brief Get center of rotation
     * @return center of rotation
     */
-    const Vec3& center() const
-    {
-      return center_;
-    }
+    const Vec3& center() const ;
 
     /**
     * @brief Get center of rotation
     * @return Center of rotation
     */
-    Vec3& center()
-    {
-      return center_;
-    }
+    Vec3& center() ;
 
     /**
     * @brief Get translation vector
     * @return translation vector
     * @note t = -RC
     */
-    inline Vec3 translation() const
-    {
-      return -( rotation_ * center_ );
-    }
+    Vec3 translation() const ;
 
 
     /**
@@ -101,10 +82,7 @@ class Pose3
     * @param p Point
     * @return transformed point
     */
-    inline Mat3X operator () ( const Mat3X& p ) const
-    {
-      return rotation_ * ( p.colwise() - center_ );
-    }
+    Mat3X operator () ( const Mat3X& p ) const ;
 
 
     /**
@@ -112,31 +90,21 @@ class Pose3
     * @param P a Pose
     * @return Composition of current pose and parameter pose
     */
-    Pose3 operator * ( const Pose3& P ) const
-    {
-      return Pose3( rotation_ * P.rotation_, P.center_ + P.rotation_.transpose() * center_ );
-    }
+    Pose3 operator * ( const Pose3& P ) const ;
 
 
     /**
     * @brief Get inverse of the pose
     * @return Inverse of the pose
     */
-    Pose3 inverse() const
-    {
-      return Pose3( rotation_.transpose(),  -( rotation_ * center_ ) );
-    }
-
+    Pose3 inverse() const ;
 
     /**
     * @brief Return the depth (distance) of a point respect to the camera center
     * @param X Input point
     * @return Distance to center
     */
-    double depth( const Vec3 &X ) const
-    {
-      return ( rotation_ * ( X - center_ ) )[2];
-    }
+    double depth( const Vec3 &X ) const ;
 
     /**
     * Serialization out

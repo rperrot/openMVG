@@ -4,6 +4,7 @@ add_definitions(-DTHIS_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 add_executable(openMVG_sample_multiview_robustEssential robust_essential.cpp)
 target_link_libraries(openMVG_sample_multiview_robustEssential
   openMVG_image
+  openMVG_geometry
   openMVG_multiview
   openMVG_system
   openMVG_features

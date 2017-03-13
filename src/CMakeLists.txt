@@ -411,7 +411,9 @@ add_subdirectory(openMVG)
 # openMVG libraries
 # ==============================================================================
 set(OpenMVG_LIBRARIES
+  openMVG_camera
   openMVG_image
+  openMVG_geometry
   openMVG_features
   openMVG_matching_image_collection
   openMVG_kvld

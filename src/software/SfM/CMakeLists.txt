@@ -228,6 +228,7 @@ INSTALL(TARGETS openMVG_main_ExportUndistortedImages DESTINATION bin/)
 ADD_EXECUTABLE(openMVG_main_openMVG2PMVS main_openMVG2PMVS.cpp)
 TARGET_LINK_LIBRARIES(openMVG_main_openMVG2PMVS
   openMVG_system
+  openMVG_geometry
   openMVG_image
   openMVG_features
   openMVG_sfm
@@ -357,6 +358,7 @@ ENDIF(OpenMVG_USE_OPENCV)
 ###
 ADD_EXECUTABLE(openMVG_main_evalQuality main_evalQuality.cpp)
 TARGET_LINK_LIBRARIES(openMVG_main_evalQuality
+  openMVG_geometry 
   openMVG_system
   openMVG_features
   openMVG_sfm

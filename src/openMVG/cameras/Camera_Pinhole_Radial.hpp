@@ -97,11 +97,7 @@ class Pinhole_Intrinsic_Radial_K1 : public Pinhole_Intrinsic
     Pinhole_Intrinsic_Radial_K1(
       int w = 0, int h = 0,
       double focal = 0.0, double ppx = 0, double ppy = 0,
-      double k1 = 0.0 )
-      : Pinhole_Intrinsic( w, h, focal, ppx, ppy )
-    {
-      params_ = {k1};
-    }
+      double k1 = 0.0 );
 
     ~Pinhole_Intrinsic_Radial_K1() override = default;
 
@@ -109,64 +105,34 @@ class Pinhole_Intrinsic_Radial_K1 : public Pinhole_Intrinsic
     * @brief Tell from which type the embed camera is
     * @retval PINHOLE_CAMERA_RADIAL1
     */
-    EINTRINSIC getType() const override
-    {
-      return PINHOLE_CAMERA_RADIAL1;
-    }
+    EINTRINSIC getType() const override ;
 
     /**
     * @brief Does the camera model handle a distortion field?
     * @retval true if intrinsic holds distortion
     * @retval false if intrinsic does not hold distortion
     */
-    bool have_disto() const override
-    {
-      return true;
-    }
+    bool have_disto() const override ;
 
     /**
     * @brief Add the distortion field to a point (that is in normalized camera frame)
     * @param p Point before distortion computation (in normalized camera frame)
     * @return point with distortion
     */
-    Vec2 add_disto( const Vec2 & p ) const override
-    {
-
-      const double k1 = params_[0];
-
-      const double r2 = p( 0 ) * p( 0 ) + p( 1 ) * p( 1 );
-      const double r_coeff = ( 1. + k1 * r2 );
-
-      return ( p * r_coeff );
-    }
+    Vec2 add_disto( const Vec2 & p ) const override ;
 
     /**
     * @brief Remove the distortion to a camera point (that is in normalized camera frame)
     * @param p Point with distortion
     * @return Point without distortion
     */
-    Vec2 remove_disto( const Vec2& p ) const override
-    {
-      // Compute the radius from which the point p comes from thanks to a bisection
-      // Minimize disto(radius(p')^2) == actual Squared(radius(p))
-
-      const double r2 = p( 0 ) * p( 0 ) + p( 1 ) * p( 1 );
-      const double radius = ( r2 == 0 ) ?
-                            1. :
-                            ::sqrt( radial_distortion::bisection_Radius_Solve( params_, r2, distoFunctor ) / r2 );
-      return radius * p;
-    }
+    Vec2 remove_disto( const Vec2& p ) const override ;
 
     /**
     * @brief Data wrapper for non linear optimization (get data)
     * @return vector of parameter of this intrinsic
     */
-    std::vector<double> getParams() const override
-    {
-      std::vector<double> params = Pinhole_Intrinsic::getParams();
-      params.insert(params.end(), std::begin(params_), std::end(params_));
-      return params;
-    }
+    std::vector<double> getParams() const override ;
 
     /**
     * @brief Data wrapper for non linear optimization (update from data)
@@ -174,21 +140,7 @@ class Pinhole_Intrinsic_Radial_K1 : public Pinhole_Intrinsic
     * @retval true if update is correct
     * @retval false if there was an error during update
     */
-    bool updateFromParams( const std::vector<double> & params ) override
-    {
-      if ( params.size() == 4 )
-      {
-        *this = Pinhole_Intrinsic_Radial_K1(
-                  w_, h_,
-                  params[0], params[1], params[2], // focal, ppx, ppy
-                  params[3] ); //K1
-        return true;
-      }
-      else
-      {
-        return false;
-      }
-    }
+    bool updateFromParams( const std::vector<double> & params ) override ;
 
     /**
     * @brief Return the list of parameter indexes that must be held constant
@@ -196,48 +148,21 @@ class Pinhole_Intrinsic_Radial_K1 : public Pinhole_Intrinsic
     */
     std::vector<int> subsetParameterization
     (
-      const Intrinsic_Parameter_Type & parametrization) const override
-    {
-      std::vector<int> constant_index;
-      const int param = static_cast<int>(parametrization);
-      if ( !(param & (int)Intrinsic_Parameter_Type::ADJUST_FOCAL_LENGTH)
-          || param & (int)Intrinsic_Parameter_Type::NONE )
-      {
-        constant_index.push_back(0);
-      }
-      if ( !(param & (int)Intrinsic_Parameter_Type::ADJUST_PRINCIPAL_POINT)
-          || param & (int)Intrinsic_Parameter_Type::NONE )
-      {
-        constant_index.push_back(1);
-        constant_index.push_back(2);
-      }
-      if ( !(param & (int)Intrinsic_Parameter_Type::ADJUST_DISTORTION)
-          || param & (int)Intrinsic_Parameter_Type::NONE )
-      {
-        constant_index.push_back(3);
-      }
-      return constant_index;
-    }
+      const Intrinsic_Parameter_Type & parametrization) const override ;
 
     /**
     * @brief Return the un-distorted pixel (with removed distortion)
     * @param p Input distorted pixel
     * @return Point without distortion
     */
-    Vec2 get_ud_pixel( const Vec2& p ) const override
-    {
-      return cam2ima( remove_disto( ima2cam( p ) ) );
-    }
+    Vec2 get_ud_pixel( const Vec2& p ) const override ;
 
     /**
     * @brief Return the distorted pixel (with added distortion)
     * @param p Input pixel
     * @return Distorted pixel
     */
-    Vec2 get_d_pixel( const Vec2& p ) const override
-    {
-      return cam2ima( add_disto( ima2cam( p ) ) );
-    }
+    Vec2 get_d_pixel( const Vec2& p ) const override ;
 
     /**
     * @brief Serialization out
@@ -265,10 +190,7 @@ class Pinhole_Intrinsic_Radial_K1 : public Pinhole_Intrinsic
     * @brief Clone the object
     * @return A clone (copy of the stored object)
     */
-    IntrinsicBase * clone( void ) const override
-    {
-      return new class_type( *this );
-    }
+    IntrinsicBase * clone( void ) const override ;
 
   private:
 
@@ -279,11 +201,7 @@ class Pinhole_Intrinsic_Radial_K1 : public Pinhole_Intrinsic
     * @param r2 square distance (relative to center)
     * @return distance
     */
-    static inline double distoFunctor( const std::vector<double> & params, double r2 )
-    {
-      const double & k1 = params[0];
-      return r2 * Square( 1. + r2 * k1 );
-    }
+    static double distoFunctor( const std::vector<double> & params, double r2 ) ;
 };
 
 /**
@@ -315,11 +233,7 @@ class Pinhole_Intrinsic_Radial_K3 : public Pinhole_Intrinsic
     Pinhole_Intrinsic_Radial_K3(
       int w = 0, int h = 0,
       double focal = 0.0, double ppx = 0, double ppy = 0,
-      double k1 = 0.0, double k2 = 0.0, double k3 = 0.0 )
-      : Pinhole_Intrinsic( w, h, focal, ppx, ppy )
-    {
-      params_ = {k1, k2, k3};
-    }
+      double k1 = 0.0, double k2 = 0.0, double k3 = 0.0 );
 
     ~Pinhole_Intrinsic_Radial_K3() override = default;
 
@@ -327,64 +241,33 @@ class Pinhole_Intrinsic_Radial_K3 : public Pinhole_Intrinsic
     * @brief Tell from which type the embed camera is
     * @retval PINHOLE_CAMERA_RADIAL3
     */
-    EINTRINSIC getType() const override
-    {
-      return PINHOLE_CAMERA_RADIAL3;
-    }
+    EINTRINSIC getType() const override ;
 
     /**
     * @brief Does the camera model handle a distortion field?
     * @retval true
     */
-    bool have_disto() const override
-    {
-      return true;
-    }
+    bool have_disto() const override;
 
     /**
     * @brief Add the distortion field to a point (that is in normalized camera frame)
     * @param p Point before distortion computation (in normalized camera frame)
     * @return point with distortion
     */
-    Vec2 add_disto( const Vec2 & p ) const override
-    {
-      const double & k1 = params_[0], & k2 = params_[1], & k3 = params_[2];
-
-      const double r2 = p( 0 ) * p( 0 ) + p( 1 ) * p( 1 );
-      const double r4 = r2 * r2;
-      const double r6 = r4 * r2;
-      const double r_coeff = ( 1. + k1 * r2 + k2 * r4 + k3 * r6 );
-
-      return ( p * r_coeff );
-    }
+    Vec2 add_disto( const Vec2 & p ) const override ;
 
     /**
     * @brief Remove the distortion to a camera point (that is in normalized camera frame)
     * @param p Point with distortion
     * @return Point without distortion
     */
-    Vec2 remove_disto( const Vec2& p ) const override
-    {
-      // Compute the radius from which the point p comes from thanks to a bisection
-      // Minimize disto(radius(p')^2) == actual Squared(radius(p))
-
-      const double r2 = p( 0 ) * p( 0 ) + p( 1 ) * p( 1 );
-      const double radius = ( r2 == 0 ) ? //1. : ::sqrt(bisectionSolve(_params, r2) / r2);
-                            1. :
-                            ::sqrt( radial_distortion::bisection_Radius_Solve( params_, r2, distoFunctor ) / r2 );
-      return radius * p;
-    }
+    Vec2 remove_disto( const Vec2& p ) const override ;
 
     /**
     * @brief Data wrapper for non linear optimization (get data)
     * @return vector of parameter of this intrinsic
     */
-    std::vector<double> getParams() const override
-    {
-      std::vector<double> params = Pinhole_Intrinsic::getParams();
-      params.insert( params.end(), std::begin(params_), std::end(params_));
-      return params;
-    }
+    std::vector<double> getParams() const override ;
 
     /**
     * @brief Data wrapper for non linear optimization (update from data)
@@ -392,72 +275,28 @@ class Pinhole_Intrinsic_Radial_K3 : public Pinhole_Intrinsic
     * @retval true if update is correct
     * @retval false if there was an error during update
     */
-    bool updateFromParams( const std::vector<double> & params ) override
-    {
-      if ( params.size() == 6 )
-      {
-        *this = Pinhole_Intrinsic_Radial_K3(
-                  w_, h_,
-                  params[0], params[1], params[2], // focal, ppx, ppy
-                  params[3], params[4], params[5] ); // K1, K2, K3
-        return true;
-      }
-      else
-      {
-        return false;
-      }
-    }
+    bool updateFromParams( const std::vector<double> & params ) override ;
 
     /**
     * @brief Return the list of parameter indexes that must be held constant
     * @param parametrization The given parametrization
     */
     std::vector<int> subsetParameterization
-    (
-      const Intrinsic_Parameter_Type & parametrization) const override
-    {
-      std::vector<int> constant_index;
-      const int param = static_cast<int>(parametrization);
-      if ( !(param & (int)Intrinsic_Parameter_Type::ADJUST_FOCAL_LENGTH)
-          || param & (int)Intrinsic_Parameter_Type::NONE )
-      {
-        constant_index.push_back(0);
-      }
-      if ( !(param & (int)Intrinsic_Parameter_Type::ADJUST_PRINCIPAL_POINT)
-          || param & (int)Intrinsic_Parameter_Type::NONE )
-      {
-        constant_index.push_back(1);
-        constant_index.push_back(2);
-      }
-      if ( !(param & (int)Intrinsic_Parameter_Type::ADJUST_DISTORTION)
-          || param & (int)Intrinsic_Parameter_Type::NONE )
-      {
-        constant_index.push_back(3);
-        constant_index.push_back(4);
-        constant_index.push_back(5);
-      }
-      return constant_index;
-    }
+    ( const Intrinsic_Parameter_Type & parametrization) const override ;
 
     /**
     * @brief Return the un-distorted pixel (with removed distortion)
     * @param p Input distorted pixel
     * @return Point without distortion
     */
-    Vec2 get_ud_pixel( const Vec2& p ) const override
-    {
-      return cam2ima( remove_disto( ima2cam( p ) ) );
-    }
+    Vec2 get_ud_pixel( const Vec2& p ) const override ;
 
     /**
     * @brief Return the distorted pixel (with added distortion)
     * @param p Input pixel
     * @return Distorted pixel
     */
-    Vec2 get_d_pixel( const Vec2& p ) const override
-    {
-      return cam2ima( add_disto( ima2cam( p ) ) );
-    }
+    Vec2 get_d_pixel( const Vec2& p ) const override ;
 
     /**
     * @brief Serialization out
@@ -485,11 +324,7 @@ class Pinhole_Intrinsic_Radial_K3 : public Pinhole_Intrinsic
     * @brief Clone the object
     * @return A clone (copy of the stored object)
     */
-    IntrinsicBase * clone( void ) const override
-    {
-      return new class_type( *this );
-    }
-
+    IntrinsicBase * clone( void ) const override ;
   private:
 
 
@@ -499,11 +334,7 @@ class Pinhole_Intrinsic_Radial_K3 : public Pinhole_Intrinsic
     * @param r2 square distance (relative to center)
     * @return distance
     */
-    static inline double distoFunctor( const std::vector<double> & params, double r2 )
-    {
-      const double & k1 = params[0], & k2 = params[1], & k3 = params[2];
-      return r2 * Square( 1. + r2 * ( k1 + r2 * ( k2 + r2 * k3 ) ) );
-    }
+    static double distoFunctor( const std::vector<double> & params, double r2 ) ;
 };
 
 } // namespace cameras

@@ -8,6 +8,7 @@
 
 #include "openMVG/graph/graph.hpp"
 #include "openMVG/matching/metric.hpp"
+#include "openMVG/multiview/projection.hpp"
 #include "openMVG/multiview/solver_fundamental_kernel.hpp"
 #include "openMVG/multiview/triangulation_nview.hpp"
 #include "openMVG/robust_estimation/guided_matching.hpp"

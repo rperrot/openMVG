@@ -10,6 +10,7 @@
 #include "openMVG/graph/connectedComponent.hpp"
 #include "openMVG/matching/indMatch.hpp"
 #include "openMVG/multiview/essential.hpp"
+#include "openMVG/multiview/projection.hpp"
 #include "openMVG/multiview/triangulation.hpp"
 #include "openMVG/multiview/triangulation_nview.hpp"
 #include "openMVG/sfm/pipelines/localization/SfM_Localizer.hpp"

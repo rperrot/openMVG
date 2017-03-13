@@ -44,12 +44,7 @@ struct IntrinsicBase : public Clonable<IntrinsicBase>
   * @param w Width of the image
   * @param h Height of the image
   */
-  IntrinsicBase( unsigned int w = 0, unsigned int h = 0 )
-    : w_( w ),
-      h_( h )
-  {
-
-  }
+  IntrinsicBase( unsigned int w = 0, unsigned int h = 0 ) ;
 
   /**
   * @brief Destructor
@@ -60,19 +55,12 @@ struct IntrinsicBase : public Clonable<IntrinsicBase>
   * @brief Get width of the image
   * @return width of the image
   */
-  unsigned int w() const
-  {
-    return w_;
-  }
-
+  unsigned int w() const ;
   /**
   * @brief Get height of the image
   * @return height of the image
   */
-  unsigned int h() const
-  {
-    return h_;
-  }
+  unsigned int h() const ;
 
   /**
   * @brief Compute projection of a 3D point into the image plane
@@ -83,18 +71,8 @@ struct IntrinsicBase : public Clonable<IntrinsicBase>
   */
   Vec2 project(
     const geometry::Pose3 & pose,
-    const Vec3 & pt3D ) const
-  {
-    const Vec3 X = pose( pt3D ); // apply pose
-    if ( this->have_disto() ) // apply disto & intrinsics
-    {
-      return this->cam2ima( this->add_disto( X.hnormalized() ) );
-    }
-    else // apply intrinsics
-    {
-      return this->cam2ima( X.hnormalized() );
-    }
-  }
+    const Vec3 & pt3D ) const ;
+
 
   /**
   * @brief Compute the residual between the 3D projected point and an image observation
@@ -106,11 +84,7 @@ struct IntrinsicBase : public Clonable<IntrinsicBase>
   Vec2 residual(
     const geometry::Pose3 & pose,
     const Vec3 & X,
-    const Vec2 & x ) const
-  {
-    const Vec2 proj = this->project( pose, X );
-    return x - proj;
-  }
+    const Vec2 & x ) const ;
 
   // --
   // Virtual members
@@ -168,10 +142,7 @@ struct IntrinsicBase : public Clonable<IntrinsicBase>
   * @retval true if intrinsic holds distortion
   * @retval false if intrinsic does not hold distortion
   */
-  virtual bool have_disto() const
-  {
-    return false;
-  }
+  virtual bool have_disto() const ; 
 
   /**
   * @brief Add the distortion field to a point (that is in normalized camera frame)
@@ -241,17 +212,7 @@ struct IntrinsicBase : public Clonable<IntrinsicBase>
   * @brief Generate a unique Hash from the camera parameters (used for grouping)
   * @return Hash value
   */
-  virtual std::size_t hashValue() const
-  {
-    size_t seed = 0;
-    stl::hash_combine( seed, static_cast<int>( this->getType() ) );
-    stl::hash_combine( seed, w_ );
-    stl::hash_combine( seed, h_ );
-    const std::vector<double> params = this->getParams();
-    for ( const auto & param : params )
-      stl::hash_combine( seed , param );
-    return seed;
-  }
+  virtual std::size_t hashValue() const ;
 };
 
 
@@ -268,23 +229,12 @@ struct IntrinsicBase : public Clonable<IntrinsicBase>
 *
 * @return Angle (in degree) between the two rays
 */
-inline double AngleBetweenRay(
+double AngleBetweenRay(
   const geometry::Pose3 & pose1,
   const IntrinsicBase * intrinsic1,
   const geometry::Pose3 & pose2,
   const IntrinsicBase * intrinsic2,
-  const Vec2 & x1, const Vec2 & x2 )
-{
-  // x = (u, v, 1.0)  // image coordinates
-  // X = R.t() * K.inv() * x + C // Camera world point
-  // getting the ray:
-  // ray = X - C = R.t() * K.inv() * x
-  const Vec3 ray1 = ( pose1.rotation().transpose() * intrinsic1->operator()( x1 ) ).normalized();
-  const Vec3 ray2 = ( pose2.rotation().transpose() * intrinsic2->operator()( x2 ) ).normalized();
-  const double mag = ray1.norm() * ray2.norm();
-  const double dotAngle = ray1.dot( ray2 );
-  return R2D( acos( clamp( dotAngle / mag, -1.0 + 1.e-8, 1.0 - 1.e-8 ) ) );
-}
+  const Vec2 & x1, const Vec2 & x2 ) ;
 
 } // namespace cameras
 } // namespace openMVG
