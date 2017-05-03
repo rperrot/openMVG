@@ -263,13 +263,13 @@ namespace features
           {
             // Cross
             const std::array<unsigned char, 4> tmp = {data[ 1 ], data[ 3 ], data[ 4 ], data[ 6 ]};
-            Ip = stl::numeric_array<unsigned char, 4>::median( data.begin(), data.end() );
+            Ip = stl::numeric_array<unsigned char, 4>::median( tmp.begin(), tmp.end() );
           }
           else
           {
             // Diag
             const std::array<unsigned char, 4ul> tmp = {data[ 0 ], data[ 2 ], data[ 5 ], data[ 7 ]};
-            Ip = stl::numeric_array<unsigned char, 4ul>::median( data.begin(), data.end() );
+            Ip = stl::numeric_array<unsigned char, 4ul>::median( tmp.begin(), tmp.end() );
           }
 
           // 2 -> Compute Labels of each neigborings pixels
