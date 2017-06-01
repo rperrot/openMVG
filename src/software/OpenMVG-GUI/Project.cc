@@ -57,7 +57,8 @@ Project::Project( const std::string & base_path ,
   m_project_base_path( base_path ) ,
   m_project_image_path( image_path ) ,
   m_sfm_method( SFM_METHOD_INCREMENTAL ) ,
-  m_scene_mgr( scn )
+  m_scene_mgr( scn ) ,
+  m_sparse_point_cloud( nullptr ) 
 {
   createProject( base_path , image_path , intrin_params , camera_sensor_width_database_file ) ;
 }

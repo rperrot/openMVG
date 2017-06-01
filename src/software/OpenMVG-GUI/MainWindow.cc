@@ -842,8 +842,15 @@ void MainWindow::onHasComputedSfM( const WorkerNextAction & next_action )
     m_worker_global_sfm_computation = nullptr ;
   }
 
-  // Load sparse point cloud
+  // Remove old object
   std::shared_ptr<SceneManager> mgr = m_project->sceneManager() ;
+  std::shared_ptr<RenderableObject> sprs = m_project->sparsePointCloud() ;
+  if( sprs )
+  {
+    mgr->removeObject( sprs ) ;
+  }
+
+  // Load sparse point cloud
   const std::string sparse = m_project->sfMDataPlyPath() ;
 
   // Load from file
@@ -852,7 +859,7 @@ void MainWindow::onHasComputedSfM( const WorkerNextAction & next_action )
   LoadPly( sparse , pts , col ) ;
 
   // Add to the scene, to the project and to the result view
-  std::shared_ptr<RenderableObject> sprs  = std::make_shared<PointCloud>( m_result_view->pointShader() , pts , col ) ;
+  sprs = std::make_shared<PointCloud>( m_result_view->pointShader() , pts , col ) ;
   mgr->addObject( sprs ) ;
   m_project->setSparsePointCloud( sprs ) ;
   m_result_view->prepareObjects() ;

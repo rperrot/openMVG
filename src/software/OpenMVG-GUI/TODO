@@ -6,7 +6,6 @@
 - "Save as..." project 
 
 - Check for consistency : 
-  - essential|fundamental matrices with incremetal|global 
   - binary features with matching parameters 
 - Overwrite files already computed 
 

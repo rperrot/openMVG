@@ -249,8 +249,16 @@ void ResultViewWidget::mouseMoveEvent( QMouseEvent * event )
       const openMVG::Vec3 axis = realOld.cross( realNew ) ;
       const double angle = std::atan( axis.norm() / realOld.dot( realNew ) ) ;
 
+      // Change frame for local frame to global frame ( for rotation axis ) 
+      const openMVG::Vec3 y = -camera->up().normalized() ;
+      const openMVG::Vec3 z = ( camera->destination() - camera->position() ).normalized() ;
+      const openMVG::Vec3 x = z.cross( y ) ;
+      const openMVG::Vec3 naxis = openMVG::Vec3( axis.dot( openMVG::Vec3( x[0] , y[0] , z[0] ) ) ,
+                                  axis.dot( openMVG::Vec3( x[1] , y[1] , z[1] ) ) ,
+                                  axis.dot( openMVG::Vec3( x[2] , y[2] , z[2] ) ) );
+
       // Rotate the camera around center of projection
-      camera->rotateAroundDestination( axis , -angle ) ;
+      camera->rotateAroundDestination( naxis , angle ) ;
     }
   }
 

@@ -114,15 +114,10 @@ openMVG::Mat4 DualQuaternion::toMatrix( void ) const
 // Pure rotation around an axis with a specifed angle (in radian)
 DualQuaternion DualQuaternion::rotation( const openMVG::Vec3 & axis , const double aRad )
 {
-  const double theta = aRad / 2.0 ;
-  const double ct = std::cos( theta ) ;
-  const double st = std::sin( theta ) ;
   const openMVG::Vec3 n = axis.normalized() ;
-  const double nx = n[0] ;
-  const double ny = n[1] ;
-  const double nz = n[2] ;
-
-  return DualQuaternion( Eigen::Quaterniond( ct , nx * st , ny * st , nz * st ) , Eigen::Quaterniond( 0.0 , 0.0 , 0.0 , 0.0 ) ) ;
+ 
+  return DualQuaternion( Eigen::Quaterniond( Eigen::AngleAxisd( aRad , n ) ) , 
+                         Eigen::Quaterniond( 0.0 , 0.0 , 0.0 , 0.0 ) ) ;
 }
 
 // Pure translation of a given vector
