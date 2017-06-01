@@ -12,3 +12,5 @@
 
 - Error feedback for workers 
   (pass params to finished signal ?) 
+
+- Remove old computed mesh after sfm computation/colorize 
