@@ -16,3 +16,4 @@ if (QT_FOUND)
 endif (QT_FOUND)
 
 add_subdirectory( SfMWebGLViewer )
+add_subdirectory( OpenMVG-GUI )

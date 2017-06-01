@@ -1,0 +1,81 @@
+#ifndef _OPENMVG_SOFTWARE_OPENMVG_GUI_WORKERS_WORKER_PROJECT_CREATION_HH_
+#define _OPENMVG_SOFTWARE_OPENMVG_GUI_WORKERS_WORKER_PROJECT_CREATION_HH_
+
+#include "Project.hh"
+#include "WorkerInterface.hh"
+
+
+#include <QObject>
+
+#include <string>
+
+namespace openMVG_gui
+{
+
+class SceneManager ;
+
+/**
+* @brief worker thread used to create a new project
+*/
+class WorkerProjectCreation : public QObject, public WorkerInterface
+{
+  public:
+
+    /**
+    * @brief Constructor
+    * @param base_path Project output path
+    * @param image_path Input image path
+    * @param intrin Intrisic params
+    * @param database_file Camera database file
+    * @param s_mgr Scene Manager
+    */
+    WorkerProjectCreation( const std::string &base_path ,
+                           const std::string &image_path ,
+                           const IntrinsicParams & intrin ,
+                           const std::string &database_file ,
+                           std::shared_ptr<SceneManager> s_mgr ,
+                           const WorkerNextAction & na = NEXT_ACTION_NONE ) ;
+
+    /**
+    * @brief get progress range
+    */
+    void progressRange( int & min , int & max ) const ;
+
+    /**
+    * @brief Function used to retrieve the project after creation
+    * @return the newly created project (if success only )
+    */
+    std::shared_ptr<Project> project( void ) ;
+
+
+  public slots :
+    /**
+    * @brief create the project
+    */
+    void process( void ) ;
+
+  signals:
+
+    // 0 -> nothing done
+    // 1 -> all done
+    void progress( int ) ;
+
+    // After computation
+    void finished( const WorkerNextAction & na );
+
+  private:
+
+    std::string m_project_base_path ;
+    std::string m_input_image_path ;
+    IntrinsicParams m_intrin_params ;
+    std::string m_database_path ;
+    std::shared_ptr<SceneManager> m_scn_manager ;
+
+    std::shared_ptr<Project> m_project ;
+
+    Q_OBJECT
+} ;
+
+} // namespace openMVG_gui
+
+#endif

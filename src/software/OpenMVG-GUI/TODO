@@ -1,0 +1,14 @@
+- Provide a finer feedback for loads (init)
+
+- Interface to interact with sfm_data (intrinsics) 
+- Interface to show matches between pairs 
+
+- "Save as..." project 
+
+- Check for consistency : 
+  - essential|fundamental matrices with incremetal|global 
+  - binary features with matching parameters 
+- Overwrite files already computed 
+
+- Error feedback for workers 
+  (pass params to finished signal ?) 

@@ -66,7 +66,7 @@ class C_Progress
      * @param increment the number of step that we want to increment the internal step counter
      * @return the value of the internal count => count()
      **/
-    unsigned long operator+= ( unsigned long ulIncrement )
+    virtual unsigned long operator+= ( unsigned long ulIncrement )
     //  Effects: Increment appropriate progress tic if needed.
     //  Postconditions: count()== original count() + increment
     //  Returns: count().
@@ -109,7 +109,7 @@ class C_Progress
      * @brief Pre-Increment operator
      * @return the value of _count
      **/
-    unsigned long  operator++()           { return operator+= ( 1 ); }
+    virtual unsigned long  operator++()           { return operator+= ( 1 ); }
 
     //-- Accessor
     /**
