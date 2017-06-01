@@ -265,6 +265,39 @@ bool Project::hasColorComputed( void ) const
 }
 
 /**
+* @brief Indicate if matches.f.bin is present
+* @retval true if file exists
+* @retval false if file does not exist
+*/
+bool Project::hasMatchesFundamentalFiltered( void ) const
+{
+  const std::string matches_path = matchesPath() ;
+  return stlplus::file_exists( stlplus::create_filespec( matches_path , "matches.f.bin" ) );
+}
+
+/**
+* @brief Indicate if matches.e.bin is present
+* @retval true if file exists
+* @retval false if file does not exist
+*/
+bool Project::hasMatchesEssentialFiltered( void ) const
+{
+  const std::string matches_path = matchesPath() ;
+  return stlplus::file_exists( stlplus::create_filespec( matches_path , "matches.e.bin" ) );
+}
+
+/**
+* @brief Indicate if matches.h.bin is present
+* @param true if file exists
+* @retval false if file does not exist
+*/
+bool Project::hasMatchesHomographyFiltered( void ) const
+{
+  const std::string matches_path = matchesPath() ;
+  return stlplus::file_exists( stlplus::create_filespec( matches_path , "matches.h.bin" ) );
+}
+
+/**
 * @brief Get feature parameters
 * @return current feature computation parameters
 */
@@ -354,7 +387,7 @@ std::vector< int > Project::imageIds( void ) const
 
   for( auto it : m_sfm_data->GetViews() )
   {
-    res.emplace_back( it.first ) ; 
+    res.emplace_back( it.first ) ;
   }
   return res ;
 }

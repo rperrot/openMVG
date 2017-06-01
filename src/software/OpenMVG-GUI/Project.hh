@@ -103,7 +103,26 @@ class Project
     */
     bool hasColorComputed( void ) const ;
 
+    /**
+    * @brief Indicate if matches.f.bin is present
+    * @retval true if file exists
+    * @retval false if file does not exist
+    */
+    bool hasMatchesFundamentalFiltered( void ) const ;
 
+    /**
+    * @brief Indicate if matches.e.bin is present
+    * @retval true if file exists
+    * @retval false if file does not exist
+    */
+    bool hasMatchesEssentialFiltered( void ) const ;
+
+    /**
+    * @brief Indicate if matches.h.bin is present
+    * @param true if file exists
+    * @retval false if file does not exist
+    */
+    bool hasMatchesHomographyFiltered( void ) const ;
 
     /**
     * @brief Get feature parameters
@@ -170,6 +189,7 @@ class Project
     * @param return matches base path
     */
     std::string matchesPath( void ) const ;
+
 
     /**
     * @brief Given a base path, get global reconstruction path

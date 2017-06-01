@@ -581,13 +581,44 @@ void MainWindow::onHasLoadedFeatures( const WorkerNextAction & next_action )
   {
     // Load matches
     std::string match_name ;
+    // Get the first available matche file
     if( m_project->sfMMethod() == SFM_METHOD_INCREMENTAL )
     {
-      match_name = "matches.f.bin" ;
+      if( m_project->hasMatchesFundamentalFiltered() )
+      {
+        match_name = "matches.f.bin" ;
+      }
+      else if( m_project->hasMatchesEssentialFiltered() )
+      {
+        match_name = "matches.e.bin" ;
+      }
+      else if( m_project->hasMatchesHomographyFiltered() )
+      {
+        match_name = "matches.h.bin" ;
+      }
+      else
+      {
+        // TODO : error !
+      }
     }
-    else
+    else // method global
     {
-      match_name = "matches.e.bin" ;
+      if( m_project->hasMatchesEssentialFiltered() )
+      {
+        match_name = "matches.e.bin" ;
+      }
+      else if( m_project->hasMatchesFundamentalFiltered() )
+      {
+        match_name = "matches.f.bin" ;
+      }
+      else if( m_project->hasMatchesHomographyFiltered() )
+      {
+        match_name = "matches.h.bin" ;
+      }
+      else
+      {
+        // TODO : error !
+      }
     }
     m_worker_matches_provider_load = new WorkerMatchesProviderLoad( m_project , match_name , remove( next_action , NEXT_ACTION_LOAD_MATCHES ) ) ;
     QThread * thread = new QThread( this ) ;
