@@ -51,9 +51,6 @@ bool WorkerColorComputation::ColorizeTracks(
 
   WorkerProgressInterface * progressInterface = new WorkerProgressInterface() ;
   {
-
-    std::cerr << "nb landmarks : " << sfm_data->GetLandmarks().size() << std::endl ;
-
     m_progress_value = 0 ;
     progressInterface->restart( sfm_data->GetLandmarks().size() ) ;
     connect( progressInterface , SIGNAL( increment( int ) ) , this , SLOT( hasIncremented( int ) ) ,  Qt::DirectConnection ) ;
