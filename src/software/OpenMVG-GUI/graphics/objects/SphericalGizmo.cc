@@ -1,5 +1,7 @@
 #include "SphericalGizmo.hh"
 
+#include <QOpenGLExtraFunctions>
+
 namespace openMVG_gui
 {
 
@@ -72,6 +74,13 @@ openMVG::Mat4 SphericalGizmo::modelMat( void ) const
 */
 void SphericalGizmo::prepare( void )
 {
+  if( m_prepared )
+  {
+    return ;
+  }
+
+  QOpenGLExtraFunctions *glFuncs = QOpenGLContext::currentContext()->extraFunctions();
+
   const double pi = 3.14159265358979 ;
 
   const uint32_t nbPointPerCircle = 128 ;
@@ -167,11 +176,11 @@ void SphericalGizmo::prepare( void )
   assert( idOut == nbVert ) ;
 
   // set vertex data
-  glGenVertexArrays( 1 , &m_vao ) ;
-  glBindVertexArray( m_vao ) ;
-  glGenBuffers( 1 , &m_vbo ) ;
-  glBindBuffer( GL_ARRAY_BUFFER , m_vbo ) ;
-  glBufferData( GL_ARRAY_BUFFER , nbTotal * sizeof( GLfloat ) , data , GL_STATIC_DRAW ) ;
+  glFuncs->glGenVertexArrays( 1 , &m_vao ) ;
+  glFuncs->glBindVertexArray( m_vao ) ;
+  glFuncs->glGenBuffers( 1 , &m_vbo ) ;
+  glFuncs->glBindBuffer( GL_ARRAY_BUFFER , m_vbo ) ;
+  glFuncs->glBufferData( GL_ARRAY_BUFFER , nbTotal * sizeof( GLfloat ) , data , GL_STATIC_DRAW ) ;
 
   GLint pos = m_shader->attribLocation( "inPos" ) ;
   GLint col = m_shader->attribLocation( "inCol" ) ;
@@ -191,17 +200,17 @@ void SphericalGizmo::prepare( void )
   }
   if( pos != -1 )
   {
-    glEnableVertexAttribArray( pos ) ;
-    glVertexAttribPointer( pos , 3 , GL_FLOAT , GL_FALSE , 6 * sizeof( GLfloat ) , ( GLvoid * ) 0 ) ;
+    glFuncs->glEnableVertexAttribArray( pos ) ;
+    glFuncs->glVertexAttribPointer( pos , 3 , GL_FLOAT , GL_FALSE , 6 * sizeof( GLfloat ) , ( GLvoid * ) 0 ) ;
   }
   if( col != -1 )
   {
-    glEnableVertexAttribArray( col ) ;
-    glVertexAttribPointer( col , 3 , GL_FLOAT , GL_FALSE , 6 * sizeof( GLfloat ) , ( GLvoid* ) ( 3 * sizeof( GLfloat ) ) ) ;
+    glFuncs->glEnableVertexAttribArray( col ) ;
+    glFuncs->glVertexAttribPointer( col , 3 , GL_FLOAT , GL_FALSE , 6 * sizeof( GLfloat ) , ( GLvoid* ) ( 3 * sizeof( GLfloat ) ) ) ;
   }
 
-  glBindBuffer( GL_ARRAY_BUFFER , 0 ) ;
-  glBindVertexArray( 0 );
+  glFuncs->glBindBuffer( GL_ARRAY_BUFFER , 0 ) ;
+  glFuncs->glBindVertexArray( 0 );
 
   delete[] data ;
   m_prepared = true ;
@@ -213,9 +222,11 @@ void SphericalGizmo::prepare( void )
 */
 void SphericalGizmo::draw( void ) const
 {
-  glBindVertexArray( m_vao ) ;
-  glDrawArrays( GL_LINES , 0 , m_nb_vert ) ;
-  glBindVertexArray( 0 ) ;
+  QOpenGLExtraFunctions *glFuncs = QOpenGLContext::currentContext()->extraFunctions();
+
+  glFuncs->glBindVertexArray( m_vao ) ;
+  glFuncs->glDrawArrays( GL_LINES , 0 , m_nb_vert ) ;
+  glFuncs->glBindVertexArray( 0 ) ;
 }
 
 /**

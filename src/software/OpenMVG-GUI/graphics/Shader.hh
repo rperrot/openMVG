@@ -1,7 +1,8 @@
 #ifndef _OPENMVG_SOFTWARE_OPENMVG_GUI_GRAPHICS_SHADER_HH_
 #define _OPENMVG_SOFTWARE_OPENMVG_GUI_GRAPHICS_SHADER_HH_
 
-#include <GL/glew.h>
+
+#include <QOpenGLFunctions>
 
 #include <string>
 
@@ -21,7 +22,7 @@ enum ShaderType
 /**
 * @brief Class managing a shader (vertex, fragment, geometry, ...) in openGL
 */
-class Shader
+class Shader 
 {
   public:
 

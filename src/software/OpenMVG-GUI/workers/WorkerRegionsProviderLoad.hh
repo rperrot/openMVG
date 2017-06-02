@@ -4,8 +4,9 @@
 #include "Project.hh"
 #include "WorkerInterface.hh"
 
-
 #include <QObject>
+
+#include <atomic>
 
 namespace openMVG
 {

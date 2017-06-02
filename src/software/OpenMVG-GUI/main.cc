@@ -2,8 +2,6 @@
 
 #include "workers/WorkerNextAction.hh"
 
-#include <GL/glew.h>
-
 #include <QApplication>
 
 #include <clocale>

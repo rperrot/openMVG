@@ -1,5 +1,8 @@
 #include "ShaderProgram.hh"
 
+#include <QOpenGLFunctions>
+
+
 namespace openMVG_gui
 {
 
@@ -26,7 +29,8 @@ ShaderProgram::~ShaderProgram( void )
 {
   if( m_pgm > 0 )
   {
-    glDeleteProgram( m_pgm ) ;
+    QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
+    glFuncs->glDeleteProgram( m_pgm ) ;
   }
 }
 
@@ -45,7 +49,8 @@ ShaderProgram::operator bool() const
 */
 void ShaderProgram::enable( void )
 {
-  glUseProgram( m_pgm ) ;
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
+  glFuncs->glUseProgram( m_pgm ) ;
 }
 
 /**
@@ -53,7 +58,8 @@ void ShaderProgram::enable( void )
 */
 void ShaderProgram::disable( void )
 {
-  glUseProgram( 0 ) ;
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
+  glFuncs->glUseProgram( 0 ) ;
 }
 
 /**
@@ -73,8 +79,9 @@ GLuint ShaderProgram::getID( void ) const
 */
 void ShaderProgram::setUniform( const std::string & name , const int x )
 {
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
   const GLint loc = m_active_uniform_loc[ name ] ;
-  glUniform1i( loc , x ) ;
+  glFuncs->glUniform1i( loc , x ) ;
 }
 
 /**
@@ -84,7 +91,8 @@ void ShaderProgram::setUniform( const std::string & name , const int x )
 */
 void ShaderProgram::setUniform( const GLint loc , const int x )
 {
-  glUniform1i( loc , x ) ;
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
+  glFuncs->glUniform1i( loc , x ) ;
 }
 
 /**
@@ -94,8 +102,9 @@ void ShaderProgram::setUniform( const GLint loc , const int x )
 */
 void ShaderProgram::setUniform( const std::string & name , const float x )
 {
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
   const GLint loc = m_active_uniform_loc[ name ] ;
-  glUniform1f( loc , x ) ;
+  glFuncs->glUniform1f( loc , x ) ;
 }
 
 /**
@@ -105,7 +114,8 @@ void ShaderProgram::setUniform( const std::string & name , const float x )
 */
 void ShaderProgram::setUniform( const GLint loc , const float x )
 {
-  glUniform1f( loc , x ) ;
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
+  glFuncs->glUniform1f( loc , x ) ;
 }
 
 /**
@@ -116,8 +126,9 @@ void ShaderProgram::setUniform( const GLint loc , const float x )
 */
 void ShaderProgram::setUniform( const std::string & name , const int x , const int y )
 {
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
   const GLint loc = m_active_uniform_loc[ name ] ;
-  glUniform2i( loc , x , y ) ;
+  glFuncs->glUniform2i( loc , x , y ) ;
 }
 
 /**
@@ -128,7 +139,8 @@ void ShaderProgram::setUniform( const std::string & name , const int x , const i
 */
 void ShaderProgram::setUniform( const GLint loc , const int x , const int y )
 {
-  glUniform2i( loc , x , y ) ;
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
+  glFuncs->glUniform2i( loc , x , y ) ;
 }
 
 /**
@@ -139,8 +151,9 @@ void ShaderProgram::setUniform( const GLint loc , const int x , const int y )
 */
 void ShaderProgram::setUniform( const std::string & name , const float x , const float y )
 {
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
   const GLint loc = m_active_uniform_loc[ name ] ;
-  glUniform2f( loc , x , y ) ;
+  glFuncs->glUniform2f( loc , x , y ) ;
 }
 
 /**
@@ -151,7 +164,8 @@ void ShaderProgram::setUniform( const std::string & name , const float x , const
 */
 void ShaderProgram::setUniform( const GLint loc , const float x , const float y )
 {
-  glUniform2f( loc , x , y ) ;
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
+  glFuncs->glUniform2f( loc , x , y ) ;
 }
 
 /**
@@ -161,8 +175,9 @@ void ShaderProgram::setUniform( const GLint loc , const float x , const float y 
 */
 void ShaderProgram::setUniform( const std::string & name , const openMVG::Vec2 & v )
 {
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
   const GLint loc = m_active_uniform_loc[ name ] ;
-  glUniform2f( loc , v[0] , v[1] ) ;
+  glFuncs->glUniform2f( loc , v[0] , v[1] ) ;
 }
 
 /**
@@ -172,7 +187,8 @@ void ShaderProgram::setUniform( const std::string & name , const openMVG::Vec2 &
 */
 void ShaderProgram::setUniform( const GLint loc , const openMVG::Vec2 & v )
 {
-  glUniform2f( loc , v[0] , v[1] ) ;
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
+  glFuncs->glUniform2f( loc , v[0] , v[1] ) ;
 }
 
 
@@ -185,8 +201,9 @@ void ShaderProgram::setUniform( const GLint loc , const openMVG::Vec2 & v )
 */
 void ShaderProgram::setUniform( const std::string & name , const int x , const int y , const int z )
 {
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
   const GLint loc = m_active_uniform_loc[ name ] ;
-  glUniform3i( loc , x , y , z ) ;
+  glFuncs->glUniform3i( loc , x , y , z ) ;
 }
 
 /**
@@ -198,7 +215,8 @@ void ShaderProgram::setUniform( const std::string & name , const int x , const i
 */
 void ShaderProgram::setUniform( const GLint loc , const int x , const int y , const int z )
 {
-  glUniform3i( loc , x , y , z ) ;
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
+  glFuncs->glUniform3i( loc , x , y , z ) ;
 }
 
 /**
@@ -210,8 +228,9 @@ void ShaderProgram::setUniform( const GLint loc , const int x , const int y , co
 */
 void ShaderProgram::setUniform( const std::string & name , const float x , const float y , const float z )
 {
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
   const GLint loc = m_active_uniform_loc[ name ] ;
-  glUniform3f( loc , x , y , z ) ;
+  glFuncs->glUniform3f( loc , x , y , z ) ;
 }
 
 /**
@@ -223,7 +242,8 @@ void ShaderProgram::setUniform( const std::string & name , const float x , const
 */
 void ShaderProgram::setUniform( const GLint loc , const float x , const float y , const float z )
 {
-  glUniform3f( loc , x , y , z ) ;
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
+  glFuncs->glUniform3f( loc , x , y , z ) ;
 }
 
 /**
@@ -233,8 +253,9 @@ void ShaderProgram::setUniform( const GLint loc , const float x , const float y 
 */
 void ShaderProgram::setUniform( const std::string & name , const openMVG::Vec3 & v )
 {
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
   const GLint loc = m_active_uniform_loc[ name ] ;
-  glUniform3f( loc , v[0] , v[1] , v[2] ) ;
+  glFuncs->glUniform3f( loc , v[0] , v[1] , v[2] ) ;
 }
 
 /**
@@ -244,7 +265,8 @@ void ShaderProgram::setUniform( const std::string & name , const openMVG::Vec3 &
 */
 void ShaderProgram::setUniform( const GLint loc , const openMVG::Vec3 & v )
 {
-  glUniform3f( loc , v[0] , v[1] , v[2] ) ;
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
+  glFuncs->glUniform3f( loc , v[0] , v[1] , v[2] ) ;
 }
 
 /**
@@ -257,8 +279,9 @@ void ShaderProgram::setUniform( const GLint loc , const openMVG::Vec3 & v )
 */
 void ShaderProgram::setUniform( const std::string & name , const int x , const int y , const int z , const int w )
 {
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
   const GLint loc = m_active_uniform_loc[ name ] ;
-  glUniform4i( loc , x , y , z , w ) ;
+  glFuncs->glUniform4i( loc , x , y , z , w ) ;
 }
 
 /**
@@ -271,7 +294,8 @@ void ShaderProgram::setUniform( const std::string & name , const int x , const i
 */
 void ShaderProgram::setUniform( const GLint loc , const int x , const int y , const int z , const int w )
 {
-  glUniform4i( loc , x , y , z , w ) ;
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
+  glFuncs->glUniform4i( loc , x , y , z , w ) ;
 }
 
 /**
@@ -284,8 +308,9 @@ void ShaderProgram::setUniform( const GLint loc , const int x , const int y , co
 */
 void ShaderProgram::setUniform( const std::string & name , const float x , const float y , const float z , const float w )
 {
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
   const GLint loc = m_active_uniform_loc[ name ] ;
-  glUniform4f( loc , x , y , z , w ) ;
+  glFuncs->glUniform4f( loc , x , y , z , w ) ;
 }
 
 /**
@@ -298,7 +323,8 @@ void ShaderProgram::setUniform( const std::string & name , const float x , const
 */
 void ShaderProgram::setUniform( const GLint loc , const float x , const float y , const float z , const float w )
 {
-  glUniform4f( loc , x , y , z , w ) ;
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
+  glFuncs->glUniform4f( loc , x , y , z , w ) ;
 }
 
 /**
@@ -308,8 +334,9 @@ void ShaderProgram::setUniform( const GLint loc , const float x , const float y 
 */
 void ShaderProgram::setUniform( const std::string & name , const openMVG::Vec4 & v )
 {
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
   const GLint loc = m_active_uniform_loc[ name ] ;
-  glUniform4f( loc , v[0] , v[1] , v[2] , v[3] ) ;
+  glFuncs->glUniform4f( loc , v[0] , v[1] , v[2] , v[3] ) ;
 }
 
 /**
@@ -319,7 +346,8 @@ void ShaderProgram::setUniform( const std::string & name , const openMVG::Vec4 &
 */
 void ShaderProgram::setUniform( const GLint loc , const openMVG::Vec4 & v )
 {
-  glUniform4f( loc , v[0] , v[1] , v[2] , v[3] ) ;
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
+  glFuncs->glUniform4f( loc , v[0] , v[1] , v[2] , v[3] ) ;
 }
 
 /**
@@ -329,6 +357,7 @@ void ShaderProgram::setUniform( const GLint loc , const openMVG::Vec4 & v )
 */
 void ShaderProgram::setUniform( const std::string & name , const openMVG::Mat4 & m , bool transpose )
 {
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
   const Eigen::Matrix4f tmp_m = m.cast<float>() ;
   const GLfloat tmp[] =
   {
@@ -338,7 +367,7 @@ void ShaderProgram::setUniform( const std::string & name , const openMVG::Mat4 &
     tmp_m( 3 , 0 ) , tmp_m( 3 , 1 ) , tmp_m( 3 , 2 ) , tmp_m( 3 , 3 )
   } ;
   const GLint loc = m_active_uniform_loc[ name ] ;
-  glUniformMatrix4fv( loc , 1 , transpose , tmp ) ;
+  glFuncs->glUniformMatrix4fv( loc , 1 , transpose , tmp ) ;
 }
 
 /**
@@ -348,6 +377,7 @@ void ShaderProgram::setUniform( const std::string & name , const openMVG::Mat4 &
 */
 void ShaderProgram::setUniform( const GLint loc , const openMVG::Mat4 & m , bool transpose )
 {
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
   const Eigen::Matrix4f tmp_m = m.cast<float>() ;
   const GLfloat tmp[] =
   {
@@ -356,7 +386,7 @@ void ShaderProgram::setUniform( const GLint loc , const openMVG::Mat4 & m , bool
     tmp_m( 2 , 0 ) , tmp_m( 2 , 1 ) , tmp_m( 2 , 2 ) , tmp_m( 2 , 3 ) ,
     tmp_m( 3 , 0 ) , tmp_m( 3 , 1 ) , tmp_m( 3 , 2 ) , tmp_m( 3 , 3 )
   } ;
-  glUniformMatrix4fv( loc , 1 , transpose , tmp ) ;
+  glFuncs->glUniformMatrix4fv( loc , 1 , transpose , tmp ) ;
 }
 
 /**
@@ -416,18 +446,19 @@ bool ShaderProgram::hasAttribute( const std::string & name ) const
 */
 void ShaderProgram::linkProgram( void )
 {
-  m_pgm = glCreateProgram() ;
-  glAttachShader( m_pgm , m_vert_shader.getID() ) ;
-  glAttachShader( m_pgm , m_frag_shader.getID() ) ;
-  glLinkProgram( m_pgm ) ;
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
+  m_pgm = glFuncs->glCreateProgram() ;
+  glFuncs->glAttachShader( m_pgm , m_vert_shader.getID() ) ;
+  glFuncs->glAttachShader( m_pgm , m_frag_shader.getID() ) ;
+  glFuncs->glLinkProgram( m_pgm ) ;
 
   GLint program_ok;
-  glGetProgramiv( m_pgm, GL_LINK_STATUS, &program_ok );
+  glFuncs->glGetProgramiv( m_pgm, GL_LINK_STATUS, &program_ok );
   if ( program_ok != GL_TRUE )
   {
     GLsizei log_length = 0;
     GLchar message[1024];
-    glGetProgramInfoLog( m_pgm, 1024, &log_length, message );
+    glFuncs->glGetProgramInfoLog( m_pgm, 1024, &log_length, message );
     m_pgm = 0 ;
   }
 }
@@ -437,40 +468,41 @@ void ShaderProgram::linkProgram( void )
 */
 void ShaderProgram::populateActiveUniformsAndAtttributes( void )
 {
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
   enable() ;
   GLint nb , maxLen ;
   // Uniforms
   {
-    glGetProgramiv( m_pgm , GL_ACTIVE_UNIFORMS, &nb );
-    glGetProgramiv( m_pgm , GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxLen );
+    glFuncs->glGetProgramiv( m_pgm , GL_ACTIVE_UNIFORMS, &nb );
+    glFuncs->glGetProgramiv( m_pgm , GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxLen );
     GLchar * u_name = new GLchar[ maxLen ] ;
 
     for( int id_unif = 0 ; id_unif < nb ; ++id_unif )
     {
       GLint size ;
       GLenum type ;
-      glGetActiveUniform( m_pgm , id_unif , maxLen, nullptr , &size, &type, u_name );
+      glFuncs->glGetActiveUniform( m_pgm , id_unif , maxLen, nullptr , &size, &type, u_name );
       std::string s_name( u_name ) ;
 
-      m_active_uniform_loc[ s_name ] = glGetUniformLocation( m_pgm , u_name ) ;
+      m_active_uniform_loc[ s_name ] = glFuncs->glGetUniformLocation( m_pgm , u_name ) ;
     }
     delete[] u_name ;
   }
 
   // Attributes
   {
-    glGetProgramiv( m_pgm , GL_ACTIVE_ATTRIBUTES, &nb );
-    glGetProgramiv( m_pgm, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &maxLen );
+    glFuncs->glGetProgramiv( m_pgm , GL_ACTIVE_ATTRIBUTES, &nb );
+    glFuncs->glGetProgramiv( m_pgm, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &maxLen );
     GLchar * a_name = new GLchar[ maxLen ] ;
 
     for( int id_attr = 0 ; id_attr < nb ; ++id_attr )
     {
       GLint size ;
       GLenum type ;
-      glGetActiveAttrib( m_pgm , id_attr, maxLen, nullptr, &size, &type, a_name );
+      glFuncs->glGetActiveAttrib( m_pgm , id_attr, maxLen, nullptr, &size, &type, a_name );
       std::string s_name( a_name ) ;
 
-      m_active_attribute_loc[ s_name ] = glGetAttribLocation( m_pgm , a_name ) ;
+      m_active_attribute_loc[ s_name ] = glFuncs->glGetAttribLocation( m_pgm , a_name ) ;
     }
     delete[] a_name ;
   }

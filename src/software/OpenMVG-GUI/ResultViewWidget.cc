@@ -28,9 +28,6 @@ ResultViewWidget::ResultViewWidget( QWidget * parent )
 */
 void ResultViewWidget::initializeGL( void )
 {
-  glewExperimental = true ;
-  glewInit();
-
   glClearColor( 0.251 , 0.251 , 0.251 , 1.0 ) ;
   glEnable( GL_DEPTH_TEST ) ;
 

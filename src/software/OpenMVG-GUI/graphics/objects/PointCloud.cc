@@ -1,5 +1,7 @@
 #include "PointCloud.hh"
 
+#include <QOpenGLExtraFunctions>
+
 namespace openMVG_gui
 {
 
@@ -26,8 +28,10 @@ PointCloud::PointCloud( std::shared_ptr<ShaderProgram> pgm ,
 */
 PointCloud::~PointCloud()
 {
-  glDeleteVertexArrays( 1 , &m_vao ) ;
-  glDeleteBuffers( 1 , &m_vbo ) ;
+  QOpenGLExtraFunctions *glFuncs = QOpenGLContext::currentContext()->extraFunctions();
+
+  glFuncs->glDeleteVertexArrays( 1 , &m_vao ) ;
+  glFuncs->glDeleteBuffers( 1 , &m_vbo ) ;
 }
 
 
@@ -37,6 +41,8 @@ PointCloud::~PointCloud()
 */
 void PointCloud::prepare( void )
 {
+  QOpenGLExtraFunctions *glFuncs = QOpenGLContext::currentContext()->extraFunctions();
+
   if( m_prepared )
   {
     return ;
@@ -72,11 +78,11 @@ void PointCloud::prepare( void )
   }
 
   // set vertex data
-  glGenVertexArrays( 1 , &m_vao ) ;
-  glBindVertexArray( m_vao ) ;
-  glGenBuffers( 1 , &m_vbo ) ;
-  glBindBuffer( GL_ARRAY_BUFFER , m_vbo ) ;
-  glBufferData( GL_ARRAY_BUFFER , nb_total_elt * sizeof( GLfloat ) , data , GL_STATIC_DRAW ) ;
+  glFuncs->glGenVertexArrays( 1 , &m_vao ) ;
+  glFuncs->glBindVertexArray( m_vao ) ;
+  glFuncs->glGenBuffers( 1 , &m_vbo ) ;
+  glFuncs->glBindBuffer( GL_ARRAY_BUFFER , m_vbo ) ;
+  glFuncs->glBufferData( GL_ARRAY_BUFFER , nb_total_elt * sizeof( GLfloat ) , data , GL_STATIC_DRAW ) ;
 
   GLint pos = m_shader->attribLocation( "inPos" ) ;
   GLint col = m_shader->attribLocation( "inCol" ) ;
@@ -96,17 +102,17 @@ void PointCloud::prepare( void )
   }
   if( pos != -1 )
   {
-    glEnableVertexAttribArray( pos ) ;
-    glVertexAttribPointer( pos , 3 , GL_FLOAT , GL_FALSE , 6 * sizeof( GLfloat ) , ( GLvoid * ) 0 ) ;
+    glFuncs->glEnableVertexAttribArray( pos ) ;
+    glFuncs->glVertexAttribPointer( pos , 3 , GL_FLOAT , GL_FALSE , 6 * sizeof( GLfloat ) , ( GLvoid * ) 0 ) ;
   }
   if( col != -1 )
   {
-    glEnableVertexAttribArray( col ) ;
-    glVertexAttribPointer( col , 3 , GL_FLOAT , GL_FALSE , 6 * sizeof( GLfloat ) , ( GLvoid* ) ( 3 * sizeof( GLfloat ) ) ) ;
+    glFuncs->glEnableVertexAttribArray( col ) ;
+    glFuncs->glVertexAttribPointer( col , 3 , GL_FLOAT , GL_FALSE , 6 * sizeof( GLfloat ) , ( GLvoid* ) ( 3 * sizeof( GLfloat ) ) ) ;
   }
 
-  glBindBuffer( GL_ARRAY_BUFFER , 0 ) ;
-  glBindVertexArray( 0 );
+  glFuncs->glBindBuffer( GL_ARRAY_BUFFER , 0 ) ;
+  glFuncs->glBindVertexArray( 0 );
 
   delete[] data ;
   m_prepared = true ;
@@ -117,9 +123,11 @@ void PointCloud::prepare( void )
 */
 void PointCloud::draw( void ) const
 {
-  glBindVertexArray( m_vao ) ;
-  glDrawArrays( GL_POINTS , 0 , m_nb_vert ) ;
-  glBindVertexArray( 0 ) ;
+  QOpenGLExtraFunctions *glFuncs = QOpenGLContext::currentContext()->extraFunctions();
+
+  glFuncs->glBindVertexArray( m_vao ) ;
+  glFuncs->glDrawArrays( GL_POINTS , 0 , m_nb_vert ) ;
+  glFuncs->glBindVertexArray( 0 ) ;
 }
 
 

@@ -4,6 +4,10 @@
 
 #include <iostream>
 
+
+#include <QOpenGLFunctions>
+
+
 namespace openMVG_gui
 {
 /**
@@ -26,7 +30,8 @@ Shader::~Shader( )
 {
   if( m_valid )
   {
-    glDeleteShader( m_id );
+    QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
+    glFuncs->glDeleteShader( m_id );
   }
 }
 
@@ -61,22 +66,24 @@ Shader::operator bool() const
 
 void Shader::loadAndCompile( const std::string & filePath )
 {
+  QOpenGLFunctions *glFuncs = QOpenGLContext::currentContext()->functions();
+
   m_id = 0 ;
   switch( m_type )
   {
     case SHADER_TYPE_VERTEX :
     {
-      m_id = glCreateShader( GL_VERTEX_SHADER ) ;
+      m_id = glFuncs->glCreateShader( GL_VERTEX_SHADER ) ;
       break ;
     }
     case SHADER_TYPE_FRAGMENT :
     {
-      m_id = glCreateShader( GL_FRAGMENT_SHADER ) ;
+      m_id = glFuncs->glCreateShader( GL_FRAGMENT_SHADER ) ;
       break ;
     }
     case SHADER_TYPE_GEOMETRY :
     {
-      m_id = glCreateShader( GL_GEOMETRY_SHADER );
+      m_id = glFuncs->glCreateShader( GL_GEOMETRY_SHADER );
       break ;
     }
   }
@@ -92,12 +99,12 @@ void Shader::loadAndCompile( const std::string & filePath )
   const std::string content = fileContent( filePath ) ;
   GLint len = content.size() ;
   const char * c_content = content.c_str() ;
-  glShaderSource( m_id , 1 , &c_content , &len ) ;
-  glCompileShader( m_id ) ;
+  glFuncs->glShaderSource( m_id , 1 , &c_content , &len ) ;
+  glFuncs->glCompileShader( m_id ) ;
 
   // Get error code
   GLint ok ;
-  glGetShaderiv( m_id , GL_COMPILE_STATUS, &ok );
+  glFuncs->glGetShaderiv( m_id , GL_COMPILE_STATUS, &ok );
   if( ok )
   {
     m_valid = true ;
@@ -107,11 +114,11 @@ void Shader::loadAndCompile( const std::string & filePath )
   {
     // Get error message
     GLint log_len = 0;
-    glGetShaderiv( m_id , GL_INFO_LOG_LENGTH , &log_len );
+    glFuncs->glGetShaderiv( m_id , GL_INFO_LOG_LENGTH , &log_len );
 
     GLchar* log = new GLchar[ log_len ] ;
 
-    glGetShaderInfoLog( m_id , log_len , nullptr , log ) ;
+    glFuncs->glGetShaderInfoLog( m_id , log_len , nullptr , log ) ;
 
     std::cerr << "Compile log : " << log << std::endl ;
 
