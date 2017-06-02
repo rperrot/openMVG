@@ -66,4 +66,36 @@ void SceneManager::render( const double aspect )
   m_hierarchy->render( shared_from_this() , aspect ) ;
 }
 
+// Set cameras gizmos
+void SceneManager::setCameraGizmos( const std::map< int , std::shared_ptr<RenderableObject> > & objs )
+{
+  m_camera_gizmos = objs ;
+
+  for( auto & it : m_camera_gizmos )
+  {
+    m_hierarchy->addObject( it.second ) ;
+  }
+}
+
+// Remove all camera gizmos
+void SceneManager::removeCameraGizmos( void )
+{
+  for( auto & it : m_camera_gizmos )
+  {
+    m_hierarchy->removeObject( it.second ) ;
+  }
+  m_camera_gizmos.clear() ;
+}
+
+// Get a gizmo
+std::shared_ptr<RenderableObject> SceneManager::cameraGizmo( const int id ) const
+{
+  if( m_camera_gizmos.count( id ) > 0 )
+  {
+    return m_camera_gizmos.at( id ) ;
+  }
+
+  return nullptr ;
+}
+
 } // namespace openMVG_gui

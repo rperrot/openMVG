@@ -1,7 +1,9 @@
-set( OPENMVG_GRAPHICS_OBJECTS_HEADERS Grid.hh 
+set( OPENMVG_GRAPHICS_OBJECTS_HEADERS CameraGizmo.hh 
+                                      Grid.hh 
                                       PointCloud.hh
                                       SphericalGizmo.hh  )
-set( OPENMVG_GRAPHICS_OBJECTS_SOURCES Grid.cc 
+set( OPENMVG_GRAPHICS_OBJECTS_SOURCES CameraGizmo.cc 
+                                      Grid.cc 
                                       PointCloud.cc
                                       SphericalGizmo.cc ) 
 

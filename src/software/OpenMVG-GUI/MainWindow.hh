@@ -115,6 +115,11 @@ class MainWindow : public QMainWindow
     */
     void onUpdateImageList( void ) ;
 
+    /**
+    * @brief Action to be executed when user wants to show/hide the grid
+    */
+    void onShowHideGrid( void ) ; 
+
 
     // After something happened
     /**
@@ -242,6 +247,9 @@ class MainWindow : public QMainWindow
     QAction * m_setting_features_act ;
     QAction * m_setting_matches_act ;
     QAction * m_setting_sfm_act ;
+    /// View 
+    QMenu * m_view_menu ; 
+    QAction * m_show_hide_grid_act ; 
 
     /// The image listing widget
     ImageListWidget * m_image_list ;

@@ -30,7 +30,7 @@ class SceneManager : public std::enable_shared_from_this<SceneManager>
     void addObject( std::shared_ptr<RenderableObject> obj ) ;
 
     /**
-    * @brief remove object from scene 
+    * @brief remove object from scene
     */
     void removeObject( std::shared_ptr<RenderableObject> obj ) ;
 
@@ -56,8 +56,18 @@ class SceneManager : public std::enable_shared_from_this<SceneManager>
     */
     void render( const double aspect );
 
+    // Set cameras gizmos
+    void setCameraGizmos( const std::map< int , std::shared_ptr<RenderableObject> > & objs ) ;
+
+    // Remove all camera gizmos 
+    void removeCameraGizmos( void ) ; 
+
+    // Get a gizmo 
+    std::shared_ptr<RenderableObject> cameraGizmo( const int id ) const ; 
+
   private:
 
+    std::map< int , std::shared_ptr<RenderableObject> > m_camera_gizmos ;
     std::shared_ptr<SceneHierarchy> m_hierarchy ;
     std::shared_ptr<Camera> m_camera ;
 

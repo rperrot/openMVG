@@ -8,12 +8,13 @@
 
 
 #include "graphics/hierarchies/LinearHierarchy.hh"
+#include "graphics/objects/CameraGizmo.hh"
 #include "graphics/objects/PointCloud.hh"
 #include "graphics/objects/SphericalGizmo.hh"
 #include "utils/BoundingSphere.hh"
 #include "utils/PlyLoader.hh"
 
-
+#include "openMVG/sfm/sfm_data.hpp"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include <QApplication>
@@ -193,6 +194,20 @@ void MainWindow::onOpenProject( void )
     std::shared_ptr<RenderableObject> sprs  = std::make_shared<PointCloud>( m_result_view->pointShader() , pts , col ) ;
     mgr->addObject( sprs ) ;
     m_project->setSparsePointCloud( sprs ) ;
+
+    // Add the camera gizmos
+    std::shared_ptr<openMVG::sfm::SfM_Data> sfm = m_project->SfMData() ;
+    if( sfm )
+    {
+      mgr->removeCameraGizmos() ;
+      std::map<int, std::shared_ptr<RenderableObject>> cam_gizmos ;
+      for( auto & cur_pose : sfm->GetPoses() )
+      {
+        cam_gizmos[ cur_pose.first ] = std::make_shared<CameraGizmo>( m_result_view->pointShader() , cur_pose.second , 0.1 ) ;
+      }
+      mgr->setCameraGizmos( cam_gizmos ) ;
+    }
+
     m_result_view->prepareObjects() ;
     m_result_view->updateTrackballSize() ;
 
@@ -228,6 +243,20 @@ void MainWindow::onOpenProject( void )
     std::shared_ptr<RenderableObject> sprs  = std::make_shared<PointCloud>( m_result_view->pointShader() , pts , col ) ;
     mgr->addObject( sprs ) ;
     m_project->setSparsePointCloud( sprs ) ;
+
+    // Add the camera gizmos
+    std::shared_ptr<openMVG::sfm::SfM_Data> sfm = m_project->SfMData() ;
+    if( sfm )
+    {
+      mgr->removeCameraGizmos() ;
+      std::map<int, std::shared_ptr<RenderableObject>> cam_gizmos ;
+      for( auto & cur_pose : sfm->GetPoses() )
+      {
+        cam_gizmos[ cur_pose.first ] = std::make_shared<CameraGizmo>( m_result_view->pointShader() , cur_pose.second , 0.1 ) ;
+      }
+      mgr->setCameraGizmos( cam_gizmos ) ;
+    }
+
     m_result_view->prepareObjects() ;
     m_result_view->updateTrackballSize() ;
 
@@ -536,6 +565,19 @@ void MainWindow::onUpdateImageList( void )
 }
 
 /**
+* @brief Action to be executed when user wants to show/hide the grid
+*/
+void MainWindow::onShowHideGrid( void )
+{
+  std::shared_ptr<RenderableObject> g = m_result_view->grid() ;
+  const bool active = g->isVisible() ;
+  g->setVisible( ! active ) ;
+  m_result_view->update() ;
+  m_show_hide_grid_act->setChecked( ! active ) ;
+}
+
+
+/**
 * @brief Action to be executed when features have been computed
 */
 void MainWindow::onHasComputedFeatures( const WorkerNextAction & next_action  )
@@ -815,6 +857,20 @@ void MainWindow::onHasComputedSfM( const WorkerNextAction & next_action )
   sprs = std::make_shared<PointCloud>( m_result_view->pointShader() , pts , col ) ;
   mgr->addObject( sprs ) ;
   m_project->setSparsePointCloud( sprs ) ;
+
+  // Add the camera gizmos
+  std::shared_ptr<openMVG::sfm::SfM_Data> sfm = m_project->SfMData() ;
+  if( sfm )
+  {
+    mgr->removeCameraGizmos() ;
+    std::map<int, std::shared_ptr<RenderableObject>> cam_gizmos ;
+    for( auto & cur_pose : sfm->GetPoses() )
+    {
+      cam_gizmos[ cur_pose.first ] = std::make_shared<CameraGizmo>( m_result_view->pointShader() , cur_pose.second , 0.1 ) ;
+    }
+    mgr->setCameraGizmos( cam_gizmos ) ;
+  }
+
   m_result_view->prepareObjects() ;
   m_result_view->updateTrackballSize() ;
   m_result_view->update() ;
@@ -1061,6 +1117,7 @@ void MainWindow::buildMenus( void )
   m_file_menu = mbar->addMenu( "File" ) ;
   m_workflow_menu = mbar->addMenu( "Workflow" ) ;
   m_settings_menu = mbar->addMenu( "Settings" ) ;
+  m_view_menu = mbar->addMenu( "View" ) ;
 
   m_file_new_act = m_file_menu->addAction( "New" ) ;
   m_file_new_act->setShortcuts( QKeySequence::New ) ;
@@ -1085,6 +1142,10 @@ void MainWindow::buildMenus( void )
   m_setting_features_act = m_settings_menu->addAction( "Features" ) ;
   m_setting_matches_act = m_settings_menu->addAction( "Matching" ) ;
   m_setting_sfm_act = m_settings_menu->addAction( "SfM" ) ;
+
+  m_show_hide_grid_act = m_view_menu->addAction( "Grid" ) ;
+  m_show_hide_grid_act->setCheckable( true ) ;
+  m_show_hide_grid_act->setChecked( true ) ; 
 }
 
 /**
@@ -1137,6 +1198,7 @@ void MainWindow::makeConnections( void )
   connect( m_setting_features_act , SIGNAL( triggered() ) , this , SLOT( onChangeFeatureSettings() ) ) ;
   connect( m_setting_matches_act , SIGNAL( triggered() ) , this , SLOT( onChangeMatchesSettings() ) ) ;
   connect( m_setting_sfm_act , SIGNAL( triggered() ) , this , SLOT( onChangeSfMSettings() ) ) ;
+  connect( m_show_hide_grid_act , SIGNAL( triggered() ) , this , SLOT( onShowHideGrid() ) ) ;
 }
 
 void MainWindow::createProgress( const std::string &message , const int minvalue , const int maxvalue )

@@ -66,7 +66,7 @@ class ResultViewWidget : public QOpenGLWidget
     /**
     * @brief Update track size based on screen
     */
-    void updateTrackballSize( void ) ; 
+    void updateTrackballSize( void ) ;
 
     /**
     * @brief Update scene by zooming in or out
@@ -86,10 +86,10 @@ class ResultViewWidget : public QOpenGLWidget
     void mouseMoveEvent( QMouseEvent * event ) override ;
 
     /**
-    * @brief Mouse event management 
-    * Use to pan/rotate camera for ex 
+    * @brief Mouse event management
+    * Use to pan/rotate camera for ex
     */
-    void mouseReleaseEvent( QMouseEvent * event ) override ; 
+    void mouseReleaseEvent( QMouseEvent * event ) override ;
 
   private:
 
