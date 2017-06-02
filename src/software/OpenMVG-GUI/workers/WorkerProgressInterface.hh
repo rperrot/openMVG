@@ -5,6 +5,8 @@
 
 #include <QObject>
 
+#include <mutex>
+
 namespace openMVG_gui
 {
 // This is an helper class used to make an interface with standard openMVG
@@ -47,6 +49,7 @@ class WorkerProgressInterface : public QObject , public C_Progress
   private:
 
     bool m_canceled ;
+    std::mutex m_mutex ; 
 
     Q_OBJECT
 } ;

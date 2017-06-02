@@ -8,6 +8,7 @@
 #include <QObject>
 
 #include <atomic>
+#include <mutex>
 
 namespace openMVG
 {
@@ -80,12 +81,14 @@ class WorkerMatchesComputation : public QObject, public WorkerInterface
   private:
 
     std::shared_ptr<openMVG::matching::PairWiseMatches> m_map_PutativesMatches;
+    
 
     std::shared_ptr<Project> m_project ;
     std::shared_ptr<openMVG::sfm::Regions_Provider> m_regions_provider ;
 
     // Internal counter for the number of step already done
     std::atomic<unsigned int> m_progress_value ;
+    std::mutex m_mutex ; 
 
     Q_OBJECT
 } ;

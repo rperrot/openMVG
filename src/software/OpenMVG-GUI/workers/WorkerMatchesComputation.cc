@@ -39,7 +39,7 @@ void WorkerMatchesComputation::progressRange( int & min , int & max ) const
   min = 0 ;
   max = openMVG::exhaustivePairs( sfm_data->GetViews().size() ).size() + 1 ;
 
-  std::cerr << "WorkerMatchesComputation" << " min : " << min << " - max : " << max << std::endl ; 
+  std::cerr << "WorkerMatchesComputation" << " min : " << min << " - max : " << max << std::endl ;
 }
 
 /**
@@ -63,12 +63,11 @@ void WorkerMatchesComputation::process( void )
   const int nb_pair = pairs.size() ;
 
   m_progress_value = 0 ;
-  emit progress( ( int ) m_progress_value ) ;
-
+  sendProgress() ;
 
   WorkerProgressInterface * progressInterface = new WorkerProgressInterface() ;
 
-  connect( progressInterface , SIGNAL( increment( int ) ) , this , SLOT( hasIncremented( int ) ) ) ;
+  connect( progressInterface , SIGNAL( increment( int ) ) , this , SLOT( hasIncremented( int ) ) , Qt::DirectConnection ) ;
 
   // Compute matching for all pairs
   m_map_PutativesMatches = std::make_shared<openMVG::matching::PairWiseMatches>() ;
@@ -82,14 +81,17 @@ void WorkerMatchesComputation::process( void )
     std::cerr << "Could not save result" << std::endl ;
     // TODO : find a way to inform the user of the failure
 
-    emit progress( nb_pair + 1 ) ;
+    m_progress_value = nb_pair + 1 ;
+    sendProgress() ;
     emit finished( NEXT_ACTION_ERROR ) ;
+
     delete progressInterface ;
     QCoreApplication::processEvents();
     return ;
   }
 
-  emit progress( nb_pair + 1 ) ;
+  m_progress_value = nb_pair + 1 ;
+  sendProgress() ;
   emit finished( nextAction() ) ;
   QCoreApplication::processEvents();
   delete progressInterface ;
@@ -99,7 +101,6 @@ void WorkerMatchesComputation::sendProgress( void )
 {
   int progress_value = m_progress_value ;
   emit progress( progress_value ) ;
-  QCoreApplication::processEvents();
 }
 
 

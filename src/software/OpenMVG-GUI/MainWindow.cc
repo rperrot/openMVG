@@ -55,6 +55,8 @@ MainWindow::MainWindow()
   m_worker_incremental_sfm_computation = nullptr ;
   m_worker_global_sfm_computation      = nullptr ;
   m_worker_color_computation           = nullptr ;
+
+  m_progress_dialog = nullptr ;
 }
 
 /**
@@ -62,6 +64,9 @@ MainWindow::MainWindow()
 */
 void MainWindow::onNewProject( void )
 {
+  delete m_progress_dialog ;
+  m_progress_dialog = nullptr ;
+
   qInfo( "New Project" ) ;
   NewProjectDialog dlg( this ) ;
 
@@ -90,23 +95,14 @@ void MainWindow::onNewProject( void )
     QThread * thread = new QThread( this ) ;
     m_worker_project_creation->moveToThread( thread ) ;
 
+    int progress_min = 0 , progress_max = 0 ;
+    m_worker_project_creation->progressRange( progress_min , progress_max ) ;
+    createProgress( "Project Creation, please wait ..." , progress_min , progress_max ) ;
+
     connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
     connect( thread , SIGNAL( started() ) , m_worker_project_creation , SLOT( process() ) ) ;
-    connect( m_worker_project_creation , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
     connect( m_worker_project_creation , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasCreatedProject( const WorkerNextAction & ) ) ) ;
-    connect( m_worker_project_creation , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) ) ;
-
-    int progress_min = 0 ;
-    int progress_max = 0 ;
-    m_worker_project_creation->progressRange( progress_min , progress_max ) ;
-    m_progress_dialog->setWindowModality( Qt::WindowModal ) ;
-    m_progress_dialog->setCancelButton( nullptr ) ;
-    m_progress_dialog->setLabelText( "Project Creation, please wait ..." ) ;
-    const int width = QFontMetrics( m_progress_dialog->font() ).width( m_progress_dialog->labelText() ) + 100;
-    m_progress_dialog->resize( width , m_progress_dialog->height() ) ;
-    m_progress_dialog->setRange( progress_min , progress_max ) ;
-    m_progress_dialog->setMinimumDuration( 100 ) ;
-    m_progress_dialog->setValue( 0 ) ;
+    connect( m_worker_project_creation , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
 
     thread->start() ;
   }
@@ -307,28 +303,24 @@ void MainWindow::onQuit( void )
 */
 void MainWindow::onComputeFeatures( void )
 {
+  delete m_progress_dialog ;
+  m_progress_dialog = nullptr ;
+
   qInfo( "Compute features" ) ;
 
   m_worker_features_computation = new WorkerFeaturesComputation( m_project ) ;
   QThread * thread = new QThread( this ) ;
   m_worker_features_computation->moveToThread( thread ) ;
 
+  int progress_min = 0 , progress_max = 0 ;
+  m_worker_features_computation->progressRange( progress_min , progress_max ) ;
+  createProgress( "Features computation, please wait ..." , progress_min , progress_max ) ;
+
   connect( thread , SIGNAL( started() ) , m_worker_features_computation , SLOT( process() ) ) ;
+  connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
   connect( m_worker_features_computation, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
   connect( m_worker_features_computation, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasComputedFeatures( const WorkerNextAction & ) ) ) ;
-  connect( m_worker_features_computation , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) ) ;
-
-  int progress_min = 0 ;
-  int progress_max = 0 ;
-  m_worker_features_computation->progressRange( progress_min , progress_max ) ;
-  m_progress_dialog->setWindowModality( Qt::WindowModal ) ;
-  m_progress_dialog->setCancelButton( nullptr ) ;
-  m_progress_dialog->setLabelText( "Features computation, please wait ..." ) ;
-  const int width = QFontMetrics( m_progress_dialog->font() ).width( m_progress_dialog->labelText() ) + 100;
-  m_progress_dialog->resize( width , m_progress_dialog->height() ) ;
-  m_progress_dialog->setRange( progress_min , progress_max ) ;
-  m_progress_dialog->setMinimumDuration( 100 ) ;
-  m_progress_dialog->setValue( 0 ) ;
+  connect( m_worker_features_computation , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
 
   thread->start() ;
 }
@@ -338,6 +330,9 @@ void MainWindow::onComputeFeatures( void )
 */
 void MainWindow::onComputeMatches( void )
 {
+  delete m_progress_dialog ;
+  m_progress_dialog = nullptr ;
+
   // First load then what's next
   WorkerNextAction act = NEXT_ACTION_COMPUTE_MATCHES | NEXT_ACTION_COMPUTE_GEOMETRIC_FILTERING ;
 
@@ -347,22 +342,15 @@ void MainWindow::onComputeMatches( void )
   QThread * thread = new QThread( this ) ;
   m_worker_regions_provide_load->moveToThread( thread ) ;
 
+  int progress_min = 0 , progress_max = 0 ;
+  m_worker_regions_provide_load->progressRange( progress_min , progress_max ) ;
+  createProgress( "Loading regions, please wait ..." , progress_min , progress_max ) ;
+
   connect( thread , SIGNAL( started() ) , m_worker_regions_provide_load , SLOT( process() ) ) ;
+  connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
   connect( m_worker_regions_provide_load, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
   connect( m_worker_regions_provide_load, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasLoadedRegions( const WorkerNextAction & ) ) ) ;
-  connect( m_worker_regions_provide_load , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) ) ;
-
-  int progress_min = 0 ;
-  int progress_max = 0 ;
-  m_worker_regions_provide_load->progressRange( progress_min , progress_max ) ;
-  m_progress_dialog->setWindowModality( Qt::WindowModal ) ;
-  m_progress_dialog->setCancelButton( nullptr ) ;
-  m_progress_dialog->setLabelText( "Loading regions, please wait ..." ) ;
-  const int width = QFontMetrics( m_progress_dialog->font() ).width( m_progress_dialog->labelText() ) + 100;
-  m_progress_dialog->resize( width , m_progress_dialog->height() ) ;
-  m_progress_dialog->setRange( progress_min , progress_max ) ;
-  m_progress_dialog->setMinimumDuration( 100 ) ;
-  m_progress_dialog->setValue( 0 ) ;
+  connect( m_worker_regions_provide_load , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
 
   thread->start() ;
 }
@@ -372,6 +360,9 @@ void MainWindow::onComputeMatches( void )
 */
 void MainWindow::onComputeSfM( void )
 {
+  delete m_progress_dialog ;
+  m_progress_dialog = nullptr ;
+
   qInfo( "Compute SfM" ) ;
 
   WorkerNextAction act = NEXT_ACTION_LOAD_MATCHES ;
@@ -389,22 +380,15 @@ void MainWindow::onComputeSfM( void )
   QThread * thread = new QThread( this ) ;
   m_worker_features_provider_load->moveToThread( thread ) ;
 
+  int progress_min = 0 , progress_max = 0 ;
+  m_worker_features_provider_load->progressRange( progress_min , progress_max ) ;
+  createProgress( "Loading features, please wait ..." , progress_min , progress_max ) ;
+
   connect( thread , SIGNAL( started() ) , m_worker_features_provider_load , SLOT( process() ) ) ;
+  connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
   connect( m_worker_features_provider_load, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
   connect( m_worker_features_provider_load, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasLoadedFeatures( const WorkerNextAction & ) ) ) ;
-  connect( m_worker_features_provider_load , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) ) ;
-
-  int progress_min = 0 ;
-  int progress_max = 0 ;
-  m_worker_features_provider_load->progressRange( progress_min , progress_max ) ;
-  m_progress_dialog->setWindowModality( Qt::WindowModal ) ;
-  m_progress_dialog->setCancelButton( nullptr ) ;
-  m_progress_dialog->setLabelText( "Loading features, please wait ..." ) ;
-  const int width = QFontMetrics( m_progress_dialog->font() ).width( m_progress_dialog->labelText() ) + 100;
-  m_progress_dialog->resize( width , m_progress_dialog->height() ) ;
-  m_progress_dialog->setRange( progress_min , progress_max ) ;
-  m_progress_dialog->setMinimumDuration( 100 ) ;
-  m_progress_dialog->setValue( 0 ) ;
+  connect( m_worker_features_provider_load , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
 
   thread->start() ;
 }
@@ -414,28 +398,24 @@ void MainWindow::onComputeSfM( void )
 */
 void MainWindow::onComputeColor( void )
 {
+  delete m_progress_dialog ;
+  m_progress_dialog = nullptr ;
+
   qInfo( "Compute Color" ) ;
 
   m_worker_color_computation = new WorkerColorComputation( m_project );
   QThread * thread = new QThread( this ) ;
   m_worker_color_computation->moveToThread( thread ) ;
 
+  int progress_min = 0 , progress_max = 0 ;
+  m_worker_color_computation->progressRange( progress_min , progress_max ) ;
+  createProgress( "Computing scene color, please wait ..." , progress_min , progress_max ) ;
+
   connect( thread , SIGNAL( started() ) , m_worker_color_computation , SLOT( process() ) ) ;
+  connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
   connect( m_worker_color_computation, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
   connect( m_worker_color_computation, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasComputedColor( const WorkerNextAction & ) ) ) ;
-  connect( m_worker_color_computation , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) ) ;
-
-  int progress_min = 0 ;
-  int progress_max = 0 ;
-  m_worker_color_computation->progressRange( progress_min , progress_max ) ;
-  m_progress_dialog->setWindowModality( Qt::WindowModal ) ;
-  m_progress_dialog->setCancelButton( nullptr ) ;
-  m_progress_dialog->setLabelText( "Computing scene color, please wait ..." ) ;
-  const int width = QFontMetrics( m_progress_dialog->font() ).width( m_progress_dialog->labelText() ) + 100;
-  m_progress_dialog->resize( width , m_progress_dialog->height() ) ;
-  m_progress_dialog->setRange( progress_min , progress_max ) ;
-  m_progress_dialog->setMinimumDuration( 100 ) ;
-  m_progress_dialog->setValue( 0 ) ;
+  connect( m_worker_color_computation , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
 
   thread->start() ;
 }
@@ -495,7 +475,8 @@ void MainWindow::onChangeSfMSettings( void )
 */
 void MainWindow::onHasCreatedProject( const WorkerNextAction & next_action  )
 {
-  m_progress_dialog->reset() ;
+  delete m_progress_dialog ;
+  m_progress_dialog = nullptr ;
 
   // Set the project
   m_project = m_worker_project_creation->project() ;
@@ -514,23 +495,15 @@ void MainWindow::onHasCreatedProject( const WorkerNextAction & next_action  )
   QThread * thread = new QThread( this ) ;
   m_worker_thumbnail_generation->moveToThread( thread ) ;
 
+  int progress_min = 0 , progress_max = 0 ;
+  m_worker_thumbnail_generation->progressRange( progress_min , progress_max ) ;
+  createProgress( "Thumbnails Creation, please wait ..." , progress_min , progress_max ) ;
+
   connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
   connect( thread , SIGNAL( started() ) , m_worker_thumbnail_generation , SLOT( process() ) ) ;
   connect( m_worker_thumbnail_generation, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
   connect( m_worker_thumbnail_generation, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onUpdateImageList() ) ) ;
-  connect( m_worker_thumbnail_generation , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) ) ;
-
-  int progress_min = 0 ;
-  int progress_max = 0 ;
-  m_worker_thumbnail_generation->progressRange( progress_min , progress_max ) ;
-  m_progress_dialog->setWindowModality( Qt::WindowModal ) ;
-  m_progress_dialog->setCancelButton( nullptr ) ;
-  m_progress_dialog->setLabelText( "Thumbnails Creation, please wait ..." ) ;
-  const int width = QFontMetrics( m_progress_dialog->font() ).width( m_progress_dialog->labelText() ) + 100;
-  m_progress_dialog->resize( width , m_progress_dialog->height() ) ;
-  m_progress_dialog->setRange( progress_min , progress_max ) ;
-  m_progress_dialog->setMinimumDuration( 100 ) ;
-  m_progress_dialog->setValue( 0 ) ;
+  connect( m_worker_thumbnail_generation , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
 
   thread->start() ;
 }
@@ -542,6 +515,9 @@ void MainWindow::onUpdateImageList( void )
 {
   delete m_worker_thumbnail_generation ;
   m_worker_thumbnail_generation = nullptr ;
+
+  delete m_progress_dialog ;
+  m_progress_dialog = nullptr ;
 
   const std::vector< std::pair< int , std::string > > images_path = m_project->GetImageNames() ;
   const std::string thumb_path = m_project->thumbnailsPath() ;
@@ -564,7 +540,9 @@ void MainWindow::onUpdateImageList( void )
 */
 void MainWindow::onHasComputedFeatures( const WorkerNextAction & next_action  )
 {
-  m_progress_dialog->reset() ;
+  delete m_progress_dialog ;
+  m_progress_dialog = nullptr ;
+
   delete m_worker_features_computation ;
   m_worker_features_computation = nullptr ;
 
@@ -578,6 +556,9 @@ void MainWindow::onHasComputedFeatures( const WorkerNextAction & next_action  )
 */
 void MainWindow::onHasLoadedFeatures( const WorkerNextAction & next_action )
 {
+  delete m_progress_dialog ;
+  m_progress_dialog = nullptr ;
+
   if( contains( next_action , NEXT_ACTION_LOAD_MATCHES ) )
   {
     // Load matches
@@ -625,23 +606,16 @@ void MainWindow::onHasLoadedFeatures( const WorkerNextAction & next_action )
     QThread * thread = new QThread( this ) ;
     m_worker_matches_provider_load->moveToThread( thread ) ;
 
+    int progress_min = 0 , progress_max = 0 ;
+    m_worker_matches_provider_load->progressRange( progress_min , progress_max ) ;
+    createProgress( "Loading matches, please wait ..." , progress_min , progress_max ) ;
+
     connect( thread , SIGNAL( started() ) , m_worker_matches_provider_load , SLOT( process() ) ) ;
+    connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
     connect( m_worker_matches_provider_load, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
     connect( m_worker_matches_provider_load, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasLoadedMatches( const WorkerNextAction & ) ) ) ;
-    connect( m_worker_matches_provider_load , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) ) ;
-    connect( m_worker_matches_provider_load , SIGNAL( finished( const WorkerNextAction & ) ) , m_progress_dialog , SLOT( reset() ) );
+    connect( m_worker_matches_provider_load , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
 
-    int progress_min = 0 ;
-    int progress_max = 0 ;
-    m_worker_matches_provider_load->progressRange( progress_min , progress_max ) ;
-    m_progress_dialog->setWindowModality( Qt::WindowModal ) ;
-    m_progress_dialog->setCancelButton( nullptr ) ;
-    m_progress_dialog->setLabelText( "Loading matches, please wait ..." ) ;
-    const int width = QFontMetrics( m_progress_dialog->font() ).width( m_progress_dialog->labelText() ) + 100;
-    m_progress_dialog->resize( width , m_progress_dialog->height() ) ;
-    m_progress_dialog->setRange( progress_min , progress_max ) ;
-    m_progress_dialog->setMinimumDuration( 100 ) ;
-    m_progress_dialog->setValue( 0 ) ;
 
     thread->start() ;
   }
@@ -652,7 +626,8 @@ void MainWindow::onHasLoadedFeatures( const WorkerNextAction & next_action )
 */
 void MainWindow::onHasLoadedMatches( const WorkerNextAction & next_action )
 {
-  m_progress_dialog->reset() ;
+  delete m_progress_dialog ;
+  m_progress_dialog = nullptr ;
 
   // Compute SfM
   if( contains( next_action , NEXT_ACTION_COMPUTE_INCREMENTAL_SFM ) )
@@ -670,22 +645,15 @@ void MainWindow::onHasLoadedMatches( const WorkerNextAction & next_action )
     QThread * thread = new QThread( this ) ;
     m_worker_incremental_sfm_computation->moveToThread( thread ) ;
 
+    int progress_min = 0 , progress_max = 0 ;
+    m_worker_incremental_sfm_computation->progressRange( progress_min , progress_max ) ;
+    createProgress( "Incremental SfM computation, please wait ..." , progress_min , progress_max ) ;
+
     connect( thread , SIGNAL( started() ) , m_worker_incremental_sfm_computation , SLOT( process() ) ) ;
+    connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
     connect( m_worker_incremental_sfm_computation, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
     connect( m_worker_incremental_sfm_computation, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasComputedSfM( const WorkerNextAction & ) ) ) ;
-    connect( m_worker_incremental_sfm_computation , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) ) ;
-
-    int progress_min = 0 ;
-    int progress_max = 0 ;
-    m_worker_incremental_sfm_computation->progressRange( progress_min , progress_max ) ;
-    m_progress_dialog->setWindowModality( Qt::WindowModal ) ;
-    m_progress_dialog->setCancelButton( nullptr ) ;
-    m_progress_dialog->setLabelText( "Incremental SfM computation, please wait ..." ) ;
-    const int width = QFontMetrics( m_progress_dialog->font() ).width( m_progress_dialog->labelText() ) + 100;
-    m_progress_dialog->resize( width , m_progress_dialog->height() ) ;
-    m_progress_dialog->setRange( progress_min , progress_max ) ;
-    m_progress_dialog->setMinimumDuration( 100 ) ;
-    m_progress_dialog->setValue( 0 ) ;
+    connect( m_worker_incremental_sfm_computation , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
 
     thread->start() ;
   }
@@ -703,22 +671,15 @@ void MainWindow::onHasLoadedMatches( const WorkerNextAction & next_action )
     QThread * thread = new QThread( this ) ;
     m_worker_global_sfm_computation->moveToThread( thread ) ;
 
+    int progress_min = 0 , progress_max = 0 ;
+    m_worker_global_sfm_computation->progressRange( progress_min , progress_max ) ;
+    createProgress( "Global SfM computation, please wait ..." , progress_min , progress_max ) ;
+
     connect( thread , SIGNAL( started() ) , m_worker_global_sfm_computation , SLOT( process() ) ) ;
+    connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
     connect( m_worker_global_sfm_computation, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
     connect( m_worker_global_sfm_computation, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasComputedSfM( const WorkerNextAction & ) ) ) ;
-    connect( m_worker_global_sfm_computation , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) ) ;
-
-    int progress_min = 0 ;
-    int progress_max = 0 ;
-    m_worker_global_sfm_computation->progressRange( progress_min , progress_max ) ;
-    m_progress_dialog->setWindowModality( Qt::WindowModal ) ;
-    m_progress_dialog->setCancelButton( nullptr ) ;
-    m_progress_dialog->setLabelText( "Global SfM computation, please wait ..." ) ;
-    const int width = QFontMetrics( m_progress_dialog->font() ).width( m_progress_dialog->labelText() ) + 100;
-    m_progress_dialog->resize( width , m_progress_dialog->height() ) ;
-    m_progress_dialog->setRange( progress_min , progress_max ) ;
-    m_progress_dialog->setMinimumDuration( 100 ) ;
-    m_progress_dialog->setValue( 0 ) ;
+    connect( m_worker_global_sfm_computation , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
 
     thread->start() ;
   }
@@ -729,7 +690,8 @@ void MainWindow::onHasLoadedMatches( const WorkerNextAction & next_action )
 */
 void MainWindow::onHasLoadedRegions( const WorkerNextAction & next_action )
 {
-  m_progress_dialog->reset() ;
+  delete m_progress_dialog ;
+  m_progress_dialog = nullptr ;
 
   if( contains( next_action , NEXT_ACTION_COMPUTE_MATCHES ) )
   {
@@ -739,23 +701,15 @@ void MainWindow::onHasLoadedRegions( const WorkerNextAction & next_action )
     QThread * thread = new QThread( this ) ;
     m_worker_matches_computation->moveToThread( thread ) ;
 
+    int progress_min = 0 , progress_max = 0 ;
+    m_worker_matches_computation->progressRange( progress_min , progress_max ) ;
+    createProgress( "Matches computation, please wait ..." , progress_min , progress_max ) ;
+
     connect( thread , SIGNAL( started() ) , m_worker_matches_computation , SLOT( process( ) ) ) ;
+    connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
+    connect( m_worker_matches_computation , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
     connect( m_worker_matches_computation, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
     connect( m_worker_matches_computation, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasComputedMatches( const WorkerNextAction & ) ) ) ;
-    connect( m_worker_matches_computation , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) ) ;
-    connect( m_worker_matches_computation, SIGNAL( finished( const WorkerNextAction & ) )  , m_progress_dialog , SLOT( reset() ) ) ;
-
-    int progress_min = 0 ;
-    int progress_max = 0 ;
-    m_worker_matches_computation->progressRange( progress_min , progress_max ) ;
-    m_progress_dialog->setWindowModality( Qt::WindowModal ) ;
-    m_progress_dialog->setCancelButton( nullptr ) ;
-    m_progress_dialog->setLabelText( "Matches computation, please wait ..." ) ;
-    const int width = QFontMetrics( m_progress_dialog->font() ).width( m_progress_dialog->labelText() ) + 100;
-    m_progress_dialog->resize( width , m_progress_dialog->height() ) ;
-    m_progress_dialog->setRange( progress_min , progress_max ) ;
-    m_progress_dialog->setMinimumDuration( 100 ) ;
-    m_progress_dialog->setValue( 0 ) ;
 
     thread->start() ;
   }
@@ -767,6 +721,9 @@ void MainWindow::onHasLoadedRegions( const WorkerNextAction & next_action )
 */
 void MainWindow::onHasComputedMatches( const WorkerNextAction & next_action )
 {
+  delete m_progress_dialog ;
+  m_progress_dialog = nullptr ;
+
   if( contains( next_action , NEXT_ACTION_COMPUTE_GEOMETRIC_FILTERING ) )
   {
     std::shared_ptr<openMVG::sfm::Regions_Provider> regions_provider = m_worker_regions_provide_load->regionsProvider() ;
@@ -776,24 +733,15 @@ void MainWindow::onHasComputedMatches( const WorkerNextAction & next_action )
     QThread * thread = new QThread( this ) ;
     m_worker_geometric_filtering->moveToThread( thread ) ;
 
+    int progress_min = 0 , progress_max = 0 ;
+    m_worker_geometric_filtering->progressRange( progress_min , progress_max ) ;
+    createProgress( "Geometric filtering, please wait ..." , progress_min , progress_max ) ;
+
     connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
     connect( thread , SIGNAL( started() ) , m_worker_geometric_filtering , SLOT( process() ) ) ;
+    connect( m_worker_geometric_filtering , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
     connect( m_worker_geometric_filtering, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
     connect( m_worker_geometric_filtering, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasDoneGeometricFiltering( const WorkerNextAction & ) ) ) ;
-    connect( m_worker_geometric_filtering , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) ) ;
-    connect( m_worker_geometric_filtering, SIGNAL( finished( const WorkerNextAction & ) ), m_progress_dialog, SLOT( reset() ) );
-
-    int progress_min = 0 ;
-    int progress_max = 0 ;
-    m_worker_geometric_filtering->progressRange( progress_min , progress_max ) ;
-    m_progress_dialog->setWindowModality( Qt::WindowModal ) ;
-    m_progress_dialog->setCancelButton( nullptr ) ;
-    m_progress_dialog->setLabelText( "Geometric filtering, please wait ..." ) ;
-    const int width = QFontMetrics( m_progress_dialog->font() ).width( m_progress_dialog->labelText() ) + 150;
-    m_progress_dialog->resize( width , m_progress_dialog->height() ) ;
-    m_progress_dialog->setRange( progress_min , progress_max ) ;
-    m_progress_dialog->setMinimumDuration( 100 ) ;
-    m_progress_dialog->setValue( 0 ) ;
 
     thread->start() ;
   }
@@ -804,7 +752,8 @@ void MainWindow::onHasComputedMatches( const WorkerNextAction & next_action )
 */
 void MainWindow::onHasDoneGeometricFiltering( const WorkerNextAction & next_action )
 {
-  m_progress_dialog->reset() ;
+  delete m_progress_dialog ;
+  m_progress_dialog = nullptr ;
 
   m_state = STATE_MATCHES_COMPUTED ;
   updateInterface() ;
@@ -823,6 +772,9 @@ void MainWindow::onHasDoneGeometricFiltering( const WorkerNextAction & next_acti
 */
 void MainWindow::onHasComputedSfM( const WorkerNextAction & next_action )
 {
+  delete m_progress_dialog ;
+  m_progress_dialog = nullptr ;
+
   if( m_project->sfMMethod() == SFM_METHOD_INCREMENTAL )
   {
     delete m_worker_features_provider_load ;
@@ -875,6 +827,9 @@ void MainWindow::onHasComputedColor( const WorkerNextAction & next_action  )
 {
   delete m_worker_color_computation ;
   m_worker_color_computation = nullptr ;
+
+  delete m_progress_dialog ;
+  m_progress_dialog = nullptr ;
 
   // Remove old object
   std::shared_ptr<SceneManager> mgr = m_project->sceneManager() ;
@@ -1092,10 +1047,6 @@ void MainWindow::buildInterface( void )
 
   mainWidget->setLayout( mainLayout ) ;
 
-  m_progress_dialog = new QProgressDialog( this ) ;
-  m_progress_dialog->setRange( 0 , 1 ) ;
-  m_progress_dialog->setValue( 1 ) ;
-  m_progress_dialog->reset() ;
 
   setCentralWidget( mainWidget ) ;
 }
@@ -1187,5 +1138,33 @@ void MainWindow::makeConnections( void )
   connect( m_setting_matches_act , SIGNAL( triggered() ) , this , SLOT( onChangeMatchesSettings() ) ) ;
   connect( m_setting_sfm_act , SIGNAL( triggered() ) , this , SLOT( onChangeSfMSettings() ) ) ;
 }
+
+void MainWindow::createProgress( const std::string &message , const int minvalue , const int maxvalue )
+{
+  m_progress_dialog = new QProgressDialog( this ) ;
+  m_progress_dialog->setRange( 0 , 1 ) ;
+  m_progress_dialog->setValue( 1 ) ;
+  m_progress_dialog->setAutoClose( true ) ;
+  m_progress_dialog->setAutoReset( true ) ;
+  m_progress_dialog->reset() ;
+  m_progress_dialog->setWindowModality( Qt::WindowModal ) ;
+  m_progress_dialog->setCancelButton( nullptr ) ;
+  m_progress_dialog->setLabelText( message.c_str() ) ;
+  m_progress_dialog->setRange( minvalue , maxvalue ) ;
+  m_progress_dialog->setMinimumDuration( 100 ) ;
+  m_progress_dialog->setValue( 0 ) ;
+
+  QVBoxLayout *layout = new QVBoxLayout;
+  foreach ( QObject *obj, m_progress_dialog->children() )
+  {
+    QWidget *widget = qobject_cast<QWidget *>( obj );
+    if ( widget )
+    {
+      layout->addWidget( widget );
+    }
+  }
+  m_progress_dialog->setLayout( layout );
+}
+
 
 } // namespace openMVG_gui

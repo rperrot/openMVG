@@ -33,7 +33,7 @@ WorkerColorComputation::WorkerColorComputation( std::shared_ptr<Project> proj )
 void WorkerColorComputation::progressRange( int & min , int & max ) const
 {
   min = 0 ;
-  max = m_project->SfMData()->GetLandmarks().size() ;
+  max = m_project->SfMData()->GetLandmarks().size() + 1 ;
 
   std::cout << "min : " << min << " - max : " << max << std::endl ;
 }
@@ -56,7 +56,7 @@ bool WorkerColorComputation::ColorizeTracks(
 
     m_progress_value = 0 ;
     progressInterface->restart( sfm_data->GetLandmarks().size() ) ;
-    connect( progressInterface , SIGNAL( increment( int ) ) , this , SLOT( hasIncremented( int ) ) ) ;
+    connect( progressInterface , SIGNAL( increment( int ) ) , this , SLOT( hasIncremented( int ) ) ,  Qt::DirectConnection ) ;
 
     /*
     C_Progress_display my_progress_bar( sfm_data.GetLandmarks().size(),
@@ -217,7 +217,8 @@ void WorkerColorComputation::process( void )
     sOutputPLY_Out = stlplus::create_filespec( m_project->reconstructionGlobalPath() , "colorized.ply" ) ;
   }
 
-  emit progress( 0 ) ;
+  m_progress_value = 0 ;
+  sendProgress() ;
 
   // Compute the scene structure color
   std::vector<Vec3> vec_3dPoints, vec_tracksColor, vec_camPosition;
@@ -226,23 +227,32 @@ void WorkerColorComputation::process( void )
     GetCameraPositions( sfm_data, vec_camPosition );
 
     // Export the SfM_Data scene in the expected format
-    if ( plyHelper::exportToPly( vec_3dPoints, vec_camPosition, sOutputPLY_Out, &vec_tracksColor ) )
+    if ( ! plyHelper::exportToPly( vec_3dPoints, vec_camPosition, sOutputPLY_Out, &vec_tracksColor ) )
     {
-      emit progress( last ) ;
+      m_progress_value = last + 1 ;
+      sendProgress() ;
       emit finished( nextAction() ) ;
       return ;
     }
   }
 
 
-  emit progress( last ) ;
+  m_progress_value = last + 1 ;
+  sendProgress( ) ;
   emit finished( nextAction() ) ;
+}
+
+
+void WorkerColorComputation::sendProgress( void )
+{
+  int progress_value = m_progress_value ;
+  emit progress( progress_value ) ;
 }
 
 void WorkerColorComputation::hasIncremented( int nb )
 {
   m_progress_value += nb ;
-  emit progress( ( int ) m_progress_value ) ;
+  sendProgress() ;
 }
 
 } // namespace openMVG

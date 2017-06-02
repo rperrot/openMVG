@@ -19,6 +19,8 @@ bool WorkerProgressInterface::hasBeenCanceled() const
 
 unsigned long WorkerProgressInterface::operator+= ( unsigned long ulIncrement )
 {
+  std::lock_guard<std::mutex> lock( m_mutex );
+
   unsigned long res = C_Progress::operator+=( ulIncrement ) ;
   emit increment( ulIncrement ) ;
   return res ;
@@ -26,6 +28,8 @@ unsigned long WorkerProgressInterface::operator+= ( unsigned long ulIncrement )
 
 unsigned long WorkerProgressInterface::operator++()
 {
+  std::lock_guard<std::mutex> lock( m_mutex );
+
   unsigned long res = C_Progress::operator+= ( 1 ) ;
   emit increment( 1 ) ;
   return res ;

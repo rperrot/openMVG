@@ -50,6 +50,8 @@ class WorkerColorComputation : public QObject, public WorkerInterface
     */
     void hasIncremented( int ) ;
 
+    void sendProgress( void ) ;
+
   signals :
 
     // 0 -> nothing done

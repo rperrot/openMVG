@@ -6,6 +6,8 @@
 #include "openMVG/matching/indMatch_utils.hpp"
 #include "openMVG/sfm/pipelines/sfm_regions_provider.hpp"
 
+#include <QCoreApplication>
+
 namespace openMVG_gui
 {
 
@@ -27,7 +29,7 @@ void WorkerRegionsProviderLoad::progressRange( int & min , int & max ) const
 {
   min = 0 ;
   std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data = m_project->SfMData() ;
-  max = sfm_data->GetViews().size() ;
+  max = sfm_data->GetViews().size() + 1 ;
 }
 
 /**
@@ -43,7 +45,6 @@ std::shared_ptr<openMVG::sfm::Regions_Provider> WorkerRegionsProviderLoad::regio
 */
 void WorkerRegionsProviderLoad::process( void )
 {
-  m_progress_value = 0 ;
 
   std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data = m_project->SfMData() ;
   const int nb_region = sfm_data->GetViews().size() ;
@@ -55,33 +56,37 @@ void WorkerRegionsProviderLoad::process( void )
   if ( !regions_type )
   {
     std::cerr << "could not load region_type" << std::endl ;
-    emit progress( nb_region ) ;
+    m_progress_value = nb_region + 1 ;
+    sendProgress() ;
     // TODO emit a failure option in finished ?
     emit finished( NEXT_ACTION_ERROR ) ;
-    return ; 
+    return ;
   }
 
 
   WorkerProgressInterface * progressInterface = new WorkerProgressInterface() ;
 
-  connect( progressInterface , SIGNAL( increment( int ) ) , this , SLOT( hasIncremented( int ) ) ) ;
+  connect( progressInterface , SIGNAL( increment( int ) ) , this , SLOT( hasIncremented( int ) ) ,  Qt::DirectConnection) ;
 
-  emit progress( 0 ) ;
+  m_progress_value = 0 ;
+  sendProgress();
 
   // Load regions
   m_regions_provider = std::make_shared<openMVG::sfm::Regions_Provider>();
   if ( !m_regions_provider->load( *sfm_data, match_dir, regions_type, progressInterface ) )
   {
     std::cerr << "could not load regions" << std::endl ;
-    emit progress( nb_region ) ;
+    m_progress_value = nb_region + 1 ;
+    sendProgress() ;
     // TODO emit a failure option in finished ?
     emit finished( NEXT_ACTION_ERROR ) ;
-    return ; 
+    return ;
   }
 
   delete progressInterface ;
 
-  emit progress( nb_region ) ;
+  m_progress_value = nb_region + 1 ;
+  sendProgress() ;
   emit finished( nextAction() ) ;
 }
 
@@ -91,7 +96,17 @@ void WorkerRegionsProviderLoad::process( void )
 void WorkerRegionsProviderLoad::hasIncremented( int nb )
 {
   m_progress_value += nb ;
-  emit progress( m_progress_value ) ;
+  sendProgress() ;
 }
+
+/**
+* @brief set progress value to the main thread
+*/
+void WorkerRegionsProviderLoad::sendProgress( void )
+{
+  int progress_value = m_progress_value ;
+  emit progress( progress_value ) ;
+}
+
 
 } // namespace openMVG_gui

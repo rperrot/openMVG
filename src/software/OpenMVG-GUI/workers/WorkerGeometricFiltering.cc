@@ -38,7 +38,7 @@ WorkerGeometricFiltering::WorkerGeometricFiltering( std::shared_ptr<Project> & p
 void WorkerGeometricFiltering::progressRange( int & min , int & max ) const
 {
   min = 0 ;
-  max = m_map_putative->size() + 1 ;
+  max = m_map_putative->size() + 2 ;
 
   std::cerr << "[ WorkerGeometricFiltering ] min : " << min << " max : " << max << std::endl;
 }
@@ -68,10 +68,10 @@ void WorkerGeometricFiltering::process( void )
 
   WorkerProgressInterface * progressInterface = new WorkerProgressInterface() ;
 
-  connect( progressInterface , SIGNAL( increment( int ) ) , this , SLOT( hasIncremented( int ) ) ) ;
+  connect( progressInterface , SIGNAL( increment( int ) ) , this , SLOT( hasIncremented( int ) ) , Qt::DirectConnection ) ;
 
   m_progress_value = 0 ;
-  emit progress( 0 ) ;
+  sendProgress() ;
 
   bool bGuided_matching = false ;
   std::string sGeometricMatchesFilename ;
@@ -131,6 +131,9 @@ void WorkerGeometricFiltering::process( void )
       }
     }
 
+    m_progress_value = m_map_putative->size() + 1 ;
+    sendProgress() ;
+
     //---------------------------------------
     //-- Export geometric filtered matches
     //---------------------------------------
@@ -143,8 +146,8 @@ void WorkerGeometricFiltering::process( void )
     }
   }
 
-
-  emit progress( m_map_putative->size() + 1 ) ;
+  m_progress_value = m_map_putative->size() + 2 ;
+  sendProgress() ;
   emit finished( nextAction() ) ;
   QCoreApplication::processEvents();
 
@@ -155,7 +158,6 @@ void WorkerGeometricFiltering::sendProgress( void )
 {
   int progress_value = m_progress_value ;
   emit progress( progress_value ) ;
-  QCoreApplication::processEvents();
 }
 
 

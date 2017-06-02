@@ -7,6 +7,7 @@
 #include <QObject>
 
 #include <atomic>
+#include <mutex>
 
 namespace openMVG
 {
@@ -55,6 +56,12 @@ class WorkerRegionsProviderLoad : public QObject, public WorkerInterface
     */
     void hasIncremented( int ) ;
 
+    /**
+    * @brief set progress value to the main thread
+    */
+    void sendProgress( void ) ;
+
+
   signals :
 
     // 0 -> nothing done
@@ -74,6 +81,7 @@ class WorkerRegionsProviderLoad : public QObject, public WorkerInterface
 
     // Internal counter for the number of step already done
     std::atomic<unsigned int> m_progress_value ;
+    std::mutex m_mutex ; 
 
     std::shared_ptr<openMVG::sfm::Regions_Provider> m_regions_provider ;
 

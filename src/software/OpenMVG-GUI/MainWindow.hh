@@ -204,6 +204,8 @@ class MainWindow : public QMainWindow
     */
     void makeConnections( void ) ;
 
+    void createProgress( const std::string &message , const int minvalue , const int maxvalue ) ;
+
     /// File menu
     QMenu * m_file_menu ;
     /// New project
