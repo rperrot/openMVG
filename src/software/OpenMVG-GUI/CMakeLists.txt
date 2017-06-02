@@ -1,9 +1,10 @@
-find_package( Qt5Widgets QUIET )
-find_package( Qt5OpenGL QUIET )
-find_package(OpenGL QUIET)
+find_package( Qt5Widgets REQUIRED )
+find_package( Qt5OpenGL REQUIRED )
+find_package( OpenGL REQUIRED )
+find_package( GLEW REQUIRED )
 
 # Ensure Qt and openGL are present, and Qt >= 5.4 
-if( Qt5Widgets_FOUND AND Qt5OpenGL_FOUND AND OpenGL_FOUND AND NOT (Qt5Widgets_VERSION LESS 5.4.0))
+if( Qt5Widgets_FOUND AND Qt5OpenGL_FOUND AND OPENGL_FOUND AND GLEW_FOUND AND NOT (Qt5Widgets_VERSION LESS 5.4.0))
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
@@ -50,6 +51,7 @@ target_link_libraries( OpenMVG-GUI
                        Qt5::OpenGL 
                        # openGL 
                        ${OPENGL_LIBRARIES}
+                       ${GLEW_LIBRARIES}
                        # openMVG
                        openMVG_features 
                        openMVG_image
@@ -60,6 +62,7 @@ target_link_libraries( OpenMVG-GUI
                        stlplus
                        vlsift )
 target_include_directories( OpenMVG-GUI PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/graphics)
+target_include_directories( OpenMVG-GUI PRIVATE ${OPENGL_INCLUDE_DIR} ${GLEW_INCLUDE_DIRS} )
 
 add_custom_command( TARGET OpenMVG-GUI POST_BUILD 
   COMMAND ${CMAKE_COMMAND} -E make_directory "${EXECUTABLE_OUTPUT_PATH}/ressources" )

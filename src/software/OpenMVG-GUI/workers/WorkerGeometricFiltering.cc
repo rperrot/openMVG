@@ -12,6 +12,8 @@
 #include "openMVG/matching_image_collection/E_ACRobust.hpp"
 #include "openMVG/matching_image_collection/H_ACRobust.hpp"
 
+#include <QCoreApplication>
+
 using namespace openMVG::matching_image_collection ;
 
 namespace openMVG_gui

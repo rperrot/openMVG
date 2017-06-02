@@ -3,8 +3,9 @@
 
 #include "SceneManager.hh"
 
-#include <QWidget>
+#include <QMouseEvent>
 #include <QOpenGLWidget>
+#include <QWidget>
 
 namespace openMVG_gui
 {

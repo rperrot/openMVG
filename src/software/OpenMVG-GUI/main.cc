@@ -2,6 +2,8 @@
 
 #include "workers/WorkerNextAction.hh"
 
+#include <GL/glew.h>
+
 #include <QApplication>
 
 #include <clocale>
@@ -14,13 +16,12 @@ int main( int argc , char ** argv )
   setlocale( LC_ALL, "C" ) ;
   setlocale( LC_NUMERIC, "C" ) ;
 
-
   qRegisterMetaType<openMVG_gui::WorkerNextAction>( "WorkerNextAction" );
 
   // OpenGL
   // OpenGL use 3.3 minimum
   QSurfaceFormat format;
-  format.setVersion( 3 , 3 );
+  format.setVersion( 3 , 2 );
   format.setProfile( QSurfaceFormat::CoreProfile );
   QSurfaceFormat::setDefaultFormat( format );
 

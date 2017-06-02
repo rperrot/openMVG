@@ -8,5 +8,6 @@ set( OPENMVG_GRAPHICS_OBJECTS_SOURCES Grid.cc
 add_library( OpenMVG_gui_graphics_objects STATIC ${OPENMVG_GRAPHICS_OBJECTS_HEADERS} ${OPENMVG_GRAPHICS_OBJECTS_SOURCES} )
 target_link_libraries( OpenMVG_gui_graphics_objects ${OPENGL_LIBRARIES} Qt5::OpenGL )
 target_include_directories( OpenMVG_gui_graphics_objects PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../ )
+target_include_directories( OpenMVG_gui_graphics_objects PRIVATE ${OPENGL_INCLUDE_DIR} )
 
 set_target_properties( OpenMVG_gui_graphics_objects PROPERTIES CXX_STANDARD 11 )

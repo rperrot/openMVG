@@ -1,5 +1,7 @@
 #include "Grid.hh"
 
+#include <GL/glew.h>
+
 namespace openMVG_gui
 {
 

@@ -17,6 +17,7 @@
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include <QApplication>
+#include <QFileDialog>
 #include <QHBoxLayout>
 #include <QMenuBar>
 #include <QMessageBox>

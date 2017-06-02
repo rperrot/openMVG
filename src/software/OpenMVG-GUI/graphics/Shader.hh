@@ -1,7 +1,9 @@
 #ifndef _OPENMVG_SOFTWARE_OPENMVG_GUI_GRAPHICS_SHADER_HH_
 #define _OPENMVG_SOFTWARE_OPENMVG_GUI_GRAPHICS_SHADER_HH_
 
-#include <QtOpenGL>
+#include <GL/glew.h>
+
+#include <string>
 
 namespace openMVG_gui
 {

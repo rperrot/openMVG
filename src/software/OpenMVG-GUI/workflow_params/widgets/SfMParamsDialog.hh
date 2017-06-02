@@ -5,10 +5,12 @@
 #include "workflow_params/GlobalSfMParams.hh"
 #include "workflow_params/IncrementalSfMParams.hh"
 
+#include <QCheckBox>
 #include <QComboBox>
 #include <QDialog>
 #include <QGroupBox>
 #include <QPushButton>
+#include <QRadioButton>
 
 
 namespace openMVG_gui
