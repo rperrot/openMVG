@@ -21,9 +21,11 @@
 #include "workers/WorkerNextAction.hh"
 
 #include <QAction>
+#include <QCheckBox>
 #include <QMainWindow>
 #include <QMenu>
 #include <QProgressDialog>
+#include <QSlider>
 
 namespace openMVG_gui
 {
@@ -118,11 +120,16 @@ class MainWindow : public QMainWindow
     /**
     * @brief Action to be executed when user wants to show/hide the grid
     */
-    void onShowHideGrid( void ) ; 
+    void onShowHideGrid( void ) ;
 
     /**
-    * @brief Action to be executed when user has selected an image in the image list 
-    * @param id Id of the selected image 
+    * @brief Action to be executed when user wants to show/hide the camera gizmos
+    */
+    void onShowHideCameraGizmos( void ) ;
+
+    /**
+    * @brief Action to be executed when user has selected an image in the image list
+    * @param id Id of the selected image
     */
     void onSelectImage( int id ) ;
 
@@ -253,9 +260,10 @@ class MainWindow : public QMainWindow
     QAction * m_setting_features_act ;
     QAction * m_setting_matches_act ;
     QAction * m_setting_sfm_act ;
-    /// View 
-    QMenu * m_view_menu ; 
-    QAction * m_show_hide_grid_act ; 
+    /// View
+    QMenu * m_view_menu ;
+    QAction * m_show_hide_grid_act ;
+    QAction * m_show_camera_gizmos_act ;
 
     /// The image listing widget
     ImageListWidget * m_image_list ;

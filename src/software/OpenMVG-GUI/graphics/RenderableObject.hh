@@ -67,7 +67,7 @@ class RenderableObject
     /**
     * @brief Switch between visible/invisble state
     */
-    void switchVisbility( void ) ;
+    void switchVisibility( void ) ;
 
   protected:
 

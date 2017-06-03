@@ -178,31 +178,26 @@ void MatchingParams::buildMatcher( void )
   {
     case MATCHING_METHOD_BRUTEFORCE_L2 :
     {
-      std::cout << "Build Brute L2" << std::endl ;
       m_matcher = std::make_shared<openMVG::matching_image_collection::Matcher_Regions>( m_ratio , openMVG::matching::BRUTE_FORCE_L2 ) ;
       break ;
     }
     case MATCHING_METHOD_ANN_L2 :
     {
-      std::cout << "Build ANN L2" << std::endl ;
       m_matcher = std::make_shared<openMVG::matching_image_collection::Matcher_Regions>( m_ratio , openMVG::matching::ANN_L2 ) ;
       break ;
     }
     case MATCHING_METHOD_CASCADE_HASHING_L2 :
     {
-      std::cout << "Build Cascade L2" << std::endl ;
       m_matcher = std::make_shared<openMVG::matching_image_collection::Matcher_Regions>( m_ratio , openMVG::matching::CASCADE_HASHING_L2 ) ;
       break ;
     }
     case MATCHING_METHOD_FAST_CASCADE_HASHING_L2 :
     {
-      std::cout << "Build Fast Cascade L2" << std::endl ;
       m_matcher = std::make_shared<openMVG::matching_image_collection::Cascade_Hashing_Matcher_Regions>( m_ratio ) ;
       break ;
     }
     case MATCHING_METHOD_BRUTE_FORCE_HAMMING :
     {
-      std::cout << "Build Brute Hamming L2" << std::endl ;
       m_matcher = std::make_shared<openMVG::matching_image_collection::Matcher_Regions>( m_ratio , openMVG::matching::BRUTE_FORCE_HAMMING ) ;
       break ;
     }

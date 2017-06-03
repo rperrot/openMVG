@@ -25,6 +25,7 @@
 #include <QMessageBox>
 #include <QThread>
 #include <QToolBar>
+#include <QVBoxLayout>
 
 namespace openMVG_gui
 {
@@ -33,6 +34,7 @@ namespace openMVG_gui
 * @brief Main window
 */
 MainWindow::MainWindow()
+  : m_project( nullptr )
 {
   setWindowTitle( "OpenMVG-GUI" );
   showMaximized() ;
@@ -633,8 +635,33 @@ void MainWindow::onShowHideGrid( void )
   const bool active = g->isVisible() ;
   g->setVisible( ! active ) ;
   m_result_view->update() ;
-  m_show_hide_grid_act->setChecked( ! active ) ;
 }
+
+/**
+* @brief Action to be executed when user wants to show/hide the camera gizmos
+*/
+void MainWindow::onShowHideCameraGizmos( void )
+{
+  if( m_project )
+  {
+    std::shared_ptr<SceneManager> mgr = m_project->sceneManager() ;
+    if( mgr )
+    {
+      // Remove selection of all previous gizmos
+      std::vector< std::shared_ptr<RenderableObject> > gizmos = mgr->cameraGizmos() ;
+      for( auto & it : gizmos )
+      {
+        std::shared_ptr<CameraGizmo> c_gizmo = std::dynamic_pointer_cast<CameraGizmo>( it ) ;
+        if( c_gizmo.use_count() )
+        {
+          c_gizmo->switchVisibility( ) ;
+        }
+      }
+    }
+  }
+  m_result_view->update() ;
+}
+
 
 /**
 * @brief Action to be executed when user has selected an image in the image list
@@ -667,7 +694,7 @@ void MainWindow::onSelectImage( int id )
       }
     }
   }
-  m_result_view->update() ; 
+  m_result_view->update() ;
 }
 
 
@@ -1214,11 +1241,12 @@ void MainWindow::buildInterface( void )
   QHBoxLayout * mainLayout = new QHBoxLayout ;
   mainLayout->setContentsMargins( 0 , 0 , 0 , 0 ) ;
   mainLayout->addWidget( m_image_list , 1 ) ;
-  mainLayout->addWidget( m_result_view , 4 ) ;
+
+  // Result part
+  mainLayout->addWidget( m_result_view, 4 ) ;
+
 
   mainWidget->setLayout( mainLayout ) ;
-
-
   setCentralWidget( mainWidget ) ;
 }
 
@@ -1261,6 +1289,10 @@ void MainWindow::buildMenus( void )
   m_show_hide_grid_act = m_view_menu->addAction( "Grid" ) ;
   m_show_hide_grid_act->setCheckable( true ) ;
   m_show_hide_grid_act->setChecked( true ) ;
+
+  m_show_camera_gizmos_act = m_view_menu->addAction( "Camera gizmos" ) ;
+  m_show_camera_gizmos_act->setCheckable( true ) ;
+  m_show_camera_gizmos_act->setChecked( true ) ;
 }
 
 /**
@@ -1314,6 +1346,7 @@ void MainWindow::makeConnections( void )
   connect( m_setting_matches_act , SIGNAL( triggered() ) , this , SLOT( onChangeMatchesSettings() ) ) ;
   connect( m_setting_sfm_act , SIGNAL( triggered() ) , this , SLOT( onChangeSfMSettings() ) ) ;
   connect( m_show_hide_grid_act , SIGNAL( triggered() ) , this , SLOT( onShowHideGrid() ) ) ;
+  connect( m_show_camera_gizmos_act , SIGNAL( triggered() ) , this , SLOT( onShowHideCameraGizmos() ) ) ;
 
   // Interface
   connect( m_image_list , SIGNAL( hasSelectedAnImage( int ) ) , this , SLOT( onSelectImage( int ) ) );

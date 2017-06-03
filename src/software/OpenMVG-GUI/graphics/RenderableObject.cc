@@ -67,7 +67,7 @@ void RenderableObject::setVisible( const bool vis )
 /**
 * @brief Switch between visible/invisble state
 */
-void RenderableObject::switchVisbility( void )
+void RenderableObject::switchVisibility( void )
 {
   m_is_visible = ! m_is_visible;
 }
