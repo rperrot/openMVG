@@ -16,7 +16,8 @@ namespace openMVG_gui
 class WorkerFeaturesComputation : public QObject , public WorkerInterface
 {
   public:
-    WorkerFeaturesComputation( std::shared_ptr<Project> & pro , 
+    WorkerFeaturesComputation( std::shared_ptr<Project> & pro ,
+                               const bool overwrite_existing ,
                                const WorkerNextAction & na = NEXT_ACTION_NONE );
 
     /**
@@ -42,6 +43,7 @@ class WorkerFeaturesComputation : public QObject , public WorkerInterface
 
   private:
 
+    bool m_overwrite_existing ;
     std::shared_ptr<Project> m_project ;
 
     Q_OBJECT

@@ -62,7 +62,7 @@ class MatchingParams
     * @brief Move ctr 
     * @param src Source 
     */
-    MatchingParams( MatchingParams && src) = default ; 
+    MatchingParams( MatchingParams && src) ;
 
     /**
     * @brief Assignment operator 
@@ -162,6 +162,7 @@ void MatchingParams::load( Archive & ar )
   ar( m_max_iteration_filtering ) ;
   ar( m_method ) ;
   ar( m_ratio ) ;
+  m_matcher = nullptr ; 
 
   buildMatcher() ;
 }

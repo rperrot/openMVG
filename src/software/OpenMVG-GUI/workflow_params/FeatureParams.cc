@@ -22,8 +22,8 @@ FeatureParams::FeatureParams( const FeatureType & type ,
                               const bool upright  )
   : m_feat_type( type ) ,
     m_feat_preset( preset ) ,
-    m_upright( upright ) , 
-    m_describer( nullptr ) 
+    m_upright( upright ) ,
+    m_describer( nullptr )
 {
   createDescriber() ;
 }
@@ -128,22 +128,25 @@ void FeatureParams::createDescriber( void )
       break ;
     }
   }
-  switch( m_feat_preset )
+  if( m_describer )
   {
-    case FEATURE_PRESET_NORMAL:
+    switch( m_feat_preset )
     {
-      m_describer->Set_configuration_preset( NORMAL_PRESET ) ;
-      break ;
-    }
-    case FEATURE_PRESET_HIGH :
-    {
-      m_describer->Set_configuration_preset( HIGH_PRESET ) ;
-      break ;
-    }
-    case FEATURE_PRESET_ULTRA :
-    {
-      m_describer->Set_configuration_preset( ULTRA_PRESET ) ;
-      break ;
+      case FEATURE_PRESET_NORMAL:
+      {
+        m_describer->Set_configuration_preset( NORMAL_PRESET ) ;
+        break ;
+      }
+      case FEATURE_PRESET_HIGH :
+      {
+        m_describer->Set_configuration_preset( HIGH_PRESET ) ;
+        break ;
+      }
+      case FEATURE_PRESET_ULTRA :
+      {
+        m_describer->Set_configuration_preset( ULTRA_PRESET ) ;
+        break ;
+      }
     }
   }
 }

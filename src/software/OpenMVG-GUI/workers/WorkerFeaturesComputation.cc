@@ -16,9 +16,11 @@ namespace openMVG_gui
 {
 
 WorkerFeaturesComputation::WorkerFeaturesComputation( std::shared_ptr<Project> & pro ,
+    const bool overwrite_existing ,
     const WorkerNextAction & na )
   :
   WorkerInterface( na ) ,
+  m_overwrite_existing( overwrite_existing ) ,
   m_project( pro )
 {
 
@@ -93,7 +95,7 @@ void WorkerFeaturesComputation::process( void )
     sDesc = stlplus::create_filespec( matches_dir, stlplus::basename_part( sView_filename ), "desc" );
 
     //If features or descriptors file are missing, compute them
-    if ( !stlplus::file_exists( sFeat ) || !stlplus::file_exists( sDesc ) )
+    if ( !stlplus::file_exists( sFeat ) || !stlplus::file_exists( sDesc ) || m_overwrite_existing )
     {
       QImage img( sView_filename.c_str() ) ;
       if( img.isNull() )

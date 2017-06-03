@@ -24,6 +24,19 @@ MatchingParams::MatchingParams( const MatchingMethod & method ,
 }
 
 /**
+* @brief Move ctr
+* @param src Source
+*/
+MatchingParams::MatchingParams( MatchingParams && src )
+  : m_geometry( src.m_geometry ) ,
+    m_max_iteration_filtering( src.m_max_iteration_filtering ) ,
+    m_method( src.m_method ) ,
+    m_ratio( src.m_ratio )
+{
+  buildMatcher() ;
+}
+
+/**
 * @brief Copy ctr
 * @param src Source
 */
@@ -55,6 +68,22 @@ MatchingParams & MatchingParams::operator=( const MatchingParams & src )
   return ( *this ) ;
 }
 
+/**
+* @brief Move Assignment operator
+* @param src Source
+* @return self after assignment
+*/
+MatchingParams & MatchingParams::operator=( MatchingParams && src )
+{
+  m_geometry = src.m_geometry ;
+  m_max_iteration_filtering = src.m_max_iteration_filtering ;
+  m_method = src.m_method ;
+  m_ratio = src.m_ratio ;
+
+  buildMatcher() ;
+
+  return ( *this ) ;
+}
 
 /**
 * @brief Get geometric model used for matching
@@ -115,8 +144,8 @@ void MatchingParams::setMethod( const MatchingMethod & mtd )
 {
   if( m_method != mtd )
   {
-    buildMatcher() ;
     m_method = mtd ;
+    buildMatcher() ;
   }
 }
 
@@ -137,8 +166,8 @@ void MatchingParams::setDistanceRatio( const float dist )
 {
   if( m_ratio != dist )
   {
-    buildMatcher() ;
     m_ratio = dist ;
+    buildMatcher() ;
   }
 }
 
@@ -149,26 +178,31 @@ void MatchingParams::buildMatcher( void )
   {
     case MATCHING_METHOD_BRUTEFORCE_L2 :
     {
+      std::cout << "Build Brute L2" << std::endl ;
       m_matcher = std::make_shared<openMVG::matching_image_collection::Matcher_Regions>( m_ratio , openMVG::matching::BRUTE_FORCE_L2 ) ;
       break ;
     }
     case MATCHING_METHOD_ANN_L2 :
     {
+      std::cout << "Build ANN L2" << std::endl ;
       m_matcher = std::make_shared<openMVG::matching_image_collection::Matcher_Regions>( m_ratio , openMVG::matching::ANN_L2 ) ;
       break ;
     }
     case MATCHING_METHOD_CASCADE_HASHING_L2 :
     {
+      std::cout << "Build Cascade L2" << std::endl ;
       m_matcher = std::make_shared<openMVG::matching_image_collection::Matcher_Regions>( m_ratio , openMVG::matching::CASCADE_HASHING_L2 ) ;
       break ;
     }
     case MATCHING_METHOD_FAST_CASCADE_HASHING_L2 :
     {
+      std::cout << "Build Fast Cascade L2" << std::endl ;
       m_matcher = std::make_shared<openMVG::matching_image_collection::Cascade_Hashing_Matcher_Regions>( m_ratio ) ;
       break ;
     }
     case MATCHING_METHOD_BRUTE_FORCE_HAMMING :
     {
+      std::cout << "Build Brute Hamming L2" << std::endl ;
       m_matcher = std::make_shared<openMVG::matching_image_collection::Matcher_Regions>( m_ratio , openMVG::matching::BRUTE_FORCE_HAMMING ) ;
       break ;
     }

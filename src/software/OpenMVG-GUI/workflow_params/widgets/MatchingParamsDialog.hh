@@ -33,6 +33,26 @@ class MatchingParamsDialog : public QDialog
     */
     MatchingParams params( void ) ;
 
+    /**
+    * @brief Disable the binary modes
+    */
+    void disableBinaryMode( void ) ;
+
+    /**
+    * @brief Disable the scalar modes
+    */
+    void disableScalarMode( void ) ;
+
+    /**
+    * @brief Enable the binary modes
+    */
+    void enableBinaryMode( void ) ;
+
+    /**
+    * @brief Enable the scalar modes
+    */
+    void enableScalarMode( void ) ;
+
   public slots:
 
     /**

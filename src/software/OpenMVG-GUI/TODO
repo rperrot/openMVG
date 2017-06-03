@@ -1,3 +1,5 @@
+- Provide clickable cameras 
+- Provide way to show selected cameras 
 - Provide a finer feedback for loads (init)
 
 - Interface to interact with sfm_data (intrinsics) 
@@ -5,11 +7,5 @@
 
 - "Save as..." project 
 
-- Check for consistency : 
-  - binary features with matching parameters 
-- Overwrite files already computed 
-
 - Error feedback for workers 
   (pass params to finished signal ?) 
-
-- Remove old computed mesh after sfm computation/colorize 

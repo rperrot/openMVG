@@ -12,6 +12,7 @@
 #include "graphics/objects/PointCloud.hh"
 #include "graphics/objects/SphericalGizmo.hh"
 #include "utils/BoundingSphere.hh"
+#include "utils/ImageDescriberInfo.hh"
 #include "utils/PlyLoader.hh"
 
 #include "openMVG/sfm/sfm_data.hpp"
@@ -162,6 +163,27 @@ void MainWindow::onOpenProject( void )
 
   // Load thumbnails
   onUpdateImageList() ;
+
+  /**
+  * Select a matching method that is compatible with the features computed
+  * Because project could have been saved before feature computation 
+  */
+  const std::string matchesPath = m_project->matchesPath() ;
+  const std::string describerPath = stlplus::create_filespec( matchesPath , "image_describer.json" ) ;
+  if( stlplus::file_exists( describerPath ) )
+  {
+    if( isBinaryDescriber( describerPath ) )
+    {
+      m_project->matchingParams().setMethod( MATCHING_METHOD_BRUTE_FORCE_HAMMING ) ;
+    }
+    else
+    {
+      if( m_project->matchingParams().method() == MATCHING_METHOD_BRUTE_FORCE_HAMMING )
+      {
+        m_project->matchingParams().setMethod( MATCHING_METHOD_FAST_CASCADE_HASHING_L2 ) ;
+      }
+    }
+  }
 
   // Update scene state
   m_state = STATE_PROJECT_OPENED ;
@@ -335,9 +357,29 @@ void MainWindow::onComputeFeatures( void )
   delete m_progress_dialog ;
   m_progress_dialog = nullptr ;
 
+  bool overwrite = false ;
+  if( m_project->hasAllFeaturesComputed() || m_project->hasPartialFeaturesComputed() )
+  {
+    // Ask user to overwrite ?
+    QMessageBox::StandardButton btn = QMessageBox::question( this , "File exists" , "Some images have already a description, overwrite it ?" , QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel ) ;
+    if( btn == QMessageBox::Cancel )
+    {
+      return ;
+    }
+    else if( btn == QMessageBox::Yes )
+    {
+      overwrite = true ;
+    }
+    else
+    {
+      overwrite = false ;
+    }
+  }
+
   qInfo( "Compute features" ) ;
 
-  m_worker_features_computation = new WorkerFeaturesComputation( m_project ) ;
+
+  m_worker_features_computation = new WorkerFeaturesComputation( m_project , overwrite ) ;
   QThread * thread = new QThread( this ) ;
   m_worker_features_computation->moveToThread( thread ) ;
 
@@ -473,6 +515,24 @@ void MainWindow::onChangeMatchesSettings( void )
 
   MatchingParamsDialog dlg( this , m_project->matchingParams() ) ;
 
+  // Load the image describer (if it exists)
+  const std::string matchesPath = m_project->matchesPath() ;
+  const std::string describerPath = stlplus::create_filespec( matchesPath , "image_describer.json" ) ;
+  if( stlplus::file_exists( describerPath ) )
+  {
+    if( isBinaryDescriber( describerPath ) )
+    {
+      dlg.enableBinaryMode() ;
+      dlg.disableScalarMode() ;
+    }
+    else
+    {
+      dlg.enableScalarMode() ;
+      dlg.disableBinaryMode() ;
+    }
+  }
+
+
   int res = dlg.exec() ;
   if ( res == QDialog::Accepted )
   {
@@ -587,6 +647,27 @@ void MainWindow::onHasComputedFeatures( const WorkerNextAction & next_action  )
 
   delete m_worker_features_computation ;
   m_worker_features_computation = nullptr ;
+
+
+  /**
+  * Select a matching method that is compatible with the features computed
+  */
+  const std::string matchesPath = m_project->matchesPath() ;
+  const std::string describerPath = stlplus::create_filespec( matchesPath , "image_describer.json" ) ;
+  if( stlplus::file_exists( describerPath ) )
+  {
+    if( isBinaryDescriber( describerPath ) )
+    {
+      m_project->matchingParams().setMethod( MATCHING_METHOD_BRUTE_FORCE_HAMMING ) ;
+    }
+    else
+    {
+      if( m_project->matchingParams().method() == MATCHING_METHOD_BRUTE_FORCE_HAMMING )
+      {
+        m_project->matchingParams().setMethod( MATCHING_METHOD_FAST_CASCADE_HASHING_L2 ) ;
+      }
+    }
+  }
 
   m_state = STATE_FEATURES_COMPUTED ;
   updateInterface() ;
@@ -1145,7 +1226,7 @@ void MainWindow::buildMenus( void )
 
   m_show_hide_grid_act = m_view_menu->addAction( "Grid" ) ;
   m_show_hide_grid_act->setCheckable( true ) ;
-  m_show_hide_grid_act->setChecked( true ) ; 
+  m_show_hide_grid_act->setChecked( true ) ;
 }
 
 /**

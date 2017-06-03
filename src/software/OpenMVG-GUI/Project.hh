@@ -89,6 +89,13 @@ class Project
     bool hasAllFeaturesComputed( void ) const ;
 
     /**
+    * @brief Indicate if some of the images have features computed (but not all)
+    * @retval true if nb image with features > 0 && nb image with features < nb images
+    * @retval false if no image have features computed or if all images have features computed
+    */
+    bool hasPartialFeaturesComputed( void ) const ;
+
+    /**
     * @brief Indicate if all matches are computed
     */
     bool hasAllMatchesComputed( void ) const ;
@@ -140,7 +147,13 @@ class Project
     * @brief get matching parameters
     * @return curent matching parameters
     */
-    MatchingParams matchingParams( void ) const ;
+    MatchingParams& matchingParams( void ) ;
+
+    /**
+    * @brief get matching parameters
+    * @return curent matching parameters
+    */
+    MatchingParams matchingParams( void ) const ; 
 
     /**
     * @brief Set Matching parameters

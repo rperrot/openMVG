@@ -3,6 +3,8 @@
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QLabel>
+#include <QStandardItem>
+#include <QStandardItemModel>
 #include <QVBoxLayout>
 
 #include <iostream>
@@ -99,6 +101,73 @@ MatchingParams MatchingParamsDialog::params( void )
   }
 
   return MatchingParams( match_method , ratio , geom_type , maxIter ) ;
+}
+
+/**
+* @brief Disable the binary modes
+*/
+void MatchingParamsDialog::disableBinaryMode( void )
+{
+  // If binary mode is active, set activation to the first scalar mode
+  if( m_params_matching_method->currentIndex() == 4 )
+  {
+    m_params_matching_method->setCurrentIndex( 0 ) ;
+  }
+
+  QStandardItemModel* model = qobject_cast<QStandardItemModel*>( m_params_matching_method->model() );
+  bool disabled = true ;
+  QStandardItem* item = model->item( 4 );
+  item->setFlags( disabled ? item->flags() & ~Qt::ItemIsEnabled :
+                  item->flags() | Qt::ItemIsEnabled );
+}
+
+/**
+* @brief Disable the scalar modes
+*/
+void MatchingParamsDialog::disableScalarMode( void )
+{
+  // If scalar mode is active, set activation to first binary mode
+  if( m_params_matching_method->currentIndex() != -1 &&
+      m_params_matching_method->currentIndex() != 4 )
+  {
+    m_params_matching_method->setCurrentIndex( 4 ) ;
+  }
+
+  bool disabled = true ;
+  QStandardItemModel* model = qobject_cast<QStandardItemModel*>( m_params_matching_method->model() );
+  for( int i = 0 ; i < 4 ; ++i )
+  {
+    QStandardItem* item = model->item( i );
+    item->setFlags( disabled ? item->flags() & ~Qt::ItemIsEnabled :
+                    item->flags() | Qt::ItemIsEnabled );
+  }
+}
+
+/**
+* @brief Enable the binary modes
+*/
+void MatchingParamsDialog::enableBinaryMode( void )
+{
+  QStandardItemModel* model = qobject_cast<QStandardItemModel*>( m_params_matching_method->model() );
+  bool disabled = false ;
+  QStandardItem* item = model->item( 4 );
+  item->setFlags( disabled ? item->flags() & ~Qt::ItemIsEnabled :
+                  item->flags() | Qt::ItemIsEnabled );
+}
+
+/**
+* @brief Enable the scalar modes
+*/
+void MatchingParamsDialog::enableScalarMode( void )
+{
+  bool disabled = false ;
+  QStandardItemModel* model = qobject_cast<QStandardItemModel*>( m_params_matching_method->model() );
+  for( int i = 0 ; i < 4 ; ++i )
+  {
+    QStandardItem* item = model->item( i );
+    item->setFlags( disabled ? item->flags() & ~Qt::ItemIsEnabled :
+                    item->flags() | Qt::ItemIsEnabled );
+  }
 }
 
 /**

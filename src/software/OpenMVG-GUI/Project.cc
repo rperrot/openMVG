@@ -58,7 +58,7 @@ Project::Project( const std::string & base_path ,
   m_project_image_path( image_path ) ,
   m_sfm_method( SFM_METHOD_INCREMENTAL ) ,
   m_scene_mgr( scn ) ,
-  m_sparse_point_cloud( nullptr ) 
+  m_sparse_point_cloud( nullptr )
 {
   createProject( base_path , image_path , intrin_params , camera_sensor_width_database_file ) ;
 }
@@ -209,6 +209,35 @@ bool Project::hasAllFeaturesComputed( void ) const
   return true ;
 }
 
+/**
+* @brief Indicate if some of the images have features computed
+*/
+bool Project::hasPartialFeaturesComputed( void ) const
+{
+  size_t nb_computed = 0 ;
+  const std::string matches_dir = matchesPath() ;
+  for( int i = 0; i < static_cast<int>( m_sfm_data->views.size() ); ++i )
+  {
+    openMVG::sfm::Views::const_iterator iterViews = m_sfm_data->views.begin();
+    std::advance( iterViews, i );
+    const openMVG::sfm::View * view = iterViews->second.get();
+    const std::string sView_filename = stlplus::create_filespec( m_sfm_data->s_root_path, view->s_Img_path ) ;
+    const std::string sFeat = stlplus::create_filespec( matches_dir, stlplus::basename_part( sView_filename ), "feat" ) ;
+    const std::string sDesc = stlplus::create_filespec( matches_dir, stlplus::basename_part( sView_filename ), "desc" );
+
+    //If features or descriptors file are missing, we haven't done all, so conclude
+    if ( !stlplus::file_exists( sFeat ) || !stlplus::file_exists( sDesc ) )
+    {
+      return false ;
+    }
+    else
+    {
+      ++nb_computed ;
+    }
+  }
+  return ( nb_computed > 0 ) && ( nb_computed < m_sfm_data->views.size() ) ;
+}
+
 
 
 /**
@@ -220,7 +249,7 @@ bool Project::hasAllMatchesComputed( void ) const
   // TODO : check if it's a reasonable test :
   // -> If any of the matches.X.bin is present, it should be enough ?
   const std::string matchesPath = this->matchesPath() ;
-  const MatchingParams matchesParams = matchingParams() ;
+  const MatchingParams matchesParams = this->matchingParams() ;
 
   std::string matchesName ;
   switch( matchesParams.geometricModel() )
@@ -322,10 +351,20 @@ void Project::setFeatureParams( const FeatureParams & f_params )
 * @brief get matching parameters
 * @return curent matching parameters
 */
-MatchingParams Project::matchingParams( void ) const
+MatchingParams & Project::matchingParams( void )
 {
   return m_match_params ;
 }
+
+/**
+* @brief get matching parameters
+* @return curent matching parameters
+*/
+MatchingParams Project::matchingParams( void ) const 
+{
+  return m_match_params ;  
+}
+
 
 /**
 * @brief Set Matching parameters
