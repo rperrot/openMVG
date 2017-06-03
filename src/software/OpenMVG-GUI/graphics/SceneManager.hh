@@ -65,6 +65,9 @@ class SceneManager : public std::enable_shared_from_this<SceneManager>
     // Get a gizmo 
     std::shared_ptr<RenderableObject> cameraGizmo( const int id ) const ; 
 
+    // Get list of camera gizmos 
+    std::vector< std::shared_ptr<RenderableObject> > cameraGizmos( void ) const ; 
+
   private:
 
     std::map< int , std::shared_ptr<RenderableObject> > m_camera_gizmos ;

@@ -120,6 +120,12 @@ class MainWindow : public QMainWindow
     */
     void onShowHideGrid( void ) ; 
 
+    /**
+    * @brief Action to be executed when user has selected an image in the image list 
+    * @param id Id of the selected image 
+    */
+    void onSelectImage( int id ) ;
+
 
     // After something happened
     /**

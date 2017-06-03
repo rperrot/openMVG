@@ -166,7 +166,7 @@ void MainWindow::onOpenProject( void )
 
   /**
   * Select a matching method that is compatible with the features computed
-  * Because project could have been saved before feature computation 
+  * Because project could have been saved before feature computation
   */
   const std::string matchesPath = m_project->matchesPath() ;
   const std::string describerPath = stlplus::create_filespec( matchesPath , "image_describer.json" ) ;
@@ -634,6 +634,40 @@ void MainWindow::onShowHideGrid( void )
   g->setVisible( ! active ) ;
   m_result_view->update() ;
   m_show_hide_grid_act->setChecked( ! active ) ;
+}
+
+/**
+* @brief Action to be executed when user has selected an image in the image list
+* @param id Id of the selected image
+*/
+void MainWindow::onSelectImage( int id )
+{
+  if( m_project )
+  {
+    std::shared_ptr<SceneManager> mgr = m_project->sceneManager() ;
+    if( mgr )
+    {
+      // Remove selection of all previous gizmos
+      std::vector< std::shared_ptr<RenderableObject> > gizmos = mgr->cameraGizmos() ;
+      for( auto & it : gizmos )
+      {
+        std::shared_ptr<CameraGizmo> c_gizmo = std::dynamic_pointer_cast<CameraGizmo>( it ) ;
+        if( c_gizmo.use_count() )
+        {
+          c_gizmo->setSelected( false ) ;
+        }
+      }
+
+      // Select the specified one
+      std::shared_ptr<RenderableObject> gizmo = mgr->cameraGizmo( id ) ;
+      std::shared_ptr<CameraGizmo> c_gizmo = std::dynamic_pointer_cast<CameraGizmo>( gizmo ) ;
+      if( c_gizmo.use_count() )
+      {
+        c_gizmo->setSelected( true );
+      }
+    }
+  }
+  m_result_view->update() ; 
 }
 
 
@@ -1280,6 +1314,9 @@ void MainWindow::makeConnections( void )
   connect( m_setting_matches_act , SIGNAL( triggered() ) , this , SLOT( onChangeMatchesSettings() ) ) ;
   connect( m_setting_sfm_act , SIGNAL( triggered() ) , this , SLOT( onChangeSfMSettings() ) ) ;
   connect( m_show_hide_grid_act , SIGNAL( triggered() ) , this , SLOT( onShowHideGrid() ) ) ;
+
+  // Interface
+  connect( m_image_list , SIGNAL( hasSelectedAnImage( int ) ) , this , SLOT( onSelectImage( int ) ) );
 }
 
 void MainWindow::createProgress( const std::string &message , const int minvalue , const int maxvalue )

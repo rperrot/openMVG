@@ -4,8 +4,23 @@
 
 #include <QVBoxLayout>
 
+#include <iostream>
+
 namespace openMVG_gui
 {
+
+ImageListWidgetItem::ImageListWidgetItem( const std::string & name , QListWidget * parent , const int id )
+  : QListWidgetItem( name.c_str() , parent ) ,
+    m_id( id )
+{
+
+}
+
+int ImageListWidgetItem::id( void ) const
+{
+  return m_id ;
+}
+
 
 /**
 * @brief ctr
@@ -15,8 +30,9 @@ ImageListWidget::ImageListWidget( QWidget * parent )
   : QWidget( parent )
 {
   buildInterface() ;
-  // TODO : find an automatic way to do it ? 
-  // note : thumbnails are 256pix in width 
+  makeConnections() ; 
+  // TODO : find an automatic way to do it ?
+  // note : thumbnails are 256pix in width
   setMinimumSize( 300 , 10 ) ;
 }
 
@@ -27,12 +43,13 @@ ImageListWidget::ImageListWidget( QWidget * parent )
 */
 void ImageListWidget::setImages( const std::vector< std::pair< int , std::string > > & paths )
 {
-  m_image_list_view->clear() ; 
+  m_images = paths ;
+  m_image_list_view->clear() ;
   for( size_t id_image = 0 ; id_image < paths.size() ; ++id_image )
   {
     const std::string base_name = stlplus::filename_part( paths[id_image].second ) ;
     QImage img( paths[id_image].second.c_str() );
-    QListWidgetItem * item = new QListWidgetItem( base_name.c_str() , m_image_list_view ) ;
+    ImageListWidgetItem * item = new ImageListWidgetItem( base_name , m_image_list_view , paths[id_image].first ) ;
     item->setData( Qt::DecorationRole ,  QPixmap::fromImage( img ) );
     item->setFlags( Qt::ItemIsSelectable | Qt::ItemIsEnabled ) ;
   }
@@ -43,7 +60,8 @@ void ImageListWidget::setImages( const std::vector< std::pair< int , std::string
 */
 void ImageListWidget::clear( void )
 {
-  m_image_list_view->clear() ; 
+  m_images.clear() ;
+  m_image_list_view->clear() ;
 }
 
 /**
@@ -62,6 +80,25 @@ void ImageListWidget::buildInterface( void )
   mainLayout->addWidget( m_image_list_view ) ;
   setLayout( mainLayout ) ;
 }
+
+void ImageListWidget::makeConnections( void )
+{
+  connect( m_image_list_view , SIGNAL( itemSelectionChanged() ) , this , SLOT( onSelectionChanged() ) ) ;
+}
+
+void ImageListWidget::onSelectionChanged( void )
+{
+  QList<QListWidgetItem *> selectedItems = m_image_list_view->selectedItems() ;
+  if( selectedItems.count() == 1 )
+  {
+    ImageListWidgetItem * item = dynamic_cast<ImageListWidgetItem*>( selectedItems.at( 0 ) ) ;
+    if( item )
+    {
+      emit hasSelectedAnImage( item->id() ) ;
+    }
+  }
+}
+
 
 
 } // namespace openMVG_gui

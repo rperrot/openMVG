@@ -98,4 +98,16 @@ std::shared_ptr<RenderableObject> SceneManager::cameraGizmo( const int id ) cons
   return nullptr ;
 }
 
+// Get list of camera gizmos
+std::vector< std::shared_ptr<RenderableObject> > SceneManager::cameraGizmos( void ) const
+{
+  std::vector< std::shared_ptr<RenderableObject>> res ;
+  for( auto & it : m_camera_gizmos )
+  {
+    res.emplace_back( it.second ) ;
+  }
+  return res ;
+}
+
+
 } // namespace openMVG_gui

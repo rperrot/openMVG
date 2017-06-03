@@ -4,6 +4,7 @@
 #include "openMVG/geometry/pose3.hpp"
 
 #include "RenderableObject.hh"
+#include "SelectableObject.hh"
 
 namespace openMVG_gui
 {
@@ -12,7 +13,7 @@ namespace openMVG_gui
 * @brief Class holding a simple camera gizmo
 * @note Gizmo is a contained in a square of size x size x size
 */
-class CameraGizmo : public RenderableObject
+class CameraGizmo : public RenderableObject , public SelectableObject
 {
   public:
 
@@ -64,6 +65,10 @@ class CameraGizmo : public RenderableObject
     GLsizei m_nb_vert ;
     GLuint m_vao ;
     GLuint m_vbo ;
+
+    GLsizei m_nb_vert_selection ;
+    GLuint m_vao_selection ;
+    GLuint m_vbo_selection ; 
 } ;
 
 } // namespace openMVG_gui
