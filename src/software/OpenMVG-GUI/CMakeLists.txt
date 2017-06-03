@@ -31,7 +31,7 @@ set( OPENMVG_GUI_SOURCES ImageListWidget.cc
 #if( APPLE )
 #add_executable( OpenMVG-GUI MACOSX_BUNDLE main.cc ${OPENMVG_GUI_HEADERS} ${OPENMVG_GUI_SOURCES} )
 #else( APPLE )
-add_executable( OpenMVG-GUI WIN32 main.cc ${OPENMVG_GUI_HEADERS} ${OPENMVG_GUI_SOURCES} )
+add_executable( OpenMVG-GUI WIN32 main.cc ${OPENMVG_GUI_HEADERS} ${OPENMVG_GUI_SOURCES} application.rc )
 
 # create ressource dirs 
 #endif( APPLE )

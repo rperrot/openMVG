@@ -1,5 +1,4 @@
 - Provide clickable cameras 
-- Provide way to show selected cameras 
 - Provide a finer feedback for loads (init)
 
 - Interface to interact with sfm_data (intrinsics) 
