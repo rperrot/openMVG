@@ -662,6 +662,16 @@ void MainWindow::onShowHideCameraGizmos( void )
   m_result_view->update() ;
 }
 
+/**
+* @brief Action to be executed when user wants to show/hide image list
+*/
+void MainWindow::onShowImageList( void )
+{
+  const bool visible = m_show_hide_image_list_act->isChecked() ;
+  m_image_list->setVisible( visible ) ;
+  m_result_view->update() ;
+}
+
 
 /**
 * @brief Action to be executed when user has selected an image in the image list
@@ -1257,11 +1267,13 @@ void MainWindow::buildMenus( void )
 {
   QMenuBar * mbar = menuBar() ;
 
+  // All menus
   m_file_menu = mbar->addMenu( "File" ) ;
   m_workflow_menu = mbar->addMenu( "Workflow" ) ;
   m_settings_menu = mbar->addMenu( "Settings" ) ;
   m_view_menu = mbar->addMenu( "View" ) ;
 
+  // File actions
   m_file_new_act = m_file_menu->addAction( "New" ) ;
   m_file_new_act->setShortcuts( QKeySequence::New ) ;
   m_file_menu->addSeparator() ;
@@ -1277,22 +1289,29 @@ void MainWindow::buildMenus( void )
   m_file_quit_act = m_file_menu->addAction( "Quit" ) ;
   m_file_quit_act->setShortcuts( QKeySequence::Quit ) ;
 
+  // Workflow actions
   m_compute_features_act = m_workflow_menu->addAction( "Compute features" ) ;
   m_compute_matches_act = m_workflow_menu->addAction( "Compute matches" ) ;
   m_compute_sfm_act = m_workflow_menu->addAction( "Compute SfM" ) ;
   m_compute_color_act = m_workflow_menu->addAction( "Compute color" ) ;
 
+  // Settings actions
   m_setting_features_act = m_settings_menu->addAction( "Features" ) ;
   m_setting_matches_act = m_settings_menu->addAction( "Matching" ) ;
   m_setting_sfm_act = m_settings_menu->addAction( "SfM" ) ;
 
+  // View actions
+  m_show_hide_image_list_act = m_view_menu->addAction( "Image list" );
+  m_show_hide_image_list_act->setCheckable( true ) ;
+  m_show_hide_image_list_act->setChecked( true ) ;
+  m_view_menu->addSeparator() ; 
   m_show_hide_grid_act = m_view_menu->addAction( "Grid" ) ;
   m_show_hide_grid_act->setCheckable( true ) ;
   m_show_hide_grid_act->setChecked( true ) ;
-
-  m_show_camera_gizmos_act = m_view_menu->addAction( "Camera gizmos" ) ;
-  m_show_camera_gizmos_act->setCheckable( true ) ;
-  m_show_camera_gizmos_act->setChecked( true ) ;
+  m_show_hide_camera_gizmos_act = m_view_menu->addAction( "Camera gizmos" ) ;
+  m_show_hide_camera_gizmos_act->setCheckable( true ) ;
+  m_show_hide_camera_gizmos_act->setChecked( true ) ;
+  
 }
 
 /**
@@ -1346,7 +1365,8 @@ void MainWindow::makeConnections( void )
   connect( m_setting_matches_act , SIGNAL( triggered() ) , this , SLOT( onChangeMatchesSettings() ) ) ;
   connect( m_setting_sfm_act , SIGNAL( triggered() ) , this , SLOT( onChangeSfMSettings() ) ) ;
   connect( m_show_hide_grid_act , SIGNAL( triggered() ) , this , SLOT( onShowHideGrid() ) ) ;
-  connect( m_show_camera_gizmos_act , SIGNAL( triggered() ) , this , SLOT( onShowHideCameraGizmos() ) ) ;
+  connect( m_show_hide_camera_gizmos_act , SIGNAL( triggered() ) , this , SLOT( onShowHideCameraGizmos() ) ) ;
+  connect( m_show_hide_image_list_act , SIGNAL( triggered() ) , this , SLOT( onShowImageList() ) );
 
   // Interface
   connect( m_image_list , SIGNAL( hasSelectedAnImage( int ) ) , this , SLOT( onSelectImage( int ) ) );

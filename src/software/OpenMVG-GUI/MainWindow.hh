@@ -128,10 +128,17 @@ class MainWindow : public QMainWindow
     void onShowHideCameraGizmos( void ) ;
 
     /**
+    * @brief Action to be executed when user wants to show/hide image list
+    */
+    void onShowImageList( void ) ;
+
+
+    /**
     * @brief Action to be executed when user has selected an image in the image list
     * @param id Id of the selected image
     */
     void onSelectImage( int id ) ;
+
 
 
     // After something happened
@@ -263,7 +270,8 @@ class MainWindow : public QMainWindow
     /// View
     QMenu * m_view_menu ;
     QAction * m_show_hide_grid_act ;
-    QAction * m_show_camera_gizmos_act ;
+    QAction * m_show_hide_camera_gizmos_act ;
+    QAction * m_show_hide_image_list_act ;
 
     /// The image listing widget
     ImageListWidget * m_image_list ;
