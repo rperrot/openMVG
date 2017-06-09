@@ -3,6 +3,7 @@
 
 #include "openMVG/numeric/numeric.h"
 
+#include <cctype>
 #include <fstream>
 #include <sstream>
 

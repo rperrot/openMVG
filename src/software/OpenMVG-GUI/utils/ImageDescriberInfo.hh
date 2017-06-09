@@ -2,6 +2,7 @@
 #define _OPENMVG_SOFTWARE_OPENMVG_GUI_UTILS_IMAGE_DESCRIBER_INFO_HH_
 
 #include <memory>
+#include <string>
 
 namespace openMVG
 {
