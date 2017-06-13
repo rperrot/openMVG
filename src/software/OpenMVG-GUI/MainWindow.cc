@@ -1244,7 +1244,7 @@ void MainWindow::buildInterface( void )
 {
   m_image_list = new ImageListWidget( this ) ;
 
-  m_result_view = new ResultViewWidget( this ) ;
+  m_result_view = new ResultViewWidget( this ) ; 
 
   // Add everything to the main window
   QWidget * mainWidget = new QWidget ;

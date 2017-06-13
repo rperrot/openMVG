@@ -59,14 +59,19 @@ class SceneManager : public std::enable_shared_from_this<SceneManager>
     // Set cameras gizmos
     void setCameraGizmos( const std::map< int , std::shared_ptr<RenderableObject> > & objs ) ;
 
-    // Remove all camera gizmos 
-    void removeCameraGizmos( void ) ; 
+    // Remove all camera gizmos
+    void removeCameraGizmos( void ) ;
 
-    // Get a gizmo 
-    std::shared_ptr<RenderableObject> cameraGizmo( const int id ) const ; 
+    // Get a gizmo
+    std::shared_ptr<RenderableObject> cameraGizmo( const int id ) const ;
 
-    // Get list of camera gizmos 
-    std::vector< std::shared_ptr<RenderableObject> > cameraGizmos( void ) const ; 
+    // Get list of camera gizmos
+    std::vector< std::shared_ptr<RenderableObject> > cameraGizmos( void ) const ;
+
+    /**
+    * @brief destroy all openGL data (if any present)
+    */
+    void destroyGLData( void ) ;
 
   private:
 

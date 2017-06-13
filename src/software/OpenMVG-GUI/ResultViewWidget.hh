@@ -20,7 +20,9 @@ class ResultViewWidget : public QOpenGLWidget
     * @brief Ctr
     * @param parent Parent widget
     */
-    ResultViewWidget( QWidget * parent ) ;
+    ResultViewWidget( QWidget * parent = nullptr ) ;
+
+    ~ResultViewWidget( void ) ; 
 
     /**
     * @brief Initialize openGL context
@@ -91,7 +93,18 @@ class ResultViewWidget : public QOpenGLWidget
     */
     void mouseReleaseEvent( QMouseEvent * event ) override ;
 
+  private slots : 
+
+    /**
+    * @brief clean openGL data before quitting 
+    */
+    void destroyGLData( void ) ; 
+
   private:
+
+    
+
+    void makeConnections( void ) ;
 
     std::shared_ptr<SceneManager> m_scn ;
     std::shared_ptr<ShaderProgram> m_point_shader ;
@@ -101,6 +114,8 @@ class ResultViewWidget : public QOpenGLWidget
     // For mouse motion
     double m_last_mouse_x ;
     double m_last_mouse_y ;
+
+    Q_OBJECT 
 } ;
 
 } // namespace openMVG_gui

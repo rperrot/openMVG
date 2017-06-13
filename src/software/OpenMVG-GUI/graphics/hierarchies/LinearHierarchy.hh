@@ -8,7 +8,7 @@
 namespace openMVG_gui
 {
 
-  class SceneManager;
+class SceneManager;
 
 /**
 * @brief class holding a linear hierarchy (ie: a soup of object without structure)
@@ -24,10 +24,10 @@ class LinearHierarchy : public SceneHierarchy
     void addObject( std::shared_ptr<RenderableObject> obj ) override ;
 
     /**
-    * @brief remove an object from the hierarchy 
-    * @note if object does not exists in the hierarchy, do nothing 
+    * @brief remove an object from the hierarchy
+    * @note if object does not exists in the hierarchy, do nothing
     */
-    void removeObject( std::shared_ptr<RenderableObject> obj ) override ; 
+    void removeObject( std::shared_ptr<RenderableObject> obj ) override ;
 
     /**
     * @brief Build internal structure
@@ -36,10 +36,16 @@ class LinearHierarchy : public SceneHierarchy
 
     /**
     * @brief Render current scene
-    * @param scn Scene 
-    * @param ratio Aspect ratio 
+    * @param scn Scene
+    * @param ratio Aspect ratio
     */
     void render( std::shared_ptr<SceneManager> scn , const double aspect_ratio ) override ;
+
+    /**
+    * @brief destroy all openGL data (if any present)
+    */
+    void destroyGLData( void ) override ; 
+
 
   private:
 

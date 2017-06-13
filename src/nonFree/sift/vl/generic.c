@@ -1074,6 +1074,7 @@ vl_destructor ()
   printf("VLFeat DEBUG: destroying the generic thread state instance (threading support disabled).\n") ;
 #endif
   vl_thread_specific_state_delete(vl_get_state()->threadState) ;
+  vl_get_state()->threadState = NULL ; 
 #endif
 
 #if defined(DEBUG)

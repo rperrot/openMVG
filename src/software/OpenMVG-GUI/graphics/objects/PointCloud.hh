@@ -27,7 +27,7 @@ class PointCloud : public RenderableObject
     /**
     * @brief Dtr
     */
-    ~PointCloud();
+    virtual ~PointCloud();
 
     /**
     * @brief Prepare object before rendering (ie: create buffers, prepare data)
@@ -39,6 +39,12 @@ class PointCloud : public RenderableObject
     * @brief Draw code for the object
     */
     void draw( void ) const override;
+
+    /**
+    * @brief destroy all openGL data (if any present)
+    */
+    void destroyGLData( void ) override ;
+
 
   private:
     std::vector< openMVG::Vec3 > m_pts ;

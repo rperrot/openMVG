@@ -28,6 +28,11 @@ class CameraGizmo : public RenderableObject , public SelectableObject
                  const double size = 1.0 ) ;
 
     /**
+    * @brief Destructor 
+    */
+    virtual ~CameraGizmo( void ) ; 
+
+    /**
     * @brief Get current size of the gizmo
     * @return current size of the gizmo
     */
@@ -56,6 +61,12 @@ class CameraGizmo : public RenderableObject , public SelectableObject
     */
     openMVG::Mat4 modelMat( void ) const override ;
 
+    /**
+    * @brief destroy all openGL data (if any present)
+    */
+    void destroyGLData( void ) override ;
+
+
   private:
 
     openMVG::geometry::Pose3 m_pose ;
@@ -68,7 +79,7 @@ class CameraGizmo : public RenderableObject , public SelectableObject
 
     GLsizei m_nb_vert_selection ;
     GLuint m_vao_selection ;
-    GLuint m_vbo_selection ; 
+    GLuint m_vbo_selection ;
 } ;
 
 } // namespace openMVG_gui

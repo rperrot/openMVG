@@ -23,6 +23,8 @@ class SphericalGizmo: public RenderableObject
                     const openMVG::Vec3 & center ,
                     const double radius ) ;
 
+    virtual ~SphericalGizmo( void ) ; 
+
     /**
     * @brief Set center of the gizmo
     * @param nCenter New center
@@ -63,6 +65,12 @@ class SphericalGizmo: public RenderableObject
     * @brief Draw code for the object
     */
     void draw( void ) const override;
+
+    /**
+    * @brief destroy all openGL data (if any present)
+    */
+    void destroyGLData( void ) override ;
+
 
   private:
 

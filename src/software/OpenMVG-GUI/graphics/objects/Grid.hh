@@ -30,7 +30,7 @@ class Grid : public RenderableObject
           const openMVG::Vec3 col_standard_lines = openMVG::Vec3( 0.75 , 0.75 , 0.75 ) ,
           const openMVG::Vec3 col_major_lines    = openMVG::Vec3( 0.40 , 0.40 , 0.40 ) ) ;
 
-    ~Grid();
+    virtual ~Grid();
 
     /**
     * @brief Prepare object before rendering (ie: create buffers, prepare data)
@@ -42,6 +42,11 @@ class Grid : public RenderableObject
     * @brief Draw code for the object
     */
     void draw( void ) const override;
+
+    /**
+    * @brief destroy all openGL data (if any present)
+    */
+    void destroyGLData( void ) override ;
 
   private:
 

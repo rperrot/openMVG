@@ -23,6 +23,13 @@ ResultViewWidget::ResultViewWidget( QWidget * parent )
 
 }
 
+ResultViewWidget::~ResultViewWidget( void ) 
+{
+  destroyGLData() ; 
+  m_scn = nullptr ; 
+}
+
+
 /**
 * @brief Initialize openGL context
 */
@@ -180,7 +187,7 @@ void ResultViewWidget::wheelEvent( QWheelEvent * event )
 */
 void ResultViewWidget::mousePressEvent( QMouseEvent * event )
 {
-  if( event->button() == Qt::LeftButton || 
+  if( event->button() == Qt::LeftButton ||
       event->button() == Qt::MiddleButton )
   {
     m_last_mouse_x = event->x() ;
@@ -267,8 +274,8 @@ void ResultViewWidget::mouseMoveEvent( QMouseEvent * event )
       const openMVG::Vec3 panVector = interOld - interNew ;
 
       camera->pan( panVector ) ;
-      std::dynamic_pointer_cast<SphericalGizmo>( m_sph_gizmo )->setCenter( camera->destination() ) ;      
-      
+      std::dynamic_pointer_cast<SphericalGizmo>( m_sph_gizmo )->setCenter( camera->destination() ) ;
+
       break ;
     }
     case ROTATE :
@@ -294,13 +301,13 @@ void ResultViewWidget::mouseMoveEvent( QMouseEvent * event )
       camera->rotateAroundDestination( naxis , angle ) ;
       break ;
     }
-    case ZOOM : 
+    case ZOOM :
     {
-      break ; 
+      break ;
     }
-    default :  
+    default :
     {
-      break ; 
+      break ;
     }
   }
 
@@ -317,6 +324,31 @@ void ResultViewWidget::mouseReleaseEvent( QMouseEvent * event )
 {
   m_sph_gizmo->setVisible( false ) ;
   update() ;
+}
+
+/**
+* @brief clean openGL data before quitting
+*/
+void ResultViewWidget::destroyGLData( void )
+{
+  std::cerr << "destroy" << std::endl ;
+  makeCurrent() ;
+
+  m_point_shader = nullptr ;
+  m_grid = nullptr ;
+  m_sph_gizmo = nullptr ;
+
+  if( m_scn )
+  {
+    m_scn->destroyGLData() ;
+  }
+  doneCurrent() ;
+}
+
+void ResultViewWidget::makeConnections( void )
+{
+  // see the Qt doc : we must be sure that we have a direct connection to use makeCurrent in slot
+  connect( context() , SIGNAL( aboutToBeDestroyed() ) , this , SLOT( destroyGLData() ) , Qt::DirectConnection ) ;
 }
 
 

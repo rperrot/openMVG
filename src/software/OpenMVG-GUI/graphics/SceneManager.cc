@@ -109,5 +109,13 @@ std::vector< std::shared_ptr<RenderableObject> > SceneManager::cameraGizmos( voi
   return res ;
 }
 
+/**
+* @brief destroy all openGL data (if any present)
+*/
+void SceneManager::destroyGLData( void )
+{
+  m_hierarchy->destroyGLData() ;
+}
+
 
 } // namespace openMVG_gui

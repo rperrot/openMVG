@@ -24,17 +24,15 @@ Grid::Grid( std::shared_ptr<ShaderProgram> pgm  ,
     m_color_x( col_axis_x ) ,
     m_color_y( col_axis_y ) ,
     m_color_standard( col_standard_lines ) ,
-    m_color_major( col_major_lines )
+    m_color_major( col_major_lines ) ,
+    m_nb_vert( 0 ) 
 {
 
 }
 
 Grid::~Grid()
 {
-  QOpenGLExtraFunctions *glFuncs = QOpenGLContext::currentContext()->extraFunctions();
-
-  glFuncs->glDeleteVertexArrays( 1 , &m_vao ) ;
-  glFuncs->glDeleteBuffers( 1 , &m_vbo ) ;
+  destroyGLData() ;
 }
 
 
@@ -233,6 +231,24 @@ void Grid::draw( void ) const
   glFuncs->glBindVertexArray( m_vao ) ;
   glFuncs->glDrawArrays( GL_LINES , 0 , m_nb_vert ) ;
   glFuncs->glBindVertexArray( 0 ) ;
+}
+
+/**
+* @brief destroy all openGL data (if any present)
+*/
+void Grid::destroyGLData( void )
+{
+  if( m_nb_vert > 0 )
+  {
+    QOpenGLExtraFunctions *glFuncs = QOpenGLContext::currentContext()->extraFunctions();
+
+    glFuncs->glDeleteVertexArrays( 1 , &m_vao ) ;
+    glFuncs->glDeleteBuffers( 1 , &m_vbo ) ;
+
+    m_nb_vert = 0 ;
+
+    RenderableObject::destroyGLData() ; 
+  }
 }
 
 } // namespace openMVG_gui

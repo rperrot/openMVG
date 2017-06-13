@@ -17,6 +17,12 @@ RenderableObject::RenderableObject( std::shared_ptr<ShaderProgram> shader , cons
 
 }
 
+RenderableObject::~RenderableObject( void )
+{
+
+}
+
+
 /**
 * @brief Get model matrix
 * @return current model matrix (in left hand system)
@@ -71,5 +77,14 @@ void RenderableObject::switchVisibility( void )
 {
   m_is_visible = ! m_is_visible;
 }
+
+/**
+* @brief destroy all openGL data (if any present)
+*/
+void RenderableObject::destroyGLData( void )
+{
+  m_shader = nullptr ; 
+}
+
 
 } // namespace openMVG_gui

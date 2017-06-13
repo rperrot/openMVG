@@ -17,9 +17,19 @@ CameraGizmo::CameraGizmo( std::shared_ptr<ShaderProgram> shad ,
                           const double size )
   : RenderableObject( shad ) ,
     m_pose( pose ) ,
-    m_size( size )
+    m_size( size ) , 
+    m_nb_vert( 0 ) 
 {
 
+}
+
+
+/**
+* @brief Destructor
+*/
+CameraGizmo::~CameraGizmo( void )
+{
+  destroyGLData() ;
 }
 
 /**
@@ -221,7 +231,7 @@ void CameraGizmo::prepare( void )
   // Selection
   int nb_triangle_selection = 4 ;
   int nb_vert_selection = 3 * nb_triangle_selection ;
-  m_nb_vert_selection = nb_vert_selection ; 
+  m_nb_vert_selection = nb_vert_selection ;
   int total_data_selection = nb_vert_selection * nb_component_per_vert ;
   GLfloat * dataSelection = new GLfloat[ total_data_selection ] ;
 
@@ -308,7 +318,7 @@ void CameraGizmo::prepare( void )
   }
 
   delete[] data ;
-  delete[] dataSelection ; 
+  delete[] dataSelection ;
   m_prepared = true ;
 }
 
@@ -358,5 +368,27 @@ openMVG::Mat4 CameraGizmo::modelMat( void ) const
 
   return ( tra * rot * scale ).transpose() ;
 }
+
+/**
+* @brief destroy all openGL data (if any present)
+*/
+void CameraGizmo::destroyGLData( void )
+{
+  if( m_nb_vert > 0 )
+  {
+    QOpenGLExtraFunctions *glFuncs = QOpenGLContext::currentContext()->extraFunctions();
+
+    glFuncs->glDeleteVertexArrays( 1 , &m_vao ) ;
+    glFuncs->glDeleteBuffers( 1 , &m_vbo ) ;
+
+    glFuncs->glDeleteVertexArrays( 1 , &m_vao_selection ) ;
+    glFuncs->glDeleteBuffers( 1 , &m_vbo_selection ) ;
+
+    m_nb_vert = 0 ;
+    
+    RenderableObject::destroyGLData() ; 
+  }
+}
+
 
 } // namespace openMVG_gui

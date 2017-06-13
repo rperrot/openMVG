@@ -16,10 +16,17 @@ SphericalGizmo::SphericalGizmo( std::shared_ptr<ShaderProgram> pgm ,
                                 const double radius )
   : RenderableObject( pgm ) ,
     m_center( center ) ,
-    m_radius( radius )
+    m_radius( radius ) ,
+    m_nb_vert( 0 )
 {
   buildModelMat() ;
 }
+
+SphericalGizmo::~SphericalGizmo( void )
+{
+  destroyGLData() ;
+}
+
 
 /**
 * @brief Set center of the gizmo
@@ -253,6 +260,24 @@ void SphericalGizmo::buildModelMat( void )
   m_model( 3 , 1 ) = m_center[1] ;
   m_model( 3 , 2 ) = m_center[2] ;
   m_model( 3 , 3 ) = 1.0 ;
+}
+
+/**
+* @brief destroy all openGL data (if any present)
+*/
+void SphericalGizmo::destroyGLData( void )
+{
+  if( m_nb_vert > 0 )
+  {
+    QOpenGLExtraFunctions *glFuncs = QOpenGLContext::currentContext()->extraFunctions();
+
+    glFuncs->glDeleteVertexArrays( 1 , &m_vao ) ;
+    glFuncs->glDeleteBuffers( 1 , &m_vbo ) ;
+
+    m_nb_vert = 0 ;
+
+    RenderableObject::destroyGLData() ; 
+  }
 }
 
 } // namespace openMVG_gui

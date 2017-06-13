@@ -23,6 +23,8 @@ class RenderableObject
     RenderableObject( std::shared_ptr<ShaderProgram> shader ,
                       const bool visible = true ) ;
 
+    virtual ~RenderableObject( void ) ; 
+
     /**
     * @brief Get model matrix
     * @return current model matrix (in left hand system)
@@ -38,6 +40,12 @@ class RenderableObject
     * @brief Draw code for the object
     */
     virtual void draw( void ) const = 0 ;
+
+    /**
+    * @brief destroy all openGL data (if any present)
+    */
+    virtual void destroyGLData( void )  ;
+
 
     /**
     * @brief Get shader of the object
@@ -68,6 +76,8 @@ class RenderableObject
     * @brief Switch between visible/invisble state
     */
     void switchVisibility( void ) ;
+
+
 
   protected:
 

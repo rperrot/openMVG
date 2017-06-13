@@ -18,7 +18,8 @@ PointCloud::PointCloud( std::shared_ptr<ShaderProgram> pgm ,
   : RenderableObject( pgm ) ,
     m_pts( pts ) ,
     m_col( col ) ,
-    m_default_color( defaultColor )
+    m_default_color( defaultColor ) ,
+    m_nb_vert( 0 )
 {
 
 }
@@ -28,10 +29,7 @@ PointCloud::PointCloud( std::shared_ptr<ShaderProgram> pgm ,
 */
 PointCloud::~PointCloud()
 {
-  QOpenGLExtraFunctions *glFuncs = QOpenGLContext::currentContext()->extraFunctions();
-
-  glFuncs->glDeleteVertexArrays( 1 , &m_vao ) ;
-  glFuncs->glDeleteBuffers( 1 , &m_vbo ) ;
+  destroyGLData() ;
 }
 
 
@@ -130,5 +128,22 @@ void PointCloud::draw( void ) const
   glFuncs->glBindVertexArray( 0 ) ;
 }
 
+/**
+* @brief destroy all openGL data (if any present)
+*/
+void PointCloud::destroyGLData( void )
+{
+  if( m_nb_vert > 0 )
+  {
+    QOpenGLExtraFunctions *glFuncs = QOpenGLContext::currentContext()->extraFunctions();
+
+    glFuncs->glDeleteVertexArrays( 1 , &m_vao ) ;
+    glFuncs->glDeleteBuffers( 1 , &m_vbo ) ;
+
+    m_nb_vert = 0 ;
+
+    RenderableObject::destroyGLData() ; 
+  }
+}
 
 } // namespace openMVG_gui

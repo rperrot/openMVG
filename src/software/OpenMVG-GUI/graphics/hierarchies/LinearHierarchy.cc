@@ -88,4 +88,15 @@ void LinearHierarchy::render( std::shared_ptr<SceneManager> scn , const double a
   }
 }
 
+/**
+* @brief destroy all openGL data (if any present)
+*/
+void LinearHierarchy::destroyGLData( void )
+{
+  for( auto & object : m_objects )
+  {
+    object->destroyGLData() ;
+  }
+}
+
 } // openMVG_gui

@@ -28,10 +28,10 @@ class SceneHierarchy
     virtual void addObject( std::shared_ptr<RenderableObject> obj ) = 0 ;
 
     /**
-    * @brief remove an object from the hierarchy 
-    * @note if object does not exists in the hierarchy, do nothing 
+    * @brief remove an object from the hierarchy
+    * @note if object does not exists in the hierarchy, do nothing
     */
-    virtual void removeObject( std::shared_ptr<RenderableObject> obj ) = 0 ; 
+    virtual void removeObject( std::shared_ptr<RenderableObject> obj ) = 0 ;
 
     /**
     * @brief Build internal structure
@@ -43,6 +43,11 @@ class SceneHierarchy
     * @param mgr Scene manager (containing camera and lights)
     */
     virtual void render( std::shared_ptr<SceneManager> scn , const double aspect_ratio ) = 0 ;
+
+    /**
+    * @brief destroy all openGL data (if any present)
+    */
+    virtual void destroyGLData( void ) = 0 ;
 
   private:
 
