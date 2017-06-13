@@ -180,7 +180,8 @@ void ResultViewWidget::wheelEvent( QWheelEvent * event )
 */
 void ResultViewWidget::mousePressEvent( QMouseEvent * event )
 {
-  if( event->button() == Qt::LeftButton )
+  if( event->button() == Qt::LeftButton || 
+      event->button() == Qt::MiddleButton )
   {
     m_last_mouse_x = event->x() ;
     m_last_mouse_y = event->y() ;
@@ -211,11 +212,40 @@ void ResultViewWidget::mouseMoveEvent( QMouseEvent * event )
     return ;
   }
 
-  if( event->buttons() == Qt::LeftButton )
+  enum MouseAction
+  {
+    PAN ,
+    ZOOM ,
+    ROTATE ,
+
+    NONE
+  } ;
+
+  MouseAction cur_act = NONE ;
+
+  // 1st : select action to do
+
+  if( event->buttons() == Qt::MiddleButton )
+  {
+    cur_act = PAN ;
+  }
+  else if( event->buttons() == Qt::LeftButton )
   {
     if( event->modifiers() & Qt::ControlModifier )
     {
-      // Pan
+      cur_act = PAN ;
+    }
+    else
+    {
+      cur_act = ROTATE ;
+    }
+  }
+
+  // 2nd Apply action
+  switch( cur_act )
+  {
+    case PAN :
+    {
       openMVG::Vec3 oldPos( m_last_mouse_x , static_cast<double>( height()  ) - m_last_mouse_y , 0.0 ) ;
       openMVG::Vec3 newPos( event->x() , static_cast<double>( height() ) - event->y() , 0.0 ) ;
 
@@ -237,11 +267,12 @@ void ResultViewWidget::mouseMoveEvent( QMouseEvent * event )
       const openMVG::Vec3 panVector = interOld - interNew ;
 
       camera->pan( panVector ) ;
-      std::dynamic_pointer_cast<SphericalGizmo>( m_sph_gizmo )->setCenter( camera->destination() ) ;
+      std::dynamic_pointer_cast<SphericalGizmo>( m_sph_gizmo )->setCenter( camera->destination() ) ;      
+      
+      break ;
     }
-    else // if( event->modifiers() & Qt::AltModifier )
+    case ROTATE :
     {
-      // Rotate
       // Compute parameters of the rotation
       const BellBall ball( std::min( 0.8 * width() / 2.0 , 0.8 * height() / 2.0 ) ) ;
 
@@ -251,7 +282,7 @@ void ResultViewWidget::mouseMoveEvent( QMouseEvent * event )
       const openMVG::Vec3 axis = realOld.cross( realNew ) ;
       const double angle = std::atan( axis.norm() / realOld.dot( realNew ) ) ;
 
-      // Change frame for local frame to global frame ( for rotation axis ) 
+      // Change frame for local frame to global frame ( for rotation axis )
       const openMVG::Vec3 y = -camera->up().normalized() ;
       const openMVG::Vec3 z = ( camera->destination() - camera->position() ).normalized() ;
       const openMVG::Vec3 x = z.cross( y ) ;
@@ -261,6 +292,15 @@ void ResultViewWidget::mouseMoveEvent( QMouseEvent * event )
 
       // Rotate the camera around center of projection
       camera->rotateAroundDestination( naxis , angle ) ;
+      break ;
+    }
+    case ZOOM : 
+    {
+      break ; 
+    }
+    default :  
+    {
+      break ; 
     }
   }
 

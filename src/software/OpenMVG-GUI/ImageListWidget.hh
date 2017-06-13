@@ -3,6 +3,7 @@
 
 #include <QListWidget>
 #include <QListWidgetItem>
+#include <QStyledItemDelegate>
 #include <QWidget>
 
 #include <string>
@@ -11,19 +12,37 @@ namespace openMVG_gui
 {
 
 /**
-* @brief items that are in imagelistwidgets 
-* @note this is a convenient class, it should not be used by the user 
-*/ 
+* @brief Custom drawing of the image items
+* Allow to draw id and indication if it has a mask
+*/
+class ImageListDrawingDelegate : public QStyledItemDelegate
+{
+  public:
+    ImageListDrawingDelegate( QWidget * parent ) ;
+
+    void paint( QPainter * painter , const QStyleOptionViewItem &option, const QModelIndex &index ) const override ;
+} ;
+
+/**
+* @brief items that are in imagelistwidgets
+* @note this is a convenient class, it should not be used by the user
+*/
 class ImageListWidgetItem : public QListWidgetItem
 {
   public:
-    ImageListWidgetItem( const std::string & name , QListWidget * parent , const int id ) ;
+    ImageListWidgetItem( const std::string & name = "" , QListWidget * parent = nullptr , const int id = -1 , const bool has_mask = false ) ;
 
     int id( void ) const ;
 
+    bool hasMask( void ) const ;
+
+    void setHasMask( const bool has )  ;
+
   private:
     int m_id ;
+    bool m_has_mask ;
 } ;
+
 
 /**
 * @brief A widget used to display a list of images in thumbnails
@@ -82,5 +101,6 @@ class ImageListWidget : public QWidget
 } ;
 
 } // namespace openMVG_gui
+
 
 #endif

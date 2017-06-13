@@ -2,6 +2,9 @@
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
+#include <QBrush>
+#include <QFontMetrics>
+#include <QPainter>
 #include <QVBoxLayout>
 
 #include <iostream>
@@ -9,9 +12,47 @@
 namespace openMVG_gui
 {
 
-ImageListWidgetItem::ImageListWidgetItem( const std::string & name , QListWidget * parent , const int id )
+//// DELEGATE
+ImageListDrawingDelegate::ImageListDrawingDelegate( QWidget * parent )
+  : QStyledItemDelegate( parent )
+{
+
+}
+
+void ImageListDrawingDelegate::paint( QPainter * painter , const QStyleOptionViewItem &option,
+                                      const QModelIndex &index ) const
+{
+  painter->save() ;
+  QStyledItemDelegate::paint( painter, option, index );
+
+  const int id = index.data( Qt::UserRole ).toInt() ;
+
+  const bool hasMask = index.data( Qt::UserRole + 1 ).toBool() ; 
+
+  QPixmap img = index.data( Qt::DecorationRole ).value<QPixmap>() ; 
+
+  QBrush white_background( Qt::SolidPattern ) ;
+  QColor white_a200( 255 , 255 , 255 , 200 ) ; 
+  white_background.setColor( white_a200 ) ; 
+
+  painter->setBrush( white_background ) ; 
+
+  QFontMetrics metric( painter->font() ) ;
+  const int text_height = metric.height( ) ; 
+  const int text_width = metric.width( std::to_string( id ).c_str() ) ;
+  // TODO : need to check how to get 5 and 3 automatically 
+  painter->drawRect( option.rect.x() + 5 , option.rect.y() + 3 , text_width + 10 , text_height + 10 ) ;
+  painter->drawText( option.rect.x() + 10 , option.rect.y() + 5 + text_height , std::to_string( id ).c_str() ) ;
+
+  painter->restore() ;
+}
+
+
+///// ITEM
+ImageListWidgetItem::ImageListWidgetItem( const std::string & name , QListWidget * parent , const int id , const bool has_mask )
   : QListWidgetItem( name.c_str() , parent ) ,
-    m_id( id )
+    m_id( id ) ,
+    m_has_mask( has_mask )
 {
 
 }
@@ -21,6 +62,20 @@ int ImageListWidgetItem::id( void ) const
   return m_id ;
 }
 
+bool ImageListWidgetItem::hasMask( void ) const
+{
+  return m_has_mask ;
+}
+
+void ImageListWidgetItem::setHasMask( const bool has )
+{
+  m_has_mask = has ;
+  setData( Qt::UserRole + 1 , m_has_mask ) ; 
+}
+
+
+
+//// CONTAINER
 
 /**
 * @brief ctr
@@ -30,10 +85,10 @@ ImageListWidget::ImageListWidget( QWidget * parent )
   : QWidget( parent )
 {
   buildInterface() ;
-  makeConnections() ; 
+  makeConnections() ;
   // TODO : find an automatic way to do it ?
   // note : thumbnails are 256pix in width
-  setMinimumSize( 300 , 10 ) ;
+  setMinimumSize( 310 , 10 ) ;
 }
 
 /**
@@ -51,6 +106,7 @@ void ImageListWidget::setImages( const std::vector< std::pair< int , std::string
     QImage img( paths[id_image].second.c_str() );
     ImageListWidgetItem * item = new ImageListWidgetItem( base_name , m_image_list_view , paths[id_image].first ) ;
     item->setData( Qt::DecorationRole ,  QPixmap::fromImage( img ) );
+    item->setData( Qt::UserRole , paths[id_image].first ) ;
     item->setFlags( Qt::ItemIsSelectable | Qt::ItemIsEnabled ) ;
   }
 }
@@ -74,6 +130,8 @@ void ImageListWidget::buildInterface( void )
   m_image_list_view->setViewMode( QListWidget::IconMode ) ;
   m_image_list_view->setIconSize( QSize( 128 , 128 ) ) ;
   m_image_list_view->setResizeMode( QListWidget::Adjust );
+
+  m_image_list_view->setItemDelegate( new ImageListDrawingDelegate( this ) ) ;
 
 
   QVBoxLayout * mainLayout = new QVBoxLayout ;
