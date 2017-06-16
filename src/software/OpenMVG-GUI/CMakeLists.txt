@@ -17,12 +17,16 @@ add_subdirectory( workflow_params )
 set( OPENMVG_GUI_HEADERS ApplicationState.hh 
                          ImageListWidget.hh 
                          MainWindow.hh 
+                         MaskDefinitionDialog.hh
+                         MaskView.hh 
                          NewProjectDialog.hh 
                          OpenMVGImageInterface.hh
                          Project.hh 
                          ResultViewWidget.hh )
 set( OPENMVG_GUI_SOURCES ImageListWidget.cc 
                          MainWindow.cc 
+                         MaskDefinitionDialog.cc
+                         MaskView.cc 
                          NewProjectDialog.cc 
                          OpenMVGImageInterface.cc
                          Project.cc 

@@ -13,6 +13,7 @@
 #include <QImage>
 
 #include <cereal/archives/xml.hpp>
+#include <cereal/types/map.hpp>
 #include <cereal/types/utility.hpp>
 
 #include <algorithm>
@@ -86,6 +87,15 @@ void Project::save( void )
 
   // Save global project state
   cereal::XMLOutputArchive archive( file );
+
+  int major_version = 0 ;
+  int minor_version = 1 ;
+  int revision_version = 0 ;
+
+  archive( cereal::make_nvp( "major_version" , major_version ) ) ;
+  archive( cereal::make_nvp( "minor_version" , minor_version ) ) ;
+  archive( cereal::make_nvp( "revision_version" , revision_version ) ) ;
+
   archive( cereal::make_nvp( "project_path" , m_project_base_path ) ) ;
   archive( cereal::make_nvp( "image_path" , m_project_image_path ) ) ;
   archive( cereal::make_nvp( "sfm_method" , m_sfm_method ) ) ;
@@ -99,6 +109,9 @@ void Project::save( void )
   // Save SfM computation params
   archive( cereal::make_nvp( "incremental_sfm_params" , m_incremental_sfm_params ) ) ;
   archive( cereal::make_nvp( "global_sfm_params" , m_global_sfm_params ) );
+
+  // Save mask enabled/disabled param
+  archive( cereal::make_nvp( "mask_enabled" , m_mask_enabled ) ) ;
 
   m_saved = true ;
 }
@@ -120,6 +133,13 @@ void Project::open( const std::string & projectFile )
   // Save global project state
   cereal::XMLInputArchive archive( file );
 
+  int major_version ;
+  int minor_version ;
+  int revision_version ; 
+  archive( cereal::make_nvp( "major_version" , major_version ) ) ;
+  archive( cereal::make_nvp( "minor_version" , minor_version ) ) ;
+  archive( cereal::make_nvp( "revision_version" , revision_version ) ) ;
+
   archive( cereal::make_nvp( "project_path" , m_project_base_path ) ) ;
   archive( cereal::make_nvp( "image_path" , m_project_image_path ) ) ;
   archive( cereal::make_nvp( "sfm_method" , m_sfm_method ) ) ;
@@ -133,6 +153,9 @@ void Project::open( const std::string & projectFile )
   // Load SfM computation params
   archive( cereal::make_nvp( "incremental_sfm_params" , m_incremental_sfm_params ) ) ;
   archive( cereal::make_nvp( "global_sfm_params" , m_global_sfm_params ) );
+
+  // Save mask enabled/disabled param
+  archive( cereal::make_nvp( "mask_enabled" , m_mask_enabled ) ) ;
 
   // Load sfm_data ?
   // either from reconstruction path or at least from matches path
@@ -182,8 +205,20 @@ void Project::open( const std::string & projectFile )
 */
 std::string Project::getImagePath( const size_t id_image ) const
 {
-  return m_project_image_path ;
+  return stlplus::create_filespec( m_sfm_data->s_root_path, m_sfm_data->GetViews().at( id_image )->s_Img_path ) ;
 }
+
+/**
+* @brief Get mask image path of a specified image
+* @param id_image Id of the image to get
+* @return mask image path
+*/
+std::string Project::getMaskImagePath( const size_t id_image ) const
+{
+  return stlplus::create_filespec( m_sfm_data->s_root_path ,
+                                   stlplus::basename_part( m_sfm_data->GetViews().at( id_image )->s_Img_path ) + "_mask", "png" );
+}
+
 
 /**
 * @brief Indicate if all image have features computed
@@ -360,9 +395,9 @@ MatchingParams & Project::matchingParams( void )
 * @brief get matching parameters
 * @return curent matching parameters
 */
-MatchingParams Project::matchingParams( void ) const 
+MatchingParams Project::matchingParams( void ) const
 {
-  return m_match_params ;  
+  return m_match_params ;
 }
 
 
@@ -980,6 +1015,31 @@ bool Project::hasUnsavedChange( void ) const
 {
   return ! m_saved ;
 }
+
+/**
+* @brief Indicate if mask is enabled for a specified image
+* @param id Id of the image
+*/
+bool Project::maskEnabled( const int id ) const
+{
+  if( ! m_mask_enabled.count( id ) )
+  {
+    return false ;
+  }
+  else
+  {
+    return m_mask_enabled.at( id ) ;
+  }
+}
+
+/**
+ * @brief Enable/disable mask on selected id
+ */
+void Project::setMaskEnabled( const int id , const bool value )
+{
+  m_mask_enabled[ id ] = value ;
+}
+
 
 
 

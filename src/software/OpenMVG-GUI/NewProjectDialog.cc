@@ -123,7 +123,6 @@ void NewProjectDialog::buildInterface( void )
 {
   QGridLayout * glayout = new QGridLayout ;
 
-
   m_lbl_input_image = new QLabel( "Input folder" ) ;
   m_lbl_output_project = new QLabel( "Output folder" ) ;
 

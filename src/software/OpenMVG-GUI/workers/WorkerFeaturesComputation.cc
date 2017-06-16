@@ -108,12 +108,13 @@ void WorkerFeaturesComputation::process( void )
 
       openMVG::image::Image<unsigned char> * mask = nullptr; // The mask is null by default
 
+      
       const std::string sImageMask_filename =
         stlplus::create_filespec( sfm_data->s_root_path,
                                   stlplus::basename_part( sView_filename ) + "_mask", "png" );
 
       openMVG::image::Image<unsigned char> imageMask;
-      if ( stlplus::file_exists( sImageMask_filename ) )
+      if ( m_project->maskEnabled( i ) && stlplus::file_exists( sImageMask_filename ) )
       {
         QImage maskimg( sImageMask_filename.c_str() ) ;
         imageMask = QImageToOpenMVGImageGrayscale( maskimg ) ;

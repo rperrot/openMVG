@@ -1,7 +1,9 @@
 #include "MainWindow.hh"
 
 // Dialogs
+#include "MaskDefinitionDialog.hh"
 #include "NewProjectDialog.hh"
+
 #include "workflow_params/widgets/FeatureParamsDialog.hh"
 #include "workflow_params/widgets/MatchingParamsDialog.hh"
 #include "workflow_params/widgets/SfMParamsDialog.hh"
@@ -165,6 +167,14 @@ void MainWindow::onOpenProject( void )
 
   // Load thumbnails
   onUpdateImageList() ;
+
+  for( int i = 0 ; i < m_project->nbImage() ; ++i )
+  {
+    if( m_project->maskEnabled( i ) )
+    {
+      m_image_list->setMaskEnabled( i , true ) ; 
+    }
+  }
 
   /**
   * Select a matching method that is compatible with the features computed
@@ -709,6 +719,41 @@ void MainWindow::onSelectImage( int id )
 
 
 /**
+* @brief Action to be executed when user want to define mask of an image
+* @param id Id of the image for which mask would be defined
+*/
+void MainWindow::onDefineMask( int id )
+{
+  MaskDefinitionDialog dlg( this , m_project , id ) ;
+  dlg.setMaskActivated( m_project->maskEnabled( id ) );
+
+  int res = dlg.exec() ;
+  if( res == QDialog::Accepted )
+  {
+    if( dlg.hasMaskActivated() )
+    {
+      QImage img = dlg.getMask() ;
+
+      // Save mask
+      const std::string path = m_project->getMaskImagePath( id ) ;
+      img.save( path.c_str() ) ;
+      m_project->setMaskEnabled( id , true ) ;
+      m_image_list->setMaskEnabled( id , true ) ;
+    }
+    else
+    {
+      m_project->setMaskEnabled( id , false ) ;
+      m_image_list->setMaskEnabled( id , false ) ;
+    }
+  }
+  else
+  {
+
+  }
+}
+
+
+/**
 * @brief Action to be executed when features have been computed
 */
 void MainWindow::onHasComputedFeatures( const WorkerNextAction & next_action  )
@@ -1244,7 +1289,7 @@ void MainWindow::buildInterface( void )
 {
   m_image_list = new ImageListWidget( this ) ;
 
-  m_result_view = new ResultViewWidget( this ) ; 
+  m_result_view = new ResultViewWidget( this ) ;
 
   // Add everything to the main window
   QWidget * mainWidget = new QWidget ;
@@ -1304,14 +1349,14 @@ void MainWindow::buildMenus( void )
   m_show_hide_image_list_act = m_view_menu->addAction( "Image list" );
   m_show_hide_image_list_act->setCheckable( true ) ;
   m_show_hide_image_list_act->setChecked( true ) ;
-  m_view_menu->addSeparator() ; 
+  m_view_menu->addSeparator() ;
   m_show_hide_grid_act = m_view_menu->addAction( "Grid" ) ;
   m_show_hide_grid_act->setCheckable( true ) ;
   m_show_hide_grid_act->setChecked( true ) ;
   m_show_hide_camera_gizmos_act = m_view_menu->addAction( "Camera gizmos" ) ;
   m_show_hide_camera_gizmos_act->setCheckable( true ) ;
   m_show_hide_camera_gizmos_act->setChecked( true ) ;
-  
+
 }
 
 /**
@@ -1370,9 +1415,11 @@ void MainWindow::makeConnections( void )
 
   // Interface
   connect( m_image_list , SIGNAL( hasSelectedAnImage( int ) ) , this , SLOT( onSelectImage( int ) ) );
+  connect( m_image_list , SIGNAL( hasRequestedMaskDefinition( int ) ) , this , SLOT( onDefineMask( int ) ) ) ;
+
 }
 
-void MainWindow::createProgress( const std::string &message , const int minvalue , const int maxvalue )
+void MainWindow::createProgress( const std::string & message , const int minvalue , const int maxvalue )
 {
   m_progress_dialog = new QProgressDialog( this ) ;
   m_progress_dialog->setRange( 0 , 1 ) ;

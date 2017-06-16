@@ -1,6 +1,7 @@
 #ifndef _OPENMVG_SOFTWARE_OPENMVG_GUI_IMAGE_LIST_WIDGET_HH_
 #define _OPENMVG_SOFTWARE_OPENMVG_GUI_IMAGE_LIST_WIDGET_HH_
 
+#include <QContextMenuEvent>
 #include <QListWidget>
 #include <QListWidgetItem>
 #include <QStyledItemDelegate>
@@ -59,6 +60,11 @@ class ImageListWidget : public QWidget
     ImageListWidget( QWidget * parent ) ;
 
 
+    /**
+    * @brief Handle right click
+    */
+    void contextMenuEvent( QContextMenuEvent *e ) override ;
+
   public slots :
 
     /**
@@ -69,9 +75,28 @@ class ImageListWidget : public QWidget
     void setImages( const std::vector< std::pair< int , std::string > > & paths ) ;
 
     /**
+    * @brief Set enable/disable mask on selected image 
+    * @param id_image Id of the image to enable 
+    * @param enable Enable status 
+    */
+    void setMaskEnabled( const int id_image , const bool enable ) ;
+
+    /**
     * @brief remove all images of the widget
     */
     void clear( void ) ;
+
+    /**
+    * @brief Launch widget to define image mask
+    * @param id Id of the image to define
+    */
+    void onMaskDefinition( int id ) ;
+
+    /**
+    * @brief Launch widget to define image mask
+    * @param id Id of the image to define
+    */
+    void onIntrinsicSelection( int id ) ;
 
   signals :
 
@@ -81,11 +106,30 @@ class ImageListWidget : public QWidget
     */
     void hasSelectedAnImage( int id ) ;
 
+    /**
+    * @brief Signal to inform the main window that user would like to define mask for an image
+    * @param id Id of the image which requested the definition
+    */
+    void hasRequestedMaskDefinition( int id ) ;
+
+    /**
+    * @brief Signal to inform the main window that user would like to define intrinsic for an image
+    * @param id Id of the image which requested the definition
+    */
+    void hasRequestedIntrinsicSelection( int id ) ;
+
+
   private slots :
 
     void onSelectionChanged( void ) ;
 
+
+
+
   private:
+
+
+
 
     /**
     * @brief Build interface widgets

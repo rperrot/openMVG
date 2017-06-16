@@ -84,6 +84,13 @@ class Project
     std::string getImagePath( const size_t id_image ) const ;
 
     /**
+    * @brief Get mask image path of a specified image
+    * @param id_image Id of the image to get
+    * @return mask image path
+    */
+    std::string getMaskImagePath( const size_t id_image ) const ;
+
+    /**
     * @brief Indicate if all image have features computed
     */
     bool hasAllFeaturesComputed( void ) const ;
@@ -153,7 +160,7 @@ class Project
     * @brief get matching parameters
     * @return curent matching parameters
     */
-    MatchingParams matchingParams( void ) const ; 
+    MatchingParams matchingParams( void ) const ;
 
     /**
     * @brief Set Matching parameters
@@ -277,6 +284,17 @@ class Project
     */
     bool hasUnsavedChange( void ) const ;
 
+    /**
+    * @brief Indicate if mask is enabled for a specified image 
+    * @param id Id of the image 
+    */
+    bool maskEnabled( const int id ) const ; 
+
+    /**
+    * @brief Enable/disable mask on selected id
+    */
+    void setMaskEnabled( const int id , const bool value ) ;
+
   private:
 
     /**
@@ -363,6 +381,9 @@ class Project
 
     // The sfm data file
     std::shared_ptr<openMVG::sfm::SfM_Data> m_sfm_data ;
+
+    // Indicate if mask is enabled
+    std::map< int , bool > m_mask_enabled ;
 
     // The 3d scene
     std::shared_ptr<SceneManager> m_scene_mgr ;

@@ -140,6 +140,12 @@ class MainWindow : public QMainWindow
     void onSelectImage( int id ) ;
 
 
+    /**
+    * @brief Action to be executed when user want to define mask of an image
+    * @param id Id of the image for which mask would be defined
+    */
+    void onDefineMask( int id ) ;
+
 
     // After something happened
     /**

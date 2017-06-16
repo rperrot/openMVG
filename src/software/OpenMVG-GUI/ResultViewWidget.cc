@@ -331,7 +331,6 @@ void ResultViewWidget::mouseReleaseEvent( QMouseEvent * event )
 */
 void ResultViewWidget::destroyGLData( void )
 {
-  std::cerr << "destroy" << std::endl ;
   makeCurrent() ;
 
   m_point_shader = nullptr ;
