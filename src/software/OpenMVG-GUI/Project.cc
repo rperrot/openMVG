@@ -53,7 +53,8 @@ Project::Project( const std::string & base_path ,
                   const std::string & image_path ,
                   const IntrinsicParams & intrin_params ,
                   const std::string camera_sensor_width_database_file ,
-                  std::shared_ptr<SceneManager> scn )
+                  std::shared_ptr<SceneManager> scn ,
+                  C_Progress * progress )
   :
   m_project_base_path( base_path ) ,
   m_project_image_path( image_path ) ,
@@ -61,7 +62,7 @@ Project::Project( const std::string & base_path ,
   m_scene_mgr( scn ) ,
   m_sparse_point_cloud( nullptr )
 {
-  createProject( base_path , image_path , intrin_params , camera_sensor_width_database_file ) ;
+  createProject( base_path , image_path , intrin_params , camera_sensor_width_database_file , progress ) ;
 }
 
 /**
@@ -135,7 +136,7 @@ void Project::open( const std::string & projectFile )
 
   int major_version ;
   int minor_version ;
-  int revision_version ; 
+  int revision_version ;
   archive( cereal::make_nvp( "major_version" , major_version ) ) ;
   archive( cereal::make_nvp( "minor_version" , minor_version ) ) ;
   archive( cereal::make_nvp( "revision_version" , revision_version ) ) ;
@@ -549,7 +550,8 @@ std::string Project::colorizedSfMPlyPath( void ) const
 void Project::createProject( const std::string & base_path ,
                              const std::string & image_path ,
                              const IntrinsicParams & intrin_params ,
-                             const std::string camera_sensor_width_database_file )
+                             const std::string camera_sensor_width_database_file ,
+                             C_Progress * progress )
 {
   m_project_base_path = base_path ;
   m_project_image_path = image_path ;
@@ -583,10 +585,15 @@ void Project::createProject( const std::string & base_path ,
 
   double width , height , ppx , ppy , focal ;
 
+  if( progress )
+  {
+    progress->restart( vec_image.size() ) ;
+  }
+
   // 5 - get valid images and initialize intrinsics for each views
   for ( std::vector<std::string>::const_iterator iter_image = vec_image.begin();
         iter_image != vec_image.end();
-        ++iter_image )
+        ++iter_image  )
   {
     // Read meta data to fill camera parameter (w,h,focal,ppx,ppy) fields.
     width = height = ppx = ppy = focal = -1.0;
@@ -597,12 +604,20 @@ void Project::createProject( const std::string & base_path ,
     // Test if the image format is supported:
     if ( openMVG::image::GetFormat( sImageFilename.c_str() ) == openMVG::image::Unknown )
     {
+      if( progress )
+      {
+        ++( *progress ) ;
+      }
       continue; // image cannot be opened
     }
 
     if( sImFilenamePart.find( "mask.png" ) != std::string::npos
         || sImFilenamePart.find( "_mask.png" ) != std::string::npos )
     {
+      if( progress )
+      {
+        ++( *progress ) ;
+      }
       continue;
     }
 
@@ -610,6 +625,10 @@ void Project::createProject( const std::string & base_path ,
     QImage img( sImageFilename.c_str() ) ;
     if ( img.isNull() ) // openMVG::image::ReadImageHeader( sImageFilename.c_str(), &imgHeader ) )
     {
+      if( progress )
+      {
+        ++( *progress ) ;
+      }
       continue;  // image cannot be read
     }
 
@@ -732,6 +751,11 @@ void Project::createProject( const std::string & base_path ,
 
       // Add the view to the sfm_container
       views[v.id_view] = std::make_shared<View>( v );
+    }
+
+    if( progress )
+    {
+      ++( *progress ) ;
     }
   }
 

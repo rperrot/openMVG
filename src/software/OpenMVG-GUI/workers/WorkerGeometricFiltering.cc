@@ -39,8 +39,6 @@ void WorkerGeometricFiltering::progressRange( int & min , int & max ) const
 {
   min = 0 ;
   max = m_map_putative->size() + 2 ;
-
-  std::cerr << "[ WorkerGeometricFiltering ] min : " << min << " max : " << max << std::endl;
 }
 
 /**

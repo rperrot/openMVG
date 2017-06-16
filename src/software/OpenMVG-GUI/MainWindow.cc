@@ -172,7 +172,7 @@ void MainWindow::onOpenProject( void )
   {
     if( m_project->maskEnabled( i ) )
     {
-      m_image_list->setMaskEnabled( i , true ) ; 
+      m_image_list->setMaskEnabled( i , true ) ;
     }
   }
 

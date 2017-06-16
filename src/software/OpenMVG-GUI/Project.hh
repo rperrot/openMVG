@@ -9,6 +9,8 @@
 
 #include "graphics/SceneManager.hh"
 
+#include "third_party/progress/progress.hpp"
+
 #include <string>
 
 // fwrd declaration
@@ -55,7 +57,8 @@ class Project
              const std::string & image_path ,
              const IntrinsicParams & intrin_params ,
              const std::string camera_sensor_width_database_file ,
-             std::shared_ptr<SceneManager> mgr ) ;
+             std::shared_ptr<SceneManager> mgr ,
+             C_Progress * progress = nullptr ) ;
 
     /**
     * @brief The number of image in the project
@@ -308,7 +311,8 @@ class Project
     void createProject( const std::string & base_path ,
                         const std::string & image_path ,
                         const IntrinsicParams & intrin_params ,
-                        const std::string camera_sensor_width_database_file ) ;
+                        const std::string camera_sensor_width_database_file ,
+                        C_Progress * progres = nullptr ) ;
     /**
     * @brief Create directory structure for a new project
     * @param base_path base directory

@@ -54,6 +54,16 @@ class WorkerProjectCreation : public QObject, public WorkerInterface
     */
     void process( void ) ;
 
+    /**
+    * @brief internal progress bar has been incremented, now signal it to the external progress dialog
+    */
+    void hasIncremented( int ) ;
+
+    /**
+    * @brief set progress value to the main thread
+    */
+    void sendProgress( void ) ;
+
   signals:
 
     // 0 -> nothing done
@@ -65,12 +75,15 @@ class WorkerProjectCreation : public QObject, public WorkerInterface
 
   private:
 
+    std::atomic<unsigned int> m_progress_value ;
+
+    // In
     std::string m_project_base_path ;
     std::string m_input_image_path ;
     IntrinsicParams m_intrin_params ;
     std::string m_database_path ;
     std::shared_ptr<SceneManager> m_scn_manager ;
-
+    // Out
     std::shared_ptr<Project> m_project ;
 
     Q_OBJECT
