@@ -61,9 +61,9 @@ void SceneManager::prepare( void )
 /**
 * @brief render current scene
 */
-void SceneManager::render( const double aspect )
+void SceneManager::render( const double w , const double h )
 {
-  m_hierarchy->render( shared_from_this() , aspect ) ;
+  m_hierarchy->render( shared_from_this() , w , h ) ;
 }
 
 // Set cameras gizmos

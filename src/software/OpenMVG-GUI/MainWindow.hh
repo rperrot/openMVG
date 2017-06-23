@@ -146,6 +146,16 @@ class MainWindow : public QMainWindow
     */
     void onDefineMask( int id ) ;
 
+    /**
+    * @brief Action to be executed when user select perspective projection matrix 
+    */ 
+    void onSetPerspectiveProjection( void ) ;
+
+    /**
+    * @brief Action to be executed when user select orthographic projection matrix 
+    */
+    void onSetOrthographicProjection( void ) ;
+
 
     // After something happened
     /**
@@ -278,6 +288,9 @@ class MainWindow : public QMainWindow
     QAction * m_show_hide_grid_act ;
     QAction * m_show_hide_camera_gizmos_act ;
     QAction * m_show_hide_image_list_act ;
+    QMenu * m_view_projection_menu ;
+    QAction * m_view_projection_perspective ;
+    QAction * m_view_projection_orthographic ;
 
     /// The image listing widget
     ImageListWidget * m_image_list ;

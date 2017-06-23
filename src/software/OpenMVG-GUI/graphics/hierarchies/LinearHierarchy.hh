@@ -39,7 +39,7 @@ class LinearHierarchy : public SceneHierarchy
     * @param scn Scene
     * @param ratio Aspect ratio
     */
-    void render( std::shared_ptr<SceneManager> scn , const double aspect_ratio ) override ;
+    void render( std::shared_ptr<SceneManager> scn , const double w , const double h ) override ;
 
     /**
     * @brief destroy all openGL data (if any present)

@@ -22,13 +22,15 @@ class Camera
     * @param fov Field Of View (in radian)
     * @param near_plane Near plane
     * @param far_plane Far plane
+    * @param ortho Indicate if it's an orthographic camera 
     */
     Camera( const openMVG::Vec3 & pos ,
             const openMVG::Vec3 & dest ,
             const openMVG::Vec3 & up ,
             const double fov ,
             const double near_plane ,
-            const double far_plane ) ;
+            const double far_plane ,
+            const bool ortho = false ) ;
 
     /**
     * @brief Get camera position
@@ -115,9 +117,10 @@ class Camera
     * @brief Get projection matrix for the current parameters
     * @param aspect Aspect ratio (w/h)
     * @return Projection matrix
+    * @note if m_is_ortho is true return an orthographic projection, if false return a perspective projection
     * @note It should be directly used in openGL (no transpose needed)
     */
-    openMVG::Mat4 projMatrix( const double aspect ) const ;
+    openMVG::Mat4 projMatrix( const double width , const double height ) const ;
 
     /**
     * @brief center camera to a specified position while keeping orientation frame
@@ -146,7 +149,7 @@ class Camera
     void pan( const openMVG::Vec3 & delta ) ;
 
     /**
-    * @brief Move position and update up vector accordingly 
+    * @brief Move position and update up vector accordingly
     */
     void rotateAroundDestination( const openMVG::Vec3 & axis , const double angle ) ;
 
@@ -159,6 +162,18 @@ class Camera
     openMVG::Vec3 unProject( const openMVG::Vec3 & pt , const double viewport[4] ) const ;
 
 
+    /**
+    * @brief Indicate if it's an orthographic camera 
+    * @retval true if it's ortho 
+    * @retval false if not 
+    */
+    bool isOrtho( void ) const ; 
+
+    /**
+    * @brief Set orthographic mode 
+    * @param iso orthographic activation mode 
+    */
+    void setOrtho( const bool iso ) ;
 
     /**
     * @brief serialization load
@@ -186,6 +201,8 @@ class Camera
     double m_fov ;
     double m_near ;
     double m_far ;
+
+    bool m_is_ortho ;
 
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW

@@ -23,10 +23,10 @@ ResultViewWidget::ResultViewWidget( QWidget * parent )
 
 }
 
-ResultViewWidget::~ResultViewWidget( void ) 
+ResultViewWidget::~ResultViewWidget( void )
 {
-  destroyGLData() ; 
-  m_scn = nullptr ; 
+  destroyGLData() ;
+  m_scn = nullptr ;
 }
 
 
@@ -64,7 +64,7 @@ void ResultViewWidget::paintGL( void )
 
   if( m_scn )
   {
-    m_scn->render( ( double )w / ( double )h ) ;
+    m_scn->render( ( double )w , ( double )h ) ;
   }
 }
 
@@ -167,15 +167,85 @@ void ResultViewWidget::wheelEvent( QWheelEvent * event )
   const double numDegrees = ( double )( event->angleDelta().y() ) / 8;
   const double numSteps = ( double ) numDegrees / 15;
 
+  enum MouseAction
+  {
+    ZOOM ,
+    CHANGE_FOV , // shift
+    CHANGE_NEAR , // ctrl
+    CHANGE_FAR // alt
+  } ;
+
+  MouseAction act = ZOOM ;
+
+  if( event->modifiers() & Qt::ShiftModifier )
+  {
+    act = CHANGE_FOV ;
+  }
+  /*
+  else if( event->modifiers() & Qt::ControlModifier )
+  {
+    act = CHANGE_NEAR ;
+  }
+  else if( event->modifiers() & Qt::AltModifier )
+  {
+    act = CHANGE_FAR ;
+  }
+  */
+
+
   if( m_scn )
   {
     std::shared_ptr<Camera> camera = m_scn->camera() ;
     if( camera )
     {
-      camera->zoom( numSteps ) ;
+      switch( act )
+      {
+        case ZOOM :
+        {
+          camera->zoom( numSteps ) ;
+
+          break ;
+        }
+        case CHANGE_NEAR :
+        {
+          const double cur_near = camera->nearPlane() ;
+          const double cur_far  = camera->farPlane() ;
+
+          const double ratio = 0.1 ;
+
+          const double new_np = std::min( std::max( 0.000001 , cur_near + ratio * numSteps ) , cur_far );
+
+          camera->setNearPlane( new_np ) ;
+
+          break ;
+        }
+        case CHANGE_FAR :
+        {
+          const double cur_near = camera->nearPlane() ;
+          const double cur_far  = camera->farPlane() ;
+
+          const double ratio = ( cur_far - cur_near ) / 100.0 ;
+
+          const double new_np = std::max( cur_far + ratio * numSteps , cur_near );
+
+          camera->setFarPlane( new_np ) ;
+          break ;
+        }
+        case CHANGE_FOV :
+        {
+          const double cur_fov = openMVG::R2D( camera->fov() ) ;
+
+          const double new_fov = std::min( 90.0 , std::max( 5.0 , cur_fov + 1.2 * numSteps ) );
+
+          camera->setFov( openMVG::D2R( new_fov ) ) ;
+
+          break ;
+        }
+      }
 
       updateTrackballSize() ;
     }
+
   }
   //  event->accept();
   update() ;

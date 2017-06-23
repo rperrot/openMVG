@@ -42,7 +42,7 @@ class SceneHierarchy
     * @brief Render current scene
     * @param mgr Scene manager (containing camera and lights)
     */
-    virtual void render( std::shared_ptr<SceneManager> scn , const double aspect_ratio ) = 0 ;
+    virtual void render( std::shared_ptr<SceneManager> scn , const double w , const double h ) = 0 ;
 
     /**
     * @brief destroy all openGL data (if any present)

@@ -54,7 +54,7 @@ class SceneManager : public std::enable_shared_from_this<SceneManager>
     /**
     * @brief render current scene
     */
-    void render( const double aspect );
+    void render( const double w , const double h );
 
     // Set cameras gizmos
     void setCameraGizmos( const std::map< int , std::shared_ptr<RenderableObject> > & objs ) ;

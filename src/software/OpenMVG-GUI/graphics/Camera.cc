@@ -19,13 +19,15 @@ Camera::Camera( const openMVG::Vec3 & pos ,
                 const openMVG::Vec3 & up ,
                 const double fov ,
                 const double near_plane ,
-                const double far_plane )
+                const double far_plane ,
+                const bool is_ortho )
   : m_pos( pos ) ,
     m_dest( dest ) ,
     m_up( up ) ,
     m_fov( fov ) ,
     m_near( near_plane ) ,
-    m_far( far_plane )
+    m_far( far_plane ) ,
+    m_is_ortho( false )
 {
 
 }
@@ -186,37 +188,87 @@ openMVG::Mat4 Camera::viewMatrix( void ) const
 * @return Projection matrix
 * @note It should be directly used in openGL (no transpose needed)
 */
-openMVG::Mat4 Camera::projMatrix( const double aspect ) const
+openMVG::Mat4 Camera::projMatrix( const double width , const double height ) const
 {
-  const double range = std::tan( m_fov / 2.0 ) * m_near ;
-  const double left = - range * aspect ;
-  const double right = range * aspect ;
-  const double bottom = -range ;
-  const double top = range ;
+  if( ! m_is_ortho )
+  {
+    const double aspect = width / height ;
+    const double range = std::tan( m_fov / 2.0 ) * m_near ;
 
-  openMVG::Mat4 res ;
+    const double left = - range * aspect ;
+    const double right = range * aspect ;
+    const double bottom = -range ;
+    const double top = range ;
 
-  res( 0 , 0 ) = 2.0 * m_near / ( right - left ) ;
-  res( 0 , 1 ) = 0.0 ;
-  res( 0 , 2 ) = 0.0 ;
-  res( 0 , 3 ) = 0.0 ;
+    const double tmp = 2.0 * m_near ;
 
-  res( 1 , 0 ) = 0.0 ;
-  res( 1 , 1 ) = 2.0 * m_near / ( top - bottom ) ;
-  res( 1 , 2 ) = 0.0 ;
-  res( 1 , 3 ) = 0.0 ;
+    openMVG::Mat4 res ;
 
-  res( 2 , 0 ) = ( right + left ) / ( right - left ) ;
-  res( 2 , 1 ) = ( top + bottom ) / ( top - bottom ) ;
-  res( 2 , 2 ) = - ( m_far + m_near ) / ( m_far - m_near ) ;
-  res( 2 , 3 ) = -1.0 ;
+    res( 0 , 0 ) = tmp / ( right - left ) ;
+    res( 0 , 1 ) = 0.0 ;
+    res( 0 , 2 ) = 0.0 ;
+    res( 0 , 3 ) = 0.0 ;
 
-  res( 3 , 0 ) = 0.0 ;
-  res( 3 , 1 ) = 0.0 ;
-  res( 3 , 2 ) = - ( 2.0 * m_far * m_near ) / ( m_far - m_near ) ;
-  res( 3 , 3 ) = 0.0 ;
+    res( 1 , 0 ) = 0.0 ;
+    res( 1 , 1 ) = tmp / ( top - bottom ) ;
+    res( 1 , 2 ) = 0.0 ;
+    res( 1 , 3 ) = 0.0 ;
 
-  return res ;
+    res( 2 , 0 ) = ( right + left ) / ( right - left ) ;
+    res( 2 , 1 ) = ( top + bottom ) / ( top - bottom ) ;
+    res( 2 , 2 ) = ( - m_far - m_near ) / ( m_far - m_near ) ;
+    res( 2 , 3 ) = -1.0 ;
+
+    res( 3 , 0 ) = 0.0 ;
+    res( 3 , 1 ) = 0.0 ;
+    res( 3 , 2 ) = ( - tmp * m_far ) / ( m_far - m_near ) ;
+    res( 3 , 3 ) = 0.0 ;
+
+    return res ;
+  }
+  else
+  {
+    const double left = -width/height ;
+    const double right = width/height ;
+    const double bottom = -1.0 ;
+    const double top = 1.0 ;
+
+    const double sum1 = left + right ;
+    const double sum2 = top + bottom ;
+    const double sum3 = m_far + m_near ;
+
+    const double diff1 = right - left ;
+    const double diff2 = top - bottom ;
+    const double diff3 = m_far - m_near ;
+
+    const double tx = - sum1 / diff1 ;
+    const double ty = - sum2 / diff2 ;
+    const double tz = - sum3 / diff3 ;
+
+    openMVG::Mat4 res ;
+
+    res( 0 , 0 ) = 2.0 / diff1 ;
+    res( 0 , 1 ) = 0.0 ;
+    res( 0 , 2 ) = 0.0 ;
+    res( 0 , 3 ) = tx ;
+
+    res( 1 , 0 ) = 0.0 ;
+    res( 1 , 1 ) = 2.0 / diff2 ;
+    res( 1 , 2 ) = 0.0 ;
+    res( 1 , 3 ) = ty ;
+
+    res( 2 , 0 ) = 0.0 ;
+    res( 2 , 1 ) = 0.0 ;
+    res( 2 , 2 ) = - 2.0 / diff3 ;
+    res( 2 , 3 ) = tz ;
+
+    res( 3 , 0 ) = 0.0 ;
+    res( 3 , 1 ) = 0.0 ;
+    res( 3 , 2 ) = 0.0 ;
+    res( 3 , 3 ) = 1.0 ;
+
+    return res.transpose() ;
+  }
 }
 
 /**
@@ -307,7 +359,7 @@ openMVG::Vec3 Camera::unProject( const openMVG::Vec3 & pt ,
                                  const double viewport[4] ) const
 {
   const openMVG::Mat4 view = viewMatrix() ;
-  const openMVG::Mat4 proj = projMatrix( viewport[2] / viewport[3] ) ;
+  const openMVG::Mat4 proj = projMatrix( viewport[2] , viewport[3] ) ;
 
   // Note because matrices are left handed, proj * view -> view * proj * transpose
   const openMVG::Mat4 inv = ( view * proj ).transpose().inverse();
@@ -324,6 +376,25 @@ openMVG::Vec3 Camera::unProject( const openMVG::Vec3 & pt ,
   res /= res[3] ;
 
   return openMVG::Vec3( res[0] , res[1] , res[2] ) ;
+}
+
+/**
+* @brief Indicate if it's an orthographic camera
+* @retval true if it's ortho
+* @retval false if not
+*/
+bool Camera::isOrtho( void ) const
+{
+  return m_is_ortho ;
+}
+
+/**
+* @brief Set orthographic mode
+* @param iso orthographic activation mode
+*/
+void Camera::setOrtho( const bool iso )
+{
+  m_is_ortho = iso ;
 }
 
 /**

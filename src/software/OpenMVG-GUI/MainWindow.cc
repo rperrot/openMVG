@@ -754,6 +754,56 @@ void MainWindow::onDefineMask( int id )
 
 
 /**
+* @brief Action to be executed when user select perspective projection matrix
+*/
+void MainWindow::onSetPerspectiveProjection( void )
+{
+  m_view_projection_orthographic->setChecked( false );
+  m_view_projection_perspective->setChecked( true ) ;
+
+  if( m_project )
+  {
+    std::shared_ptr<SceneManager> mgr = m_project->sceneManager() ;
+    if( mgr )
+    {
+      std::shared_ptr<Camera> cam = mgr->camera() ;
+      if( cam )
+      {
+        cam->setOrtho( false ) ;
+        m_result_view->update();
+      }
+    }
+  }
+
+}
+
+
+/**
+* @brief Action to be executed when user select orthographic projection matrix
+*/
+void MainWindow::onSetOrthographicProjection( void )
+{
+  m_view_projection_orthographic->setChecked( true );
+  m_view_projection_perspective->setChecked( false ) ;
+
+  std::shared_ptr<SceneManager> mgr = m_project->sceneManager() ;
+  if( m_project )
+  {
+    std::shared_ptr<SceneManager> mgr = m_project->sceneManager() ;
+    if( mgr )
+    {
+      std::shared_ptr<Camera> cam = mgr->camera() ;
+      if( cam )
+      {
+        cam->setOrtho( true ) ;
+        m_result_view->update();
+      }
+    }
+  }
+}
+
+
+/**
 * @brief Action to be executed when features have been computed
 */
 void MainWindow::onHasComputedFeatures( const WorkerNextAction & next_action  )
@@ -1357,6 +1407,16 @@ void MainWindow::buildMenus( void )
   m_show_hide_camera_gizmos_act->setCheckable( true ) ;
   m_show_hide_camera_gizmos_act->setChecked( true ) ;
 
+
+  m_view_projection_menu = m_view_menu->addMenu( "View Projection" ) ;
+
+  m_view_projection_perspective = m_view_projection_menu->addAction( "Perspective" ) ;
+  m_view_projection_perspective->setCheckable( true ) ;
+  m_view_projection_perspective->setChecked( true ) ;
+  m_view_projection_orthographic = m_view_projection_menu->addAction( "Orthographic" ) ;
+  m_view_projection_orthographic->setCheckable( true ) ;
+  m_view_projection_orthographic->setChecked( false ) ;
+
 }
 
 /**
@@ -1412,6 +1472,8 @@ void MainWindow::makeConnections( void )
   connect( m_show_hide_grid_act , SIGNAL( triggered() ) , this , SLOT( onShowHideGrid() ) ) ;
   connect( m_show_hide_camera_gizmos_act , SIGNAL( triggered() ) , this , SLOT( onShowHideCameraGizmos() ) ) ;
   connect( m_show_hide_image_list_act , SIGNAL( triggered() ) , this , SLOT( onShowImageList() ) );
+  connect( m_view_projection_orthographic , SIGNAL( triggered() ) , this , SLOT( onSetOrthographicProjection() ) ) ;
+  connect( m_view_projection_perspective , SIGNAL( triggered() ) , this , SLOT( onSetPerspectiveProjection() ) ) ;
 
   // Interface
   connect( m_image_list , SIGNAL( hasSelectedAnImage( int ) ) , this , SLOT( onSelectImage( int ) ) );

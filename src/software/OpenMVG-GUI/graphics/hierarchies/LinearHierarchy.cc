@@ -49,12 +49,12 @@ void LinearHierarchy::prepare( void )
 * @brief Render current scene
 * @param mgr Scene manager (containing camera and lights)
 */
-void LinearHierarchy::render( std::shared_ptr<SceneManager> scn , const double aspect_ratio )
+void LinearHierarchy::render( std::shared_ptr<SceneManager> scn , const double w , const double h )
 {
   // TODO : get resolution for rendering
   std::shared_ptr<Camera> cam = scn->camera() ;
   const openMVG::Mat4 camViewMat = cam->viewMatrix() ;
-  const openMVG::Mat4 camProjMat = cam->projMatrix( aspect_ratio ) ;
+  const openMVG::Mat4 camProjMat = cam->projMatrix( w , h ) ;
 
   // TODO : compute MVP matrix here to avoid computation in shader
 
