@@ -337,7 +337,7 @@ bool Project::hasColorComputed( void ) const
 */
 bool Project::hasMatchesFundamentalFiltered( void ) const
 {
-  const std::string matches_path = matchesPath() ;
+  const std::string matches_path = featuresPath() ;
   return stlplus::file_exists( stlplus::create_filespec( matches_path , "matches.f.bin" ) );
 }
 
@@ -348,7 +348,7 @@ bool Project::hasMatchesFundamentalFiltered( void ) const
 */
 bool Project::hasMatchesEssentialFiltered( void ) const
 {
-  const std::string matches_path = matchesPath() ;
+  const std::string matches_path = featuresPath() ;
   return stlplus::file_exists( stlplus::create_filespec( matches_path , "matches.e.bin" ) );
 }
 
@@ -359,7 +359,7 @@ bool Project::hasMatchesEssentialFiltered( void ) const
 */
 bool Project::hasMatchesHomographyFiltered( void ) const
 {
-  const std::string matches_path = matchesPath() ;
+  const std::string matches_path = featuresPath() ;
   return stlplus::file_exists( stlplus::create_filespec( matches_path , "matches.h.bin" ) );
 }
 
@@ -784,6 +784,7 @@ bool Project::createDirectoryStructure( const std::string & base_path )
   const std::string matches_path = matchesPath( base_path ) ;
   const std::string rec_global_path = reconstructionGlobalPath( base_path ) ;
   const std::string rec_sequen_path = reconstructionSequentialPath( base_path ) ;
+  const std::string global_features_dir = globalFeaturePath( base_path ) ;
 
   if( !stlplus::folder_exists( base_path ) )
   {
@@ -852,6 +853,19 @@ bool Project::createDirectoryStructure( const std::string & base_path )
     if( ! stlplus::folder_exists( matches_path ) )
     {
       // TODO : do we have to remove the path already created ?
+      return false ;
+    }
+  }
+
+  // sfm/features
+  if( ! stlplus::folder_exists( global_features_dir ) )
+  {
+    if( ! stlplus::folder_create( global_features_dir ) )
+    {
+      return false ;
+    }
+    if( ! stlplus::folder_exists( global_features_dir ) )
+    {
       return false ;
     }
   }
@@ -927,6 +941,106 @@ std::string Project::matchesPath( const std::string & base_path ) const
 {
   return stlplus::folder_append_separator( sfmPath( base_path ) ) + "matches" ;
 }
+
+/**
+* @brief Get features path relative to the current features params
+* @return feature path
+*/
+std::string Project::featuresPath( void ) const
+{
+  // Feature path :
+  // folder_feature_detector / folder_descriptor / folder_preset
+
+  std::string folder_detector ;
+  std::string folder_descriptor ;
+  std::string folder_preset ;
+
+  switch( m_feature_params.type() )
+  {
+    case FEATURE_TYPE_SIFT :
+    {
+      folder_detector = "SIFT" ;
+      break ;
+    }
+    case FEATURE_TYPE_SIFT_ANATOMY :
+    {
+      folder_detector = "SIFT_ANATOMY" ;
+      break ;
+    }
+    case FEATURE_TYPE_AKAZE_FLOAT :
+    case FEATURE_TYPE_AKAZE_MLDB :
+    {
+      folder_detector = "AKAZE" ;
+      break ;
+    }
+  }
+
+  switch( m_feature_params.type() )
+  {
+    case FEATURE_TYPE_SIFT :
+    case FEATURE_TYPE_SIFT_ANATOMY :
+    {
+      folder_descriptor = "SIFT" ;
+      break ;
+    }
+    case FEATURE_TYPE_AKAZE_FLOAT :
+    {
+      folder_descriptor = "MSURF" ;
+      break ;
+    }
+    case FEATURE_TYPE_AKAZE_MLDB :
+    {
+      folder_descriptor = "MLDB" ;
+      break ;
+    }
+  }
+
+  switch( m_feature_params.preset() )
+  {
+    case FEATURE_PRESET_NORMAL :
+    {
+      folder_preset = "NORMAL" ;
+      break ;
+    }
+    case FEATURE_PRESET_HIGH :
+    {
+      folder_preset = "HIGH" ;
+      break ;
+    }
+    case FEATURE_PRESET_ULTRA :
+    {
+      folder_preset = "ULTRA" ;
+      break ;
+    }
+  }
+
+  return
+    stlplus::folder_append_separator(
+      stlplus::folder_append_separator(
+        stlplus::folder_append_separator( globalFeaturePath() ) + folder_detector ) +
+      folder_descriptor ) + folder_preset ;
+}
+
+/**
+* @brief Get global feature path
+* @return global feature path
+*/
+std::string Project::globalFeaturePath( void ) const
+{
+  return stlplus::folder_append_separator( stlplus::folder_append_separator( m_project_base_path ) + "sfm" ) + "features" ;
+}
+
+/**
+* @brief Get global feature path
+* @param base_path project base path
+* @return global feature path
+*/
+std::string Project::globalFeaturePath( const std::string & base_path ) const
+{
+  return stlplus::folder_append_separator( sfmPath( base_path ) ) + "features" ;
+}
+
+
 
 /**
 * @brief Given a base path, get global reconstruction path

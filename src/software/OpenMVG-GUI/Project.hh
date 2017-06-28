@@ -213,6 +213,17 @@ class Project
     */
     std::string matchesPath( void ) const ;
 
+    /**
+    * @brief Get features path relative to the current features params
+    * @return feature path
+    */
+    std::string featuresPath( void ) const ;
+
+    /**
+    * @brief Get global feature path
+    * @return global feature path
+    */
+    std::string globalFeaturePath( void ) const ;
 
     /**
     * @brief Given a base path, get global reconstruction path
@@ -288,10 +299,10 @@ class Project
     bool hasUnsavedChange( void ) const ;
 
     /**
-    * @brief Indicate if mask is enabled for a specified image 
-    * @param id Id of the image 
+    * @brief Indicate if mask is enabled for a specified image
+    * @param id Id of the image
     */
-    bool maskEnabled( const int id ) const ; 
+    bool maskEnabled( const int id ) const ;
 
     /**
     * @brief Enable/disable mask on selected id
@@ -363,6 +374,14 @@ class Project
     * @return reconstruction sequential path
     */
     std::string reconstructionSequentialPath( const std::string & base_path ) const ;
+
+
+    /**
+    * @brief Get global feature path
+    * @param base_path project base path
+    * @return global feature path
+    */
+    std::string globalFeaturePath( const std::string & base_path ) const ;
 
     /// Indicate if the project on disk is the last one (ie: save is up to date)
     bool m_saved ;

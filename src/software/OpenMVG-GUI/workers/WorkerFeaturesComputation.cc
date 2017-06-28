@@ -48,8 +48,116 @@ void WorkerFeaturesComputation::process( void )
   const FeatureParams f_params = m_project->featureParams() ;
   std::shared_ptr<openMVG::features::Image_describer> image_describer = f_params.describer() ;
 
+
+  // Create output feature folder
+  const std::string base_feature_path = m_project->globalFeaturePath() ;
+  std::string base_detector_path ;
+  switch( m_project->featureParams().type() )
+  {
+    case FEATURE_TYPE_SIFT :
+    {
+      base_detector_path = stlplus::folder_append_separator( base_feature_path ) + "SIFT" ;
+      break ;
+    }
+    case FEATURE_TYPE_SIFT_ANATOMY :
+    {
+      base_detector_path = stlplus::folder_append_separator( base_feature_path ) + "SIFT_ANATOMY" ;
+      break ;
+    }
+    case FEATURE_TYPE_AKAZE_FLOAT :
+    case FEATURE_TYPE_AKAZE_MLDB :
+    {
+      base_detector_path = stlplus::folder_append_separator( base_feature_path ) + "AKAZE" ;
+      break ;
+    }
+  }
+  if( ! stlplus::folder_exists( base_detector_path ) )
+  {
+    if( ! stlplus::folder_create( base_detector_path ) )
+    {
+      emit progress( nb_image ) ;
+      emit finished( NEXT_ACTION_ERROR ) ;
+      return ;
+    }
+    if( ! stlplus::folder_exists( base_detector_path ) )
+    {
+      emit progress( nb_image ) ;
+      emit finished( NEXT_ACTION_ERROR ) ;
+      return ;
+    }
+  }
+  std::string base_descriptor_path ;
+  switch( m_project->featureParams().type() )
+  {
+    case FEATURE_TYPE_SIFT :
+    case FEATURE_TYPE_SIFT_ANATOMY :
+    {
+      base_descriptor_path = stlplus::folder_append_separator( base_detector_path ) + "SIFT" ;
+      break ;
+    }
+    case FEATURE_TYPE_AKAZE_FLOAT :
+    {
+      base_descriptor_path = stlplus::folder_append_separator( base_detector_path ) + "MSURF" ;
+      break ;
+    }
+    case FEATURE_TYPE_AKAZE_MLDB :
+    {
+      base_descriptor_path = stlplus::folder_append_separator( base_detector_path ) + "MLDB" ;
+      break ;
+    }
+  }
+  if( ! stlplus::folder_exists( base_descriptor_path ) )
+  {
+    if( ! stlplus::folder_create( base_descriptor_path ) )
+    {
+      emit progress( nb_image ) ;
+      emit finished( NEXT_ACTION_ERROR ) ;
+      return ;
+    }
+    if( ! stlplus::folder_exists( base_descriptor_path ) )
+    {
+      emit progress( nb_image ) ;
+      emit finished( NEXT_ACTION_ERROR ) ;
+      return ;
+    }
+  }
+  std::string feature_path ;
+  switch( m_project->featureParams().preset() )
+  {
+    case FEATURE_PRESET_NORMAL :
+    {
+      feature_path = stlplus::folder_append_separator( base_descriptor_path ) + "NORMAL" ;
+      break ;
+    }
+    case FEATURE_PRESET_HIGH :
+    {
+      feature_path = stlplus::folder_append_separator( base_descriptor_path ) + "HIGH" ;
+      break ;
+    }
+    case FEATURE_PRESET_ULTRA :
+    {
+      feature_path = stlplus::folder_append_separator( base_descriptor_path ) + "ULTRA" ;
+      break ;
+    }
+  }
+  if( ! stlplus::folder_exists( feature_path ) )
+  {
+    if( ! stlplus::folder_create( feature_path ) )
+    {
+      emit progress( nb_image ) ;
+      emit finished( NEXT_ACTION_ERROR ) ;
+      return ;
+    }
+    if( ! stlplus::folder_exists( feature_path ) )
+    {
+      emit progress( nb_image ) ;
+      emit finished( NEXT_ACTION_ERROR ) ;
+      return ;
+    }
+  }
+
   // Save the image_describer
-  const std::string sImage_describer = stlplus::create_filespec( matches_dir , "image_describer", "json" );
+  const std::string sImage_describer = stlplus::create_filespec( feature_path , "image_describer", "json" );
   {
     std::ofstream stream( sImage_describer.c_str() );
     if ( !stream.is_open() )
@@ -91,8 +199,8 @@ void WorkerFeaturesComputation::process( void )
     const openMVG::sfm::View * view = iterViews->second.get();
     const std::string
     sView_filename = stlplus::create_filespec( sfm_data->s_root_path, view->s_Img_path ),
-    sFeat = stlplus::create_filespec( matches_dir, stlplus::basename_part( sView_filename ), "feat" ),
-    sDesc = stlplus::create_filespec( matches_dir, stlplus::basename_part( sView_filename ), "desc" );
+    sFeat = stlplus::create_filespec( feature_path, stlplus::basename_part( sView_filename ), "feat" ),
+    sDesc = stlplus::create_filespec( feature_path, stlplus::basename_part( sView_filename ), "desc" );
 
     //If features or descriptors file are missing, compute them
     if ( !stlplus::file_exists( sFeat ) || !stlplus::file_exists( sDesc ) || m_overwrite_existing )
@@ -108,7 +216,7 @@ void WorkerFeaturesComputation::process( void )
 
       openMVG::image::Image<unsigned char> * mask = nullptr; // The mask is null by default
 
-      
+
       const std::string sImageMask_filename =
         stlplus::create_filespec( sfm_data->s_root_path,
                                   stlplus::basename_part( sView_filename ) + "_mask", "png" );

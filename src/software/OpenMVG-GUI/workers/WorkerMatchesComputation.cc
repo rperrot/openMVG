@@ -56,11 +56,12 @@ std::shared_ptr<openMVG::matching::PairWiseMatches> WorkerMatchesComputation::pu
 */
 void WorkerMatchesComputation::process( void )
 {
-  const std::string match_dir = m_project->matchesPath() ;
+  const std::string sFeaturePath = m_project->featuresPath( ) ;
+
   std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data = m_project->SfMData() ;
-  std::cerr << "Before" << std::endl ; 
+  std::cerr << "Before" << std::endl ;
   std::shared_ptr<openMVG::matching_image_collection::Matcher> matcher = m_project->matchingParams().matcher() ;
-  std::cerr << "After" << std::endl ; 
+  std::cerr << "After" << std::endl ;
   openMVG::Pair_Set pairs = openMVG::exhaustivePairs( sfm_data->GetViews().size() ) ;
   const int nb_pair = pairs.size() ;
 
@@ -78,7 +79,7 @@ void WorkerMatchesComputation::process( void )
 
 
   // Save the putative matches file
-  if ( !openMVG::matching::Save( *m_map_PutativesMatches, stlplus::create_filespec( match_dir , "matches.putative.bin" ) ) )
+  if ( !openMVG::matching::Save( *m_map_PutativesMatches, stlplus::create_filespec( sFeaturePath , "matches.putative.bin" ) ) )
   {
     std::cerr << "Could not save result" << std::endl ;
     // TODO : find a way to inform the user of the failure

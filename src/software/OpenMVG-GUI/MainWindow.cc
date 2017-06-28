@@ -180,8 +180,8 @@ void MainWindow::onOpenProject( void )
   * Select a matching method that is compatible with the features computed
   * Because project could have been saved before feature computation
   */
-  const std::string matchesPath = m_project->matchesPath() ;
-  const std::string describerPath = stlplus::create_filespec( matchesPath , "image_describer.json" ) ;
+  const std::string featuresPath = m_project->featuresPath() ;
+  const std::string describerPath = stlplus::create_filespec( featuresPath , "image_describer.json" ) ;
   if( stlplus::file_exists( describerPath ) )
   {
     if( isBinaryDescriber( describerPath ) )
@@ -528,8 +528,8 @@ void MainWindow::onChangeMatchesSettings( void )
   MatchingParamsDialog dlg( this , m_project->matchingParams() ) ;
 
   // Load the image describer (if it exists)
-  const std::string matchesPath = m_project->matchesPath() ;
-  const std::string describerPath = stlplus::create_filespec( matchesPath , "image_describer.json" ) ;
+  const std::string featuresPath = m_project->featuresPath() ;
+  const std::string describerPath = stlplus::create_filespec( featuresPath , "image_describer.json" ) ;
   if( stlplus::file_exists( describerPath ) )
   {
     if( isBinaryDescriber( describerPath ) )
@@ -818,8 +818,8 @@ void MainWindow::onHasComputedFeatures( const WorkerNextAction & next_action  )
   /**
   * Select a matching method that is compatible with the features computed
   */
-  const std::string matchesPath = m_project->matchesPath() ;
-  const std::string describerPath = stlplus::create_filespec( matchesPath , "image_describer.json" ) ;
+  const std::string featuresPath = m_project->featuresPath() ;
+  const std::string describerPath = stlplus::create_filespec( featuresPath , "image_describer.json" ) ;
   if( stlplus::file_exists( describerPath ) )
   {
     if( isBinaryDescriber( describerPath ) )

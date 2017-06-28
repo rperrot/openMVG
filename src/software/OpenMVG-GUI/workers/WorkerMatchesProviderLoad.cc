@@ -43,13 +43,13 @@ void WorkerMatchesProviderLoad::process( void )
   emit progress( 0 ) ;
 
   std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data = m_project->SfMData( ) ;
-  const std::string sMatchesDir = m_project->matchesPath() ;
+  const std::string sFeaturePath = m_project->featuresPath() ;
 
   // Matches reading
   m_matches_provider = std::make_shared<openMVG::sfm::Matches_Provider>();
   if // Try to read the two matches file formats
   (
-    !( m_matches_provider->load( *sfm_data, stlplus::create_filespec( sMatchesDir, m_matches_filename ) ) )
+    !( m_matches_provider->load( *sfm_data, stlplus::create_filespec( sFeaturePath , m_matches_filename ) ) )
   )
   {
     std::cerr << std::endl

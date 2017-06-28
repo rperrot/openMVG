@@ -51,9 +51,9 @@ void WorkerFeaturesProviderLoad::process( void )
   emit progress( 0 ) ;
 
   std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data = m_project->SfMData() ;
-  const std::string sMatchesDir = m_project->matchesPath( ) ;
-
-  const std::string sImage_describer = stlplus::create_filespec( sMatchesDir, "image_describer", "json" );
+  const std::string sFeaturePath = m_project->featuresPath( ) ;
+  
+  const std::string sImage_describer = stlplus::create_filespec( sFeaturePath, "image_describer", "json" );
   std::unique_ptr<openMVG::features::Regions> regions_type = openMVG::features::Init_region_type_from_file( sImage_describer );
   if ( !regions_type )
   {
@@ -68,7 +68,7 @@ void WorkerFeaturesProviderLoad::process( void )
 
   // Features reading
   m_feature_provider = std::make_shared<openMVG::sfm::Features_Provider>();
-  if ( !m_feature_provider->load( *sfm_data, sMatchesDir, regions_type ) )
+  if ( !m_feature_provider->load( *sfm_data, sFeaturePath, regions_type ) )
   {
     std::cerr << std::endl << "Invalid features." << std::endl;
 

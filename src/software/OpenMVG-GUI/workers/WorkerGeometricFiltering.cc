@@ -56,7 +56,7 @@ std::shared_ptr<openMVG::matching::PairWiseMatches> WorkerGeometricFiltering::fi
 */
 void WorkerGeometricFiltering::process( void )
 {
-  const std::string matches_path = m_project->matchesPath() ;
+  const std::string sFeaturePath = m_project->featuresPath() ;
   std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data = m_project->SfMData() ;
   const MatchingParams m_params = m_project->matchingParams() ;
   const int imax_iteration = m_params.maxIterationFiltering() ;
@@ -136,7 +136,7 @@ void WorkerGeometricFiltering::process( void )
     //-- Export geometric filtered matches
     //---------------------------------------
     if ( !Save( *m_map_filtered,
-                stlplus::create_filespec( stlplus::folder_append_separator( matches_path ) , sGeometricMatchesFilename ) ) )
+                stlplus::create_filespec( stlplus::folder_append_separator( sFeaturePath ) , sGeometricMatchesFilename ) ) )
     {
       // std::cerr
       //     << "Cannot save computed matches in: "

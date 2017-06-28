@@ -48,10 +48,10 @@ void WorkerRegionsProviderLoad::process( void )
 
   std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data = m_project->SfMData() ;
   const int nb_region = sfm_data->GetViews().size() ;
-  const std::string match_dir = m_project->matchesPath() ;
+  const std::string featurePath = m_project->featuresPath() ;
 
   // Get region type
-  const std::string sImage_describer = stlplus::create_filespec( match_dir, "image_describer", "json" );
+  const std::string sImage_describer = stlplus::create_filespec( featurePath, "image_describer", "json" );
   std::unique_ptr<openMVG::features::Regions> regions_type = openMVG::features::Init_region_type_from_file( sImage_describer );
   if ( !regions_type )
   {
@@ -73,7 +73,7 @@ void WorkerRegionsProviderLoad::process( void )
 
   // Load regions
   m_regions_provider = std::make_shared<openMVG::sfm::Regions_Provider>();
-  if ( !m_regions_provider->load( *sfm_data, match_dir, regions_type, progressInterface ) )
+  if ( !m_regions_provider->load( *sfm_data, featurePath, regions_type, progressInterface ) )
   {
     std::cerr << "could not load regions" << std::endl ;
     m_progress_value = nb_region + 1 ;
