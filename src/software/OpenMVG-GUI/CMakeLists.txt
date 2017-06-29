@@ -7,6 +7,7 @@ if( Qt5Widgets_FOUND AND Qt5OpenGL_FOUND AND OPENGL_FOUND  AND NOT (Qt5Widgets_V
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
 
 add_subdirectory( graphics )
 add_subdirectory( utils )
@@ -15,6 +16,7 @@ add_subdirectory( workflow_params )
 
 
 set( OPENMVG_GUI_HEADERS ApplicationState.hh 
+                         DetailListWidget.hh 
                          ImageListWidget.hh 
                          MainWindow.hh 
                          MaskDefinitionDialog.hh
@@ -23,7 +25,8 @@ set( OPENMVG_GUI_HEADERS ApplicationState.hh
                          OpenMVGImageInterface.hh
                          Project.hh 
                          ResultViewWidget.hh )
-set( OPENMVG_GUI_SOURCES ImageListWidget.cc 
+set( OPENMVG_GUI_SOURCES DetailListWidget.cc
+                         ImageListWidget.cc
                          MainWindow.cc 
                          MaskDefinitionDialog.cc
                          MaskView.cc 
@@ -35,7 +38,7 @@ set( OPENMVG_GUI_SOURCES ImageListWidget.cc
 #if( APPLE )
 #add_executable( OpenMVG-GUI MACOSX_BUNDLE main.cc ${OPENMVG_GUI_HEADERS} ${OPENMVG_GUI_SOURCES} )
 #else( APPLE )
-add_executable( OpenMVG-GUI WIN32 main.cc ${OPENMVG_GUI_HEADERS} ${OPENMVG_GUI_SOURCES} application.rc )
+add_executable( OpenMVG-GUI WIN32 main.cc ${OPENMVG_GUI_HEADERS} ${OPENMVG_GUI_SOURCES} application.rc ressources/ressources.qrc )
 
 # create ressource dirs 
 #endif( APPLE )
@@ -79,5 +82,15 @@ add_custom_command( TARGET OpenMVG-GUI POST_BUILD
 add_custom_command( TARGET OpenMVG-GUI POST_BUILD 
   COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/ressources/point_shader.vert" 
     "${EXECUTABLE_OUTPUT_PATH}/ressources/point_shader.vert" ) 
+add_custom_command( TARGET OpenMVG-GUI POST_BUILD 
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${EXECUTABLE_OUTPUT_PATH}/icons" )
+add_custom_command( TARGET OpenMVG-GUI POST_BUILD 
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/ressources/icons/plus.svg" 
+    "${EXECUTABLE_OUTPUT_PATH}/icons/plus.svg" ) 
+add_custom_command( TARGET OpenMVG-GUI POST_BUILD 
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/ressources/icons/minus.svg" 
+    "${EXECUTABLE_OUTPUT_PATH}/icons/minus.svg" ) 
+
+
 
 endif()

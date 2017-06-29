@@ -63,6 +63,8 @@ MainWindow::MainWindow()
   m_worker_color_computation           = nullptr ;
 
   m_progress_dialog = nullptr ;
+
+  m_detail_list->setVisible( false ) ;
 }
 
 /**
@@ -624,13 +626,23 @@ void MainWindow::onUpdateImageList( void )
   const std::string thumb_path = m_project->thumbnailsPath() ;
 
   std::vector< std::pair<int, std::string>> images_full_path ;
+  std::map< int , std::string > image_id_names ;
+  std::map< int , std::pair<int, int> > image_resolution ;
+  std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data = m_project->SfMData() ;
   for( size_t id_image = 0 ; id_image < images_path.size() ; ++id_image )
   {
     const std::string path = stlplus::create_filespec( stlplus::folder_append_separator( thumb_path ) , images_path[ id_image ].second ) ;
     images_full_path.emplace_back( std::make_pair( images_path[ id_image ].first , path ) ) ;
+
+    image_id_names[ images_path[ id_image ].first ] = images_path[ id_image ].second ;
+    image_resolution[ images_path[ id_image ].first ] =
+      std::make_pair( sfm_data->GetViews().at( images_path[ id_image ].first )->ui_width ,
+                      sfm_data->GetViews().at( images_path[ id_image ].first )->ui_height ) ;
+
   }
 
   m_image_list->setImages( images_full_path ) ;
+  m_detail_list->setImagesInfos( image_id_names , image_resolution );
 
   m_state = STATE_PROJECT_OPENED ;
   updateInterface() ;
@@ -682,6 +694,16 @@ void MainWindow::onShowImageList( void )
   m_result_view->update() ;
 }
 
+
+/**
+* @brief Action to be exected when user wants to show/hide detail list
+*/
+void MainWindow::onShowHideDetail( void )
+{
+  const bool visible = m_show_hide_detail_list_act->isChecked() ;
+  m_detail_list->setVisible( visible ) ;
+  m_result_view->update() ;
+}
 
 /**
 * @brief Action to be executed when user has selected an image in the image list
@@ -1338,6 +1360,7 @@ void MainWindow::updateInterface( void )
 void MainWindow::buildInterface( void )
 {
   m_image_list = new ImageListWidget( this ) ;
+  m_detail_list = new DetailListWidget( this ) ;
 
   m_result_view = new ResultViewWidget( this ) ;
 
@@ -1346,10 +1369,11 @@ void MainWindow::buildInterface( void )
   QHBoxLayout * mainLayout = new QHBoxLayout ;
   mainLayout->setContentsMargins( 0 , 0 , 0 , 0 ) ;
   mainLayout->addWidget( m_image_list , 1 ) ;
+  mainLayout->addWidget( m_detail_list , 1 ) ;
+
 
   // Result part
-  mainLayout->addWidget( m_result_view, 4 ) ;
-
+  mainLayout->addWidget( m_result_view, 5 ) ;
 
   mainWidget->setLayout( mainLayout ) ;
   setCentralWidget( mainWidget ) ;
@@ -1399,6 +1423,10 @@ void MainWindow::buildMenus( void )
   m_show_hide_image_list_act = m_view_menu->addAction( "Image list" );
   m_show_hide_image_list_act->setCheckable( true ) ;
   m_show_hide_image_list_act->setChecked( true ) ;
+  m_show_hide_detail_list_act = m_view_menu->addAction( "Detail list" ) ;
+  m_show_hide_detail_list_act->setCheckable( true ) ;
+  m_show_hide_detail_list_act->setChecked( false ) ;
+
   m_view_menu->addSeparator() ;
   m_show_hide_grid_act = m_view_menu->addAction( "Grid" ) ;
   m_show_hide_grid_act->setCheckable( true ) ;
@@ -1472,6 +1500,7 @@ void MainWindow::makeConnections( void )
   connect( m_show_hide_grid_act , SIGNAL( triggered() ) , this , SLOT( onShowHideGrid() ) ) ;
   connect( m_show_hide_camera_gizmos_act , SIGNAL( triggered() ) , this , SLOT( onShowHideCameraGizmos() ) ) ;
   connect( m_show_hide_image_list_act , SIGNAL( triggered() ) , this , SLOT( onShowImageList() ) );
+  connect( m_show_hide_detail_list_act , SIGNAL( triggered() ) , this , SLOT( onShowHideDetail() ) );
   connect( m_view_projection_orthographic , SIGNAL( triggered() ) , this , SLOT( onSetOrthographicProjection() ) ) ;
   connect( m_view_projection_perspective , SIGNAL( triggered() ) , this , SLOT( onSetPerspectiveProjection() ) ) ;
 

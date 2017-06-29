@@ -1,0 +1,6 @@
+<!DOCTYPE RCC><RCC version="1.0">
+    <qresource>
+        <file>icons/minus.svg</file>
+        <file>icons/plus.svg</file>
+    </qresource>
+</RCC>

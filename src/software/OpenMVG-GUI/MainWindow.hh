@@ -2,6 +2,7 @@
 #define _OPENMVG_SOFTWARE_OPENMVG_GUI_MAINWINDOW_HH_
 
 #include "ApplicationState.hh"
+#include "DetailListWidget.hh"
 #include "ImageListWidget.hh"
 #include "Project.hh"
 #include "ResultViewWidget.hh"
@@ -132,6 +133,10 @@ class MainWindow : public QMainWindow
     */
     void onShowImageList( void ) ;
 
+    /**
+    * @brief Action to be exected when user wants to show/hide detail list 
+    */
+    void onShowHideDetail( void ) ;
 
     /**
     * @brief Action to be executed when user has selected an image in the image list
@@ -147,12 +152,12 @@ class MainWindow : public QMainWindow
     void onDefineMask( int id ) ;
 
     /**
-    * @brief Action to be executed when user select perspective projection matrix 
-    */ 
+    * @brief Action to be executed when user select perspective projection matrix
+    */
     void onSetPerspectiveProjection( void ) ;
 
     /**
-    * @brief Action to be executed when user select orthographic projection matrix 
+    * @brief Action to be executed when user select orthographic projection matrix
     */
     void onSetOrthographicProjection( void ) ;
 
@@ -288,12 +293,16 @@ class MainWindow : public QMainWindow
     QAction * m_show_hide_grid_act ;
     QAction * m_show_hide_camera_gizmos_act ;
     QAction * m_show_hide_image_list_act ;
+    QAction * m_show_hide_detail_list_act ; 
     QMenu * m_view_projection_menu ;
     QAction * m_view_projection_perspective ;
     QAction * m_view_projection_orthographic ;
 
     /// The image listing widget
     ImageListWidget * m_image_list ;
+    /// The widget that contains all details
+    DetailListWidget * m_detail_list ;
+
     /// The result (3d view ?)
     ResultViewWidget * m_result_view ;
 
