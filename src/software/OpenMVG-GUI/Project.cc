@@ -1022,6 +1022,51 @@ std::string Project::featuresPath( void ) const
 }
 
 /**
+* @brief Get paths of all computed features
+* @return Path of all computed features
+*/
+std::vector< std::string > Project::featuresPaths( void ) const
+{
+  // All valid combinations
+  // DETECTOR / DESCRIPTOR / PRESET
+  const std::vector< std::vector< std::string > > combinations =
+  {
+    // SIFT
+    { "SIFT" , "SIFT" , "NORMAL" } ,
+    { "SIFT" , "SIFT" , "HIGH" } ,
+    { "SIFT" , "SIFT" , "ULTRA" } ,
+    // SIFT ANATOMY
+    { "SIFT_ANATOMY" , "SIFT" , "NORMAL" } ,
+    { "SIFT_ANATOMY" , "SIFT" , "HIGH" } ,
+    { "SIFT_ANATOMY" , "SIFT" , "ULTRA" } ,
+    // AKAZE
+    { "AKAZE" , "MSURF" , "NORMAL" } ,
+    { "AKAZE" , "MSURF" , "HIGH" } ,
+    { "AKAZE" , "MSURF" , "ULTRA" } ,
+    { "AKAZE" , "MLDB" , "NORMAL" } ,
+    { "AKAZE" , "MLDB" , "HIGH" } ,
+    { "AKAZE" , "MLDB" , "ULTRA" }
+  } ;
+
+  std::vector< std::string > res ;
+  for( const auto & cur_combi : combinations )
+  {
+    std::string path = globalFeaturePath() ;
+    for( const auto & param_combi : cur_combi )
+    {
+      path = stlplus::folder_append_separator( path ) + param_combi ;
+    }
+
+    if( stlplus::folder_exists( path ) )
+    {
+      res.emplace_back( path ) ;
+    }
+  }
+  return res ;
+}
+
+
+/**
 * @brief Get global feature path
 * @return global feature path
 */

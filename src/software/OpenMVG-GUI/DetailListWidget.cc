@@ -2,6 +2,10 @@
 
 #include <QHeaderView>
 
+#include <iostream>
+#include <iomanip>
+#include <sstream>
+
 namespace openMVG_gui
 {
 
@@ -53,8 +57,86 @@ void DetailListWidget::setImagesInfos( std::map< int , std::string > & names ,
       itemHeight->setText( 1 , std::to_string( resolution.at( cur_id ).second ).c_str() ) ;
       itemHeight->setData( 1 , Qt::UserRole , cur_id ) ;
     }
-
   }
+}
+
+/**
+* @brief Set features statistics
+* @param stats Statistics
+*/
+/**
+* @brief Set features statistics
+* @param show_names Hierarchy for name information (ex : SIFT / SIFT / ULTRA )
+* @param stats Statistics (image name, stats)
+*/
+void DetailListWidget::setFeaturesInfos( const std::vector<std::string> & show_names ,
+    const std::map< std::string , FeaturesStats > & stats )
+{
+  // Get root of the items
+  std::vector< std::string > name = { "Detector" , "Descriptor" , "Preset" } ;
+
+  QTreeWidgetItem * last = m_item_features ;
+  for( int hierarchy_idx = 0 ; hierarchy_idx < show_names.size() ; ++hierarchy_idx )
+  {
+    bool found = false ;
+    const std::string cur_name_txt = show_names[ hierarchy_idx ] ;
+
+    for( int id = 0 ; id < last->childCount() ; ++id )
+    {
+      QTreeWidgetItem * item = last->child( id ) ;
+      QString text = item->text( 1 ) ;
+      if( cur_name_txt == text.toStdString() )
+      {
+        found = true ;
+        last  = item ;
+      }
+    }
+
+    // If not found, create it
+    if( ! found )
+    {
+      last = new QTreeWidgetItem( last ) ;
+      last->setText( 0 , name[ hierarchy_idx ].c_str( ) );
+      last->setText( 1 , cur_name_txt.c_str() ) ;
+    }
+  }
+
+  QTreeWidgetItem * root = last ;
+  // Remove alredy computed elements
+  root->takeChildren() ;
+
+  for( const auto & cur_it : stats )
+  {
+    const std::string & cur_name = cur_it.first ;
+    const FeaturesStats & cur_stat = cur_it.second ;
+
+    QTreeWidgetItem * item_name = new QTreeWidgetItem( root ) ;
+    item_name->setText( 0 , cur_name.c_str() ) ;
+
+    QTreeWidgetItem * item_nb_feat = new QTreeWidgetItem( item_name ) ;
+    item_nb_feat->setText( 0 , "Nb features" ) ;
+    item_nb_feat->setText( 1 , std::to_string( cur_stat.nbFeature() ).c_str() ) ;
+    item_nb_feat->setData( 1 , Qt::UserRole , cur_stat.nbFeature() ) ;
+
+    std::stringstream str ;
+    str << std::setprecision( 2 ) << cur_stat.elapsedTime() << " s" ;
+
+    QTreeWidgetItem * item_feat_time = new QTreeWidgetItem( item_name ) ;
+    item_feat_time->setText( 0 , "Elapsed" ) ;
+    item_feat_time->setText( 1 , str.str().c_str() ) ;
+    item_feat_time->setData( 1 , Qt::UserRole , cur_stat.elapsedTime() ) ;
+  }
+}
+
+
+
+// Clear all item except structural items
+void DetailListWidget::clear( )
+{
+  m_item_images->takeChildren() ;
+  m_item_features->takeChildren() ;
+  m_item_matches->takeChildren() ;
+  m_item_reconstruction->takeChildren() ;
 }
 
 void DetailListWidget::drawRow( QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index ) const

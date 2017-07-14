@@ -1,6 +1,7 @@
 set( OPENMVG_GUI_UTILS_HEADERS BellBall.hh 
                                BoundingSphere.hh 
                                DualQuaternion.hh 
+                               FeaturesStats.hh
                                ImageDescriberInfo.hh 
                                Plane.hh 
                                PlyLoader.hh
@@ -9,6 +10,7 @@ set( OPENMVG_GUI_UTILS_HEADERS BellBall.hh
 set( OPENMVG_GUI_UTILS_SOURCES BellBall.cc 
                                BoundingSphere.cc 
                                DualQuaternion.cc 
+                               FeaturesStats.cc
                                ImageDescriberInfo.cc
                                Plane.cc 
                                PlyLoader.cc 

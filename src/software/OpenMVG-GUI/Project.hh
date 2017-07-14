@@ -220,6 +220,12 @@ class Project
     std::string featuresPath( void ) const ;
 
     /**
+    * @brief Get paths of all computed features
+    * @return Path of all computed features
+    */
+    std::vector< std::string > featuresPaths( void ) const ;
+
+    /**
     * @brief Get global feature path
     * @return global feature path
     */

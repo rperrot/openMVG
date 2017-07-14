@@ -182,6 +182,8 @@ void MainWindow::onOpenProject( void )
   * Select a matching method that is compatible with the features computed
   * Because project could have been saved before feature computation
   */
+  postFeaturesComputation() ;
+  /*
   const std::string featuresPath = m_project->featuresPath() ;
   const std::string describerPath = stlplus::create_filespec( featuresPath , "image_describer.json" ) ;
   if( stlplus::file_exists( describerPath ) )
@@ -198,6 +200,7 @@ void MainWindow::onOpenProject( void )
       }
     }
   }
+  */
 
   // Update scene state
   m_state = STATE_PROJECT_OPENED ;
@@ -351,6 +354,8 @@ void MainWindow::onCloseProject( void )
 
   // Reset interface (project/scene)
   m_project = nullptr ;
+  m_detail_list->clear() ; 
+
   resetInterface() ;
 }
 
@@ -836,29 +841,7 @@ void MainWindow::onHasComputedFeatures( const WorkerNextAction & next_action  )
   delete m_worker_features_computation ;
   m_worker_features_computation = nullptr ;
 
-
-  /**
-  * Select a matching method that is compatible with the features computed
-  */
-  const std::string featuresPath = m_project->featuresPath() ;
-  const std::string describerPath = stlplus::create_filespec( featuresPath , "image_describer.json" ) ;
-  if( stlplus::file_exists( describerPath ) )
-  {
-    if( isBinaryDescriber( describerPath ) )
-    {
-      m_project->matchingParams().setMethod( MATCHING_METHOD_BRUTE_FORCE_HAMMING ) ;
-    }
-    else
-    {
-      if( m_project->matchingParams().method() == MATCHING_METHOD_BRUTE_FORCE_HAMMING )
-      {
-        m_project->matchingParams().setMethod( MATCHING_METHOD_FAST_CASCADE_HASHING_L2 ) ;
-      }
-    }
-  }
-
-  m_state = STATE_FEATURES_COMPUTED ;
-  updateInterface() ;
+  postFeaturesComputation() ;
 }
 
 /**
@@ -1052,7 +1035,7 @@ void MainWindow::onHasComputedMatches( const WorkerNextAction & next_action )
     connect( thread , SIGNAL( started() ) , m_worker_geometric_filtering , SLOT( process() ) ) ;
     connect( m_worker_geometric_filtering , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
     connect( m_worker_geometric_filtering, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
-    connect( m_worker_geometric_filtering, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasDoneGeometricFiltering( const WorkerNextAction & ) ) ) ;
+    connect( m_worker_geometric_filtering, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onhasGeometricFiltering( const WorkerNextAction & ) ) ) ;
 
     thread->start() ;
   }
@@ -1075,6 +1058,8 @@ void MainWindow::onHasDoneGeometricFiltering( const WorkerNextAction & next_acti
   m_worker_geometric_filtering = nullptr ;
   delete m_worker_matches_computation ;
   m_worker_matches_computation = nullptr ;
+
+  postMatchesComputation() ;
 }
 
 
@@ -1106,7 +1091,114 @@ void MainWindow::onHasComputedSfM( const WorkerNextAction & next_action )
     m_worker_global_sfm_computation = nullptr ;
   }
 
-  // Remove old object
+  postSfMComputation() ;
+}
+
+void MainWindow::onHasComputedColor( const WorkerNextAction & next_action  )
+{
+  delete m_worker_color_computation ;
+  m_worker_color_computation = nullptr ;
+
+  delete m_progress_dialog ;
+  m_progress_dialog = nullptr ;
+
+  postColorComputation() ;
+}
+
+/**
+* @brief indicate if some parameters in the project are not saved on disk
+*/
+bool MainWindow::hasUnsavedChange( void ) const
+{
+  if( m_project )
+  {
+    return m_project->hasUnsavedChange() ;
+  }
+  return false ;
+}
+
+/**
+* @brief Post actions to be executed after feature computation (or feature computation failure)
+*/
+void MainWindow::postFeaturesComputation( void )
+{
+  /**
+  * Select a matching method that is compatible with the features computed
+  */
+  const std::string featuresPath = m_project->featuresPath() ;
+  const std::string describerPath = stlplus::create_filespec( featuresPath , "image_describer.json" ) ;
+  if( stlplus::file_exists( describerPath ) )
+  {
+    if( isBinaryDescriber( describerPath ) )
+    {
+      m_project->matchingParams().setMethod( MATCHING_METHOD_BRUTE_FORCE_HAMMING ) ;
+    }
+    else
+    {
+      if( m_project->matchingParams().method() == MATCHING_METHOD_BRUTE_FORCE_HAMMING )
+      {
+        m_project->matchingParams().setMethod( MATCHING_METHOD_FAST_CASCADE_HASHING_L2 ) ;
+      }
+    }
+  }
+  else
+  {
+    //no image_describer -> no features computed -> so we can exit now
+    return ;
+  }
+
+  // TODO : load features statistics from files if computed
+  std::vector< std::string > valid_features_path = m_project->featuresPaths() ;
+  for( const auto & feature_path : valid_features_path )
+  {
+    std::map< std::string , FeaturesStats > infos ;
+    const std::vector< std::pair< int , std::string > > images_path = m_project->GetImageNames() ;
+    for( const auto & cur_image_path : images_path )
+    {
+      const std::string sStat = stlplus::create_filespec( feature_path, stlplus::basename_part( cur_image_path.second ), "stat" ) ;
+      if( stlplus::file_exists( sStat ) )
+      {
+        FeaturesStats cur_stat = FeaturesStats::load( sStat ) ;
+        infos[cur_image_path.second] = cur_stat ;
+      }
+    }
+    // Add to the detail path 
+    if( infos.size() > 0 )
+    {
+      std::vector<std::string> feature_hierarchy = stlplus::folder_elements( feature_path );
+      while( feature_hierarchy.size() > 3 )
+      {
+        feature_hierarchy.erase( feature_hierarchy.begin() ) ;
+      }
+      m_detail_list->setFeaturesInfos( feature_hierarchy , infos ) ;
+    }
+  }
+
+
+
+  /**
+  * @brief Update interface
+  */
+  m_state = STATE_FEATURES_COMPUTED ;
+  updateInterface() ;
+}
+
+/**
+* @brief Post actions to be executed after matches computation (or matches computation failure)
+*/
+void MainWindow::postMatchesComputation( void )
+{
+
+}
+
+/**
+* @brief Post actions to be executed after sfm computation (or sfm computation failure)
+*/
+void MainWindow::postSfMComputation( void )
+{
+  // 1 - Load point cloud to the interface
+
+  // Remove old object in the project
   std::shared_ptr<SceneManager> mgr = m_project->sceneManager() ;
   std::shared_ptr<RenderableObject> sprs = m_project->sparsePointCloud() ;
   if( sprs )
@@ -1144,50 +1236,47 @@ void MainWindow::onHasComputedSfM( const WorkerNextAction & next_action )
   m_result_view->updateTrackballSize() ;
   m_result_view->update() ;
 
+  // 2 - Load statistics from file
+  // TODO :
+
+  // 3 - Update interface
   m_state = STATE_SFM_COMPUTED ;
   updateInterface() ;
 }
 
-void MainWindow::onHasComputedColor( const WorkerNextAction & next_action  )
+/**
+* @brief Post actions to be executed after color computation (or color computation failure)
+*/
+void MainWindow::postColorComputation( void )
 {
-  delete m_worker_color_computation ;
-  m_worker_color_computation = nullptr ;
-
-  delete m_progress_dialog ;
-  m_progress_dialog = nullptr ;
-
   // Remove old object
   std::shared_ptr<SceneManager> mgr = m_project->sceneManager() ;
   std::shared_ptr<RenderableObject> sprs = m_project->sparsePointCloud() ;
-  mgr->removeObject( sprs ) ;
-  const std::string colorized = m_project->colorizedSfMPlyPath() ;
-
-  // Add colorized object
-  std::vector< openMVG::Vec3 > pts ;
-  std::vector< openMVG::Vec3 > col ;
-  LoadPly( colorized , pts , col ) ;
-
-  sprs = std::make_shared<PointCloud>( m_result_view->pointShader() , pts , col ) ;
-  mgr->addObject( sprs ) ;
-  m_project->setSparsePointCloud( sprs ) ;
-  m_result_view->prepareObjects() ;
-  m_result_view->updateTrackballSize() ;
-  m_result_view->update() ;
-
-  m_state = STATE_COLOR_COMPUTED ;
-  updateInterface() ;
-}
-
-/**
-* @brief indicate if some parameters in the project are not saved on disk
-*/
-bool MainWindow::hasUnsavedChange( void ) const
-{
-  if( m_project )
+  if( sprs )
   {
-    return m_project->hasUnsavedChange() ;
+    mgr->removeObject( sprs ) ;
   }
-  return false ;
+  // Load the colorized one
+  const std::string colorized = m_project->colorizedSfMPlyPath() ;
+  if( stlplus::file_exists( colorized ) )
+  {
+    // Add colorized object
+    std::vector< openMVG::Vec3 > pts ;
+    std::vector< openMVG::Vec3 > col ;
+    LoadPly( colorized , pts , col ) ;
+
+    sprs = std::make_shared<PointCloud>( m_result_view->pointShader() , pts , col ) ;
+    mgr->addObject( sprs ) ;
+    m_project->setSparsePointCloud( sprs ) ;
+    m_result_view->prepareObjects() ;
+    m_result_view->updateTrackballSize() ;
+    m_result_view->update() ;
+
+    m_state = STATE_COLOR_COMPUTED ;
+    // Load statistics
+  }
+
+  updateInterface() ;
 }
 
 /**
@@ -1200,6 +1289,7 @@ void MainWindow::resetInterface( void )
   m_result_view->update() ;
 
   m_image_list->clear() ;
+  m_detail_list->clear() ; 
 
   m_state = STATE_EMPTY ;
   updateInterface() ;

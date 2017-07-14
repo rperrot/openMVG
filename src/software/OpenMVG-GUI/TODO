@@ -8,3 +8,6 @@
 
 - Error feedback for workers 
   (pass params to finished signal ?) 
+
+- When computing Matches and SfM and there exist more than one valid feature combination, ask the user to select the method to use 
+  -> 

@@ -134,7 +134,7 @@ class MainWindow : public QMainWindow
     void onShowImageList( void ) ;
 
     /**
-    * @brief Action to be exected when user wants to show/hide detail list 
+    * @brief Action to be exected when user wants to show/hide detail list
     */
     void onShowHideDetail( void ) ;
 
@@ -220,6 +220,27 @@ class MainWindow : public QMainWindow
   private:
 
     /**
+    * @brief Post actions to be executed after feature computation (or feature computation failure)
+    */
+    void postFeaturesComputation( void ) ;
+
+    /**
+    * @brief Post actions to be executed after matches computation (or matches computation failure)
+    */
+    void postMatchesComputation( void ) ;
+
+    /**
+    * @brief Post actions to be executed after sfm computation (or sfm computation failure)
+    */
+    void postSfMComputation( void ) ;
+
+    /**
+    * @brief Post actions to be executed after color computation (or color computation failure)
+    */
+    void postColorComputation( void ) ;
+
+
+    /**
     * @brief Set the interface exactly the same as after launching the application
     * -> make the interface into a clean step
     */
@@ -293,7 +314,7 @@ class MainWindow : public QMainWindow
     QAction * m_show_hide_grid_act ;
     QAction * m_show_hide_camera_gizmos_act ;
     QAction * m_show_hide_image_list_act ;
-    QAction * m_show_hide_detail_list_act ; 
+    QAction * m_show_hide_detail_list_act ;
     QMenu * m_view_projection_menu ;
     QAction * m_view_projection_perspective ;
     QAction * m_view_projection_orthographic ;

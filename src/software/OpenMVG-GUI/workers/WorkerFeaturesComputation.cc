@@ -1,6 +1,7 @@
 #include "WorkerFeaturesComputation.hh"
 
 #include "OpenMVGImageInterface.hh"
+#include "utils/FeaturesStats.hh"
 
 #include "openMVG/sfm/sfm.hpp"
 
@@ -9,6 +10,7 @@
 
 #include <QImage>
 
+#include <chrono>
 #include <fstream>
 
 
@@ -35,6 +37,7 @@ void WorkerFeaturesComputation::progressRange( int & min , int & max ) const
   min = 0 ;
   max = nb_image ;
 }
+
 
 /**
 * @brief Do the computation
@@ -197,10 +200,10 @@ void WorkerFeaturesComputation::process( void )
     openMVG::sfm::Views::const_iterator iterViews = sfm_data->views.begin();
     std::advance( iterViews, i );
     const openMVG::sfm::View * view = iterViews->second.get();
-    const std::string
-    sView_filename = stlplus::create_filespec( sfm_data->s_root_path, view->s_Img_path ),
-    sFeat = stlplus::create_filespec( feature_path, stlplus::basename_part( sView_filename ), "feat" ),
-    sDesc = stlplus::create_filespec( feature_path, stlplus::basename_part( sView_filename ), "desc" );
+    const std::string sView_filename = stlplus::create_filespec( sfm_data->s_root_path, view->s_Img_path ) ;
+    const std::string sFeat = stlplus::create_filespec( feature_path, stlplus::basename_part( sView_filename ), "feat" ) ;
+    const std::string sDesc = stlplus::create_filespec( feature_path, stlplus::basename_part( sView_filename ), "desc" ) ;
+    const std::string sStat = stlplus::create_filespec( feature_path, stlplus::basename_part( sView_filename ), "stat" ) ;
 
     //If features or descriptors file are missing, compute them
     if ( !stlplus::file_exists( sFeat ) || !stlplus::file_exists( sDesc ) || m_overwrite_existing )
@@ -242,11 +245,22 @@ void WorkerFeaturesComputation::process( void )
 
       // Compute features and descriptors and export them to files
       std::unique_ptr<openMVG::features::Regions> regions;
+      const auto start = std::chrono::high_resolution_clock::now() ;
       image_describer->Describe( imageGray, regions, mask );
+      const auto end = std::chrono::high_resolution_clock::now() ;
+      const std::chrono::duration<double> elapsed_sec = std::chrono::duration_cast<std::chrono::duration<double>>( end - start ) ;
+
+      // Save description
       image_describer->Save( regions.get(), sFeat, sDesc );
+
+      // Save statistics
+      FeaturesStats statistics( regions->RegionCount() , elapsed_sec.count() ) ;
+      statistics.save( sStat ) ;
     }
     emit progress( i ) ;
   }
+
+  // Save stats
 
   emit progress( nb_image ) ;
   emit finished( nextAction() ) ;
