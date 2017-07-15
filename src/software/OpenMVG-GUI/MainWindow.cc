@@ -1210,8 +1210,7 @@ void MainWindow::postSfMComputation( void )
   const std::string sparse = m_project->sfMDataPlyPath() ;
 
   // Load from file
-  std::vector< openMVG::Vec3 > pts ;
-  std::vector< openMVG::Vec3 > col ;
+  std::vector< openMVG::Vec3 > pts , col ;
   LoadPly( sparse , pts , col ) ;
 
   // Add to the scene, to the project and to the result view

@@ -1,5 +1,7 @@
 #include "Project.hh"
 
+#include "Version.hh"
+
 #include "openMVG/exif/exif_IO_EasyExif.hpp"
 #include "openMVG/exif/sensor_width_database/ParseDatabase.hpp"
 
@@ -89,9 +91,9 @@ void Project::save( void )
   // Save global project state
   cereal::XMLOutputArchive archive( file );
 
-  int major_version = 0 ;
-  int minor_version = 1 ;
-  int revision_version = 0 ;
+  int major_version = GUIVersionMajorNumber() ;
+  int minor_version = GUIVersionMinorNumber() ;
+  int revision_version = GUIVersionRevisionNumber() ;
 
   archive( cereal::make_nvp( "major_version" , major_version ) ) ;
   archive( cereal::make_nvp( "minor_version" , minor_version ) ) ;

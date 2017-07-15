@@ -1,5 +1,7 @@
 #include "FeaturesStats.hh"
 
+#include "Version.hh"
+
 #include <cereal/archives/xml.hpp>
 #include <cereal/types/map.hpp>
 #include <cereal/types/utility.hpp>
@@ -55,13 +57,9 @@ void FeaturesStats::save( const std::string & filename )
 
   cereal::XMLOutputArchive archive( file );
 
-  int major_version = 0 ;
-  int minor_version = 1 ;
-  int revision_version = 0 ;
-
-  archive( cereal::make_nvp( "major_version" , major_version ) ) ;
-  archive( cereal::make_nvp( "minor_version" , minor_version ) ) ;
-  archive( cereal::make_nvp( "revision_version" , revision_version ) ) ;
+  archive( cereal::make_nvp( "major_version" , GUIVersionMajorNumber() ) ) ;
+  archive( cereal::make_nvp( "minor_version" , GUIVersionMinorNumber() ) ) ;
+  archive( cereal::make_nvp( "revision_version" , GUIVersionRevisionNumber() ) ) ;
 
   archive( cereal::make_nvp( "nb_feature" , m_nb_features ) ) ;
   archive( cereal::make_nvp( "elapsed_time" , m_elapsed_time ) ) ;
@@ -97,7 +95,7 @@ FeaturesStats FeaturesStats::load( const std::string & filename )
   archive( cereal::make_nvp( "nb_feature" , res.m_nb_features ) ) ;
   archive( cereal::make_nvp( "elapsed_time" , res.m_elapsed_time ) ) ;
 
-  return res ; 
+  return res ;
 }
 
 }// namespace openMVG_gui

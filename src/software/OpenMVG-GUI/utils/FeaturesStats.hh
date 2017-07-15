@@ -52,7 +52,7 @@ class FeaturesStats
     static FeaturesStats load( const std::string & filename ) ;
 
     /**
-    * @brief Serialization 
+    * @brief Serialization
     */
     template< class Archive >
     void serialize( Archive & ar )

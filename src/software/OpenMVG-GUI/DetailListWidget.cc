@@ -2,8 +2,8 @@
 
 #include <QHeaderView>
 
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 #include <sstream>
 
 namespace openMVG_gui

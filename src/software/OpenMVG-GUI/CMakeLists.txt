@@ -24,7 +24,8 @@ set( OPENMVG_GUI_HEADERS ApplicationState.hh
                          NewProjectDialog.hh 
                          OpenMVGImageInterface.hh
                          Project.hh 
-                         ResultViewWidget.hh )
+                         ResultViewWidget.hh 
+                         Version.hh )
 set( OPENMVG_GUI_SOURCES DetailListWidget.cc
                          ImageListWidget.cc
                          MainWindow.cc 
