@@ -228,7 +228,7 @@ std::string Project::getMaskImagePath( const size_t id_image ) const
 */
 bool Project::hasAllFeaturesComputed( void ) const
 {
-  const std::string matches_dir = matchesPath() ;
+  const std::string matches_dir = featuresPath() ;
   for( int i = 0; i < static_cast<int>( m_sfm_data->views.size() ); ++i )
   {
     openMVG::sfm::Views::const_iterator iterViews = m_sfm_data->views.begin();
@@ -286,7 +286,7 @@ bool Project::hasAllMatchesComputed( void ) const
   // Just check if the matches.f.bin (or matches.e.bin or matches.h.bin) is here
   // TODO : check if it's a reasonable test :
   // -> If any of the matches.X.bin is present, it should be enough ?
-  const std::string matchesPath = this->matchesPath() ;
+  const std::string matchesPath = this->featuresPath() ;
   const MatchingParams matchesParams = this->matchingParams() ;
 
   std::string matchesName ;
@@ -486,6 +486,7 @@ std::string Project::thumbnailsPath( void ) const
 */
 std::string Project::matchesPath( void ) const
 {
+  //  return featuresPath() ;
   return stlplus::folder_append_separator( stlplus::folder_append_separator( m_project_base_path ) + "sfm" ) + "matches" ;
 }
 

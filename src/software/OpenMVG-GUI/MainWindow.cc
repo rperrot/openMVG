@@ -1035,7 +1035,7 @@ void MainWindow::onHasComputedMatches( const WorkerNextAction & next_action )
     connect( thread , SIGNAL( started() ) , m_worker_geometric_filtering , SLOT( process() ) ) ;
     connect( m_worker_geometric_filtering , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
     connect( m_worker_geometric_filtering, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
-    connect( m_worker_geometric_filtering, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onhasGeometricFiltering( const WorkerNextAction & ) ) ) ;
+    connect( m_worker_geometric_filtering, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasDoneGeometricFiltering( const WorkerNextAction & ) ) ) ;
 
     thread->start() ;
   }
