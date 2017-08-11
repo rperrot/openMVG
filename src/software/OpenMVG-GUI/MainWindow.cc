@@ -354,7 +354,7 @@ void MainWindow::onCloseProject( void )
 
   // Reset interface (project/scene)
   m_project = nullptr ;
-  m_detail_list->clear() ; 
+  m_detail_list->clear() ;
 
   resetInterface() ;
 }
@@ -1162,7 +1162,7 @@ void MainWindow::postFeaturesComputation( void )
         infos[cur_image_path.second] = cur_stat ;
       }
     }
-    // Add to the detail path 
+    // Add to the detail path
     if( infos.size() > 0 )
     {
       std::vector<std::string> feature_hierarchy = stlplus::folder_elements( feature_path );
@@ -1209,14 +1209,17 @@ void MainWindow::postSfMComputation( void )
   // Load sparse point cloud
   const std::string sparse = m_project->sfMDataPlyPath() ;
 
-  // Load from file
-  std::vector< openMVG::Vec3 > pts , col ;
-  LoadPly( sparse , pts , col ) ;
+  if( stlplus::file_exists( sparse ) )
+  {
+    // Load from file
+    std::vector< openMVG::Vec3 > pts , col ;
+    LoadPly( sparse , pts , col ) ;
 
-  // Add to the scene, to the project and to the result view
-  sprs = std::make_shared<PointCloud>( m_result_view->pointShader() , pts , col ) ;
-  mgr->addObject( sprs ) ;
-  m_project->setSparsePointCloud( sprs ) ;
+    // Add to the scene, to the project and to the result view
+    sprs = std::make_shared<PointCloud>( m_result_view->pointShader() , pts , col ) ;
+    mgr->addObject( sprs ) ;
+    m_project->setSparsePointCloud( sprs ) ;
+  }
 
   // Add the camera gizmos
   std::shared_ptr<openMVG::sfm::SfM_Data> sfm = m_project->SfMData() ;
@@ -1288,7 +1291,7 @@ void MainWindow::resetInterface( void )
   m_result_view->update() ;
 
   m_image_list->clear() ;
-  m_detail_list->clear() ; 
+  m_detail_list->clear() ;
 
   m_state = STATE_EMPTY ;
   updateInterface() ;
