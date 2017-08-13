@@ -23,6 +23,7 @@ option(OpenMVG_BUILD_DOC "Build OpenMVG documentation" ON)
 option(OpenMVG_BUILD_EXAMPLES "Build OpenMVG samples applications." ON)
 option(OpenMVG_BUILD_OPENGL_EXAMPLES "Build OpenMVG openGL examples" OFF)
 option(OpenMVG_BUILD_SOFTWARES "Build OpenMVG softwares" ON)
+option(OpenMVG_BUILD_GUI_SOFTWARES "Build OpenMVG GUI softwares (QT5)" ON)
 option(OpenMVG_BUILD_COVERAGE "Enable code coverage generation (gcc only)" OFF)
 option(OpenMVG_USE_OPENMP "Enable OpenMP parallelization" ON)
 # ==============================================================================
@@ -110,15 +111,9 @@ include(OptimizeForArchitecture)
 AutodetectHostArchitecture()
 OptimizeForArchitecture()
 
-if (SSE2_FOUND)
-  if (MSVC AND NOT ${CMAKE_CL_64})
-    register_definitions(/arch:SSE2)
-  endif (MSVC AND NOT ${CMAKE_CL_64})
-  register_definitions(-DOPENMVG_USE_SSE)
-endif ()
-if (AVX2_FOUND AND NOT MSVC)
+if (USE_AVX2)
   register_definitions(-DOPENMVG_USE_AVX2)
-endif()
+endif ()
 if (UNIX AND NOT OpenMVG_BUILD_COVERAGE)
   set(CMAKE_C_FLAGS_RELEASE "-O3")
   set(CMAKE_CXX_FLAGS_RELEASE "-O3")
@@ -231,6 +226,8 @@ MACRO(UNIT_TEST NAMESPACE NAME EXTRA_LIBS)
                           CppUnitLite ${OPENMVG_LIBRARY_DEPENDENCIES})
     add_test(NAME ${NAMESPACE}_test_${NAME} WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
              COMMAND $<TARGET_FILE:${NAMESPACE}_test_${NAME}>)
+  target_compile_definitions(${NAMESPACE}_test_${NAME}
+    PRIVATE -DTHIS_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
   endif (OpenMVG_BUILD_TESTS)
 ENDMACRO(UNIT_TEST)
 
@@ -372,13 +369,6 @@ if (OpenMVG_USE_OPENCV)
     message(STATUS "OpenCV was not found. Disabling OpenCV support.")
     UPDATE_CACHE_VARIABLE(OpenMVG_USE_OPENCV OFF)
     UPDATE_CACHE_VARIABLE(OpenMVG_USE_OCVSIFT OFF)
-  else (NOT OpenCV_FOUND)
-    include_directories(${OpenCV_INCLUDE_DIRS})
-    if (OpenMVG_USE_OCVSIFT)
-      add_definitions(-DUSE_OCVSIFT)
-    endif (OpenMVG_USE_OCVSIFT)
-    # add a definition that allows the conditional compiling
-    add_definitions(-DHAVE_OPENCV)
   endif (NOT OpenCV_FOUND)
 endif (OpenMVG_USE_OPENCV)
 
@@ -415,6 +405,8 @@ add_subdirectory(openMVG)
 set(OpenMVG_LIBRARIES
   openMVG_image
   openMVG_features
+  openMVG_geometry
+  openMVG_matching
   openMVG_matching_image_collection
   openMVG_kvld
   openMVG_multiview
@@ -422,11 +414,11 @@ set(OpenMVG_LIBRARIES
   openMVG_system
   openMVG_sfm)
 
-FOREACH(omvglib ${OpenMVG_LIBRARIES})
+foreach(omvglib ${OpenMVG_LIBRARIES})
   set_property(TARGET ${omvglib} PROPERTY FOLDER OpenMVG/OpenMVG)
   set_property(TARGET ${omvglib} APPEND PROPERTY
     INTERFACE_COMPILE_DEFINITIONS ${OpenMVG_DEFINITIONS})
-ENDFOREACH()
+endforeach()
 
 # openMVG tutorial examples
 if (OpenMVG_BUILD_EXAMPLES)
@@ -581,32 +573,32 @@ set(OpenMVG_INCLUDE_DIRS
   "${OpenMVG_INCLUDE_DIRS}"
   "${CMAKE_INSTALL_PREFIX}/include/openMVG")
 
-STRING(REGEX REPLACE
+string(REGEX REPLACE
   "${CMAKE_CURRENT_SOURCE_DIR}"
   "${CMAKE_INSTALL_PREFIX}/include"
   OpenMVG_INCLUDE_DIRS
   "${OpenMVG_INCLUDE_DIRS}"
 )
-STRING(REGEX REPLACE
+string(REGEX REPLACE
   "third_party"
   "openMVG/third_party"
   OpenMVG_INCLUDE_DIRS
   "${OpenMVG_INCLUDE_DIRS}"
 )
-STRING(REGEX REPLACE
+string(REGEX REPLACE
   "dependencies"
   "openMVG_dependencies"
   OpenMVG_INCLUDE_DIRS
   "${OpenMVG_INCLUDE_DIRS}"
 )
 if (OpenMVG_USE_INTERNAL_CERES)
-  STRING(REGEX REPLACE
+  string(REGEX REPLACE
     "ceres-solver"
     "ceres"
     OpenMVG_INCLUDE_DIRS
     "${OpenMVG_INCLUDE_DIRS}"
   )
-  STRING(REGEX REPLACE
+  string(REGEX REPLACE
     "internal/ceres/"
     ""
     OpenMVG_INCLUDE_DIRS

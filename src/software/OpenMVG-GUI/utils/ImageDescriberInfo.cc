@@ -1,6 +1,7 @@
 #include "ImageDescriberInfo.hh"
 
-#include "openMVG/features/image_describer_akaze.hpp"
+#include "openMVG/features/akaze/image_describer_akaze.hpp"
+#include "openMVG/features/image_describer_akaze_io.hpp"
 
 #include <cereal/archives/json.hpp>
 

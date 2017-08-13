@@ -15,6 +15,10 @@
 
 #include "third_party/progress/progress_display.hpp"
 
+#include <fstream>
+#include <iomanip>
+#include <iterator>
+
 namespace openMVG {
 namespace sfm {
 
@@ -115,7 +119,7 @@ const
         #pragma omp critical
 #endif
         {
-          pairs.insert(std::make_pair(viewIds[i], viewIds[j]));
+          pairs.insert({viewIds[i], viewIds[j]});
         }
       }
       // Progress bar update
@@ -201,7 +205,7 @@ const
     }
   }
   of.flush();
-  bool bOk = of.good();
+  const bool bOk = of.good();
   of.close();
   return bOk;
 }
@@ -243,7 +247,7 @@ void Frustum_Filter::init_z_near_z_far_depth
             itZ->second.second = z;
         }
         else
-          z_near_z_far_perView[id_view] = std::make_pair(z,z);
+          z_near_z_far_perView[id_view] = {z,z};
       }
     }
   }
@@ -257,7 +261,7 @@ void Frustum_Filter::init_z_near_z_far_depth
       if (!sfm_data.IsPoseAndIntrinsicDefined(view))
         continue;
       if (z_near_z_far_perView.find(view->id_view) == z_near_z_far_perView.end())
-        z_near_z_far_perView[view->id_view] = std::make_pair(zNear, zFar);
+        z_near_z_far_perView[view->id_view] = {zNear, zFar};
     }
   }
 }

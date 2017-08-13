@@ -1,8 +1,8 @@
 #include "WorkerFeaturesProviderLoad.hh"
 
 
-#include "openMVG/features/io_regions_type.hpp"
 #include "openMVG/features/regions.hpp"
+#include "openMVG/features/regions_factory_io.hpp"
 #include "openMVG/sfm/pipelines/sfm_features_provider.hpp"
 
 

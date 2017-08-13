@@ -11,6 +11,8 @@
 #include <QSlider>
 #include <QToolBar>
 
+#include <memory>
+
 
 namespace openMVG_gui
 {

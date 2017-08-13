@@ -13,8 +13,12 @@
 
 // Qt4 headers
 #include <QtGui>
+#include <QGraphicsScene>
+#include <QGraphicsView>
 #include <QGraphicsLineItem>
 #include <QGraphicsItem>
+#include <QAction>
+#include <QMessageBox>
 #include <memory>
 #include <QPen>
 #include <QInputDialog>
@@ -173,7 +177,7 @@ namespace control_point_GUI
     scene->addItem(image);
 
     QPixmap pixmap(qs_filename);
-    if(pixmap.isNull()) {
+    if (pixmap.isNull()) {
       QMessageBox::information(this, QString::null,
         tr("Cannot load QPixmap %1.").arg(qs_filename));
       return;

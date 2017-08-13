@@ -8,6 +8,14 @@
 
 #include "mainLayout.hpp"
 #include <QtGui>
+#include <QMessageBox>
+#include <QFileDialog>
+#include <QWidget>
+#include <QSplitter>
+#include <QStatusBar>
+#include <QMenu>
+#include <QGridLayout>
+#include <QMenuBar>
 #include <QDebug>
 
 #include <algorithm>
@@ -228,7 +236,7 @@ void MainWindow::registerProject()
     //Triangulate the point:
     Triangulation trianObj;
     const Observations & obs = landmark.obs;
-    for(Observations::const_iterator itObs = obs.begin();
+    for (Observations::const_iterator itObs = obs.begin();
       itObs != obs.end(); ++itObs)
     {
       const View * view = m_doc._sfm_data.views.at(itObs->first).get();
@@ -366,6 +374,7 @@ MainWindow::MainWindow
   createConnections();
 
   setWindowTitle(tr("Control_point_editor"));
+
   QMainWindow::statusBar()->showMessage("Welcome in Control_point_editor GUI.");
   resize(640, 480);
 }

@@ -8,6 +8,10 @@
 
 #include "openMVG/sfm/sfm_data_BA_ceres.hpp"
 
+#ifdef OPENMVG_USE_OPENMP
+#include <omp.h>
+#endif
+
 #include "ceres/problem.h"
 #include "ceres/solver.h"
 #include "openMVG/cameras/Camera_Common.hpp"
@@ -83,7 +87,7 @@ ceres::CostFunction * IntrinsicsToCostFunction
   const double weight
 )
 {
-  switch(intrinsic->getType())
+  switch (intrinsic->getType())
   {
     case PINHOLE_CAMERA:
       return ResidualErrorFunctor_Pinhole_Intrinsic::Create(observation, weight);
@@ -167,7 +171,7 @@ Bundle_Adjustment_Ceres::ceres_options()
 bool Bundle_Adjustment_Ceres::Adjust
 (
   SfM_Data & sfm_data,     // the SfM scene to refine
-  const Optimize_Options options
+  const Optimize_Options & options
 )
 {
   //----------

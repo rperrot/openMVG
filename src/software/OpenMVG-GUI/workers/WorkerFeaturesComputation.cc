@@ -8,6 +8,10 @@
 #include <cereal/archives/json.hpp>
 #include <cereal/details/helpers.hpp>
 
+#include "openMVG/features/image_describer_akaze_io.hpp"
+#include "openMVG/features/sift/SIFT_Anatomy_Image_Describer_io.hpp"
+#include "nonFree/sift/SIFT_describer_io.hpp"
+
 #include <QImage>
 
 #include <chrono>
@@ -169,8 +173,7 @@ void WorkerFeaturesComputation::process( void )
     }
     cereal::JSONOutputArchive archive( stream );
     archive( cereal::make_nvp( "image_describer", image_describer ) );
-    std::unique_ptr<openMVG::features::Regions> regionsType;
-    image_describer->Allocate( regionsType );
+    auto regionsType = image_describer->Allocate();
     archive( cereal::make_nvp( "regions_type", regionsType ) );
   }
 

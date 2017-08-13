@@ -2,7 +2,7 @@
 
 #include "WorkerProgressInterface.hh"
 
-#include "openMVG/features/io_regions_type.hpp"
+#include "openMVG/features/regions_factory_io.hpp"
 #include "openMVG/matching/indMatch_utils.hpp"
 #include "openMVG/sfm/pipelines/sfm_regions_provider.hpp"
 

@@ -6,9 +6,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+// The <cereal/archives> headers are special and must be included first.
+#include <cereal/archives/json.hpp>
+
 #include <openMVG/sfm/sfm.hpp>
 #include <openMVG/features/feature.hpp>
-#include <openMVG/features/io_regions_type.hpp>
+#include <openMVG/features/image_describer.hpp>
 #include <openMVG/image/image_io.hpp>
 #include <software/SfM/SfMPlyHelper.hpp>
 
@@ -18,11 +21,17 @@
 using namespace openMVG;
 using namespace openMVG::sfm;
 
-#include "nonFree/sift/SIFT_describer.hpp"
+#include "nonFree/sift/SIFT_describer_io.hpp"
+#include "openMVG/features/image_describer_akaze_io.hpp"
+
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include <cstdlib>
+
+#ifdef OPENMVG_USE_OPENMP
+#include <omp.h>
+#endif
 
 // Naive function for finding the biggest common root dir from two paths
 std::string FindCommonRootDir(const std::string & dir1, const std::string & dir2)
@@ -78,7 +87,7 @@ int main(int argc, char **argv)
   try {
     if (argc == 1) throw std::string("Invalid parameter.");
     cmd.process(argc, argv);
-  } catch(const std::string& s) {
+  } catch (const std::string& s) {
     std::cerr << "Usage: " << argv[0] << '\n'
     << "[-i|--input_file] path to a SfM_Data scene\n"
     << "[-m|--match_dir] path to the directory containing the matches\n"
@@ -382,7 +391,7 @@ int main(int argc, char **argv)
     total_num_images++;
 
     View v(*iter_image, views.size(), views.size(), views.size(), imageGray.Width(), imageGray.Height());
-    if(bSuccessfulLocalization)
+    if (bSuccessfulLocalization)
     {
       vec_found_poses.push_back(pose.center());
       // Build the view corresponding to the image
@@ -413,7 +422,7 @@ int main(int argc, char **argv)
 
   // Export found camera poses along with original reconstruction in a new sfm_data file
   ESfM_Data flag_save;
-  if(bExportStructure)
+  if (bExportStructure)
   {
     flag_save = ESfM_Data(ALL);
   }

@@ -9,7 +9,6 @@
 #ifndef OPENMVG_CAMERAS_CAMERA_SPHERICAL_HPP
 #define OPENMVG_CAMERAS_CAMERA_SPHERICAL_HPP
 
-#include "openMVG/numeric/numeric.h"
 #include "openMVG/cameras/Camera_Intrinsics.hpp"
 
 namespace openMVG
@@ -122,9 +121,9 @@ using  class_type = Intrinsic_Spherical;
       lat = uv.y() * 2 * M_PI;
 
     return {
-      cos(lat) * sin(lon),
-      -sin(lat),
-      cos(lat) * cos(lon)};
+      std::cos(lat) * std::sin(lon),
+      -std::sin(lat),
+      std::cos(lat) * std::cos(lon)};
   }
 
   /**
@@ -139,8 +138,8 @@ using  class_type = Intrinsic_Spherical;
     const Vec3 & pt3D ) const override
   {
     const Vec3 X = pose( pt3D ); // apply pose
-    const double lon = atan2(X.x(), X.z()); // Horizontal normalization of the  X-Z component
-    const double lat = atan2(-X.y(), sqrt(X.x()*X.x() + X.z()*X.z())); // Tilt angle
+    const double lon = std::atan2(X.x(), X.z()); // Horizontal normalization of the  X-Z component
+    const double lat = std::atan2(-X.y(), std::hypot(X.x(), X.z())); // Tilt angle
     // denormalization (angle to pixel value)
     return cam2ima({lon / (2 * M_PI), lat / (2 * M_PI)});
   }
@@ -201,20 +200,14 @@ using  class_type = Intrinsic_Spherical;
   * @param ar Archive
   */
   template <class Archive>
-  void save( Archive & ar ) const
-  {
-    ar(cereal::base_class<IntrinsicBase>(this));
-  }
+  inline void save( Archive & ar ) const;
 
   /**
   * @brief  Serialization in
   * @param ar Archive
   */
   template <class Archive>
-  void load( Archive & ar )
-  {
-    ar(cereal::base_class<IntrinsicBase>(this));
-  }
+  inline void load( Archive & ar );
 
   /**
   * @brief Clone the object
@@ -229,18 +222,5 @@ using  class_type = Intrinsic_Spherical;
 
 } // namespace cameras
 } // namespace openMVG
-
-#include <cereal/types/polymorphic.hpp>
-#include <cereal/types/vector.hpp>
-
-CEREAL_REGISTER_TYPE_WITH_NAME(openMVG::cameras::Intrinsic_Spherical, "spherical");
-
-namespace cereal
-{
-  // This struct specialization will tell cereal which is the right way to serialize the ambiguity
-  template <class Archive> struct specialize<Archive, openMVG::cameras::Intrinsic_Spherical, cereal::specialization::member_load_save> {};
-}
-
-CEREAL_REGISTER_POLYMORPHIC_RELATION(openMVG::cameras::IntrinsicBase, openMVG::cameras::Intrinsic_Spherical);
 
 #endif // #ifndef OPENMVG_CAMERAS_CAMERA_SPHERICAL_HPP

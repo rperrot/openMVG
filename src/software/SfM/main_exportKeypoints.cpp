@@ -6,7 +6,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#include "openMVG/features/io_regions_type.hpp"
 #include "openMVG/features/svg_features.hpp"
 #include "openMVG/image/image_io.hpp"
 #include "openMVG/sfm/pipelines/sfm_features_provider.hpp"
@@ -24,7 +23,6 @@
 #include <string>
 
 using namespace openMVG;
-using namespace openMVG::matching;
 using namespace openMVG::sfm;
 
 int main(int argc, char ** argv)
@@ -42,7 +40,7 @@ int main(int argc, char ** argv)
   try {
       if (argc == 1) throw std::string("Invalid command line parameter.");
       cmd.process(argc, argv);
-  } catch(const std::string& s) {
+  } catch (const std::string& s) {
       std::cerr << "Export pairwise matches.\nUsage: " << argv[0] << "\n"
       << "[-i|--input_file file] path to a SfM_Data scene\n"
       << "[-d|--matchdir path]\n"
@@ -98,9 +96,9 @@ int main(int argc, char ** argv)
   stlplus::folder_create(sOutDir);
   std::cout << "\n Export extracted keypoints for all images" << std::endl;
   C_Progress_display my_progress_bar( sfm_data.views.size() );
-  for(Views::const_iterator iterViews = sfm_data.views.begin();
-        iterViews != sfm_data.views.end();
-        ++iterViews, ++my_progress_bar)
+  for (Views::const_iterator iterViews = sfm_data.views.begin();
+      iterViews != sfm_data.views.end();
+      ++iterViews, ++my_progress_bar)
   {
     const View * view = iterViews->second.get();
     const std::string sView_filename = stlplus::create_filespec(sfm_data.s_root_path,

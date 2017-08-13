@@ -1,3 +1,4 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
 
 // Copyright (c) 2015 Pierre MOULON.
 
@@ -51,7 +52,6 @@ public:
     const std::string& sfileNameFeats,
     const std::string& sfileNameDescs) override
   {
-    std::cout << "Im here - binary" << std::endl;
     return loadFeatsFromFile(sfileNameFeats, vec_feats_)
           & loadDescsFromBinFile(sfileNameDescs, vec_descs_);
   }

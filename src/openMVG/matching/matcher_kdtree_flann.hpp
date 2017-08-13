@@ -12,6 +12,10 @@
 #include <memory>
 #include <vector>
 
+#ifdef OPENMVG_USE_OPENMP
+#include <omp.h>
+#endif
+
 #include "openMVG/matching/matching_interface.hpp"
 
 #include <flann/flann.hpp>
@@ -34,11 +38,7 @@ class ArrayMatcher_Kdtree_Flann : public ArrayMatcher<Scalar, Metric>
 
   ArrayMatcher_Kdtree_Flann() = default;
 
-  virtual ~ArrayMatcher_Kdtree_Flann()
-  {
-    datasetM_.reset();
-    index_.reset();
-  }
+  virtual ~ArrayMatcher_Kdtree_Flann() = default;
 
   /**
    * Build the matching structure
@@ -169,7 +169,7 @@ class ArrayMatcher_Kdtree_Flann : public ArrayMatcher<Scalar, Metric>
     }
   }
 
-  private :
+  private:
 
   std::unique_ptr< flann::Matrix<Scalar> > datasetM_;
   std::unique_ptr< flann::Index<Metric> > index_;
