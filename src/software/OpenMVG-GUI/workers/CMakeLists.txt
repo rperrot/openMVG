@@ -1,7 +1,8 @@
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 
-set( OPENMVG_GUI_WORKERS_HEADERS WorkerColorComputation.hh 
+set( OPENMVG_GUI_WORKERS_HEADERS WorkerAutomaticReconstruction.hh
+                                 WorkerColorComputation.hh 
                                  WorkerFeaturesComputation.hh 
                                  WorkerFeaturesProviderLoad.hh 
                                  WorkerGeometricFiltering.hh 
@@ -13,10 +14,11 @@ set( OPENMVG_GUI_WORKERS_HEADERS WorkerColorComputation.hh
                                  WorkerProjectCreation.hh 
                                  WorkerRegionsProviderLoad.hh
                                  WorkerThumbnailGeneration.hh 
-
                                  WorkerInterface.hh 
                                  WorkerNextAction.hh ) 
-set( OPENMVG_GUI_WORKERS_SOURCES WorkerColorComputation.cc 
+                                 
+set( OPENMVG_GUI_WORKERS_SOURCES WorkerAutomaticReconstruction.cc
+                                 WorkerColorComputation.cc 
                                  WorkerFeaturesComputation.cc 
                                  WorkerFeaturesProviderLoad.cc 
                                  WorkerGeometricFiltering.cc
@@ -35,5 +37,6 @@ set( OPENMVG_GUI_WORKERS_SOURCES WorkerColorComputation.cc
 add_library( OpenMVG_gui_workers STATIC ${OPENMVG_GUI_WORKERS_HEADERS} ${OPENMVG_GUI_WORKERS_SOURCES} )
 target_link_libraries( OpenMVG_gui_workers Qt5::Widgets Qt5::OpenGL )
 target_include_directories( OpenMVG_gui_workers PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../)
+target_include_directories( OpenMVG_gui_workers PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../graphics )
 
 set_target_properties( OpenMVG_gui_workers PROPERTIES CXX_STANDARD 11 )

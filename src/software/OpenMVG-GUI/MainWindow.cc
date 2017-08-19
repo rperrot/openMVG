@@ -1,6 +1,7 @@
 #include "MainWindow.hh"
 
 // Dialogs
+#include "AutomaticReconstructionDialog.hh"
 #include "MaskDefinitionDialog.hh"
 #include "NewProjectDialog.hh"
 
@@ -367,6 +368,63 @@ void MainWindow::onQuit( void )
   qInfo( "Quit" ) ;
   QApplication::quit() ;
 }
+
+/**
+* @brief Action to be executed when user wants to compute automatic reconstruction
+*/
+void MainWindow::onComputeAutomaticReconstruction( void )
+{
+  AutomaticReconstructionDialog dlg( this ) ;
+
+  int res = dlg.exec() ;
+  if( res == QDialog::Accepted )
+  {
+    // Default scene manager
+    std::shared_ptr<Camera> cam = std::make_shared<Camera>( openMVG::Vec3( 0.0 , -3.0 , 3.0 ) ,
+                                  openMVG::Vec3( 0.0 , 0.0 , 0.0 ) ,
+                                  openMVG::Vec3( 0.0 , 0.0 , 1.0 ) ,
+                                  openMVG::D2R( 90 ) ,
+                                  0.1 ,
+                                  100.0 ) ;
+    std::shared_ptr<SceneHierarchy> s_hier = std::make_shared<LinearHierarchy>() ;
+    std::shared_ptr<SceneManager> default_scene_manager = std::make_shared<SceneManager>( cam , s_hier ) ;
+    default_scene_manager->addObject( m_result_view->grid() ) ;
+    default_scene_manager->addObject( m_result_view->sphericalGizmo() ) ;
+
+    const std::string input_folder  = dlg.inputImagePath() ;
+    const std::string output_folder = dlg.outputProjectPath() ;
+    const AutomaticReconstructionPreset preset = dlg.preset() ;
+    m_worker_automatic_reconstruction = new WorkerAutomaticReconstruction( input_folder ,
+        output_folder ,
+        preset ,
+        default_scene_manager ) ;
+
+    int min, max ;
+    m_worker_automatic_reconstruction->progressRangeOverall( min , max ) ;
+    m_double_progress_dialog = new DoubleProgressBarDialog( this ) ;
+    m_double_progress_dialog->setRange1( min , max ) ;
+    m_double_progress_dialog->setValue1( 0 ) ;
+    m_double_progress_dialog->setLabelText2( "Current step" ) ;
+    m_double_progress_dialog->setWindowModality( Qt::WindowModal ) ;
+    m_double_progress_dialog->show();
+
+    QThread * thread = new QThread( this ) ;
+    m_worker_automatic_reconstruction->moveToThread( thread ) ;
+
+    connect( thread , SIGNAL( started() ) , m_worker_automatic_reconstruction , SLOT( process() ) ) ;
+    connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
+    connect( m_worker_automatic_reconstruction, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasDoneAutomaticReconstruction( const WorkerNextAction & ) ) ) ;
+    connect( m_worker_automatic_reconstruction, SIGNAL( finished( const WorkerNextAction & ) ) , thread , SLOT( quit() ) ) ;
+    connect( m_worker_automatic_reconstruction, SIGNAL( progressOverall( int ) ) , m_double_progress_dialog , SLOT( setValue1( int ) ) ) ;
+    connect( m_worker_automatic_reconstruction, SIGNAL( progressCurrentStage( int ) ) , m_double_progress_dialog , SLOT( setValue2( int ) ) ) ;
+    connect( m_worker_automatic_reconstruction, SIGNAL( progressRangeCurrentStage( int , int ) ) , m_double_progress_dialog , SLOT( setRange2( int , int ) ) ) ;
+    connect( m_worker_automatic_reconstruction, SIGNAL( messageCurrentStage( const std::string & ) ) , m_double_progress_dialog , SLOT( setLabelText1( const std::string & ) ) ) ;
+
+    thread->start() ;
+  }
+}
+
+
 
 /**
 * @brief Action to be executed when user want to compute features
@@ -1106,6 +1164,33 @@ void MainWindow::onHasComputedColor( const WorkerNextAction & next_action  )
 }
 
 /**
+* @brief Action to be executed when automatic reconstruction is done
+*/
+void MainWindow::onHasDoneAutomaticReconstruction( const WorkerNextAction & next_action )
+{
+  m_project = m_worker_automatic_reconstruction->project() ;
+
+  m_double_progress_dialog->hide() ;
+
+  delete m_worker_automatic_reconstruction ;
+  m_worker_automatic_reconstruction = nullptr ;
+
+  // Initialize the 3d view
+  m_result_view->setScene( m_project->sceneManager() );
+  m_result_view->prepareObjects() ;
+  m_result_view->updateTrackballSize() ;
+
+  m_result_view->update() ;
+
+  onUpdateImageList() ;
+  postFeaturesComputation() ;
+  postMatchesComputation() ;
+  postSfMComputation() ;
+  postColorComputation() ;
+}
+
+
+/**
 * @brief indicate if some parameters in the project are not saved on disk
 */
 bool MainWindow::hasUnsavedChange( void ) const
@@ -1501,6 +1586,8 @@ void MainWindow::buildMenus( void )
   m_file_quit_act->setShortcuts( QKeySequence::Quit ) ;
 
   // Workflow actions
+  m_automatic_workflow_act = m_workflow_menu->addAction( "Automatic reconstruction" ) ;
+  m_workflow_menu->addSeparator() ;
   m_compute_features_act = m_workflow_menu->addAction( "Compute features" ) ;
   m_compute_matches_act = m_workflow_menu->addAction( "Compute matches" ) ;
   m_compute_sfm_act = m_workflow_menu->addAction( "Compute SfM" ) ;
@@ -1582,6 +1669,7 @@ void MainWindow::makeConnections( void )
   connect( m_file_save_as_act , SIGNAL( triggered() ) , this , SLOT( onSaveAsProject() ) ) ;
   connect( m_file_close_act , SIGNAL( triggered() ) , this , SLOT( onCloseProject() ) ) ;
   connect( m_file_quit_act , SIGNAL( triggered() ) , this , SLOT( onQuit() ) ) ;
+  connect( m_automatic_workflow_act , SIGNAL( triggered() ) , this , SLOT( onComputeAutomaticReconstruction() ) ) ;
   connect( m_compute_features_act , SIGNAL( triggered() ) , this , SLOT( onComputeFeatures() ) ) ;
   connect( m_compute_matches_act , SIGNAL( triggered() ) , this , SLOT( onComputeMatches() ) ) ;
   connect( m_compute_sfm_act , SIGNAL( triggered() ) , this , SLOT( onComputeSfM() ) ) ;

@@ -16,7 +16,9 @@ add_subdirectory( workflow_params )
 
 
 set( OPENMVG_GUI_HEADERS ApplicationState.hh 
+                         AutomaticReconstructionDialog.hh
                          DetailListWidget.hh 
+                         DoubleProgressBarDialog.hh
                          ImageListWidget.hh 
                          MainWindow.hh 
                          MaskDefinitionDialog.hh
@@ -26,7 +28,9 @@ set( OPENMVG_GUI_HEADERS ApplicationState.hh
                          Project.hh 
                          ResultViewWidget.hh 
                          Version.hh )
-set( OPENMVG_GUI_SOURCES DetailListWidget.cc
+set( OPENMVG_GUI_SOURCES AutomaticReconstructionDialog.cc
+                         DetailListWidget.cc
+                         DoubleProgressBarDialog.cc
                          ImageListWidget.cc
                          MainWindow.cc 
                          MaskDefinitionDialog.cc

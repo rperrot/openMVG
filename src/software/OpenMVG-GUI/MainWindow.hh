@@ -7,6 +7,7 @@
 #include "Project.hh"
 #include "ResultViewWidget.hh"
 
+#include "workers/WorkerAutomaticReconstruction.hh"
 #include "workers/WorkerColorComputation.hh"
 #include "workers/WorkerFeaturesComputation.hh"
 #include "workers/WorkerFeaturesProviderLoad.hh"
@@ -20,6 +21,8 @@
 #include "workers/WorkerThumbnailGeneration.hh"
 
 #include "workers/WorkerNextAction.hh"
+
+#include "DoubleProgressBarDialog.hh"
 
 #include <QAction>
 #include <QCheckBox>
@@ -76,6 +79,11 @@ class MainWindow : public QMainWindow
     * @brief Action to be executed when user wants to quit the project
     */
     void onQuit( void ) ;
+
+    /**
+    * @brief Action to be executed when user wants to compute automatic reconstruction
+    */
+    void onComputeAutomaticReconstruction( void ) ;
 
     /**
     * @brief Action to be executed when user wants to compute features
@@ -211,6 +219,11 @@ class MainWindow : public QMainWindow
     void onHasComputedColor( const WorkerNextAction & next_action  ) ;
 
     /**
+    * @brief Action to be executed when automatic reconstruction is done
+    */
+    void onHasDoneAutomaticReconstruction( const WorkerNextAction & next_action ) ;
+
+    /**
     * @brief indicate if some parameters in the project are not saved on disk
     */
     bool hasUnsavedChange( void ) const ;
@@ -292,6 +305,8 @@ class MainWindow : public QMainWindow
     QAction * m_file_quit_act ;
     /// Workflow
     QMenu * m_workflow_menu ;
+    /// Full workflow
+    QAction * m_automatic_workflow_act ;
     /// Compute features
     QAction * m_compute_features_act ;
     QAction * m_compute_features_act_tb ;
@@ -333,7 +348,8 @@ class MainWindow : public QMainWindow
     std::shared_ptr<Project> m_project ;
 
     /// The thread workers
-    QProgressDialog * m_progress_dialog ;
+    QProgressDialog                 * m_progress_dialog ;
+    DoubleProgressBarDialog         * m_double_progress_dialog ;
     WorkerProjectCreation           * m_worker_project_creation ;
     WorkerThumbnailGeneration       * m_worker_thumbnail_generation ;
     WorkerFeaturesComputation       * m_worker_features_computation ;
@@ -345,6 +361,7 @@ class MainWindow : public QMainWindow
     WorkerIncrementalSfMComputation * m_worker_incremental_sfm_computation ;
     WorkerGlobalSfMComputation      * m_worker_global_sfm_computation ;
     WorkerColorComputation          * m_worker_color_computation ;
+    WorkerAutomaticReconstruction   * m_worker_automatic_reconstruction ;
 
     Q_OBJECT
 } ;

@@ -5,6 +5,7 @@
 #include <QApplication>
 
 #include <clocale>
+#include <string>
 
 using namespace openMVG_gui ;
 
@@ -15,6 +16,7 @@ int main( int argc , char ** argv )
   setlocale( LC_NUMERIC, "C" ) ;
 
   qRegisterMetaType<openMVG_gui::WorkerNextAction>( "WorkerNextAction" );
+  qRegisterMetaType<std::string>( "std::string" ) ;
 
   // OpenGL
   // OpenGL use 3.3 minimum
