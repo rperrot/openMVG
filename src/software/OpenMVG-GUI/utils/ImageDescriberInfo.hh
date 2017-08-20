@@ -21,7 +21,7 @@ namespace openMVG_gui
 
 /**
 * @brief Query an image describer if it's a binary one
-* @param desc Describer 
+* @param desc Describer
 * @retval true if it's a binary describer
 * @retval false if it's a scalar describer
 */
@@ -33,7 +33,7 @@ bool isBinaryDescriber( const std::shared_ptr< openMVG::features::Image_describe
 * @retval true if it's a binary describer
 * @retval false if it's a scalar describer
 */
-bool isBinaryDescriber( const std::string & describerPath ) ; 
+bool isBinaryDescriber( const std::string & describerPath ) ;
 
 } // namespace openMVG_gui
 

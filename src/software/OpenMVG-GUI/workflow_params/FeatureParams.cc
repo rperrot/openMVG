@@ -119,12 +119,12 @@ void FeatureParams::createDescriber( void )
     }
     case FEATURE_TYPE_AKAZE_FLOAT :
     {
-      m_describer = AKAZE_Image_describer::create(AKAZE_Image_describer::Params(AKAZE::Params(), AKAZE_MSURF), !m_upright);
+      m_describer = AKAZE_Image_describer::create( AKAZE_Image_describer::Params( AKAZE::Params(), AKAZE_MSURF ), !m_upright );
       break ;
     }
     case FEATURE_TYPE_AKAZE_MLDB :
     {
-      m_describer = AKAZE_Image_describer::create(AKAZE_Image_describer::Params(AKAZE::Params(), AKAZE_MLDB), !m_upright);
+      m_describer = AKAZE_Image_describer::create( AKAZE_Image_describer::Params( AKAZE::Params(), AKAZE_MLDB ), !m_upright );
       break ;
     }
   }

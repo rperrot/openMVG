@@ -20,10 +20,10 @@ void computeBoundingSphere( const std::vector< openMVG::Vec3 > & pts ,
                             double & rad ) ;
 
 /**
-* @brief Compute bounding box of a set of points 
-* @param pts List of points 
-* @param[out] min Minimum on each coords 
-* @param[out] max Maximum on each coords 
+* @brief Compute bounding box of a set of points
+* @param pts List of points
+* @param[out] min Minimum on each coords
+* @param[out] max Maximum on each coords
 */
 void computeBoundingBox( const std::vector< openMVG::Vec3 > & pts ,
                          openMVG::Vec3 & min ,

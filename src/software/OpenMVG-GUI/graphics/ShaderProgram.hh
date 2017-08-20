@@ -263,20 +263,20 @@ class ShaderProgram
     GLint uniformLocation( const std::string & name ) const ;
 
     /**
-    * @brief Indicate if a given uniform name is present in the shader 
-    * @param name Name of the uniform to test 
-    * @retval true if present 
-    * @retval false if absent 
+    * @brief Indicate if a given uniform name is present in the shader
+    * @param name Name of the uniform to test
+    * @retval true if present
+    * @retval false if absent
     */
-    bool hasUniform( const std::string & name ) const ; 
+    bool hasUniform( const std::string & name ) const ;
 
     /**
-    * @brief Indicate if a given attribute name is present in the shader 
-    * @param name Name of the attribute to test 
-    * @retval true if present 
-    * @retval false if absent 
+    * @brief Indicate if a given attribute name is present in the shader
+    * @param name Name of the attribute to test
+    * @retval true if present
+    * @retval false if absent
     */
-    bool hasAttribute( const std::string & name ) const ; 
+    bool hasAttribute( const std::string & name ) const ;
 
 
   private:

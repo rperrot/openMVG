@@ -81,7 +81,7 @@ class WorkerRegionsProviderLoad : public QObject, public WorkerInterface
 
     // Internal counter for the number of step already done
     std::atomic<unsigned int> m_progress_value ;
-    std::mutex m_mutex ; 
+    std::mutex m_mutex ;
 
     std::shared_ptr<openMVG::sfm::Regions_Provider> m_regions_provider ;
 

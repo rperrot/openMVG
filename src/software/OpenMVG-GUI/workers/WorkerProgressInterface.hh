@@ -1,5 +1,5 @@
-#ifndef _WORKER_PROGRESS_INTERFACE_HH_
-#define _WORKER_PROGRESS_INTERFACE_HH_
+#ifndef _OPENMVG_SOFTWARE_OPENMVG_GUI_WORKERS_WORKER_PROGRESS_INTERFACE_HH_
+#define _OPENMVG_SOFTWARE_OPENMVG_GUI_WORKERS_WORKER_PROGRESS_INTERFACE_HH_
 
 #include "third_party/progress/progress.hpp"
 
@@ -35,21 +35,21 @@ class WorkerProgressInterface : public QObject , public C_Progress
   public slots :
 
     /**
-    * @brief indicate that it would stop 
-    */ 
+    * @brief indicate that it would stop
+    */
     void cancel( void ) ;
 
   signals:
 
     /**
-    * @brief signal we have incremented the progress 
+    * @brief signal we have incremented the progress
     */
     void increment( int ) ;
 
   private:
 
     bool m_canceled ;
-    std::mutex m_mutex ; 
+    std::mutex m_mutex ;
 
     Q_OBJECT
 } ;

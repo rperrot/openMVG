@@ -53,7 +53,7 @@ class NewProjectDialog : public QDialog
   private:
 
     void buildInterface( void ) ;
-    void makeConnections( void ) ; 
+    void makeConnections( void ) ;
 
     /// The labels
     QLabel * m_lbl_input_image ;

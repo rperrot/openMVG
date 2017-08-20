@@ -22,7 +22,7 @@ class Camera
     * @param fov Field Of View (in radian)
     * @param near_plane Near plane
     * @param far_plane Far plane
-    * @param ortho Indicate if it's an orthographic camera 
+    * @param ortho Indicate if it's an orthographic camera
     */
     Camera( const openMVG::Vec3 & pos ,
             const openMVG::Vec3 & dest ,
@@ -163,15 +163,15 @@ class Camera
 
 
     /**
-    * @brief Indicate if it's an orthographic camera 
-    * @retval true if it's ortho 
-    * @retval false if not 
+    * @brief Indicate if it's an orthographic camera
+    * @retval true if it's ortho
+    * @retval false if not
     */
-    bool isOrtho( void ) const ; 
+    bool isOrtho( void ) const ;
 
     /**
-    * @brief Set orthographic mode 
-    * @param iso orthographic activation mode 
+    * @brief Set orthographic mode
+    * @param iso orthographic activation mode
     */
     void setOrtho( const bool iso ) ;
 

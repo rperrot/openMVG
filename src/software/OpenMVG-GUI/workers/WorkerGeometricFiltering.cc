@@ -1,18 +1,19 @@
 #include "WorkerGeometricFiltering.hh"
 
 #include "WorkerProgressInterface.hh"
+#include "utils/MatchingStats.hh"
 
 #include "openMVG/sfm/pipelines/sfm_regions_provider.hpp"
 
 #include "openMVG/matching/indMatch_utils.hpp"
-
 #include "openMVG/matching_image_collection/GeometricFilter.hpp"
-
 #include "openMVG/matching_image_collection/F_ACRobust.hpp"
 #include "openMVG/matching_image_collection/E_ACRobust.hpp"
 #include "openMVG/matching_image_collection/H_ACRobust.hpp"
 
 #include <QCoreApplication>
+
+#include <chrono>
 
 using namespace openMVG::matching_image_collection ;
 
@@ -71,6 +72,8 @@ void WorkerGeometricFiltering::process( void )
   m_progress_value = 0 ;
   sendProgress() ;
 
+  const auto start = std::chrono::high_resolution_clock::now() ;
+
   bool bGuided_matching = false ;
   std::string sGeometricMatchesFilename ;
   if ( filter_ptr )
@@ -128,6 +131,8 @@ void WorkerGeometricFiltering::process( void )
         break;
       }
     }
+    const auto end = std::chrono::high_resolution_clock::now() ;
+    const std::chrono::duration<double> elapsed_sec = std::chrono::duration_cast<std::chrono::duration<double>>( end - start ) ;
 
     m_progress_value = m_map_putative->size() + 1 ;
     sendProgress() ;
@@ -142,6 +147,11 @@ void WorkerGeometricFiltering::process( void )
       //     << "Cannot save computed matches in: "
       //     << std::string( sMatchesDirectory + "/" + sGeometricMatchesFilename );
     }
+
+    // Save the statistics file
+    MatchingStats stat_file = MatchingStats::load( stlplus::create_filespec( sFeaturePath , "matches.putative.stat" ) ) ;
+    stat_file = MatchingStats( stat_file.putativeElapsedTime() ,  elapsed_sec.count() ) ;
+    stat_file.save( stlplus::create_filespec( sFeaturePath , "matches.filtered.stat" ) ) ;
   }
 
   m_progress_value = m_map_putative->size() + 2 ;

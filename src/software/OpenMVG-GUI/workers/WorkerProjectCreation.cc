@@ -86,7 +86,7 @@ void WorkerProjectCreation::process( void )
          stlplus::create_filespec( matchesPath, "sfm_data.json" ).c_str(),
          openMVG::sfm::ESfM_Data( openMVG::sfm::ESfM_Data::VIEWS | openMVG::sfm::ESfM_Data::INTRINSICS ) ) )
   {
-    std::cerr << "Error while saving sfm_data.json" << std::endl ; 
+    std::cerr << "Error while saving sfm_data.json" << std::endl ;
     emit progress( vec_image.size() + 2 ) ;
     emit finished( NEXT_ACTION_ERROR ) ;
     return ;
@@ -97,7 +97,7 @@ void WorkerProjectCreation::process( void )
   sendProgress() ;
   emit finished( nextAction() ) ;
   QCoreApplication::processEvents();
-  
+
   delete progressInterface ;
 }
 

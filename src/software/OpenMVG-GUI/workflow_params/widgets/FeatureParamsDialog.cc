@@ -22,7 +22,7 @@ FeatureParamsDialog::FeatureParamsDialog( QWidget * parent , const FeatureParams
   makeConnections() ;
 
   setParams( initialParams ) ;
-  setWindowTitle( "Features params" ) ; 
+  setWindowTitle( "Features params" ) ;
 }
 
 /**

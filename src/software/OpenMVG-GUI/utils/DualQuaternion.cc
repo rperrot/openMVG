@@ -115,8 +115,8 @@ openMVG::Mat4 DualQuaternion::toMatrix( void ) const
 DualQuaternion DualQuaternion::rotation( const openMVG::Vec3 & axis , const double aRad )
 {
   const openMVG::Vec3 n = axis.normalized() ;
- 
-  return DualQuaternion( Eigen::Quaterniond( Eigen::AngleAxisd( aRad , n ) ) , 
+
+  return DualQuaternion( Eigen::Quaterniond( Eigen::AngleAxisd( aRad , n ) ) ,
                          Eigen::Quaterniond( 0.0 , 0.0 , 0.0 , 0.0 ) ) ;
 }
 

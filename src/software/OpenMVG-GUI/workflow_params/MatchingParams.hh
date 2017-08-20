@@ -51,32 +51,32 @@ class MatchingParams
                     const float distRatio = 0.8 ,
                     const MatchingGeometryType & geom = MATCHING_GEOMETRY_TYPE_FUNDAMENTAL ,
                     const int max_iter_geom_filtering = 2048 ) ;
-    
+
     /**
-    * @brief Copy ctr 
-    * @param src Source 
+    * @brief Copy ctr
+    * @param src Source
     */
     MatchingParams( const MatchingParams & src ) ;
 
     /**
-    * @brief Move ctr 
-    * @param src Source 
+    * @brief Move ctr
+    * @param src Source
     */
-    MatchingParams( MatchingParams && src) ;
+    MatchingParams( MatchingParams && src ) ;
 
     /**
-    * @brief Assignment operator 
-    * @param src Source 
-    * @return self after assignment 
+    * @brief Assignment operator
+    * @param src Source
+    * @return self after assignment
     */
-    MatchingParams & operator=( const MatchingParams & src ) ; 
+    MatchingParams & operator=( const MatchingParams & src ) ;
 
     /**
-    * @brief Move Assignment operator 
-    * @param src Source 
-    * @return self after assignment 
+    * @brief Move Assignment operator
+    * @param src Source
+    * @return self after assignment
     */
-    MatchingParams & operator=( MatchingParams && src ) ; 
+    MatchingParams & operator=( MatchingParams && src ) ;
 
 
     /**
@@ -162,7 +162,7 @@ void MatchingParams::load( Archive & ar )
   ar( m_max_iteration_filtering ) ;
   ar( m_method ) ;
   ar( m_ratio ) ;
-  m_matcher = nullptr ; 
+  m_matcher = nullptr ;
 
   buildMatcher() ;
 }

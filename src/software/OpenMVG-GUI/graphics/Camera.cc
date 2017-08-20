@@ -228,8 +228,8 @@ openMVG::Mat4 Camera::projMatrix( const double width , const double height ) con
   }
   else
   {
-    const double left = -width/height ;
-    const double right = width/height ;
+    const double left = -width / height ;
+    const double right = width / height ;
     const double bottom = -1.0 ;
     const double top = 1.0 ;
 

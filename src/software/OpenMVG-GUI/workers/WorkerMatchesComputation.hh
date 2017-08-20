@@ -65,9 +65,9 @@ class WorkerMatchesComputation : public QObject, public WorkerInterface
     void hasIncremented( int ) ;
 
     /**
-    * @brief set progress value to the main thread 
+    * @brief set progress value to the main thread
     */
-    void sendProgress( void ) ; 
+    void sendProgress( void ) ;
 
   signals :
 
@@ -81,14 +81,14 @@ class WorkerMatchesComputation : public QObject, public WorkerInterface
   private:
 
     std::shared_ptr<openMVG::matching::PairWiseMatches> m_map_PutativesMatches;
-    
+
 
     std::shared_ptr<Project> m_project ;
     std::shared_ptr<openMVG::sfm::Regions_Provider> m_regions_provider ;
 
     // Internal counter for the number of step already done
     std::atomic<unsigned int> m_progress_value ;
-    std::mutex m_mutex ; 
+    std::mutex m_mutex ;
 
     Q_OBJECT
 } ;

@@ -54,7 +54,7 @@ class WorkerFeaturesProviderLoad : public QObject , public WorkerInterface
   signals :
 
     // 0 -> nothing done
-    // 1 -> all done 
+    // 1 -> all done
     void progress( int ) ;
 
     // After computation of all matches (ie: signal to clear memory)
@@ -62,7 +62,7 @@ class WorkerFeaturesProviderLoad : public QObject , public WorkerInterface
 
   private:
 
-    /// The project 
+    /// The project
     std::shared_ptr<Project> m_project ;
     /// The output (note: only valid after process finished with success )
     std::shared_ptr<openMVG::sfm::Features_Provider> m_feature_provider ;

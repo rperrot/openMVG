@@ -37,9 +37,9 @@ class MaskDefinitionDialog : public QDialog
     bool hasMaskActivated( void ) const ;
 
     /**
-    * @brief Activate/Deactivate mask 
+    * @brief Activate/Deactivate mask
     * @param active Activation status
-    */ 
+    */
     void setMaskActivated( bool active ) ;
 
 
@@ -89,9 +89,9 @@ class MaskDefinitionDialog : public QDialog
     void onChangeActivation( void ) ;
 
     /**
-    * @brief Action to be executed when user change brush size slider 
+    * @brief Action to be executed when user change brush size slider
     */
-    void onChangeBrushSize( void ) ; 
+    void onChangeBrushSize( void ) ;
 
   private:
 

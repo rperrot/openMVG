@@ -34,4 +34,4 @@ WorkerNextAction remove( const WorkerNextAction & act , const WorkerNextAction &
   return static_cast<WorkerNextAction>( static_cast<int>( act ) & ( ~static_cast<int>( op ) ) ) ;
 }
 
-} // namespace openMVG_gui 
+} // namespace openMVG_gui

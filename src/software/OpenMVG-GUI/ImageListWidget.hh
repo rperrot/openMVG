@@ -75,9 +75,9 @@ class ImageListWidget : public QWidget
     void setImages( const std::vector< std::pair< int , std::string > > & paths ) ;
 
     /**
-    * @brief Set enable/disable mask on selected image 
-    * @param id_image Id of the image to enable 
-    * @param enable Enable status 
+    * @brief Set enable/disable mask on selected image
+    * @param id_image Id of the image to enable
+    * @param enable Enable status
     */
     void setMaskEnabled( const int id_image , const bool enable ) ;
 

@@ -1,5 +1,5 @@
-#ifndef _PLY_LOADER_HH_
-#define _PLY_LOADER_HH_
+#ifndef _OPENMVG_SOFTWARE_OPENMVG_GUI_UTILS_PLY_LOADER_HH_
+#define _OPENMVG_SOFTWARE_OPENMVG_GUI_UTILS_PLY_LOADER_HH_
 
 #include "openMVG/numeric/numeric.h"
 

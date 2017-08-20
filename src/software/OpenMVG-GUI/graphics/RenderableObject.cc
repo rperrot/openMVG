@@ -83,7 +83,7 @@ void RenderableObject::switchVisibility( void )
 */
 void RenderableObject::destroyGLData( void )
 {
-  m_shader = nullptr ; 
+  m_shader = nullptr ;
 }
 
 

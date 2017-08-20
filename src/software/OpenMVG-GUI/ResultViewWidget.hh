@@ -22,7 +22,7 @@ class ResultViewWidget : public QOpenGLWidget
     */
     ResultViewWidget( QWidget * parent = nullptr ) ;
 
-    ~ResultViewWidget( void ) ; 
+    ~ResultViewWidget( void ) ;
 
     /**
     * @brief Initialize openGL context
@@ -93,16 +93,16 @@ class ResultViewWidget : public QOpenGLWidget
     */
     void mouseReleaseEvent( QMouseEvent * event ) override ;
 
-  private slots : 
+  private slots :
 
     /**
-    * @brief clean openGL data before quitting 
+    * @brief clean openGL data before quitting
     */
-    void destroyGLData( void ) ; 
+    void destroyGLData( void ) ;
 
   private:
 
-    
+
 
     void makeConnections( void ) ;
 
@@ -115,7 +115,7 @@ class ResultViewWidget : public QOpenGLWidget
     double m_last_mouse_x ;
     double m_last_mouse_y ;
 
-    Q_OBJECT 
+    Q_OBJECT
 } ;
 
 } // namespace openMVG_gui

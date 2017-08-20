@@ -2,6 +2,7 @@
 #define _OPENMVG_SOFTWARE_OPENMVG_GUI_DETAIL_LIST_WIDGET_HH_
 
 #include "utils/FeaturesStats.hh"
+#include "utils/MatchingStats.hh"
 
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
@@ -39,9 +40,16 @@ class DetailListWidget : public QTreeWidget
     void setFeaturesInfos( const std::vector<std::string> & show_names ,
                            const std::map< std::string , FeaturesStats > & stats ) ;
 
+    /**
+    * @brief Set Matching computation statistics
+    * @param show_names Hierarchy for name information (ex : SIFT / SIFT / ULTRA )
+    * @param stats Statistics
+    */
+    void setMatchesInfos( const std::vector<std::string> & show_names , const MatchingStats & stats ) ;
+
     void drawRow( QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index ) const override ;
 
-    // Clear all item except structural items 
+    // Clear all item except structural items
     void clear( ) ;
 
   private:

@@ -128,6 +128,64 @@ void DetailListWidget::setFeaturesInfos( const std::vector<std::string> & show_n
   }
 }
 
+/**
+* @brief Set Matching computation statistics
+* @param stats
+*/
+void DetailListWidget::setMatchesInfos( const std::vector<std::string> & show_names , const MatchingStats & stats )
+{
+  // Get root of the items
+  std::vector< std::string > name = { "Detector" , "Descriptor" , "Preset" } ;
+
+
+  QTreeWidgetItem * last = m_item_matches ;
+  for( int hierarchy_idx = 0 ; hierarchy_idx < show_names.size() ; ++hierarchy_idx )
+  {
+    bool found = false ;
+    const std::string cur_name_txt = show_names[ hierarchy_idx ] ;
+
+    for( int id = 0 ; id < last->childCount() ; ++id )
+    {
+      QTreeWidgetItem * item = last->child( id ) ;
+      QString text = item->text( 1 ) ;
+      if( cur_name_txt == text.toStdString() )
+      {
+        found = true ;
+        last  = item ;
+      }
+    }
+
+    // If not found, create it
+    if( ! found )
+    {
+      last = new QTreeWidgetItem( last ) ;
+      last->setText( 0 , name[ hierarchy_idx ].c_str( ) );
+      last->setText( 1 , cur_name_txt.c_str() ) ;
+    }
+  }
+
+  QTreeWidgetItem * root = last ;
+  // Remove already computed elements
+  root->takeChildren() ;
+
+  std::stringstream str ;
+  str << std::setprecision( 2 ) << stats.putativeElapsedTime() << " s" ;
+
+  std::stringstream str2 ;
+  str2 << std::setprecision( 2 ) << stats.filteringElapsedTime() << " s" ;
+
+  QTreeWidgetItem * item_matching = new QTreeWidgetItem( root ) ;
+  item_matching->setText( 0 , "Matching" ) ;
+  item_matching->setText( 1 , str.str().c_str() ) ;
+  item_matching->setData( 1 , Qt::UserRole , stats.putativeElapsedTime() ) ;
+
+  QTreeWidgetItem * item_filtering = new QTreeWidgetItem( root ) ;
+  item_filtering->setText( 0 , "Filtering" );
+  item_filtering->setText( 1 , str2.str().c_str() ) ;
+  item_filtering->setData( 1 , Qt::UserRole , stats.filteringElapsedTime() ) ;
+}
+
+
 
 
 // Clear all item except structural items

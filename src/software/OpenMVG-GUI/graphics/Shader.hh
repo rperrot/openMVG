@@ -22,7 +22,7 @@ enum ShaderType
 /**
 * @brief Class managing a shader (vertex, fragment, geometry, ...) in openGL
 */
-class Shader 
+class Shader
 {
   public:
 

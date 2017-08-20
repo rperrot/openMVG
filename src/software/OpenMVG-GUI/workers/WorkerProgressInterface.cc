@@ -28,7 +28,7 @@ unsigned long WorkerProgressInterface::operator+= ( unsigned long ulIncrement )
 
 unsigned long WorkerProgressInterface::operator++()
 {
-  return operator+=( 1 ) ; 
+  return operator+=( 1 ) ;
 }
 
 void WorkerProgressInterface::cancel( void )

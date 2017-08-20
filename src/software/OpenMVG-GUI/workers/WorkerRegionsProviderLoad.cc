@@ -66,7 +66,7 @@ void WorkerRegionsProviderLoad::process( void )
 
   WorkerProgressInterface * progressInterface = new WorkerProgressInterface() ;
 
-  connect( progressInterface , SIGNAL( increment( int ) ) , this , SLOT( hasIncremented( int ) ) ,  Qt::DirectConnection) ;
+  connect( progressInterface , SIGNAL( increment( int ) ) , this , SLOT( hasIncremented( int ) ) ,  Qt::DirectConnection ) ;
 
   m_progress_value = 0 ;
   sendProgress();

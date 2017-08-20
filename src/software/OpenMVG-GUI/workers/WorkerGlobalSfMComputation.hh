@@ -28,7 +28,7 @@ class WorkerGlobalSfMComputation : public QObject , public WorkerInterface
                                 std::shared_ptr<openMVG::sfm::Features_Provider> &features_provider ,
                                 std::shared_ptr<openMVG::sfm::Matches_Provider> &matches_provider ,
                                 const bool reload_initial_intrinsics = true ,
-                                const WorkerNextAction & na = NEXT_ACTION_NONE) ;
+                                const WorkerNextAction & na = NEXT_ACTION_NONE ) ;
 
     /**
     * @brief get progress range

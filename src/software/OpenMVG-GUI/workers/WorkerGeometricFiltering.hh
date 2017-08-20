@@ -61,9 +61,9 @@ class WorkerGeometricFiltering : public QObject, public WorkerInterface
     void hasIncremented( int ) ;
 
     /**
-    * @brief set progress value to the main thread 
+    * @brief set progress value to the main thread
     */
-    void sendProgress( void ) ; 
+    void sendProgress( void ) ;
 
   signals :
 
@@ -79,14 +79,14 @@ class WorkerGeometricFiltering : public QObject, public WorkerInterface
 
     // Internal counter for the number of step already done
     std::atomic<unsigned int> m_progress_value ;
-    
+
     /// in
     std::shared_ptr<Project> m_project ;
     std::shared_ptr<openMVG::sfm::Regions_Provider> m_regions_provider ;
     std::shared_ptr<openMVG::matching::PairWiseMatches> m_map_putative ;
     /// out
     std::shared_ptr<openMVG::matching::PairWiseMatches> m_map_filtered ;
-; 
+    ;
 
     Q_OBJECT
 } ;

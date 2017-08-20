@@ -571,8 +571,8 @@ void Project::createProject( const std::string & base_path ,
   std::vector<Datasheet> vec_database;
   if ( !parseDatabase( camera_sensor_width_database_file , vec_database ) )
   {
-    std::cerr << "Could not parse database" << std::endl ; 
-    return ; 
+    std::cerr << "Could not parse database" << std::endl ;
+    return ;
     // TODO : throw something (database corrupted or missing ?)
   }
 
@@ -609,7 +609,7 @@ void Project::createProject( const std::string & base_path ,
     // Test if the image format is supported:
     if ( openMVG::image::GetFormat( sImageFilename.c_str() ) == openMVG::image::Unknown )
     {
-      std::cout << "Unknown image format : " << sImageFilename.c_str() << std::endl ; 
+      std::cout << "Unknown image format : " << sImageFilename.c_str() << std::endl ;
       if( progress )
       {
         ++( *progress ) ;

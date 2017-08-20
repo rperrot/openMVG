@@ -24,7 +24,7 @@ class MaskView : public QGraphicsView
     void setBackgroundImage( QImage & img ) ;
 
     /**
-    * @brief Set initial mask image 
+    * @brief Set initial mask image
     */
     void setMaskImage( QImage & img ) ;
 

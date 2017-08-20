@@ -15,7 +15,7 @@ DoubleProgressBarDialog::DoubleProgressBarDialog( QWidget * parent )
     m_canceled( false )
 {
   buildInterface() ;
-  makeConnections() ; 
+  makeConnections() ;
 }
 
 /**
@@ -98,13 +98,13 @@ void DoubleProgressBarDialog::cancel( void )
 */
 void DoubleProgressBarDialog::buildInterface( void )
 {
-  // Progress layout 
+  // Progress layout
   m_label_1 = new QLabel ;
   m_bar_1 = new QProgressBar ;
   m_label_2 = new QLabel ;
-  m_bar_2 = new QProgressBar ; 
+  m_bar_2 = new QProgressBar ;
 
-  QVBoxLayout * progressLayout = new QVBoxLayout ; 
+  QVBoxLayout * progressLayout = new QVBoxLayout ;
   progressLayout->addWidget( m_label_1 ) ;
   progressLayout->addWidget( m_bar_1 ) ;
   progressLayout->addWidget( m_label_2 ) ;

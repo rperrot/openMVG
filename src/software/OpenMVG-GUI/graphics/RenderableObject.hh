@@ -23,7 +23,7 @@ class RenderableObject
     RenderableObject( std::shared_ptr<ShaderProgram> shader ,
                       const bool visible = true ) ;
 
-    virtual ~RenderableObject( void ) ; 
+    virtual ~RenderableObject( void ) ;
 
     /**
     * @brief Get model matrix

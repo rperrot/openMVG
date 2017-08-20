@@ -3,6 +3,7 @@ set( OPENMVG_GUI_UTILS_HEADERS BellBall.hh
                                DualQuaternion.hh 
                                FeaturesStats.hh
                                ImageDescriberInfo.hh 
+                               MatchingStats.hh
                                Plane.hh 
                                PlyLoader.hh
                                Sphere.hh 
@@ -12,6 +13,7 @@ set( OPENMVG_GUI_UTILS_SOURCES BellBall.cc
                                DualQuaternion.cc 
                                FeaturesStats.cc
                                ImageDescriberInfo.cc
+                               MatchingStats.cc
                                Plane.cc 
                                PlyLoader.cc 
                                Sphere.cc

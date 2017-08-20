@@ -11,7 +11,7 @@ namespace openMVG_gui
 */
 enum WorkerNextAction : int
 {
-  // Special case 
+  // Special case
   NEXT_ACTION_ERROR                       = 0 ,
 
   NEXT_ACTION_NONE                        = 1 ,
@@ -53,7 +53,7 @@ WorkerNextAction remove( const WorkerNextAction & act , const WorkerNextAction &
 
 } // namespace openMVG_gui
 
-Q_DECLARE_METATYPE(openMVG_gui::WorkerNextAction);
+Q_DECLARE_METATYPE( openMVG_gui::WorkerNextAction );
 
 //Q_DECLARE_METATYPE(openMVG_gui::WorkerNextAction) ;
 

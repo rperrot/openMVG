@@ -44,7 +44,7 @@ class LinearHierarchy : public SceneHierarchy
     /**
     * @brief destroy all openGL data (if any present)
     */
-    void destroyGLData( void ) override ; 
+    void destroyGLData( void ) override ;
 
 
   private:

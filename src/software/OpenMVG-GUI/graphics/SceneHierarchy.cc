@@ -5,9 +5,9 @@ namespace openMVG_gui
 /**
 * @brief Ctr
 */
-SceneHierarchy::SceneHierarchy( void ) 
+SceneHierarchy::SceneHierarchy( void )
 {
-  
+
 }
 
 

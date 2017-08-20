@@ -82,10 +82,10 @@ class DoubleProgressBarDialog : public QDialog
     * @brief Build interface
     */
     void buildInterface( void ) ;
-    
+
     /**
-    * @brief Make connections between widgets 
-    */ 
+    * @brief Make connections between widgets
+    */
     void makeConnections( void ) ;
 
     QLabel * m_label_1 ;
@@ -101,6 +101,6 @@ class DoubleProgressBarDialog : public QDialog
     Q_OBJECT
 } ;
 
-} // namespace openMVG_gui 
+} // namespace openMVG_gui
 
 #endif

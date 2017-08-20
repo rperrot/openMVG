@@ -43,9 +43,9 @@ bool MaskDefinitionDialog::hasMaskActivated( void ) const
 * @brief Activate/Deactivate mask
 * @param active Activation status
 */
-void MaskDefinitionDialog::setMaskActivated( bool active ) 
+void MaskDefinitionDialog::setMaskActivated( bool active )
 {
-  m_activated->setChecked( active ) ; 
+  m_activated->setChecked( active ) ;
 }
 
 

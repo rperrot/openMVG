@@ -1273,7 +1273,32 @@ void MainWindow::postFeaturesComputation( void )
 */
 void MainWindow::postMatchesComputation( void )
 {
+  // Load matches statistics
+  std::string matching_path = m_project->featuresPath() ;
+  std::vector<std::string> matching_hierarchy = stlplus::folder_elements( matching_path );
+  while( matching_hierarchy.size() > 3 )
+  {
+    matching_hierarchy.erase( matching_hierarchy.begin() ) ;
+  }
 
+
+  const std::string path_filtered = stlplus::create_filespec( matching_path , "matches.filtered.stat" ) ;
+  const std::string path_matched  = stlplus::create_filespec( matching_path , "matches.putative.stat" ) ;
+
+  if( stlplus::file_exists( path_filtered ) )
+  {
+    MatchingStats infos = MatchingStats::load( path_filtered ) ;
+    m_detail_list->setMatchesInfos( matching_hierarchy , infos ) ;
+    m_state = STATE_MATCHES_COMPUTED ;
+  }
+  else if( stlplus::file_exists( path_matched ) )
+  {
+    MatchingStats infos = MatchingStats::load( path_matched ) ;
+    m_detail_list->setMatchesInfos( matching_hierarchy , infos ) ;
+    m_state = STATE_MATCHES_COMPUTED ;
+  }
+
+  updateInterface() ;
 }
 
 /**

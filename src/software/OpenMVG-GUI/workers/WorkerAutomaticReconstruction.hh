@@ -1,5 +1,5 @@
-#ifndef _WORKERS_WORKER_AUTOMATIC_RECONSTRUCTION_HH_
-#define _WORKERS_WORKER_AUTOMATIC_RECONSTRUCTION_HH_
+#ifndef _OPENMVG_SOFTWARE_OPENMVG_GUI_WORKERS_WORKER_AUTOMATIC_RECONSTRUCTION_HH_
+#define _OPENMVG_SOFTWARE_OPENMVG_GUI_WORKERS_WORKER_AUTOMATIC_RECONSTRUCTION_HH_
 
 #include "WorkerInterface.hh"
 
@@ -167,13 +167,13 @@ class WorkerAutomaticReconstruction : public QObject , public WorkerInterface
 
     QThread * m_threadColorComputation ;
     QThread * m_threadFeatureComputation ;
-    QThread * m_threadFeatureProviderLoad ; 
-    QThread * m_threadGeometricFiltering ; 
-    QThread * m_threadIncrementalSfMComputation ; 
-    QThread * m_threadMatchesComputation ; 
-    QThread * m_threadMatchesProviderLoad ; 
-    QThread * m_threadProjectCreation ; 
-    QThread * m_threadRegionsProviderLoad ; 
+    QThread * m_threadFeatureProviderLoad ;
+    QThread * m_threadGeometricFiltering ;
+    QThread * m_threadIncrementalSfMComputation ;
+    QThread * m_threadMatchesComputation ;
+    QThread * m_threadMatchesProviderLoad ;
+    QThread * m_threadProjectCreation ;
+    QThread * m_threadRegionsProviderLoad ;
     QThread * m_threadThumbnailGeneration ;
 
     std::mutex m_mutex ;

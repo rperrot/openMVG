@@ -2,6 +2,8 @@
 
 #include "WorkerProgressInterface.hh"
 
+#include "utils/MatchingStats.hh"
+
 #include "openMVG/matching/indMatch.hpp"
 #include "openMVG/matching/indMatch_utils.hpp"
 #include "openMVG/matching_image_collection/Matcher.hpp"
@@ -9,10 +11,12 @@
 #include "openMVG/sfm/sfm_data.hpp"
 #include "openMVG/sfm/pipelines/sfm_regions_provider.hpp"
 
+
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include <QCoreApplication>
 
+#include <chrono>
 
 namespace openMVG_gui
 {
@@ -59,9 +63,7 @@ void WorkerMatchesComputation::process( void )
   const std::string sFeaturePath = m_project->featuresPath( ) ;
 
   std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data = m_project->SfMData() ;
-  std::cerr << "Before" << std::endl ;
   std::shared_ptr<openMVG::matching_image_collection::Matcher> matcher = m_project->matchingParams().matcher() ;
-  std::cerr << "After" << std::endl ;
   openMVG::Pair_Set pairs = openMVG::exhaustivePairs( sfm_data->GetViews().size() ) ;
   const int nb_pair = pairs.size() ;
 
@@ -75,7 +77,11 @@ void WorkerMatchesComputation::process( void )
   // Compute matching for all pairs
   m_map_PutativesMatches = std::make_shared<openMVG::matching::PairWiseMatches>() ;
 
+  const auto start = std::chrono::high_resolution_clock::now() ;
   matcher->Match( *sfm_data , m_regions_provider , pairs , *m_map_PutativesMatches , progressInterface );
+  const auto end = std::chrono::high_resolution_clock::now() ;
+  const std::chrono::duration<double> elapsed_sec = std::chrono::duration_cast<std::chrono::duration<double>>( end - start ) ;
+
 
 
   // Save the putative matches file
@@ -92,6 +98,10 @@ void WorkerMatchesComputation::process( void )
     QCoreApplication::processEvents();
     return ;
   }
+
+  // Save the statistics file
+  MatchingStats stat_file( elapsed_sec.count() ) ;
+  stat_file.save( stlplus::create_filespec( sFeaturePath , "matches.putative.stat" ) ) ;
 
   m_progress_value = nb_pair + 1 ;
   sendProgress() ;

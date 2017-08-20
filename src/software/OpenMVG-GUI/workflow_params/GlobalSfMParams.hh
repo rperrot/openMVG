@@ -105,19 +105,19 @@ class GlobalSfMParams
 } ;
 
 template< class Archive >
-void GlobalSfMParams::load( Archive & ar ) 
+void GlobalSfMParams::load( Archive & ar )
 {
-  ar( m_rotation_avg_method ) ; 
-  ar( m_translation_avg_method ) ; 
-  ar( m_refiner_option ) ; 
+  ar( m_rotation_avg_method ) ;
+  ar( m_translation_avg_method ) ;
+  ar( m_refiner_option ) ;
 }
 
 template< class Archive >
-void GlobalSfMParams::save( Archive & ar ) const 
+void GlobalSfMParams::save( Archive & ar ) const
 {
-  ar( m_rotation_avg_method ) ; 
-  ar( m_translation_avg_method ) ; 
-  ar( m_refiner_option ) ; 
+  ar( m_rotation_avg_method ) ;
+  ar( m_translation_avg_method ) ;
+  ar( m_refiner_option ) ;
 }
 
 } // namespace openMVG_gui
