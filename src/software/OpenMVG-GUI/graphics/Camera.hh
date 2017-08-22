@@ -24,12 +24,12 @@ class Camera
     * @param far_plane Far plane
     * @param ortho Indicate if it's an orthographic camera
     */
-    Camera( const openMVG::Vec3 & pos ,
-            const openMVG::Vec3 & dest ,
-            const openMVG::Vec3 & up ,
-            const double fov ,
-            const double near_plane ,
-            const double far_plane ,
+    Camera( const openMVG::Vec3 & pos = openMVG::Vec3( 0.0 , -3.0 , 3.0 ),
+            const openMVG::Vec3 & dest = openMVG::Vec3( 0.0 , 0.0 , 0.0 ) ,
+            const openMVG::Vec3 & up = openMVG::Vec3( 0.0 , 0.0 , 1.0 ) ,
+            const double fov = openMVG::D2R( 90 ) ,
+            const double near_plane = 0.1 ,
+            const double far_plane = 10000.0 ,
             const bool ortho = false ) ;
 
     /**
@@ -214,12 +214,13 @@ class Camera
 template< class Archive >
 void Camera::load( Archive & ar )
 {
-  ar( m_pos ) ;
-  ar( m_dest ) ;
-  ar( m_up ) ;
+  ar( m_pos[0] , m_pos[1] , m_pos[2] ) ;
+  ar( m_dest[0] , m_dest[1] , m_dest[2] ) ;
+  ar( m_up[0] , m_up[1] , m_up[2] ) ;
   ar( m_fov ) ;
   ar( m_near ) ;
   ar( m_far ) ;
+  ar( m_is_ortho ) ;
 }
 
 /**
@@ -228,12 +229,13 @@ void Camera::load( Archive & ar )
 template< class Archive>
 void Camera::save( Archive & ar ) const
 {
-  ar( m_pos ) ;
-  ar( m_dest ) ;
-  ar( m_up ) ;
+  ar( m_pos[0] , m_pos[1] , m_pos[2] ) ;
+  ar( m_dest[0] , m_dest[1] , m_dest[2] ) ;
+  ar( m_up[0] , m_up[1] , m_up[2] ) ;
   ar( m_fov ) ;
   ar( m_near ) ;
   ar( m_far ) ;
+  ar( m_is_ortho ) ;
 }
 
 } // namespace openMVG_gui

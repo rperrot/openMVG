@@ -7,6 +7,7 @@
 #include "workflow_params/IntrinsicParams.hh"
 #include "workflow_params/MatchingParams.hh"
 
+#include "graphics/Camera.hh"
 #include "graphics/SceneManager.hh"
 
 #include "third_party/progress/progress.hpp"
@@ -315,6 +316,11 @@ class Project
     */
     void setMaskEnabled( const int id , const bool value ) ;
 
+    /**
+    * @brief Get current view camera
+    * @return current view camera
+    */
+    std::shared_ptr<Camera> viewportCamera( void ) const ;
 
   private:
 
@@ -418,6 +424,9 @@ class Project
     // The 3d scene
     std::shared_ptr<SceneManager> m_scene_mgr ;
     std::shared_ptr<RenderableObject> m_sparse_point_cloud ;
+
+    // The current view
+    std::shared_ptr<Camera> m_viewport_camera ;
 } ;
 
 } // namespace openMVG_gui

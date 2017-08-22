@@ -15,6 +15,7 @@
 #include <QImage>
 
 #include <cereal/archives/xml.hpp>
+#include <cereal/types/memory.hpp>
 #include <cereal/types/map.hpp>
 #include <cereal/types/utility.hpp>
 
@@ -116,6 +117,10 @@ void Project::save( void )
   // Save mask enabled/disabled param
   archive( cereal::make_nvp( "mask_enabled" , m_mask_enabled ) ) ;
 
+  // Viewport camera 
+  archive( cereal::make_nvp( "viewport_camera" , m_viewport_camera ) ) ;
+
+
   m_saved = true ;
 }
 
@@ -194,6 +199,8 @@ void Project::open( const std::string & projectFile )
       std::cerr << "Could not load sfm_data" ;
     }
   }
+  // Load camera
+  archive( cereal::make_nvp( "viewport_camera" , m_viewport_camera ) ) ;
 
   m_saved = true ;
 }
@@ -765,6 +772,10 @@ void Project::createProject( const std::string & base_path ,
     }
   }
 
+  // Create default camera 
+  m_viewport_camera = std::make_shared<Camera>() ; 
+  m_scene_mgr->setCamera( m_viewport_camera ) ; 
+
   m_saved = false ;
 }
 
@@ -1227,6 +1238,15 @@ bool Project::maskEnabled( const int id ) const
 void Project::setMaskEnabled( const int id , const bool value )
 {
   m_mask_enabled[ id ] = value ;
+}
+
+/**
+* @brief Get current view camera
+* @return current view camera
+*/
+std::shared_ptr<Camera> Project::viewportCamera( void ) const
+{
+  return m_viewport_camera ;
 }
 
 

@@ -82,6 +82,14 @@ void ResultViewWidget::resizeGL( int w, int h )
 void ResultViewWidget::setScene( std::shared_ptr<SceneManager> mgr )
 {
   m_scn = mgr ;
+  if( m_scn )
+  {
+    std::shared_ptr<Camera> camera = m_scn->camera() ;
+    if( camera )
+    {
+      std::dynamic_pointer_cast<SphericalGizmo>( m_sph_gizmo )->setCenter( camera->destination() ) ;
+    }
+  }
 }
 
 /**

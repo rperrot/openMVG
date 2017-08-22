@@ -83,14 +83,8 @@ void MainWindow::onNewProject( void )
   if( res == QDialog::Accepted )
   {
     // Default scene manager
-    std::shared_ptr<Camera> cam = std::make_shared<Camera>( openMVG::Vec3( 0.0 , -3.0 , 3.0 ) ,
-                                  openMVG::Vec3( 0.0 , 0.0 , 0.0 ) ,
-                                  openMVG::Vec3( 0.0 , 0.0 , 1.0 ) ,
-                                  openMVG::D2R( 90 ) ,
-                                  0.1 ,
-                                  100.0 ) ;
     std::shared_ptr<SceneHierarchy> s_hier = std::make_shared<LinearHierarchy>() ;
-    std::shared_ptr<SceneManager> default_scene_manager = std::make_shared<SceneManager>( cam , s_hier ) ;
+    std::shared_ptr<SceneManager> default_scene_manager = std::make_shared<SceneManager>( nullptr , s_hier ) ;
     default_scene_manager->addObject( m_result_view->grid() ) ;
     default_scene_manager->addObject( m_result_view->sphericalGizmo() ) ;
 
@@ -146,14 +140,8 @@ void MainWindow::onOpenProject( void )
   const std::string projectPath = path.toStdString() ;
 
   // TODO : save camera inside project (because a specific point a view may be user defined ?)
-  std::shared_ptr<Camera> cam = std::make_shared<Camera>( openMVG::Vec3( 0.0 , -3.0 , 3.0 ) ,
-                                openMVG::Vec3( 0.0 , 0.0 , 0.0 ) ,
-                                openMVG::Vec3( 0.0 , 0.0 , 1.0 ) ,
-                                openMVG::D2R( 90 ) ,
-                                0.1 ,
-                                10000.0 ) ;
   std::shared_ptr<SceneHierarchy> s_hier = std::make_shared<LinearHierarchy>() ;
-  std::shared_ptr<SceneManager> default_scene_manager = std::make_shared<SceneManager>( cam , s_hier ) ;
+  std::shared_ptr<SceneManager> default_scene_manager = std::make_shared<SceneManager>( nullptr , s_hier ) ;
   default_scene_manager->addObject( m_result_view->grid() ) ;
   std::shared_ptr<SphericalGizmo> sph_giz = std::dynamic_pointer_cast<SphericalGizmo>( m_result_view->sphericalGizmo() );
   default_scene_manager->addObject( sph_giz ) ;
@@ -161,6 +149,7 @@ void MainWindow::onOpenProject( void )
   m_project = nullptr ;
 
   m_project = std::make_shared<Project>( projectPath , default_scene_manager ) ;
+  m_project->sceneManager()->setCamera( m_project->viewportCamera() ) ;
   m_result_view->setScene( m_project->sceneManager() );
   m_result_view->prepareObjects() ;
   m_result_view->updateTrackballSize() ;
@@ -219,6 +208,7 @@ void MainWindow::onOpenProject( void )
     LoadPly( sparse , pts , col ) ;
 
     // Fit camera to the point cloud
+    /*
     if( pts.size() > 0 )
     {
       openMVG::Vec3 bsCenter ;
@@ -229,6 +219,7 @@ void MainWindow::onOpenProject( void )
 
       sph_giz->setCenter( bsCenter ) ;
     }
+    */
 
     // Add to the scene, to the project and to the result view
     std::shared_ptr<RenderableObject> sprs  = std::make_shared<PointCloud>( m_result_view->pointShader() , pts , col ) ;
@@ -267,6 +258,7 @@ void MainWindow::onOpenProject( void )
     LoadPly( sparse , pts , col ) ;
 
     // Fit camera to the point cloud
+    /*
     if( pts.size() > 0 )
     {
       openMVG::Vec3 bsCenter ;
@@ -277,7 +269,7 @@ void MainWindow::onOpenProject( void )
 
       sph_giz->setCenter( bsCenter ) ;
     }
-
+    */
 
     // Add to the scene, to the project and to the result view
     std::shared_ptr<RenderableObject> sprs  = std::make_shared<PointCloud>( m_result_view->pointShader() , pts , col ) ;
