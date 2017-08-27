@@ -18,7 +18,9 @@ enum ApplicationState
   // SfM Computed
   STATE_SFM_COMPUTED ,
   // Color structure Computed
-  STATE_COLOR_COMPUTED
+  STATE_COLOR_COMPUTED ,
+  // Clustering computed 
+  STATE_CLUSTERING_COMPUTED 
 } ;
 } // namespace openMVG_gui
 

@@ -794,6 +794,7 @@ bool Project::createDirectoryStructure( const std::string & base_path )
   * base_path / sfm / matches
   * base_path / sfm / reconstruction_sequential
   * base_path / sfm / reconstruction_global
+  * base_path / sfm / exporters
   */
 
   const std::string gui_path = guiPath( base_path ) ;
@@ -803,6 +804,7 @@ bool Project::createDirectoryStructure( const std::string & base_path )
   const std::string rec_global_path = reconstructionGlobalPath( base_path ) ;
   const std::string rec_sequen_path = reconstructionSequentialPath( base_path ) ;
   const std::string global_features_dir = globalFeaturePath( base_path ) ;
+  const std::string exporter_dir = exportPath( base_path ) ;
 
   if( !stlplus::folder_exists( base_path ) )
   {
@@ -903,6 +905,7 @@ bool Project::createDirectoryStructure( const std::string & base_path )
     }
   }
 
+  // sfm/reconstruction_sequential
   if( ! stlplus::folder_exists( rec_sequen_path ) )
   {
     if( ! stlplus::folder_create( rec_sequen_path ) )
@@ -1124,6 +1127,26 @@ std::string Project::reconstructionSequentialPath( const std::string & base_path
 {
   return stlplus::folder_append_separator( sfmPath( base_path ) ) + "reconstruction_sequential" ;
 }
+
+/**
+* @brief Get project export path
+* @return export path
+*/
+std::string Project::exportPath( void ) const
+{
+  return exportPath( m_project_base_path ) ;
+}
+
+/**
+* @brief Given a base path, get export path
+* @param base_path
+* @return export path
+*/
+std::string Project::exportPath( const std::string & base_path ) const
+{
+  return stlplus::folder_append_separator( base_path ) + "export" ;
+}
+
 
 /**
 * @brief get access to the sfm data structure

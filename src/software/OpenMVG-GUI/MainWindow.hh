@@ -8,6 +8,7 @@
 #include "ResultViewWidget.hh"
 
 #include "workers/WorkerAutomaticReconstruction.hh"
+#include "workers/WorkerClusterComputation.hh"
 #include "workers/WorkerColorComputation.hh"
 #include "workers/WorkerFeaturesComputation.hh"
 #include "workers/WorkerFeaturesProviderLoad.hh"
@@ -169,6 +170,40 @@ class MainWindow : public QMainWindow
     */
     void onSetOrthographicProjection( void ) ;
 
+    /**
+    * @brief Action to be executed when user want to compute clusters
+    */
+    void onComputeClusters( void ) ;
+
+    /**
+    * @brief Action to be executed when user want to export to openMVS
+    */
+    void onExportToOpenMVS( void ) ;
+
+    /**
+    * @brief Action to be executed when user want to export to MVE
+    */
+    void onExportToMVE( void ) ;
+
+    /**
+    * @brief Action to be executed when user want to export to PMVS
+    */
+    void onExportToPMVS( void ) ;
+
+    /**
+    * @brief Action to be executed when user want to export each clusters to openMVS
+    */
+    void onExportClustersToOpenMVS( void ) ;
+
+    /**
+    * @brief Action to be executed when user want to export each clusters to MVE
+    */
+    void onExportClustersToMVE( void ) ;
+
+    /**
+    * @brief Action to be executed when user want to export each clusters to PMVS
+    */
+    void onExportClustersToPMVS( void ) ;
 
     // After something happened
     /**
@@ -222,6 +257,11 @@ class MainWindow : public QMainWindow
     * @brief Action to be executed when automatic reconstruction is done
     */
     void onHasDoneAutomaticReconstruction( const WorkerNextAction & next_action ) ;
+
+    /**
+    * @brief Action to be executed when clustering has been computed
+    */
+    void onHasComputedClustering( const WorkerNextAction & next_action ) ;
 
     /**
     * @brief indicate if some parameters in the project are not saved on disk
@@ -319,6 +359,23 @@ class MainWindow : public QMainWindow
     /// Compute color of the SfM structure
     QAction * m_compute_color_act ;
     QAction * m_compute_color_act_tb ;
+    /// Export to clusters
+    QAction * m_export_to_clusters_act ;
+    /// Export to openMVS
+    QAction * m_export_to_openMVS_act ;
+    /// Export to MVE
+    QAction * m_export_to_MVE_act ;
+    /// Export to PMVS
+    QAction * m_export_to_PMVS_act ;
+    /// Clustered outputs
+    QMenu * m_clustered_exports_menu ;
+    /// Export to clusters + openMVS
+    QAction * m_export_to_clusters_openMVS_act ;
+    /// Export to clusters + MVE
+    QAction * m_export_to_clusters_MVE_act ;
+    /// Export to clusters + PMVS
+    QAction * m_export_to_clusters_PMVS_act ;
+
     /// Settings
     QMenu * m_settings_menu ;
     QAction * m_setting_features_act ;
@@ -362,6 +419,7 @@ class MainWindow : public QMainWindow
     WorkerGlobalSfMComputation      * m_worker_global_sfm_computation ;
     WorkerColorComputation          * m_worker_color_computation ;
     WorkerAutomaticReconstruction   * m_worker_automatic_reconstruction ;
+    WorkerClusterComputation        * m_worker_cluster_computation ; 
 
     Q_OBJECT
 } ;

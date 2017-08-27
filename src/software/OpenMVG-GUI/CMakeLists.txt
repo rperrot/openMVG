@@ -2,13 +2,14 @@ find_package( Qt5Widgets REQUIRED )
 find_package( Qt5OpenGL REQUIRED )
 find_package( OpenGL REQUIRED )
 
-# Ensure Qt and openGL are present, and Qt >= 5.4 
+# Ensure Qt and openGL are present, and Qt >= 5.6 
 if( Qt5Widgets_FOUND AND Qt5OpenGL_FOUND AND OPENGL_FOUND  AND NOT (Qt5Widgets_VERSION LESS 5.6.0))
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
+add_subdirectory( dialogs ) 
 add_subdirectory( graphics )
 add_subdirectory( utils )
 add_subdirectory( workers ) 
@@ -16,26 +17,16 @@ add_subdirectory( workflow_params )
 
 
 set( OPENMVG_GUI_HEADERS ApplicationState.hh 
-                         AutomaticReconstructionDialog.hh
                          DetailListWidget.hh 
-                         DoubleProgressBarDialog.hh
                          ImageListWidget.hh 
                          MainWindow.hh 
-                         MaskDefinitionDialog.hh
-                         MaskView.hh 
-                         NewProjectDialog.hh 
                          OpenMVGImageInterface.hh
                          Project.hh 
                          ResultViewWidget.hh 
                          Version.hh )
-set( OPENMVG_GUI_SOURCES AutomaticReconstructionDialog.cc
-                         DetailListWidget.cc
-                         DoubleProgressBarDialog.cc
+set( OPENMVG_GUI_SOURCES DetailListWidget.cc
                          ImageListWidget.cc
                          MainWindow.cc 
-                         MaskDefinitionDialog.cc
-                         MaskView.cc 
-                         NewProjectDialog.cc 
                          OpenMVGImageInterface.cc
                          Project.cc 
                          ResultViewWidget.cc )
@@ -52,6 +43,7 @@ set_target_properties( OpenMVG-GUI PROPERTIES CXX_STANDARD 11 )
 
 target_link_libraries( OpenMVG-GUI 
                        # sub libraries 
+                       OpenMVG_gui_dialogs
                        OpenMVG_gui_graphics
                        OpenMVG_gui_utils
                        OpenMVG_gui_workers 
@@ -71,7 +63,9 @@ target_link_libraries( OpenMVG-GUI
                        easyexif
                        stlplus
                        vlsift )
-target_include_directories( OpenMVG-GUI PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/graphics)
+
+target_include_directories( OpenMVG-GUI PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/dialogs )                   
+target_include_directories( OpenMVG-GUI PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/graphics )
 target_include_directories( OpenMVG-GUI PRIVATE ${OPENGL_INCLUDE_DIR} )
 
 add_custom_command( TARGET OpenMVG-GUI POST_BUILD 

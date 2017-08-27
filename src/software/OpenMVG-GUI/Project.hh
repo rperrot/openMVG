@@ -227,22 +227,28 @@ class Project
     std::vector< std::string > featuresPaths( void ) const ;
 
     /**
-    * @brief Get global feature path
+    * @brief Get project global feature path
     * @return global feature path
     */
     std::string globalFeaturePath( void ) const ;
 
     /**
-    * @brief Given a base path, get global reconstruction path
+    * @brief Get project global reconstruction path
     * @return reconstruction global path
     */
     std::string reconstructionGlobalPath( void ) const ;
 
     /**
-    * @brief Given a base path, get sequential reconstruction path
+    * @brief Get project sequential reconstruction path
     * @return reconstruction sequential path
     */
     std::string reconstructionSequentialPath( void ) const ;
+
+    /**
+    * @brief Get project export path 
+    * @return export path 
+    */
+    std::string exportPath( void ) const;
 
     /**
     * @brief Get path of the sfm data output ply file
@@ -388,6 +394,12 @@ class Project
     */
     std::string reconstructionSequentialPath( const std::string & base_path ) const ;
 
+    /**
+    * @brief Given a base path, get export path 
+    * @param base_path 
+    * @return export path 
+    */
+    std::string exportPath( const std::string & base_path ) const ; 
 
     /**
     * @brief Get global feature path

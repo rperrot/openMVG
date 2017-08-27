@@ -2,6 +2,7 @@
 
 // Dialogs
 #include "AutomaticReconstructionDialog.hh"
+#include "ClusterComputationSettingsDialog.hh"
 #include "MaskDefinitionDialog.hh"
 #include "NewProjectDialog.hh"
 
@@ -64,6 +65,8 @@ MainWindow::MainWindow()
   m_worker_incremental_sfm_computation = nullptr ;
   m_worker_global_sfm_computation      = nullptr ;
   m_worker_color_computation           = nullptr ;
+  m_worker_automatic_reconstruction    = nullptr ;
+  m_worker_cluster_computation         = nullptr ;
 
   m_progress_dialog = nullptr ;
 
@@ -330,7 +333,8 @@ void MainWindow::onSaveProject( void )
 */
 void MainWindow::onSaveAsProject( void )
 {
-  // qInfo( "Save as Project" ) ;
+  qInfo( "Save as Project" ) ;
+  QMessageBox::critical( this , "Sorry" , "This feature is not implemented yet" ) ;
 }
 
 /**
@@ -667,12 +671,12 @@ void MainWindow::onHasCreatedProject( const WorkerNextAction & next_action  )
 
   if( next_action == NEXT_ACTION_ERROR )
   {
-    QMessageBox::critical( this , "Error" , "There was an error during project creation") ;
-    m_project = nullptr ; 
+    QMessageBox::critical( this , "Error" , "There was an error during project creation" ) ;
+    m_project = nullptr ;
     delete m_worker_project_creation ;
     m_worker_project_creation = nullptr ;
     resetInterface() ;
-    return ; 
+    return ;
   }
 
   // Set the project
@@ -918,6 +922,93 @@ void MainWindow::onSetOrthographicProjection( void )
   }
 }
 
+/**
+* @brief Action to be executed when user want to compute clusters
+*/
+void MainWindow::onComputeClusters( void )
+{
+  qInfo( "Compute clusters" ) ;
+
+  ClusterComputationSettingsDialog dlg( this ) ;
+  int res = dlg.exec() ;
+  if( res == QDialog::Accepted )
+  {
+    QThread * thread = new QThread( this ) ;
+
+    const int lower_bound = dlg.clusterLowerBound() ;
+    const int upper_bound = dlg.clusterUpperBound() ;
+    const float voxel_size = dlg.clusterGridSize() ;
+
+    m_worker_cluster_computation = new WorkerClusterComputation( m_project , lower_bound , upper_bound , voxel_size ) ;
+    m_worker_cluster_computation->moveToThread( thread ) ;
+
+    int progress_min = 0 , progress_max = 0 ;
+    m_worker_cluster_computation->progressRange( progress_min , progress_max ) ;
+    createProgress( "Cluster computation, please wait ..." , progress_min , progress_max ) ;
+
+    connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
+    connect( thread , SIGNAL( started() ) , m_worker_cluster_computation , SLOT( process() ) ) ;
+    connect( m_worker_cluster_computation, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
+    connect( m_worker_cluster_computation, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasComputedClustering( const WorkerNextAction & ) ) ) ;
+    connect( m_worker_cluster_computation , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
+
+    thread->start() ;
+  }
+}
+
+/**
+* @brief Action to be executed when user want to export to openMVS
+*/
+void MainWindow::onExportToOpenMVS( void )
+{
+  qInfo( "Export to OpenMVS" ) ;
+  QMessageBox::critical( this , "Sorry" , "This feature is not implemented yet" ) ;
+}
+
+/**
+* @brief Action to be executed when user want to export to MVE
+*/
+void MainWindow::onExportToMVE( void )
+{
+  qInfo( "Export to MVE" ) ;
+  QMessageBox::critical( this , "Sorry" , "This feature is not implemented yet" ) ;
+}
+
+/**
+* @brief Action to be executed when user want to export to PMVS
+*/
+void MainWindow::onExportToPMVS( void )
+{
+  qInfo( "Export to PMVS" ) ;
+  QMessageBox::critical( this , "Sorry" , "This feature is not implemented yet" ) ;
+}
+
+/**
+* @brief Action to be executed when user want to export each clusters to openMVS
+*/
+void MainWindow::onExportClustersToOpenMVS( void )
+{
+  qInfo( "Export clusters to OpenMVS" ) ;
+  QMessageBox::critical( this , "Sorry" , "This feature is not implemented yet" ) ;
+}
+
+/**
+* @brief Action to be executed when user want to export each clusters to MVE
+*/
+void MainWindow::onExportClustersToMVE( void )
+{
+  qInfo( "Export clusters to MVE" ) ;
+  QMessageBox::critical( this , "Sorry" , "This feature is not implemented yet" ) ;
+}
+
+/**
+* @brief Action to be executed when user want to export each clusters to PMVS
+*/
+void MainWindow::onExportClustersToPMVS( void )
+{
+  qInfo( "Export clusters to PMVS" ) ;
+  QMessageBox::critical( this , "Sorry" , "This feature is not implemented yet" ) ;
+}
 
 /**
 * @brief Action to be executed when features have been computed
@@ -932,8 +1023,8 @@ void MainWindow::onHasComputedFeatures( const WorkerNextAction & next_action  )
 
   if( next_action == NEXT_ACTION_ERROR )
   {
-    QMessageBox::critical( this , "Error" , "There was an error during feature computation" ) ; 
-    return ;     
+    QMessageBox::critical( this , "Error" , "There was an error during feature computation" ) ;
+    return ;
   }
 
 
@@ -951,8 +1042,8 @@ void MainWindow::onHasLoadedFeatures( const WorkerNextAction & next_action )
 
   if( next_action == NEXT_ACTION_ERROR )
   {
-    QMessageBox::critical( this , "Error" , "There was an error during feature loading" ) ; 
-    return ;     
+    QMessageBox::critical( this , "Error" , "There was an error during feature loading" ) ;
+    return ;
   }
 
 
@@ -1028,8 +1119,8 @@ void MainWindow::onHasLoadedMatches( const WorkerNextAction & next_action )
 
   if( next_action == NEXT_ACTION_ERROR )
   {
-    QMessageBox::critical( this , "Error" , "There was an error during matches loading" ) ; 
-    return ;     
+    QMessageBox::critical( this , "Error" , "There was an error during matches loading" ) ;
+    return ;
   }
 
 
@@ -1099,8 +1190,8 @@ void MainWindow::onHasLoadedRegions( const WorkerNextAction & next_action )
 
   if( next_action == NEXT_ACTION_ERROR )
   {
-    QMessageBox::critical( this , "Error" , "There was an error during region loading" ) ; 
-    return ;     
+    QMessageBox::critical( this , "Error" , "There was an error during region loading" ) ;
+    return ;
   }
 
 
@@ -1137,8 +1228,8 @@ void MainWindow::onHasComputedMatches( const WorkerNextAction & next_action )
 
   if( next_action == NEXT_ACTION_ERROR )
   {
-    QMessageBox::critical( this , "Error" , "There was an error during matches computation" ) ; 
-    return ;     
+    QMessageBox::critical( this , "Error" , "There was an error during matches computation" ) ;
+    return ;
   }
 
 
@@ -1183,14 +1274,35 @@ void MainWindow::onHasDoneGeometricFiltering( const WorkerNextAction & next_acti
 
   if( next_action == NEXT_ACTION_ERROR )
   {
-    QMessageBox::critical( this , "Error" , "There was an error during geometric filtering" ) ; 
-    return ;     
+    QMessageBox::critical( this , "Error" , "There was an error during geometric filtering" ) ;
+    return ;
   }
 
   m_state = STATE_MATCHES_COMPUTED ;
   updateInterface() ;
 
   postMatchesComputation() ;
+}
+
+/**
+* @brief Action to be executed when clustering has been computed
+*/
+void MainWindow::onHasComputedClustering( const WorkerNextAction & next_action )
+{
+  delete m_progress_dialog ;
+  m_progress_dialog = nullptr ;
+
+  if( next_action == NEXT_ACTION_ERROR )
+  {
+    QMessageBox::critical( this , "Error" , "There was an error during clustering" ) ;
+    return ;
+  }
+
+  delete m_worker_cluster_computation ;
+  m_worker_cluster_computation = nullptr ;
+
+  m_state = STATE_CLUSTERING_COMPUTED ;
+  updateInterface() ;
 }
 
 
@@ -1224,8 +1336,8 @@ void MainWindow::onHasComputedSfM( const WorkerNextAction & next_action )
 
   if( next_action == NEXT_ACTION_ERROR )
   {
-    QMessageBox::critical( this , "Error" , "There was an error during SfM computation" ) ; 
-    return ;     
+    QMessageBox::critical( this , "Error" , "There was an error during SfM computation" ) ;
+    return ;
   }
 
 
@@ -1242,8 +1354,8 @@ void MainWindow::onHasComputedColor( const WorkerNextAction & next_action  )
 
   if( next_action == NEXT_ACTION_ERROR )
   {
-    QMessageBox::critical( this , "Error" , "There was an error during color computation" ) ; 
-    return ;     
+    QMessageBox::critical( this , "Error" , "There was an error during color computation" ) ;
+    return ;
   }
 
   postColorComputation() ;
@@ -1256,15 +1368,15 @@ void MainWindow::onHasDoneAutomaticReconstruction( const WorkerNextAction & next
 {
   if( next_action == NEXT_ACTION_ERROR )
   {
-    QMessageBox::critical( this , "Error" , "There was an error during automatic reconstruction" ) ; 
+    QMessageBox::critical( this , "Error" , "There was an error during automatic reconstruction" ) ;
 
-    delete m_worker_automatic_reconstruction ; 
-    m_worker_automatic_reconstruction = nullptr ; 
+    delete m_worker_automatic_reconstruction ;
+    m_worker_automatic_reconstruction = nullptr ;
 
-    m_project = nullptr ; 
-    resetInterface() ; 
+    m_project = nullptr ;
+    resetInterface() ;
 
-    return ;     
+    return ;
   }
 
   m_project = m_worker_automatic_reconstruction->project() ;
@@ -1535,6 +1647,15 @@ void MainWindow::updateInterface( void )
       m_compute_color_act->setEnabled( false ) ;
       m_compute_color_act_tb->setEnabled( false ) ;
 
+      m_export_to_clusters_act->setEnabled( false ) ;
+      m_export_to_openMVS_act->setEnabled( false ) ;
+      m_export_to_MVE_act->setEnabled( false ) ;
+      m_export_to_PMVS_act->setEnabled( false ) ;
+      m_clustered_exports_menu->setEnabled( false ) ;
+      m_export_to_clusters_openMVS_act->setEnabled( false ) ;
+      m_export_to_clusters_MVE_act->setEnabled( false ) ;
+      m_export_to_clusters_PMVS_act->setEnabled( false ) ;
+
       m_setting_features_act->setEnabled( false );
       m_setting_matches_act->setEnabled( false ) ;
       m_setting_sfm_act->setEnabled( false ) ;
@@ -1557,6 +1678,15 @@ void MainWindow::updateInterface( void )
       m_compute_color_act->setEnabled( false ) ;
       m_compute_color_act_tb->setEnabled( false ) ;
 
+      m_export_to_clusters_act->setEnabled( false ) ;
+      m_export_to_openMVS_act->setEnabled( false ) ;
+      m_export_to_MVE_act->setEnabled( false ) ;
+      m_export_to_PMVS_act->setEnabled( false ) ;
+      m_clustered_exports_menu->setEnabled( false ) ;
+      m_export_to_clusters_openMVS_act->setEnabled( false ) ;
+      m_export_to_clusters_MVE_act->setEnabled( false ) ;
+      m_export_to_clusters_PMVS_act->setEnabled( false ) ;
+
       m_setting_features_act->setEnabled( true );
       m_setting_matches_act->setEnabled( true ) ;
       m_setting_sfm_act->setEnabled( true ) ;
@@ -1578,6 +1708,15 @@ void MainWindow::updateInterface( void )
       m_compute_sfm_act_tb->setEnabled( false ) ;
       m_compute_color_act->setEnabled( false ) ;
       m_compute_color_act_tb->setEnabled( false ) ;
+
+      m_export_to_clusters_act->setEnabled( false ) ;
+      m_export_to_openMVS_act->setEnabled( false ) ;
+      m_export_to_MVE_act->setEnabled( false ) ;
+      m_export_to_PMVS_act->setEnabled( false ) ;
+      m_clustered_exports_menu->setEnabled( false ) ;
+      m_export_to_clusters_openMVS_act->setEnabled( false ) ;
+      m_export_to_clusters_MVE_act->setEnabled( false ) ;
+      m_export_to_clusters_PMVS_act->setEnabled( false ) ;
 
       m_setting_features_act->setEnabled( true );
       m_setting_matches_act->setEnabled( true ) ;
@@ -1602,6 +1741,15 @@ void MainWindow::updateInterface( void )
       m_compute_color_act->setEnabled( false ) ;
       m_compute_color_act_tb->setEnabled( false ) ;
 
+      m_export_to_clusters_act->setEnabled( false ) ;
+      m_export_to_openMVS_act->setEnabled( false ) ;
+      m_export_to_MVE_act->setEnabled( false ) ;
+      m_export_to_PMVS_act->setEnabled( false ) ;
+      m_clustered_exports_menu->setEnabled( false ) ;
+      m_export_to_clusters_openMVS_act->setEnabled( false ) ;
+      m_export_to_clusters_MVE_act->setEnabled( false ) ;
+      m_export_to_clusters_PMVS_act->setEnabled( false ) ;
+
       m_setting_features_act->setEnabled( true );
       m_setting_matches_act->setEnabled( true ) ;
       m_setting_sfm_act->setEnabled( true ) ;
@@ -1624,6 +1772,15 @@ void MainWindow::updateInterface( void )
       m_compute_color_act->setEnabled( true ) ;
       m_compute_color_act_tb->setEnabled( true ) ;
 
+      m_export_to_clusters_act->setEnabled( true ) ;
+      m_export_to_openMVS_act->setEnabled( true ) ;
+      m_export_to_MVE_act->setEnabled( true ) ;
+      m_export_to_PMVS_act->setEnabled( true ) ;
+      m_clustered_exports_menu->setEnabled( false ) ;
+      m_export_to_clusters_openMVS_act->setEnabled( false ) ;
+      m_export_to_clusters_MVE_act->setEnabled( false ) ;
+      m_export_to_clusters_PMVS_act->setEnabled( false ) ;
+
       m_setting_features_act->setEnabled( true );
       m_setting_matches_act->setEnabled( true ) ;
       m_setting_sfm_act->setEnabled( true ) ;
@@ -1645,6 +1802,46 @@ void MainWindow::updateInterface( void )
       m_compute_sfm_act_tb->setEnabled( true ) ;
       m_compute_color_act->setEnabled( true ) ;
       m_compute_color_act_tb->setEnabled( true ) ;
+
+      m_export_to_clusters_act->setEnabled( true ) ;
+      m_export_to_openMVS_act->setEnabled( true ) ;
+      m_export_to_MVE_act->setEnabled( true ) ;
+      m_export_to_PMVS_act->setEnabled( true ) ;
+      m_clustered_exports_menu->setEnabled( false ) ;
+      m_export_to_clusters_openMVS_act->setEnabled( false ) ;
+      m_export_to_clusters_MVE_act->setEnabled( false ) ;
+      m_export_to_clusters_PMVS_act->setEnabled( false ) ;
+
+      m_setting_features_act->setEnabled( true );
+      m_setting_matches_act->setEnabled( true ) ;
+      m_setting_sfm_act->setEnabled( true ) ;
+
+      break ;
+    }
+    case STATE_CLUSTERING_COMPUTED :
+    {
+      // Have done everything
+      m_file_save_act->setEnabled( true ) ;
+      m_file_save_act_tb->setEnabled( true ) ;
+      m_file_close_act->setEnabled( true ) ;
+
+      m_compute_features_act->setEnabled( true ) ;
+      m_compute_features_act_tb->setEnabled( true ) ;
+      m_compute_matches_act->setEnabled( true ) ;
+      m_compute_matches_act_tb->setEnabled( true ) ;
+      m_compute_sfm_act->setEnabled( true ) ;
+      m_compute_sfm_act_tb->setEnabled( true ) ;
+      m_compute_color_act->setEnabled( true ) ;
+      m_compute_color_act_tb->setEnabled( true ) ;
+
+      m_export_to_clusters_act->setEnabled( true ) ;
+      m_export_to_openMVS_act->setEnabled( true ) ;
+      m_export_to_MVE_act->setEnabled( true ) ;
+      m_export_to_PMVS_act->setEnabled( true ) ;
+      m_clustered_exports_menu->setEnabled( true ) ;
+      m_export_to_clusters_openMVS_act->setEnabled( true ) ;
+      m_export_to_clusters_MVE_act->setEnabled( true ) ;
+      m_export_to_clusters_PMVS_act->setEnabled( true ) ;
 
       m_setting_features_act->setEnabled( true );
       m_setting_matches_act->setEnabled( true ) ;
@@ -1716,6 +1913,16 @@ void MainWindow::buildMenus( void )
   m_compute_matches_act = m_workflow_menu->addAction( "Compute matches" ) ;
   m_compute_sfm_act = m_workflow_menu->addAction( "Compute SfM" ) ;
   m_compute_color_act = m_workflow_menu->addAction( "Compute color" ) ;
+  m_workflow_menu->addSeparator() ;
+  m_export_to_openMVS_act = m_workflow_menu->addAction( "export to openMVS" ) ;
+  m_export_to_MVE_act = m_workflow_menu->addAction( "export to MVE" ) ;
+  m_export_to_PMVS_act = m_workflow_menu->addAction( "export to PMVS" ) ;
+  m_workflow_menu->addSeparator();
+  m_export_to_clusters_act = m_workflow_menu->addAction( "Clustering" ) ;
+  m_clustered_exports_menu = m_workflow_menu->addMenu( "Clustered exports" ) ;
+  m_export_to_clusters_openMVS_act = m_clustered_exports_menu->addAction( "clusters to openMVS" );
+  m_export_to_clusters_MVE_act = m_clustered_exports_menu->addAction( "clusters to MVE" ) ;
+  m_export_to_clusters_PMVS_act = m_clustered_exports_menu->addAction( "clusters to PMVS" ) ;
 
   // Settings actions
   m_setting_features_act = m_settings_menu->addAction( "Features" ) ;
@@ -1798,6 +2005,14 @@ void MainWindow::makeConnections( void )
   connect( m_compute_matches_act , SIGNAL( triggered() ) , this , SLOT( onComputeMatches() ) ) ;
   connect( m_compute_sfm_act , SIGNAL( triggered() ) , this , SLOT( onComputeSfM() ) ) ;
   connect( m_compute_color_act , SIGNAL( triggered() ) , this , SLOT( onComputeColor() ) ) ;
+  connect( m_export_to_clusters_act , SIGNAL( triggered() ) , this , SLOT( onComputeClusters() ) ) ;
+  connect( m_export_to_openMVS_act , SIGNAL( triggered() ) , this , SLOT( onExportToOpenMVS() ) ) ;
+  connect( m_export_to_MVE_act , SIGNAL( triggered() ) , this , SLOT( onExportToMVE() ) ) ;
+  connect( m_export_to_PMVS_act , SIGNAL( triggered() ) , this , SLOT( onExportToPMVS() ) ) ;
+  connect( m_export_to_clusters_openMVS_act , SIGNAL( triggered() ) , this , SLOT( onExportClustersToOpenMVS() ) ) ;
+  connect( m_export_to_clusters_MVE_act , SIGNAL( triggered() ) , this , SLOT( onExportClustersToMVE() ) ) ;
+  connect( m_export_to_clusters_PMVS_act , SIGNAL( triggered() ) , this , SLOT( onExportClustersToPMVS() ) ) ;
+
   connect( m_setting_features_act , SIGNAL( triggered() ) , this , SLOT( onChangeFeatureSettings() ) ) ;
   connect( m_setting_matches_act , SIGNAL( triggered() ) , this , SLOT( onChangeMatchesSettings() ) ) ;
   connect( m_setting_sfm_act , SIGNAL( triggered() ) , this , SLOT( onChangeSfMSettings() ) ) ;
