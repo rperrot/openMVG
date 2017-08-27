@@ -128,21 +128,6 @@ bool WorkerColorComputation::ColorizeTracks(
       QImage qt_img( sView_filename.c_str() );
       Image<RGBColor> image_rgb = QImageToOpenMVGImage( qt_img ) ;
       const bool b_rgb_image = true ;
-      /*
-      Image<unsigned char> image_gray;
-      const bool b_rgb_image = ReadImage( sView_filename.c_str(), &image_rgb );
-      if ( !b_rgb_image ) //try Gray level
-      {
-        const bool b_gray_image = ReadImage( sView_filename.c_str(), &image_gray );
-        if ( !b_gray_image )
-        {
-          std::cerr << "Cannot open provided the image." << std::endl;
-          delete progressInterface ;
-
-          return false;
-        }
-      }
-      */
 
       // Iterate through the remaining track to color
       // - look if the current view is present to color the track

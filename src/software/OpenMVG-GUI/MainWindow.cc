@@ -30,6 +30,8 @@
 #include <QToolBar>
 #include <QVBoxLayout>
 
+#include <exception>
+
 namespace openMVG_gui
 {
 
@@ -122,7 +124,14 @@ void MainWindow::onOpenProject( void )
     QMessageBox::StandardButton btn = QMessageBox::question( this , "Project unsaved" , "Project unsaved, save now ?" , QMessageBox::Cancel | QMessageBox::No | QMessageBox::Save , QMessageBox::Save ) ;
     if( btn == QMessageBox::Save )
     {
-      m_project->save() ;
+      try
+      {
+        m_project->save() ;
+      }
+      catch( std::runtime_error & err )
+      {
+        QMessageBox::StandardButton btn = QMessageBox::critical( this , "Error" , "There was an error during save of the project" ) ;
+      }
     }
     else if( btn == QMessageBox::Cancel )
     {
@@ -139,7 +148,6 @@ void MainWindow::onOpenProject( void )
   }
   const std::string projectPath = path.toStdString() ;
 
-  // TODO : save camera inside project (because a specific point a view may be user defined ?)
   std::shared_ptr<SceneHierarchy> s_hier = std::make_shared<LinearHierarchy>() ;
   std::shared_ptr<SceneManager> default_scene_manager = std::make_shared<SceneManager>( nullptr , s_hier ) ;
   default_scene_manager->addObject( m_result_view->grid() ) ;
@@ -148,7 +156,18 @@ void MainWindow::onOpenProject( void )
 
   m_project = nullptr ;
 
-  m_project = std::make_shared<Project>( projectPath , default_scene_manager ) ;
+  try
+  {
+    m_project = std::make_shared<Project>( projectPath , default_scene_manager ) ;
+  }
+  catch( std::runtime_error & err )
+  {
+    QMessageBox::StandardButton btn = QMessageBox::critical( this , "Error" , "Could not open project" ) ;
+    m_project = nullptr ;
+    updateInterface() ;
+    return ;
+  }
+
   m_project->sceneManager()->setCamera( m_project->viewportCamera() ) ;
   m_result_view->setScene( m_project->sceneManager() );
   m_result_view->prepareObjects() ;
@@ -173,24 +192,6 @@ void MainWindow::onOpenProject( void )
   * Because project could have been saved before feature computation
   */
   postFeaturesComputation() ;
-  /*
-  const std::string featuresPath = m_project->featuresPath() ;
-  const std::string describerPath = stlplus::create_filespec( featuresPath , "image_describer.json" ) ;
-  if( stlplus::file_exists( describerPath ) )
-  {
-    if( isBinaryDescriber( describerPath ) )
-    {
-      m_project->matchingParams().setMethod( MATCHING_METHOD_BRUTE_FORCE_HAMMING ) ;
-    }
-    else
-    {
-      if( m_project->matchingParams().method() == MATCHING_METHOD_BRUTE_FORCE_HAMMING )
-      {
-        m_project->matchingParams().setMethod( MATCHING_METHOD_FAST_CASCADE_HASHING_L2 ) ;
-      }
-    }
-  }
-  */
 
   // Update scene state
   m_state = STATE_PROJECT_OPENED ;
@@ -310,10 +311,17 @@ void MainWindow::onOpenProject( void )
 */
 void MainWindow::onSaveProject( void )
 {
-  qInfo( "Save Project" ) ;
+  // qInfo( "Save Project" ) ;
   if( m_project )
   {
-    m_project->save() ;
+    try
+    {
+      m_project->save() ;
+    }
+    catch( std::runtime_error & err )
+    {
+      QMessageBox::StandardButton btn = QMessageBox::critical( this , "Error" , "There was an error during save of the project" ) ;
+    }
   }
 }
 
@@ -322,8 +330,7 @@ void MainWindow::onSaveProject( void )
 */
 void MainWindow::onSaveAsProject( void )
 {
-  // TODO :
-  qInfo( "Save as Project" ) ;
+  // qInfo( "Save as Project" ) ;
 }
 
 /**
@@ -331,13 +338,20 @@ void MainWindow::onSaveAsProject( void )
 */
 void MainWindow::onCloseProject( void )
 {
-  qInfo( "Close Project" ) ;
+  // qInfo( "Close Project" ) ;
   if( hasUnsavedChange() && m_project )
   {
     QMessageBox::StandardButton btn = QMessageBox::question( this , "Project unsaved" , "Project unsaved, save now ?" , QMessageBox::Cancel | QMessageBox::No | QMessageBox::Save , QMessageBox::Save ) ;
     if( btn == QMessageBox::Save )
     {
-      m_project->save() ;
+      try
+      {
+        m_project->save() ;
+      }
+      catch( std::runtime_error & err )
+      {
+        QMessageBox::StandardButton btn = QMessageBox::critical( this , "Error" , "There was an error during save of the project" ) ;
+      }
     }
     else if( btn == QMessageBox::Cancel )
     {
@@ -358,6 +372,26 @@ void MainWindow::onCloseProject( void )
 void MainWindow::onQuit( void )
 {
   qInfo( "Quit" ) ;
+  if( m_project && hasUnsavedChange() )
+  {
+    QMessageBox::StandardButton btn = QMessageBox::question( this , "Project unsaved" , "Project unsaved, save now ?" , QMessageBox::Cancel | QMessageBox::No | QMessageBox::Save , QMessageBox::Save ) ;
+    if( btn == QMessageBox::Save )
+    {
+      try
+      {
+        m_project->save() ;
+      }
+      catch( std::runtime_error & err )
+      {
+        QMessageBox::StandardButton btn = QMessageBox::critical( this , "Error" , "There was an error during save of the project" ) ;
+      }
+    }
+    else if( btn == QMessageBox::Cancel )
+    {
+      return ;
+    }
+  }
+
   QApplication::quit() ;
 }
 
@@ -372,12 +406,7 @@ void MainWindow::onComputeAutomaticReconstruction( void )
   if( res == QDialog::Accepted )
   {
     // Default scene manager
-    std::shared_ptr<Camera> cam = std::make_shared<Camera>( openMVG::Vec3( 0.0 , -3.0 , 3.0 ) ,
-                                  openMVG::Vec3( 0.0 , 0.0 , 0.0 ) ,
-                                  openMVG::Vec3( 0.0 , 0.0 , 1.0 ) ,
-                                  openMVG::D2R( 90 ) ,
-                                  0.1 ,
-                                  100.0 ) ;
+    std::shared_ptr<Camera> cam = std::make_shared<Camera>( ) ;
     std::shared_ptr<SceneHierarchy> s_hier = std::make_shared<LinearHierarchy>() ;
     std::shared_ptr<SceneManager> default_scene_manager = std::make_shared<SceneManager>( cam , s_hier ) ;
     default_scene_manager->addObject( m_result_view->grid() ) ;
@@ -445,7 +474,7 @@ void MainWindow::onComputeFeatures( void )
     }
   }
 
-  qInfo( "Compute features" ) ;
+  //  qInfo( "Compute features" ) ;
 
 
   m_worker_features_computation = new WorkerFeaturesComputation( m_project , overwrite ) ;
@@ -635,6 +664,16 @@ void MainWindow::onHasCreatedProject( const WorkerNextAction & next_action  )
 {
   delete m_progress_dialog ;
   m_progress_dialog = nullptr ;
+
+  if( next_action == NEXT_ACTION_ERROR )
+  {
+    QMessageBox::critical( this , "Error" , "There was an error during project creation") ;
+    m_project = nullptr ; 
+    delete m_worker_project_creation ;
+    m_worker_project_creation = nullptr ;
+    resetInterface() ;
+    return ; 
+  }
 
   // Set the project
   m_project = m_worker_project_creation->project() ;
@@ -891,6 +930,13 @@ void MainWindow::onHasComputedFeatures( const WorkerNextAction & next_action  )
   delete m_worker_features_computation ;
   m_worker_features_computation = nullptr ;
 
+  if( next_action == NEXT_ACTION_ERROR )
+  {
+    QMessageBox::critical( this , "Error" , "There was an error during feature computation" ) ; 
+    return ;     
+  }
+
+
   postFeaturesComputation() ;
 }
 
@@ -902,6 +948,13 @@ void MainWindow::onHasLoadedFeatures( const WorkerNextAction & next_action )
 {
   delete m_progress_dialog ;
   m_progress_dialog = nullptr ;
+
+  if( next_action == NEXT_ACTION_ERROR )
+  {
+    QMessageBox::critical( this , "Error" , "There was an error during feature loading" ) ; 
+    return ;     
+  }
+
 
   if( contains( next_action , NEXT_ACTION_LOAD_MATCHES ) )
   {
@@ -973,6 +1026,13 @@ void MainWindow::onHasLoadedMatches( const WorkerNextAction & next_action )
   delete m_progress_dialog ;
   m_progress_dialog = nullptr ;
 
+  if( next_action == NEXT_ACTION_ERROR )
+  {
+    QMessageBox::critical( this , "Error" , "There was an error during matches loading" ) ; 
+    return ;     
+  }
+
+
   // Compute SfM
   if( contains( next_action , NEXT_ACTION_COMPUTE_INCREMENTAL_SFM ) )
   {
@@ -1037,6 +1097,13 @@ void MainWindow::onHasLoadedRegions( const WorkerNextAction & next_action )
   delete m_progress_dialog ;
   m_progress_dialog = nullptr ;
 
+  if( next_action == NEXT_ACTION_ERROR )
+  {
+    QMessageBox::critical( this , "Error" , "There was an error during region loading" ) ; 
+    return ;     
+  }
+
+
   if( contains( next_action , NEXT_ACTION_COMPUTE_MATCHES ) )
   {
     // Now launch matches computation
@@ -1067,6 +1134,13 @@ void MainWindow::onHasComputedMatches( const WorkerNextAction & next_action )
 {
   delete m_progress_dialog ;
   m_progress_dialog = nullptr ;
+
+  if( next_action == NEXT_ACTION_ERROR )
+  {
+    QMessageBox::critical( this , "Error" , "There was an error during matches computation" ) ; 
+    return ;     
+  }
+
 
   if( contains( next_action , NEXT_ACTION_COMPUTE_GEOMETRIC_FILTERING ) )
   {
@@ -1099,15 +1173,22 @@ void MainWindow::onHasDoneGeometricFiltering( const WorkerNextAction & next_acti
   delete m_progress_dialog ;
   m_progress_dialog = nullptr ;
 
-  m_state = STATE_MATCHES_COMPUTED ;
-  updateInterface() ;
-
   delete m_worker_regions_provide_load ;
   m_worker_regions_provide_load = nullptr ;
   delete m_worker_geometric_filtering ;
   m_worker_geometric_filtering = nullptr ;
   delete m_worker_matches_computation ;
   m_worker_matches_computation = nullptr ;
+
+
+  if( next_action == NEXT_ACTION_ERROR )
+  {
+    QMessageBox::critical( this , "Error" , "There was an error during geometric filtering" ) ; 
+    return ;     
+  }
+
+  m_state = STATE_MATCHES_COMPUTED ;
+  updateInterface() ;
 
   postMatchesComputation() ;
 }
@@ -1141,6 +1222,13 @@ void MainWindow::onHasComputedSfM( const WorkerNextAction & next_action )
     m_worker_global_sfm_computation = nullptr ;
   }
 
+  if( next_action == NEXT_ACTION_ERROR )
+  {
+    QMessageBox::critical( this , "Error" , "There was an error during SfM computation" ) ; 
+    return ;     
+  }
+
+
   postSfMComputation() ;
 }
 
@@ -1152,6 +1240,12 @@ void MainWindow::onHasComputedColor( const WorkerNextAction & next_action  )
   delete m_progress_dialog ;
   m_progress_dialog = nullptr ;
 
+  if( next_action == NEXT_ACTION_ERROR )
+  {
+    QMessageBox::critical( this , "Error" , "There was an error during color computation" ) ; 
+    return ;     
+  }
+
   postColorComputation() ;
 }
 
@@ -1160,6 +1254,19 @@ void MainWindow::onHasComputedColor( const WorkerNextAction & next_action  )
 */
 void MainWindow::onHasDoneAutomaticReconstruction( const WorkerNextAction & next_action )
 {
+  if( next_action == NEXT_ACTION_ERROR )
+  {
+    QMessageBox::critical( this , "Error" , "There was an error during automatic reconstruction" ) ; 
+
+    delete m_worker_automatic_reconstruction ; 
+    m_worker_automatic_reconstruction = nullptr ; 
+
+    m_project = nullptr ; 
+    resetInterface() ; 
+
+    return ;     
+  }
+
   m_project = m_worker_automatic_reconstruction->project() ;
 
   m_double_progress_dialog->hide() ;
@@ -1224,7 +1331,6 @@ void MainWindow::postFeaturesComputation( void )
     return ;
   }
 
-  // TODO : load features statistics from files if computed
   std::vector< std::string > valid_features_path = m_project->featuresPaths() ;
   for( const auto & feature_path : valid_features_path )
   {
@@ -1408,6 +1514,7 @@ void MainWindow::updateInterface( void )
   if( ! m_project )
   {
     // No project -> clear everything in a startup state
+    m_state = STATE_EMPTY ;
   }
 
   switch( m_state )

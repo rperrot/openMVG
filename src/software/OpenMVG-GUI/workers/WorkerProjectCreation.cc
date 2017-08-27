@@ -9,6 +9,7 @@
 
 #include <QCoreApplication>
 
+#include <exception>
 #include <iostream>
 
 namespace openMVG_gui
@@ -71,7 +72,17 @@ void WorkerProjectCreation::process( void )
   m_progress_value = 0 ;
   sendProgress() ;
 
-  m_project = std::make_shared<Project>( m_project_base_path , m_input_image_path , m_intrin_params , m_database_path , m_scn_manager , progressInterface ) ;
+  try 
+  {
+    m_project = std::make_shared<Project>( m_project_base_path , m_input_image_path , m_intrin_params , m_database_path , m_scn_manager , progressInterface ) ;
+  }
+  catch( std::runtime_error & err )
+  {
+    std::cerr << "Error while creating project" << std::endl ;
+    emit progress( vec_image.size() + 2 ) ;
+    emit finished( NEXT_ACTION_ERROR ) ;
+    return ;
+  }
 
   m_progress_value = vec_image.size() + 1 ;
   sendProgress() ;

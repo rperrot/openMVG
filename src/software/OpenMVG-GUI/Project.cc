@@ -20,6 +20,7 @@
 #include <cereal/types/utility.hpp>
 
 #include <algorithm>
+#include <exception>
 #include <fstream>
 #include <vector>
 
@@ -84,8 +85,8 @@ void Project::save( void )
   std::ofstream file( stlplus::create_filespec( m_project_base_path , "project.omvg" ) ) ;
   if( ! file )
   {
-    // TODO : throw something ?
     std::cerr << "Could not save project" << std::endl ;
+    throw std::runtime_error( "Could not save project" ) ;
     return ;
   }
 
@@ -117,7 +118,7 @@ void Project::save( void )
   // Save mask enabled/disabled param
   archive( cereal::make_nvp( "mask_enabled" , m_mask_enabled ) ) ;
 
-  // Viewport camera 
+  // Viewport camera
   archive( cereal::make_nvp( "viewport_camera" , m_viewport_camera ) ) ;
 
 
@@ -133,8 +134,8 @@ void Project::open( const std::string & projectFile )
   std::ifstream file( projectFile ) ;
   if( ! file )
   {
-    // TODO : throw something ?
     std::cerr << "Could not load project" << std::endl ;
+    throw std::runtime_error( "Unable to load file" );
     return  ;
   }
 
@@ -570,8 +571,8 @@ void Project::createProject( const std::string & base_path ,
   if( ! createDirectoryStructure( base_path ) )
   {
     std::cerr << "Could not create directory structure" << std::endl ;
+    throw std::runtime_error( "Could not create project directory" ) ;
     return ;
-    // TODO : throw something ?
   }
 
   // 2 - load camera db
@@ -579,8 +580,8 @@ void Project::createProject( const std::string & base_path ,
   if ( !parseDatabase( camera_sensor_width_database_file , vec_database ) )
   {
     std::cerr << "Could not parse database" << std::endl ;
+    throw std::runtime_error( "Could not load sensor width database" ) ;
     return ;
-    // TODO : throw something (database corrupted or missing ?)
   }
 
   // 3 - create empty Sfm_data
@@ -772,9 +773,9 @@ void Project::createProject( const std::string & base_path ,
     }
   }
 
-  // Create default camera 
-  m_viewport_camera = std::make_shared<Camera>() ; 
-  m_scene_mgr->setCamera( m_viewport_camera ) ; 
+  // Create default camera
+  m_viewport_camera = std::make_shared<Camera>() ;
+  m_scene_mgr->setCamera( m_viewport_camera ) ;
 
   m_saved = false ;
 }
