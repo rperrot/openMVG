@@ -10,6 +10,7 @@
 #include "workers/WorkerAutomaticReconstruction.hh"
 #include "workers/WorkerClusterComputation.hh"
 #include "workers/WorkerColorComputation.hh"
+#include "workers/WorkerExportToOpenMVS.hh"
 #include "workers/WorkerFeaturesComputation.hh"
 #include "workers/WorkerFeaturesProviderLoad.hh"
 #include "workers/WorkerGeometricFiltering.hh"
@@ -264,6 +265,11 @@ class MainWindow : public QMainWindow
     void onHasComputedClustering( const WorkerNextAction & next_action ) ;
 
     /**
+    * @brief Action to be executed when exporting to openMVS has been computed 
+    */
+    void onHasExportedToOpenMVS( const WorkerNextAction & next_action ) ; 
+
+    /**
     * @brief indicate if some parameters in the project are not saved on disk
     */
     bool hasUnsavedChange( void ) const ;
@@ -420,6 +426,7 @@ class MainWindow : public QMainWindow
     WorkerColorComputation          * m_worker_color_computation ;
     WorkerAutomaticReconstruction   * m_worker_automatic_reconstruction ;
     WorkerClusterComputation        * m_worker_cluster_computation ; 
+    WorkerExportToOpenMVS           * m_worker_export_to_openMVS ; 
 
     Q_OBJECT
 } ;

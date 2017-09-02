@@ -12,9 +12,9 @@ namespace openMVG_gui
 enum WorkerNextAction : int
 {
   // Special case
-  NEXT_ACTION_ERROR                       = 0 ,
+  NEXT_ACTION_NONE                        = 0 ,
+  NEXT_ACTION_ERROR                       = 1 ,
 
-  NEXT_ACTION_NONE                        = 1 ,
   // Load actions
   NEXT_ACTION_LOAD_FEATURES               = 2 ,
   NEXT_ACTION_LOAD_MATCHES                = 4 ,

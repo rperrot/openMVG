@@ -4,6 +4,7 @@ set(CMAKE_AUTOMOC ON)
 set( OPENMVG_GUI_WORKERS_HEADERS WorkerAutomaticReconstruction.hh
                                  WorkerClusterComputation.hh
                                  WorkerColorComputation.hh 
+                                 WorkerExportToOpenMVS.hh
                                  WorkerFeaturesComputation.hh 
                                  WorkerFeaturesProviderLoad.hh 
                                  WorkerGeometricFiltering.hh 
@@ -21,6 +22,7 @@ set( OPENMVG_GUI_WORKERS_HEADERS WorkerAutomaticReconstruction.hh
 set( OPENMVG_GUI_WORKERS_SOURCES WorkerAutomaticReconstruction.cc
                                  WorkerClusterComputation.cc
                                  WorkerColorComputation.cc 
+                                 WorkerExportToOpenMVS.cc
                                  WorkerFeaturesComputation.cc 
                                  WorkerFeaturesProviderLoad.cc 
                                  WorkerGeometricFiltering.cc

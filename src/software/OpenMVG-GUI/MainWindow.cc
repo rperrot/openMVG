@@ -962,7 +962,49 @@ void MainWindow::onComputeClusters( void )
 void MainWindow::onExportToOpenMVS( void )
 {
   qInfo( "Export to OpenMVS" ) ;
-  QMessageBox::critical( this , "Sorry" , "This feature is not implemented yet" ) ;
+
+  const std::string output_folder = stlplus::folder_append_separator( m_project->exportPath() ) + "openMVS" ;
+  const std::string output_file   = stlplus::create_filespec( output_folder , "scene.mvs" );
+  const std::string output_undist_folder = stlplus::folder_append_separator( output_folder ) + "undist" ;
+
+  if( stlplus::folder_exists( output_folder ) )
+  {
+    // Clean all existing data
+    stlplus::folder_delete( output_folder , true ) ;
+  }
+
+  // Create output folder
+  if( ! stlplus::folder_exists( output_folder ) )
+  {
+    if( ! stlplus::folder_create( output_folder ) )
+    {
+      // TODO : message (fail)
+      return ;
+    }
+    if( ! stlplus::folder_exists( output_folder ) )
+    {
+      // TODO : message (fail)
+      return ;
+    }
+  }
+
+  //
+  QThread * thread = new QThread( this ) ;
+
+  m_worker_export_to_openMVS = new WorkerExportToOpenMVS( m_project->SfMData() , output_file , output_undist_folder ) ;
+  m_worker_export_to_openMVS->moveToThread( thread ) ;
+
+  int progress_min = 0 , progress_max = 0 ;
+  m_worker_export_to_openMVS->progressRange( progress_min , progress_max ) ;
+  createProgress( "Export to openMVS, please wait ..." , progress_min , progress_max ) ;
+
+  connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
+  connect( thread , SIGNAL( started() ) , m_worker_export_to_openMVS , SLOT( process() ) ) ;
+  connect( m_worker_export_to_openMVS, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
+  connect( m_worker_export_to_openMVS, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasExportedToOpenMVS( const WorkerNextAction & ) ) ) ;
+  connect( m_worker_export_to_openMVS , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
+
+  thread->start() ;
 }
 
 /**
@@ -1238,7 +1280,7 @@ void MainWindow::onHasComputedMatches( const WorkerNextAction & next_action )
     std::shared_ptr<openMVG::sfm::Regions_Provider> regions_provider = m_worker_regions_provide_load->regionsProvider() ;
     std::shared_ptr<openMVG::matching::PairWiseMatches> putative_matches = m_worker_matches_computation->putativeMatches() ;
 
-    m_worker_geometric_filtering = new WorkerGeometricFiltering( m_project , regions_provider , putative_matches , remove( next_action , NEXT_ACTION_COMPUTE_GEOMETRIC_FILTERING ) ) ;
+    m_worker_geometric_filtering = new WorkerGeometricFiltering( m_project , regions_provider , putative_matches , NEXT_ACTION_NONE ) ;
     QThread * thread = new QThread( this ) ;
     m_worker_geometric_filtering->moveToThread( thread ) ;
 
@@ -1304,6 +1346,27 @@ void MainWindow::onHasComputedClustering( const WorkerNextAction & next_action )
   m_state = STATE_CLUSTERING_COMPUTED ;
   updateInterface() ;
 }
+
+/**
+* @brief Action to be executed when exporting to openMVS has been computed
+*/
+void MainWindow::onHasExportedToOpenMVS( const WorkerNextAction & next_action )
+{
+  delete m_progress_dialog ;
+  m_progress_dialog = nullptr ;
+
+  if( next_action == NEXT_ACTION_ERROR )
+  {
+    QMessageBox::critical( this , "Error" , "There was an error during export to openMVS" ) ;
+    return ;
+  }
+
+  QMessageBox::information( this , "Information" , "Project exported to the \"export/openMVS\" folder inside the project folder" ) ;
+
+  delete m_worker_export_to_openMVS ;
+  m_worker_export_to_openMVS = nullptr ;
+}
+
 
 
 /**
