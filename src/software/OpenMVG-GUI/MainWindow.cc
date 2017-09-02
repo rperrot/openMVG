@@ -67,6 +67,8 @@ MainWindow::MainWindow()
   m_worker_color_computation           = nullptr ;
   m_worker_automatic_reconstruction    = nullptr ;
   m_worker_cluster_computation         = nullptr ;
+  m_worker_export_to_openMVS           = nullptr ;
+  m_worker_export_to_MVE               = nullptr ;
 
   m_progress_dialog = nullptr ;
 
@@ -978,12 +980,12 @@ void MainWindow::onExportToOpenMVS( void )
   {
     if( ! stlplus::folder_create( output_folder ) )
     {
-      // TODO : message (fail)
+      onHasExportedToOpenMVS( NEXT_ACTION_ERROR ) ;
       return ;
     }
     if( ! stlplus::folder_exists( output_folder ) )
     {
-      // TODO : message (fail)
+      onHasExportedToOpenMVS( NEXT_ACTION_ERROR ) ;
       return ;
     }
   }
@@ -1013,7 +1015,46 @@ void MainWindow::onExportToOpenMVS( void )
 void MainWindow::onExportToMVE( void )
 {
   qInfo( "Export to MVE" ) ;
-  QMessageBox::critical( this , "Sorry" , "This feature is not implemented yet" ) ;
+
+  const std::string output_folder_path = stlplus::folder_append_separator( m_project->exportPath() ) + "MVE" ;
+
+  // If something exists, remove the folder
+  if( stlplus::folder_exists( output_folder_path ) )
+  {
+    stlplus::folder_delete( output_folder_path ) ;
+  }
+
+  // Create folder
+  if( ! stlplus::folder_exists( output_folder_path ) )
+  {
+    if( ! stlplus::folder_create( output_folder_path ) )
+    {
+      onHasExportedToMVE( NEXT_ACTION_ERROR ) ;
+      return ;
+    }
+    if( ! stlplus::folder_exists( output_folder_path ) )
+    {
+      onHasExportedToMVE( NEXT_ACTION_ERROR ) ;
+      return ;
+    }
+  }
+
+  QThread * thread = new QThread( this ) ;
+
+  m_worker_export_to_MVE = new WorkerExportToMVE( m_project->SfMData() , output_folder_path ) ;
+  m_worker_export_to_MVE->moveToThread( thread ) ;
+
+  int progress_min = 0 , progress_max = 0 ;
+  m_worker_export_to_MVE->progressRange( progress_min , progress_max ) ;
+  createProgress( "Export to MVE, please wait ..." , progress_min , progress_max ) ;
+
+  connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
+  connect( thread , SIGNAL( started() ) , m_worker_export_to_MVE , SLOT( process() ) ) ;
+  connect( m_worker_export_to_MVE, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
+  connect( m_worker_export_to_MVE, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasExportedToMVE( const WorkerNextAction & ) ) ) ;
+  connect( m_worker_export_to_MVE , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
+
+  thread->start() ;
 }
 
 /**
@@ -1366,6 +1407,27 @@ void MainWindow::onHasExportedToOpenMVS( const WorkerNextAction & next_action )
   delete m_worker_export_to_openMVS ;
   m_worker_export_to_openMVS = nullptr ;
 }
+
+/**
+* @brief Action to be executed when exporting to MVE has been done
+*/
+void MainWindow::onHasExportedToMVE( const WorkerNextAction & next_action )
+{
+  delete m_progress_dialog ;
+  m_progress_dialog = nullptr ;
+
+  if( next_action == NEXT_ACTION_ERROR )
+  {
+    QMessageBox::critical( this , "Error" , "There was an error during export to MVE" ) ;
+    return ;
+  }
+
+  QMessageBox::information( this , "Information" , "Project exported to the \"export/MVE\" folder inside the project folder" ) ;
+
+  delete m_worker_export_to_MVE ;
+  m_worker_export_to_MVE = nullptr ;
+}
+
 
 
 
