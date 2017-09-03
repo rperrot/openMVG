@@ -105,6 +105,9 @@ void WorkerExportToMVE::progressRange( int & min , int & max ) const
 */
 void WorkerExportToMVE::process( void )
 {
+  m_progress_value = 0 ; 
+  sendProgress() ; 
+  
   std::atomic<bool> bOk( true );
 
   const std::string sOutDirectory = m_out_MVE_folder ;

@@ -32,6 +32,7 @@
 #include <QVBoxLayout>
 
 #include <exception>
+#include <thread>
 
 namespace openMVG_gui
 {
@@ -69,6 +70,7 @@ MainWindow::MainWindow()
   m_worker_cluster_computation         = nullptr ;
   m_worker_export_to_openMVS           = nullptr ;
   m_worker_export_to_MVE               = nullptr ;
+  m_worker_export_to_PMVS              = nullptr ;
 
   m_progress_dialog = nullptr ;
 
@@ -1063,7 +1065,49 @@ void MainWindow::onExportToMVE( void )
 void MainWindow::onExportToPMVS( void )
 {
   qInfo( "Export to PMVS" ) ;
-  QMessageBox::critical( this , "Sorry" , "This feature is not implemented yet" ) ;
+
+  const std::string output_folder_path = stlplus::folder_append_separator( m_project->exportPath() ) + "PMVS" ;
+
+  // If something exists, remove the folder
+  if( stlplus::folder_exists( output_folder_path ) )
+  {
+    stlplus::folder_delete( output_folder_path ) ;
+  }
+
+  // Create folder
+  if( ! stlplus::folder_exists( output_folder_path ) )
+  {
+    if( ! stlplus::folder_create( output_folder_path ) )
+    {
+      onHasExportedToPMVS( NEXT_ACTION_ERROR ) ;
+      return ;
+    }
+    if( ! stlplus::folder_exists( output_folder_path ) )
+    {
+      onHasExportedToPMVS( NEXT_ACTION_ERROR ) ;
+      return ;
+    }
+  }
+
+  const int resize_factor = 1 ;
+  const int cpu_count = std::thread::hardware_concurrency() == 0 ? 4 : std::thread::hardware_concurrency() ;
+
+  QThread * thread = new QThread( this ) ;
+
+  m_worker_export_to_PMVS = new WorkerExportToPMVS( m_project->SfMData() , output_folder_path , resize_factor , cpu_count , true ) ;
+  m_worker_export_to_PMVS->moveToThread( thread ) ;
+
+  int progress_min = 0 , progress_max = 0 ;
+  m_worker_export_to_PMVS->progressRange( progress_min , progress_max ) ;
+  createProgress( "Export to PMVS, please wait ..." , progress_min , progress_max ) ;
+
+  connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
+  connect( thread , SIGNAL( started() ) , m_worker_export_to_PMVS , SLOT( process() ) ) ;
+  connect( m_worker_export_to_PMVS, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
+  connect( m_worker_export_to_PMVS, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasExportedToPMVS( const WorkerNextAction & ) ) ) ;
+  connect( m_worker_export_to_PMVS , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
+
+  thread->start() ;
 }
 
 /**
@@ -1426,6 +1470,27 @@ void MainWindow::onHasExportedToMVE( const WorkerNextAction & next_action )
 
   delete m_worker_export_to_MVE ;
   m_worker_export_to_MVE = nullptr ;
+}
+
+
+/**
+* @brief Action to be executed when exporting to PMVS has been done
+*/
+void MainWindow::onHasExportedToPMVS( const WorkerNextAction & next_action )
+{
+  delete m_progress_dialog ;
+  m_progress_dialog = nullptr ;
+
+  if( next_action == NEXT_ACTION_ERROR )
+  {
+    QMessageBox::critical( this , "Error" , "There was an error during export to PMVS" ) ;
+    return ;
+  }
+
+  QMessageBox::information( this , "Information" , "Project exported to the \"export/PMVS\" folder inside the project folder" ) ;
+
+  delete m_worker_export_to_PMVS ;
+  m_worker_export_to_PMVS = nullptr ;
 }
 
 

@@ -12,6 +12,7 @@
 #include "workers/WorkerColorComputation.hh"
 #include "workers/WorkerExportToMVE.hh"
 #include "workers/WorkerExportToOpenMVS.hh"
+#include "workers/WorkerExportToPMVS.hh"
 #include "workers/WorkerFeaturesComputation.hh"
 #include "workers/WorkerFeaturesProviderLoad.hh"
 #include "workers/WorkerGeometricFiltering.hh"
@@ -271,9 +272,14 @@ class MainWindow : public QMainWindow
     void onHasExportedToOpenMVS( const WorkerNextAction & next_action ) ;
 
     /**
-    * @brief Action to be executed when exporting to MVE has been done 
+    * @brief Action to be executed when exporting to MVE has been done
     */
     void onHasExportedToMVE( const WorkerNextAction & next_action ) ;
+
+    /**
+    * @brief Action to be executed when exporting to PMVS has been done
+    */
+    void onHasExportedToPMVS( const WorkerNextAction & next_action ) ;
 
     /**
     * @brief indicate if some parameters in the project are not saved on disk
@@ -433,7 +439,8 @@ class MainWindow : public QMainWindow
     WorkerAutomaticReconstruction   * m_worker_automatic_reconstruction ;
     WorkerClusterComputation        * m_worker_cluster_computation ;
     WorkerExportToOpenMVS           * m_worker_export_to_openMVS ;
-    WorkerExportToMVE               * m_worker_export_to_MVE ; 
+    WorkerExportToMVE               * m_worker_export_to_MVE ;
+    WorkerExportToPMVS              * m_worker_export_to_PMVS ;
 
     Q_OBJECT
 } ;

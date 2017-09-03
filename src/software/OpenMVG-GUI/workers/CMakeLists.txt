@@ -6,6 +6,7 @@ set( OPENMVG_GUI_WORKERS_HEADERS WorkerAutomaticReconstruction.hh
                                  WorkerColorComputation.hh 
                                  WorkerExportToMVE.hh
                                  WorkerExportToOpenMVS.hh
+                                 WorkerExportToPMVS.hh 
                                  WorkerFeaturesComputation.hh 
                                  WorkerFeaturesProviderLoad.hh 
                                  WorkerGeometricFiltering.hh 
@@ -25,6 +26,7 @@ set( OPENMVG_GUI_WORKERS_SOURCES WorkerAutomaticReconstruction.cc
                                  WorkerColorComputation.cc 
                                  WorkerExportToMVE.cc
                                  WorkerExportToOpenMVS.cc
+                                 WorkerExportToPMVS.cc
                                  WorkerFeaturesComputation.cc 
                                  WorkerFeaturesProviderLoad.cc 
                                  WorkerGeometricFiltering.cc
