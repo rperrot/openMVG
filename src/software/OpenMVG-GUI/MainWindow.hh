@@ -425,22 +425,22 @@ class MainWindow : public QMainWindow
     /// The thread workers
     QProgressDialog                 * m_progress_dialog ;
     DoubleProgressBarDialog         * m_double_progress_dialog ;
-    WorkerProjectCreation           * m_worker_project_creation ;
-    WorkerThumbnailGeneration       * m_worker_thumbnail_generation ;
-    WorkerFeaturesComputation       * m_worker_features_computation ;
-    WorkerMatchesComputation        * m_worker_matches_computation ;
-    WorkerRegionsProviderLoad       * m_worker_regions_provide_load ;
-    WorkerGeometricFiltering        * m_worker_geometric_filtering ;
-    WorkerFeaturesProviderLoad      * m_worker_features_provider_load ;
-    WorkerMatchesProviderLoad       * m_worker_matches_provider_load ;
-    WorkerIncrementalSfMComputation * m_worker_incremental_sfm_computation ;
-    WorkerGlobalSfMComputation      * m_worker_global_sfm_computation ;
-    WorkerColorComputation          * m_worker_color_computation ;
-    WorkerAutomaticReconstruction   * m_worker_automatic_reconstruction ;
-    WorkerClusterComputation        * m_worker_cluster_computation ;
-    WorkerExportToOpenMVS           * m_worker_export_to_openMVS ;
-    WorkerExportToMVE               * m_worker_export_to_MVE ;
-    WorkerExportToPMVS              * m_worker_export_to_PMVS ;
+    std::shared_ptr<WorkerProjectCreation>           m_worker_project_creation ;
+    std::shared_ptr<WorkerThumbnailGeneration>       m_worker_thumbnail_generation ;
+    std::shared_ptr<WorkerFeaturesComputation>       m_worker_features_computation ;
+    std::shared_ptr<WorkerMatchesComputation>        m_worker_matches_computation ;
+    std::shared_ptr<WorkerRegionsProviderLoad>       m_worker_regions_provide_load ;
+    std::shared_ptr<WorkerGeometricFiltering>        m_worker_geometric_filtering ;
+    std::shared_ptr<WorkerFeaturesProviderLoad>      m_worker_features_provider_load ;
+    std::shared_ptr<WorkerMatchesProviderLoad>       m_worker_matches_provider_load ;
+    std::shared_ptr<WorkerIncrementalSfMComputation> m_worker_incremental_sfm_computation ;
+    std::shared_ptr<WorkerGlobalSfMComputation>      m_worker_global_sfm_computation ;
+    std::shared_ptr<WorkerColorComputation>          m_worker_color_computation ;
+    std::shared_ptr<WorkerAutomaticReconstruction>   m_worker_automatic_reconstruction ;
+    std::shared_ptr<WorkerClusterComputation>        m_worker_cluster_computation ;
+    std::shared_ptr<WorkerExportToOpenMVS>           m_worker_export_to_openMVS ;
+    std::shared_ptr<WorkerExportToMVE>               m_worker_export_to_MVE ;
+    std::shared_ptr<WorkerExportToPMVS>              m_worker_export_to_PMVS ;
 
     Q_OBJECT
 } ;

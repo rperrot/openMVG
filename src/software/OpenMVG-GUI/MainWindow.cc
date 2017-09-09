@@ -55,22 +55,22 @@ MainWindow::MainWindow()
   updateInterface() ;
 
   // Set all workers to nullptr
-  m_worker_project_creation            = nullptr ;
-  m_worker_thumbnail_generation        = nullptr ;
-  m_worker_features_computation        = nullptr ;
-  m_worker_matches_computation         = nullptr ;
-  m_worker_regions_provide_load        = nullptr ;
-  m_worker_geometric_filtering         = nullptr ;
-  m_worker_features_provider_load      = nullptr ;
-  m_worker_matches_provider_load       = nullptr ;
-  m_worker_incremental_sfm_computation = nullptr ;
-  m_worker_global_sfm_computation      = nullptr ;
-  m_worker_color_computation           = nullptr ;
-  m_worker_automatic_reconstruction    = nullptr ;
-  m_worker_cluster_computation         = nullptr ;
-  m_worker_export_to_openMVS           = nullptr ;
-  m_worker_export_to_MVE               = nullptr ;
-  m_worker_export_to_PMVS              = nullptr ;
+  m_worker_project_creation.reset() ;
+  m_worker_thumbnail_generation.reset() ;
+  m_worker_features_computation.reset() ;
+  m_worker_matches_computation.reset() ;
+  m_worker_regions_provide_load.reset() ;
+  m_worker_geometric_filtering.reset() ;
+  m_worker_features_provider_load.reset() ;
+  m_worker_matches_provider_load.reset() ;
+  m_worker_incremental_sfm_computation.reset() ;
+  m_worker_global_sfm_computation.reset() ;
+  m_worker_color_computation.reset() ;
+  m_worker_automatic_reconstruction.reset() ;
+  m_worker_cluster_computation.reset() ;
+  m_worker_export_to_openMVS.reset() ;
+  m_worker_export_to_MVE.reset() ;
+  m_worker_export_to_PMVS.reset() ;
 
   m_progress_dialog = nullptr ;
 
@@ -103,7 +103,7 @@ void MainWindow::onNewProject( void )
     const IntrinsicParams intrin_params ;
     const std::string camera_sensor_width_database_file = stlplus::create_filespec( stlplus::folder_append_separator( stlplus::folder_append_separator( QCoreApplication::applicationDirPath().toStdString() ) + "ressources" ) + "sensor_database" , "sensor_width_camera_database.txt" ) ;
 
-    m_worker_project_creation = new WorkerProjectCreation( base_path , image_path , intrin_params , camera_sensor_width_database_file , default_scene_manager ) ;
+    m_worker_project_creation = std::make_shared<WorkerProjectCreation>( base_path , image_path , intrin_params , camera_sensor_width_database_file , default_scene_manager ) ;
     QThread * thread = new QThread( this ) ;
     m_worker_project_creation->moveToThread( thread ) ;
 
@@ -112,9 +112,9 @@ void MainWindow::onNewProject( void )
     createProgress( "Project Creation, please wait ..." , progress_min , progress_max ) ;
 
     connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
-    connect( thread , SIGNAL( started() ) , m_worker_project_creation , SLOT( process() ) ) ;
-    connect( m_worker_project_creation , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasCreatedProject( const WorkerNextAction & ) ) ) ;
-    connect( m_worker_project_creation , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
+    connect( thread , SIGNAL( started() ) , m_worker_project_creation.get() , SLOT( process() ) ) ;
+    connect( m_worker_project_creation.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasCreatedProject( const WorkerNextAction & ) ) ) ;
+    connect( m_worker_project_creation.get() , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
 
     thread->start() ;
   }
@@ -423,10 +423,10 @@ void MainWindow::onComputeAutomaticReconstruction( void )
     const std::string input_folder  = dlg.inputImagePath() ;
     const std::string output_folder = dlg.outputProjectPath() ;
     const AutomaticReconstructionPreset preset = dlg.preset() ;
-    m_worker_automatic_reconstruction = new WorkerAutomaticReconstruction( input_folder ,
-        output_folder ,
-        preset ,
-        default_scene_manager ) ;
+    m_worker_automatic_reconstruction = std::make_shared<WorkerAutomaticReconstruction>( input_folder ,
+                                        output_folder ,
+                                        preset ,
+                                        default_scene_manager ) ;
 
     int min, max ;
     m_worker_automatic_reconstruction->progressRangeOverall( min , max ) ;
@@ -440,14 +440,14 @@ void MainWindow::onComputeAutomaticReconstruction( void )
     QThread * thread = new QThread( this ) ;
     m_worker_automatic_reconstruction->moveToThread( thread ) ;
 
-    connect( thread , SIGNAL( started() ) , m_worker_automatic_reconstruction , SLOT( process() ) ) ;
+    connect( thread , SIGNAL( started() ) , m_worker_automatic_reconstruction.get() , SLOT( process() ) ) ;
     connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
-    connect( m_worker_automatic_reconstruction, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasDoneAutomaticReconstruction( const WorkerNextAction & ) ) ) ;
-    connect( m_worker_automatic_reconstruction, SIGNAL( finished( const WorkerNextAction & ) ) , thread , SLOT( quit() ) ) ;
-    connect( m_worker_automatic_reconstruction, SIGNAL( progressOverall( int ) ) , m_double_progress_dialog , SLOT( setValue1( int ) ) ) ;
-    connect( m_worker_automatic_reconstruction, SIGNAL( progressCurrentStage( int ) ) , m_double_progress_dialog , SLOT( setValue2( int ) ) ) ;
-    connect( m_worker_automatic_reconstruction, SIGNAL( progressRangeCurrentStage( int , int ) ) , m_double_progress_dialog , SLOT( setRange2( int , int ) ) ) ;
-    connect( m_worker_automatic_reconstruction, SIGNAL( messageCurrentStage( const std::string & ) ) , m_double_progress_dialog , SLOT( setLabelText1( const std::string & ) ) ) ;
+    connect( m_worker_automatic_reconstruction.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasDoneAutomaticReconstruction( const WorkerNextAction & ) ) ) ;
+    connect( m_worker_automatic_reconstruction.get() , SIGNAL( finished( const WorkerNextAction & ) ) , thread , SLOT( quit() ) ) ;
+    connect( m_worker_automatic_reconstruction.get() , SIGNAL( progressOverall( int ) ) , m_double_progress_dialog , SLOT( setValue1( int ) ) ) ;
+    connect( m_worker_automatic_reconstruction.get() , SIGNAL( progressCurrentStage( int ) ) , m_double_progress_dialog , SLOT( setValue2( int ) ) ) ;
+    connect( m_worker_automatic_reconstruction.get() , SIGNAL( progressRangeCurrentStage( int , int ) ) , m_double_progress_dialog , SLOT( setRange2( int , int ) ) ) ;
+    connect( m_worker_automatic_reconstruction.get() , SIGNAL( messageCurrentStage( const std::string & ) ) , m_double_progress_dialog , SLOT( setLabelText1( const std::string & ) ) ) ;
 
     thread->start() ;
   }
@@ -485,7 +485,7 @@ void MainWindow::onComputeFeatures( void )
   //  qInfo( "Compute features" ) ;
 
 
-  m_worker_features_computation = new WorkerFeaturesComputation( m_project , overwrite ) ;
+  m_worker_features_computation = std::make_shared<WorkerFeaturesComputation>( m_project , overwrite ) ;
   QThread * thread = new QThread( this ) ;
   m_worker_features_computation->moveToThread( thread ) ;
 
@@ -493,11 +493,11 @@ void MainWindow::onComputeFeatures( void )
   m_worker_features_computation->progressRange( progress_min , progress_max ) ;
   createProgress( "Features computation, please wait ..." , progress_min , progress_max ) ;
 
-  connect( thread , SIGNAL( started() ) , m_worker_features_computation , SLOT( process() ) ) ;
+  connect( thread , SIGNAL( started() ) , m_worker_features_computation.get() , SLOT( process() ) ) ;
   connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
-  connect( m_worker_features_computation, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
-  connect( m_worker_features_computation, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasComputedFeatures( const WorkerNextAction & ) ) ) ;
-  connect( m_worker_features_computation , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
+  connect( m_worker_features_computation.get() , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
+  connect( m_worker_features_computation.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasComputedFeatures( const WorkerNextAction & ) ) ) ;
+  connect( m_worker_features_computation.get() , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
 
   thread->start() ;
 }
@@ -515,7 +515,7 @@ void MainWindow::onComputeMatches( void )
 
   // Load regions
   qInfo( "Load regions" ) ;
-  m_worker_regions_provide_load = new WorkerRegionsProviderLoad( m_project , act ) ;
+  m_worker_regions_provide_load = std::make_shared<WorkerRegionsProviderLoad>( m_project , act ) ;
   QThread * thread = new QThread( this ) ;
   m_worker_regions_provide_load->moveToThread( thread ) ;
 
@@ -523,11 +523,11 @@ void MainWindow::onComputeMatches( void )
   m_worker_regions_provide_load->progressRange( progress_min , progress_max ) ;
   createProgress( "Loading regions, please wait ..." , progress_min , progress_max ) ;
 
-  connect( thread , SIGNAL( started() ) , m_worker_regions_provide_load , SLOT( process() ) ) ;
+  connect( thread , SIGNAL( started() ) , m_worker_regions_provide_load.get() , SLOT( process() ) ) ;
   connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
-  connect( m_worker_regions_provide_load, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
-  connect( m_worker_regions_provide_load, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasLoadedRegions( const WorkerNextAction & ) ) ) ;
-  connect( m_worker_regions_provide_load , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
+  connect( m_worker_regions_provide_load.get() , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
+  connect( m_worker_regions_provide_load.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasLoadedRegions( const WorkerNextAction & ) ) ) ;
+  connect( m_worker_regions_provide_load.get() , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
 
   thread->start() ;
 }
@@ -553,7 +553,7 @@ void MainWindow::onComputeSfM( void )
   }
 
   // Load features
-  m_worker_features_provider_load = new WorkerFeaturesProviderLoad( m_project , act ) ;
+  m_worker_features_provider_load = std::make_shared<WorkerFeaturesProviderLoad>( m_project , act ) ;
   QThread * thread = new QThread( this ) ;
   m_worker_features_provider_load->moveToThread( thread ) ;
 
@@ -561,11 +561,11 @@ void MainWindow::onComputeSfM( void )
   m_worker_features_provider_load->progressRange( progress_min , progress_max ) ;
   createProgress( "Loading features, please wait ..." , progress_min , progress_max ) ;
 
-  connect( thread , SIGNAL( started() ) , m_worker_features_provider_load , SLOT( process() ) ) ;
+  connect( thread , SIGNAL( started() ) , m_worker_features_provider_load.get() , SLOT( process() ) ) ;
   connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
-  connect( m_worker_features_provider_load, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
-  connect( m_worker_features_provider_load, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasLoadedFeatures( const WorkerNextAction & ) ) ) ;
-  connect( m_worker_features_provider_load , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
+  connect( m_worker_features_provider_load.get() , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
+  connect( m_worker_features_provider_load.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasLoadedFeatures( const WorkerNextAction & ) ) ) ;
+  connect( m_worker_features_provider_load.get() , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
 
   thread->start() ;
 }
@@ -580,7 +580,7 @@ void MainWindow::onComputeColor( void )
 
   qInfo( "Compute Color" ) ;
 
-  m_worker_color_computation = new WorkerColorComputation( m_project );
+  m_worker_color_computation = std::make_shared<WorkerColorComputation>( m_project );
   QThread * thread = new QThread( this ) ;
   m_worker_color_computation->moveToThread( thread ) ;
 
@@ -588,11 +588,11 @@ void MainWindow::onComputeColor( void )
   m_worker_color_computation->progressRange( progress_min , progress_max ) ;
   createProgress( "Computing scene color, please wait ..." , progress_min , progress_max ) ;
 
-  connect( thread , SIGNAL( started() ) , m_worker_color_computation , SLOT( process() ) ) ;
+  connect( thread , SIGNAL( started() ) , m_worker_color_computation.get() , SLOT( process() ) ) ;
   connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
-  connect( m_worker_color_computation, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
-  connect( m_worker_color_computation, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasComputedColor( const WorkerNextAction & ) ) ) ;
-  connect( m_worker_color_computation , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
+  connect( m_worker_color_computation.get() , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
+  connect( m_worker_color_computation.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasComputedColor( const WorkerNextAction & ) ) ) ;
+  connect( m_worker_color_computation.get() , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
 
   thread->start() ;
 }
@@ -677,16 +677,14 @@ void MainWindow::onHasCreatedProject( const WorkerNextAction & next_action  )
   {
     QMessageBox::critical( this , "Error" , "There was an error during project creation" ) ;
     m_project = nullptr ;
-    delete m_worker_project_creation ;
-    m_worker_project_creation = nullptr ;
+    m_worker_project_creation.reset() ;
     resetInterface() ;
     return ;
   }
 
   // Set the project
   m_project = m_worker_project_creation->project() ;
-  delete m_worker_project_creation ;
-  m_worker_project_creation = nullptr ;
+  m_worker_project_creation.reset() ;
 
   // Initialize the 3d view
   m_result_view->setScene( m_project->sceneManager() );
@@ -696,7 +694,7 @@ void MainWindow::onHasCreatedProject( const WorkerNextAction & next_action  )
   m_result_view->update() ;
 
   // Generate the thumbnails
-  m_worker_thumbnail_generation = new WorkerThumbnailGeneration( m_project ) ;
+  m_worker_thumbnail_generation = std::make_shared<WorkerThumbnailGeneration>( m_project ) ;
   QThread * thread = new QThread( this ) ;
   m_worker_thumbnail_generation->moveToThread( thread ) ;
 
@@ -705,10 +703,10 @@ void MainWindow::onHasCreatedProject( const WorkerNextAction & next_action  )
   createProgress( "Thumbnails Creation, please wait ..." , progress_min , progress_max ) ;
 
   connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
-  connect( thread , SIGNAL( started() ) , m_worker_thumbnail_generation , SLOT( process() ) ) ;
-  connect( m_worker_thumbnail_generation, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
-  connect( m_worker_thumbnail_generation, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onUpdateImageList() ) ) ;
-  connect( m_worker_thumbnail_generation , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
+  connect( thread , SIGNAL( started() ) , m_worker_thumbnail_generation.get() , SLOT( process() ) ) ;
+  connect( m_worker_thumbnail_generation.get() , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
+  connect( m_worker_thumbnail_generation.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onUpdateImageList() ) ) ;
+  connect( m_worker_thumbnail_generation.get() , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
 
   thread->start() ;
 }
@@ -718,11 +716,10 @@ void MainWindow::onHasCreatedProject( const WorkerNextAction & next_action  )
 */
 void MainWindow::onUpdateImageList( void )
 {
-  delete m_worker_thumbnail_generation ;
-  m_worker_thumbnail_generation = nullptr ;
-
   delete m_progress_dialog ;
   m_progress_dialog = nullptr ;
+
+  m_worker_thumbnail_generation.reset() ;
 
   const std::vector< std::pair< int , std::string > > images_path = m_project->GetImageNames() ;
   const std::string thumb_path = m_project->thumbnailsPath() ;
@@ -943,7 +940,7 @@ void MainWindow::onComputeClusters( void )
     const int upper_bound = dlg.clusterUpperBound() ;
     const float voxel_size = dlg.clusterGridSize() ;
 
-    m_worker_cluster_computation = new WorkerClusterComputation( m_project , lower_bound , upper_bound , voxel_size ) ;
+    m_worker_cluster_computation = std::make_shared<WorkerClusterComputation>( m_project , lower_bound , upper_bound , voxel_size ) ;
     m_worker_cluster_computation->moveToThread( thread ) ;
 
     int progress_min = 0 , progress_max = 0 ;
@@ -951,10 +948,10 @@ void MainWindow::onComputeClusters( void )
     createProgress( "Cluster computation, please wait ..." , progress_min , progress_max ) ;
 
     connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
-    connect( thread , SIGNAL( started() ) , m_worker_cluster_computation , SLOT( process() ) ) ;
-    connect( m_worker_cluster_computation, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
-    connect( m_worker_cluster_computation, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasComputedClustering( const WorkerNextAction & ) ) ) ;
-    connect( m_worker_cluster_computation , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
+    connect( thread , SIGNAL( started() ) , m_worker_cluster_computation.get() , SLOT( process() ) ) ;
+    connect( m_worker_cluster_computation.get() , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
+    connect( m_worker_cluster_computation.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasComputedClustering( const WorkerNextAction & ) ) ) ;
+    connect( m_worker_cluster_computation.get() , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
 
     thread->start() ;
   }
@@ -995,7 +992,7 @@ void MainWindow::onExportToOpenMVS( void )
   //
   QThread * thread = new QThread( this ) ;
 
-  m_worker_export_to_openMVS = new WorkerExportToOpenMVS( m_project->SfMData() , output_file , output_undist_folder ) ;
+  m_worker_export_to_openMVS = std::make_shared<WorkerExportToOpenMVS>( m_project->SfMData() , output_file , output_undist_folder ) ;
   m_worker_export_to_openMVS->moveToThread( thread ) ;
 
   int progress_min = 0 , progress_max = 0 ;
@@ -1003,10 +1000,10 @@ void MainWindow::onExportToOpenMVS( void )
   createProgress( "Export to openMVS, please wait ..." , progress_min , progress_max ) ;
 
   connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
-  connect( thread , SIGNAL( started() ) , m_worker_export_to_openMVS , SLOT( process() ) ) ;
-  connect( m_worker_export_to_openMVS, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
-  connect( m_worker_export_to_openMVS, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasExportedToOpenMVS( const WorkerNextAction & ) ) ) ;
-  connect( m_worker_export_to_openMVS , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
+  connect( thread , SIGNAL( started() ) , m_worker_export_to_openMVS.get() , SLOT( process() ) ) ;
+  connect( m_worker_export_to_openMVS.get() , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
+  connect( m_worker_export_to_openMVS.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasExportedToOpenMVS( const WorkerNextAction & ) ) ) ;
+  connect( m_worker_export_to_openMVS.get() , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
 
   thread->start() ;
 }
@@ -1043,7 +1040,7 @@ void MainWindow::onExportToMVE( void )
 
   QThread * thread = new QThread( this ) ;
 
-  m_worker_export_to_MVE = new WorkerExportToMVE( m_project->SfMData() , output_folder_path ) ;
+  m_worker_export_to_MVE = std::make_shared<WorkerExportToMVE>( m_project->SfMData() , output_folder_path ) ;
   m_worker_export_to_MVE->moveToThread( thread ) ;
 
   int progress_min = 0 , progress_max = 0 ;
@@ -1051,10 +1048,10 @@ void MainWindow::onExportToMVE( void )
   createProgress( "Export to MVE, please wait ..." , progress_min , progress_max ) ;
 
   connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
-  connect( thread , SIGNAL( started() ) , m_worker_export_to_MVE , SLOT( process() ) ) ;
-  connect( m_worker_export_to_MVE, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
-  connect( m_worker_export_to_MVE, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasExportedToMVE( const WorkerNextAction & ) ) ) ;
-  connect( m_worker_export_to_MVE , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
+  connect( thread , SIGNAL( started() ) , m_worker_export_to_MVE.get() , SLOT( process() ) ) ;
+  connect( m_worker_export_to_MVE.get() , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
+  connect( m_worker_export_to_MVE.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasExportedToMVE( const WorkerNextAction & ) ) ) ;
+  connect( m_worker_export_to_MVE.get() , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
 
   thread->start() ;
 }
@@ -1094,7 +1091,7 @@ void MainWindow::onExportToPMVS( void )
 
   QThread * thread = new QThread( this ) ;
 
-  m_worker_export_to_PMVS = new WorkerExportToPMVS( m_project->SfMData() , output_folder_path , resize_factor , cpu_count , true ) ;
+  m_worker_export_to_PMVS = std::make_shared<WorkerExportToPMVS>( m_project->SfMData() , output_folder_path , resize_factor , cpu_count , true ) ;
   m_worker_export_to_PMVS->moveToThread( thread ) ;
 
   int progress_min = 0 , progress_max = 0 ;
@@ -1102,10 +1099,10 @@ void MainWindow::onExportToPMVS( void )
   createProgress( "Export to PMVS, please wait ..." , progress_min , progress_max ) ;
 
   connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
-  connect( thread , SIGNAL( started() ) , m_worker_export_to_PMVS , SLOT( process() ) ) ;
-  connect( m_worker_export_to_PMVS, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
-  connect( m_worker_export_to_PMVS, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasExportedToPMVS( const WorkerNextAction & ) ) ) ;
-  connect( m_worker_export_to_PMVS , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
+  connect( thread , SIGNAL( started() ) , m_worker_export_to_PMVS.get() , SLOT( process() ) ) ;
+  connect( m_worker_export_to_PMVS.get() , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
+  connect( m_worker_export_to_PMVS.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasExportedToPMVS( const WorkerNextAction & ) ) ) ;
+  connect( m_worker_export_to_PMVS.get() , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
 
   thread->start() ;
 }
@@ -1145,8 +1142,7 @@ void MainWindow::onHasComputedFeatures( const WorkerNextAction & next_action  )
   delete m_progress_dialog ;
   m_progress_dialog = nullptr ;
 
-  delete m_worker_features_computation ;
-  m_worker_features_computation = nullptr ;
+  m_worker_features_computation.reset() ;
 
   if( next_action == NEXT_ACTION_ERROR )
   {
@@ -1169,10 +1165,10 @@ void MainWindow::onHasLoadedFeatures( const WorkerNextAction & next_action )
 
   if( next_action == NEXT_ACTION_ERROR )
   {
+    m_worker_features_provider_load.reset() ;
     QMessageBox::critical( this , "Error" , "There was an error during feature loading" ) ;
     return ;
   }
-
 
   if( contains( next_action , NEXT_ACTION_LOAD_MATCHES ) )
   {
@@ -1217,7 +1213,7 @@ void MainWindow::onHasLoadedFeatures( const WorkerNextAction & next_action )
         // TODO : error !
       }
     }
-    m_worker_matches_provider_load = new WorkerMatchesProviderLoad( m_project , match_name , remove( next_action , NEXT_ACTION_LOAD_MATCHES ) ) ;
+    m_worker_matches_provider_load = std::make_shared<WorkerMatchesProviderLoad>( m_project , match_name , remove( next_action , NEXT_ACTION_LOAD_MATCHES ) ) ;
     QThread * thread = new QThread( this ) ;
     m_worker_matches_provider_load->moveToThread( thread ) ;
 
@@ -1225,14 +1221,18 @@ void MainWindow::onHasLoadedFeatures( const WorkerNextAction & next_action )
     m_worker_matches_provider_load->progressRange( progress_min , progress_max ) ;
     createProgress( "Loading matches, please wait ..." , progress_min , progress_max ) ;
 
-    connect( thread , SIGNAL( started() ) , m_worker_matches_provider_load , SLOT( process() ) ) ;
+    connect( thread , SIGNAL( started() ) , m_worker_matches_provider_load.get() , SLOT( process() ) ) ;
     connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
-    connect( m_worker_matches_provider_load, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
-    connect( m_worker_matches_provider_load, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasLoadedMatches( const WorkerNextAction & ) ) ) ;
-    connect( m_worker_matches_provider_load , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
+    connect( m_worker_matches_provider_load.get() , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
+    connect( m_worker_matches_provider_load.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasLoadedMatches( const WorkerNextAction & ) ) ) ;
+    connect( m_worker_matches_provider_load.get() , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
 
 
     thread->start() ;
+  }
+  else
+  {
+    m_worker_features_provider_load.reset() ;
   }
 }
 
@@ -1246,6 +1246,7 @@ void MainWindow::onHasLoadedMatches( const WorkerNextAction & next_action )
 
   if( next_action == NEXT_ACTION_ERROR )
   {
+    m_worker_matches_provider_load.reset() ;
     QMessageBox::critical( this , "Error" , "There was an error during matches loading" ) ;
     return ;
   }
@@ -1263,7 +1264,7 @@ void MainWindow::onHasLoadedMatches( const WorkerNextAction & next_action )
     std::shared_ptr<openMVG::sfm::Features_Provider> features_provider = m_worker_features_provider_load->featuresProvider() ;
     std::shared_ptr<openMVG::sfm::Matches_Provider> matches_provider = m_worker_matches_provider_load->matchesProvider() ;
 
-    m_worker_incremental_sfm_computation = new WorkerIncrementalSfMComputation( proj , features_provider , matches_provider , reload_initial_intrinsic , remove( next_action , NEXT_ACTION_COMPUTE_INCREMENTAL_SFM ) ) ;
+    m_worker_incremental_sfm_computation = std::make_shared<WorkerIncrementalSfMComputation>( proj , features_provider , matches_provider , reload_initial_intrinsic , remove( next_action , NEXT_ACTION_COMPUTE_INCREMENTAL_SFM ) ) ;
     QThread * thread = new QThread( this ) ;
     m_worker_incremental_sfm_computation->moveToThread( thread ) ;
 
@@ -1271,11 +1272,11 @@ void MainWindow::onHasLoadedMatches( const WorkerNextAction & next_action )
     m_worker_incremental_sfm_computation->progressRange( progress_min , progress_max ) ;
     createProgress( "Incremental SfM computation, please wait ..." , progress_min , progress_max ) ;
 
-    connect( thread , SIGNAL( started() ) , m_worker_incremental_sfm_computation , SLOT( process() ) ) ;
+    connect( thread , SIGNAL( started() ) , m_worker_incremental_sfm_computation.get() , SLOT( process() ) ) ;
     connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
-    connect( m_worker_incremental_sfm_computation, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
-    connect( m_worker_incremental_sfm_computation, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasComputedSfM( const WorkerNextAction & ) ) ) ;
-    connect( m_worker_incremental_sfm_computation , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
+    connect( m_worker_incremental_sfm_computation.get() , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
+    connect( m_worker_incremental_sfm_computation.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasComputedSfM( const WorkerNextAction & ) ) ) ;
+    connect( m_worker_incremental_sfm_computation.get() , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
 
     thread->start() ;
   }
@@ -1289,7 +1290,7 @@ void MainWindow::onHasLoadedMatches( const WorkerNextAction & next_action )
     std::shared_ptr<openMVG::sfm::Features_Provider> features_provider = m_worker_features_provider_load->featuresProvider() ;
     std::shared_ptr<openMVG::sfm::Matches_Provider> matches_provider = m_worker_matches_provider_load->matchesProvider() ;
 
-    m_worker_global_sfm_computation = new WorkerGlobalSfMComputation( proj , features_provider , matches_provider , reload_initial_intrinsic , remove( next_action , NEXT_ACTION_COMPUTE_GLOBAL_SFM ) ) ;
+    m_worker_global_sfm_computation = std::make_shared<WorkerGlobalSfMComputation>( proj , features_provider , matches_provider , reload_initial_intrinsic , remove( next_action , NEXT_ACTION_COMPUTE_GLOBAL_SFM ) ) ;
     QThread * thread = new QThread( this ) ;
     m_worker_global_sfm_computation->moveToThread( thread ) ;
 
@@ -1297,13 +1298,17 @@ void MainWindow::onHasLoadedMatches( const WorkerNextAction & next_action )
     m_worker_global_sfm_computation->progressRange( progress_min , progress_max ) ;
     createProgress( "Global SfM computation, please wait ..." , progress_min , progress_max ) ;
 
-    connect( thread , SIGNAL( started() ) , m_worker_global_sfm_computation , SLOT( process() ) ) ;
+    connect( thread , SIGNAL( started() ) , m_worker_global_sfm_computation.get() , SLOT( process() ) ) ;
     connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
-    connect( m_worker_global_sfm_computation, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
-    connect( m_worker_global_sfm_computation, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasComputedSfM( const WorkerNextAction & ) ) ) ;
-    connect( m_worker_global_sfm_computation , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
+    connect( m_worker_global_sfm_computation.get() , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
+    connect( m_worker_global_sfm_computation.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasComputedSfM( const WorkerNextAction & ) ) ) ;
+    connect( m_worker_global_sfm_computation.get() , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
 
     thread->start() ;
+  }
+  else
+  {
+    m_worker_matches_provider_load.reset() ;
   }
 }
 
@@ -1317,6 +1322,7 @@ void MainWindow::onHasLoadedRegions( const WorkerNextAction & next_action )
 
   if( next_action == NEXT_ACTION_ERROR )
   {
+    m_worker_regions_provide_load.reset() ;
     QMessageBox::critical( this , "Error" , "There was an error during region loading" ) ;
     return ;
   }
@@ -1326,7 +1332,7 @@ void MainWindow::onHasLoadedRegions( const WorkerNextAction & next_action )
   {
     // Now launch matches computation
     std::shared_ptr<openMVG::sfm::Regions_Provider> regions_provider = m_worker_regions_provide_load->regionsProvider() ;
-    m_worker_matches_computation = new WorkerMatchesComputation( m_project , regions_provider , remove( next_action , NEXT_ACTION_COMPUTE_MATCHES ) ) ;
+    m_worker_matches_computation = std::make_shared<WorkerMatchesComputation>( m_project , regions_provider , remove( next_action , NEXT_ACTION_COMPUTE_MATCHES ) ) ;
     QThread * thread = new QThread( this ) ;
     m_worker_matches_computation->moveToThread( thread ) ;
 
@@ -1334,13 +1340,17 @@ void MainWindow::onHasLoadedRegions( const WorkerNextAction & next_action )
     m_worker_matches_computation->progressRange( progress_min , progress_max ) ;
     createProgress( "Matches computation, please wait ..." , progress_min , progress_max ) ;
 
-    connect( thread , SIGNAL( started() ) , m_worker_matches_computation , SLOT( process( ) ) ) ;
+    connect( thread , SIGNAL( started() ) , m_worker_matches_computation.get() , SLOT( process( ) ) ) ;
     connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
-    connect( m_worker_matches_computation , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
-    connect( m_worker_matches_computation, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
-    connect( m_worker_matches_computation, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasComputedMatches( const WorkerNextAction & ) ) ) ;
+    connect( m_worker_matches_computation.get() , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
+    connect( m_worker_matches_computation.get() , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
+    connect( m_worker_matches_computation.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasComputedMatches( const WorkerNextAction & ) ) ) ;
 
     thread->start() ;
+  }
+  else
+  {
+    m_worker_regions_provide_load.reset() ;
   }
 }
 
@@ -1355,17 +1365,17 @@ void MainWindow::onHasComputedMatches( const WorkerNextAction & next_action )
 
   if( next_action == NEXT_ACTION_ERROR )
   {
+    m_worker_matches_computation.reset() ;
     QMessageBox::critical( this , "Error" , "There was an error during matches computation" ) ;
     return ;
   }
-
 
   if( contains( next_action , NEXT_ACTION_COMPUTE_GEOMETRIC_FILTERING ) )
   {
     std::shared_ptr<openMVG::sfm::Regions_Provider> regions_provider = m_worker_regions_provide_load->regionsProvider() ;
     std::shared_ptr<openMVG::matching::PairWiseMatches> putative_matches = m_worker_matches_computation->putativeMatches() ;
 
-    m_worker_geometric_filtering = new WorkerGeometricFiltering( m_project , regions_provider , putative_matches , NEXT_ACTION_NONE ) ;
+    m_worker_geometric_filtering = std::make_shared<WorkerGeometricFiltering>( m_project , regions_provider , putative_matches , NEXT_ACTION_NONE ) ;
     QThread * thread = new QThread( this ) ;
     m_worker_geometric_filtering->moveToThread( thread ) ;
 
@@ -1374,12 +1384,16 @@ void MainWindow::onHasComputedMatches( const WorkerNextAction & next_action )
     createProgress( "Geometric filtering, please wait ..." , progress_min , progress_max ) ;
 
     connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
-    connect( thread , SIGNAL( started() ) , m_worker_geometric_filtering , SLOT( process() ) ) ;
-    connect( m_worker_geometric_filtering , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
-    connect( m_worker_geometric_filtering, SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
-    connect( m_worker_geometric_filtering, SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasDoneGeometricFiltering( const WorkerNextAction & ) ) ) ;
+    connect( thread , SIGNAL( started() ) , m_worker_geometric_filtering.get() , SLOT( process() ) ) ;
+    connect( m_worker_geometric_filtering.get() , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
+    connect( m_worker_geometric_filtering.get() , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
+    connect( m_worker_geometric_filtering.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasDoneGeometricFiltering( const WorkerNextAction & ) ) ) ;
 
     thread->start() ;
+  }
+  else
+  {
+    m_worker_matches_computation.reset() ;
   }
 }
 
@@ -1391,13 +1405,9 @@ void MainWindow::onHasDoneGeometricFiltering( const WorkerNextAction & next_acti
   delete m_progress_dialog ;
   m_progress_dialog = nullptr ;
 
-  delete m_worker_regions_provide_load ;
-  m_worker_regions_provide_load = nullptr ;
-  delete m_worker_geometric_filtering ;
-  m_worker_geometric_filtering = nullptr ;
-  delete m_worker_matches_computation ;
-  m_worker_matches_computation = nullptr ;
-
+  m_worker_regions_provide_load.reset() ;
+  m_worker_geometric_filtering.reset() ;
+  m_worker_matches_computation.reset() ;
 
   if( next_action == NEXT_ACTION_ERROR )
   {
@@ -1419,14 +1429,13 @@ void MainWindow::onHasComputedClustering( const WorkerNextAction & next_action )
   delete m_progress_dialog ;
   m_progress_dialog = nullptr ;
 
+  m_worker_cluster_computation.reset() ;
+
   if( next_action == NEXT_ACTION_ERROR )
   {
     QMessageBox::critical( this , "Error" , "There was an error during clustering" ) ;
     return ;
   }
-
-  delete m_worker_cluster_computation ;
-  m_worker_cluster_computation = nullptr ;
 
   m_state = STATE_CLUSTERING_COMPUTED ;
   updateInterface() ;
@@ -1440,6 +1449,8 @@ void MainWindow::onHasExportedToOpenMVS( const WorkerNextAction & next_action )
   delete m_progress_dialog ;
   m_progress_dialog = nullptr ;
 
+  m_worker_export_to_openMVS.reset() ;
+
   if( next_action == NEXT_ACTION_ERROR )
   {
     QMessageBox::critical( this , "Error" , "There was an error during export to openMVS" ) ;
@@ -1448,8 +1459,6 @@ void MainWindow::onHasExportedToOpenMVS( const WorkerNextAction & next_action )
 
   QMessageBox::information( this , "Information" , "Project exported to the \"export/openMVS\" folder inside the project folder" ) ;
 
-  delete m_worker_export_to_openMVS ;
-  m_worker_export_to_openMVS = nullptr ;
 }
 
 /**
@@ -1460,6 +1469,8 @@ void MainWindow::onHasExportedToMVE( const WorkerNextAction & next_action )
   delete m_progress_dialog ;
   m_progress_dialog = nullptr ;
 
+  m_worker_export_to_MVE.reset() ;
+
   if( next_action == NEXT_ACTION_ERROR )
   {
     QMessageBox::critical( this , "Error" , "There was an error during export to MVE" ) ;
@@ -1467,9 +1478,6 @@ void MainWindow::onHasExportedToMVE( const WorkerNextAction & next_action )
   }
 
   QMessageBox::information( this , "Information" , "Project exported to the \"export/MVE\" folder inside the project folder" ) ;
-
-  delete m_worker_export_to_MVE ;
-  m_worker_export_to_MVE = nullptr ;
 }
 
 
@@ -1481,6 +1489,8 @@ void MainWindow::onHasExportedToPMVS( const WorkerNextAction & next_action )
   delete m_progress_dialog ;
   m_progress_dialog = nullptr ;
 
+  m_worker_export_to_PMVS.reset() ;
+
   if( next_action == NEXT_ACTION_ERROR )
   {
     QMessageBox::critical( this , "Error" , "There was an error during export to PMVS" ) ;
@@ -1488,12 +1498,7 @@ void MainWindow::onHasExportedToPMVS( const WorkerNextAction & next_action )
   }
 
   QMessageBox::information( this , "Information" , "Project exported to the \"export/PMVS\" folder inside the project folder" ) ;
-
-  delete m_worker_export_to_PMVS ;
-  m_worker_export_to_PMVS = nullptr ;
 }
-
-
 
 
 /**
@@ -1504,24 +1509,17 @@ void MainWindow::onHasComputedSfM( const WorkerNextAction & next_action )
   delete m_progress_dialog ;
   m_progress_dialog = nullptr ;
 
+  m_worker_features_provider_load.reset() ;
+  m_worker_matches_provider_load.reset() ;
+
   if( m_project->sfMMethod() == SFM_METHOD_INCREMENTAL )
   {
-    delete m_worker_features_provider_load ;
-    m_worker_features_provider_load = nullptr ;
-    delete m_worker_matches_provider_load ;
-    m_worker_matches_provider_load = nullptr ;
-    delete m_worker_incremental_sfm_computation ;
-    m_worker_incremental_sfm_computation = nullptr ;
+    m_worker_incremental_sfm_computation.reset() ;
   }
   else
   {
     // Global
-    delete m_worker_features_provider_load ;
-    m_worker_features_provider_load = nullptr ;
-    delete m_worker_matches_provider_load ;
-    m_worker_matches_provider_load = nullptr ;
-    delete m_worker_global_sfm_computation ;
-    m_worker_global_sfm_computation = nullptr ;
+    m_worker_global_sfm_computation.reset() ;
   }
 
   if( next_action == NEXT_ACTION_ERROR )
@@ -1530,17 +1528,15 @@ void MainWindow::onHasComputedSfM( const WorkerNextAction & next_action )
     return ;
   }
 
-
   postSfMComputation() ;
 }
 
 void MainWindow::onHasComputedColor( const WorkerNextAction & next_action  )
 {
-  delete m_worker_color_computation ;
-  m_worker_color_computation = nullptr ;
-
   delete m_progress_dialog ;
   m_progress_dialog = nullptr ;
+
+  m_worker_color_computation.reset() ;
 
   if( next_action == NEXT_ACTION_ERROR )
   {
@@ -1560,8 +1556,7 @@ void MainWindow::onHasDoneAutomaticReconstruction( const WorkerNextAction & next
   {
     QMessageBox::critical( this , "Error" , "There was an error during automatic reconstruction" ) ;
 
-    delete m_worker_automatic_reconstruction ;
-    m_worker_automatic_reconstruction = nullptr ;
+    m_worker_automatic_reconstruction.reset() ;
 
     m_project = nullptr ;
     resetInterface() ;
@@ -1573,8 +1568,7 @@ void MainWindow::onHasDoneAutomaticReconstruction( const WorkerNextAction & next
 
   m_double_progress_dialog->hide() ;
 
-  delete m_worker_automatic_reconstruction ;
-  m_worker_automatic_reconstruction = nullptr ;
+  m_worker_automatic_reconstruction.reset() ;
 
   // Initialize the 3d view
   m_result_view->setScene( m_project->sceneManager() );
@@ -2130,7 +2124,7 @@ void MainWindow::buildMenus( void )
   m_view_menu->addSeparator() ;
   m_show_hide_grid_act = m_view_menu->addAction( "Grid" ) ;
   m_show_hide_grid_act->setCheckable( true ) ;
-  m_show_hide_grid_act->setChecked( true ) ;
+  m_show_hide_grid_act->setChecked( false ) ;
   m_show_hide_camera_gizmos_act = m_view_menu->addAction( "Camera gizmos" ) ;
   m_show_hide_camera_gizmos_act->setCheckable( true ) ;
   m_show_hide_camera_gizmos_act->setChecked( true ) ;

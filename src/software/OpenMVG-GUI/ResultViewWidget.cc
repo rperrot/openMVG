@@ -48,6 +48,7 @@ void ResultViewWidget::initializeGL( void )
   const openMVG::Vec3 origin( 0.0 , 0.0 , 0.0 );
 
   m_grid = std::shared_ptr<Grid>( new Grid( m_point_shader , 201 , 201 ) ) ;
+  m_grid->setVisible( false ) ; 
   m_sph_gizmo = std::shared_ptr<SphericalGizmo>( new SphericalGizmo( m_point_shader , origin , 1.0 ) ) ;
   m_sph_gizmo->setVisible( false ) ;
 }

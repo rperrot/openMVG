@@ -39,16 +39,16 @@ WorkerAutomaticReconstruction::WorkerAutomaticReconstruction( const std::string 
     m_preset( preset ) ,
     m_scn_mgr( scn_mgr )
 {
-  m_worker_color_computation = nullptr ;
-  m_worker_feature_computation = nullptr ;
-  m_worker_feature_provider_load = nullptr ;
-  m_worker_geometric_filtering = nullptr ;
-  m_worker_incremental_sfm_computation = nullptr ;
-  m_worker_matches_computation = nullptr ;
-  m_worker_matches_provider_load = nullptr ;
-  m_worker_project_creation = nullptr ;
-  m_worker_regions_provider_load = nullptr ;
-  m_worker_thumbnail_generation = nullptr ;
+  m_worker_color_computation.reset() ;
+  m_worker_feature_computation.reset() ;
+  m_worker_feature_provider_load.reset() ;
+  m_worker_geometric_filtering.reset() ;
+  m_worker_incremental_sfm_computation.reset() ;
+  m_worker_matches_computation.reset() ;
+  m_worker_matches_provider_load.reset() ;
+  m_worker_project_creation.reset() ;
+  m_worker_regions_provider_load.reset() ;
+  m_worker_thumbnail_generation.reset() ;
 }
 
 /**
@@ -217,7 +217,7 @@ void WorkerAutomaticReconstruction::doProjectCreation( void )
   // Default scene manager
   const std::string camera_sensor_width_database_file = stlplus::create_filespec( stlplus::folder_append_separator( stlplus::folder_append_separator( QCoreApplication::applicationDirPath().toStdString() ) + "ressources" ) + "sensor_database" , "sensor_width_camera_database.txt" ) ;
   const IntrinsicParams intrin_params ;
-  m_worker_project_creation = new WorkerProjectCreation( m_output_project_folder , m_input_image_folder , intrin_params , camera_sensor_width_database_file , m_scn_mgr ) ;
+  m_worker_project_creation = std::make_shared<WorkerProjectCreation>( m_output_project_folder , m_input_image_folder , intrin_params , camera_sensor_width_database_file , m_scn_mgr ) ;
   int min, max ;
   m_worker_project_creation->progressRange( min , max ) ;
   emit( progressRangeCurrentStage( min , max ) ) ;
@@ -230,16 +230,16 @@ void WorkerAutomaticReconstruction::doProjectCreation( void )
   // Connections
   //  connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() )  ) ;
   connect( thread , SIGNAL( finished() ) , this , SLOT( hasDoneProjectCreation() ) ) ;
-  connect( m_worker_project_creation , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() )  );
-  connect( m_worker_project_creation , SIGNAL( progress( int ) ) , this , SIGNAL( progressCurrentStage( int ) ) ) ;
-  connect( thread , SIGNAL( started() ) , m_worker_project_creation , SLOT( process() )  ) ;
+  connect( m_worker_project_creation.get() , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() )  );
+  connect( m_worker_project_creation.get() , SIGNAL( progress( int ) ) , this , SIGNAL( progressCurrentStage( int ) ) ) ;
+  connect( thread , SIGNAL( started() ) , m_worker_project_creation.get() , SLOT( process() )  ) ;
 
   thread->start() ;
 }
 
 void WorkerAutomaticReconstruction::doThumbnailCreation( void )
 {
-  m_worker_thumbnail_generation = new WorkerThumbnailGeneration( m_project ) ;
+  m_worker_thumbnail_generation = std::make_shared<WorkerThumbnailGeneration>( m_project ) ;
   int min, max ;
   m_worker_thumbnail_generation->progressRange( min , max ) ;
   emit( progressRangeCurrentStage( min , max ) ) ;
@@ -252,9 +252,9 @@ void WorkerAutomaticReconstruction::doThumbnailCreation( void )
   // Connections
   //  connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() )   ) ;
   connect( thread , SIGNAL( finished() ) , this , SLOT( hasDoneThumbnailCreation() )  ) ;
-  connect( m_worker_thumbnail_generation , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
-  connect( m_worker_thumbnail_generation , SIGNAL( progress( int ) ) , this , SIGNAL( progressCurrentStage( int ) )  ) ;
-  connect( thread , SIGNAL( started() ) , m_worker_thumbnail_generation , SLOT( process() )  ) ;
+  connect( m_worker_thumbnail_generation.get() , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
+  connect( m_worker_thumbnail_generation.get() , SIGNAL( progress( int ) ) , this , SIGNAL( progressCurrentStage( int ) )  ) ;
+  connect( thread , SIGNAL( started() ) , m_worker_thumbnail_generation.get() , SLOT( process() )  ) ;
 
   thread->start() ;
 }
@@ -276,7 +276,7 @@ void WorkerAutomaticReconstruction::doFeatureComputation( void )
   }
   m_project->setFeatureParams( f_params ) ;
 
-  m_worker_feature_computation = new WorkerFeaturesComputation( m_project , true ) ;
+  m_worker_feature_computation = std::make_shared<WorkerFeaturesComputation>( m_project , true ) ;
   int min, max ;
   m_worker_feature_computation->progressRange( min , max ) ;
   emit( progressRangeCurrentStage( min , max ) ) ;
@@ -288,10 +288,10 @@ void WorkerAutomaticReconstruction::doFeatureComputation( void )
 
   // Connections
   //  connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() )  ) ;
-  connect( thread , SIGNAL( started() ) , m_worker_feature_computation , SLOT( process() )  ) ;
-  connect( m_worker_feature_computation , SIGNAL( progress( int ) ) , this , SIGNAL( progressCurrentStage( int ) )  ) ;
-  connect( m_worker_feature_computation , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() )  );
-  connect( m_worker_feature_computation , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( hasDoneFeatureComputation() ) ) ;
+  connect( thread , SIGNAL( started() ) , m_worker_feature_computation.get() , SLOT( process() )  ) ;
+  connect( m_worker_feature_computation.get() , SIGNAL( progress( int ) ) , this , SIGNAL( progressCurrentStage( int ) )  ) ;
+  connect( m_worker_feature_computation.get() , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() )  );
+  connect( m_worker_feature_computation.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( hasDoneFeatureComputation() ) ) ;
 
   thread->start() ;
 }
@@ -301,7 +301,7 @@ void WorkerAutomaticReconstruction::doFeatureMatching( void )
   // 1 region provider load
   // 2 matching
   // 3 geometric filtering
-  m_worker_regions_provider_load = new WorkerRegionsProviderLoad( m_project ) ;
+  m_worker_regions_provider_load = std::make_shared<WorkerRegionsProviderLoad>( m_project ) ;
   int min, max ;
   m_worker_regions_provider_load->progressRange( min , max ) ;
   emit( progressRangeCurrentStage( min , max ) ) ;
@@ -313,10 +313,10 @@ void WorkerAutomaticReconstruction::doFeatureMatching( void )
 
   // Connections
   //  connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
-  connect( thread , SIGNAL( started() ) , m_worker_regions_provider_load , SLOT( process() ) ) ;
-  connect( m_worker_regions_provider_load , SIGNAL( progress( int ) ) , this , SIGNAL( progressCurrentStage( int ) ) ) ;
-  connect( m_worker_regions_provider_load , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
-  connect( m_worker_regions_provider_load , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( hasDoneRegionProviderLoad() ) ) ;
+  connect( thread , SIGNAL( started() ) , m_worker_regions_provider_load.get() , SLOT( process() ) ) ;
+  connect( m_worker_regions_provider_load.get() , SIGNAL( progress( int ) ) , this , SIGNAL( progressCurrentStage( int ) ) ) ;
+  connect( m_worker_regions_provider_load.get() , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
+  connect( m_worker_regions_provider_load.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( hasDoneRegionProviderLoad() ) ) ;
 
   thread->start() ;
 }
@@ -327,7 +327,7 @@ void WorkerAutomaticReconstruction::doSfMReconstruction( void )
   // matches provider
   // incremental SfM
 
-  m_worker_feature_provider_load = new WorkerFeaturesProviderLoad( m_project ) ;
+  m_worker_feature_provider_load = std::make_shared<WorkerFeaturesProviderLoad>( m_project ) ;
   int min, max ;
   m_worker_feature_provider_load->progressRange( min , max ) ;
   emit( progressRangeCurrentStage( min , max ) ) ;
@@ -339,17 +339,17 @@ void WorkerAutomaticReconstruction::doSfMReconstruction( void )
 
   // Connections
   //  connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
-  connect( thread , SIGNAL( started() ) , m_worker_feature_provider_load , SLOT( process() ) ) ;
-  connect( m_worker_feature_provider_load , SIGNAL( progress( int ) ) , this , SIGNAL( progressCurrentStage( int ) ) ) ;
-  connect( m_worker_feature_provider_load , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
-  connect( m_worker_feature_provider_load , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( hasDoneFeatureProviderLoad() ) ) ;
+  connect( thread , SIGNAL( started() ) , m_worker_feature_provider_load.get() , SLOT( process() ) ) ;
+  connect( m_worker_feature_provider_load.get() , SIGNAL( progress( int ) ) , this , SIGNAL( progressCurrentStage( int ) ) ) ;
+  connect( m_worker_feature_provider_load.get() , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
+  connect( m_worker_feature_provider_load.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( hasDoneFeatureProviderLoad() ) ) ;
 
   thread->start() ;
 }
 
 void WorkerAutomaticReconstruction::doColorization( void )
 {
-  m_worker_color_computation = new WorkerColorComputation( m_project ) ;
+  m_worker_color_computation = std::make_shared<WorkerColorComputation>( m_project ) ;
   int min, max ;
   m_progress_value = 0 ;
   m_worker_color_computation->progressRange( min , max ) ;
@@ -362,10 +362,10 @@ void WorkerAutomaticReconstruction::doColorization( void )
 
   // Connections
   //  connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
-  connect( thread , SIGNAL( started() ) , m_worker_color_computation , SLOT( process() ) ) ;
-  connect( m_worker_color_computation , SIGNAL( progress( int ) ) , this , SIGNAL( progressCurrentStage( int ) ) ) ;
-  connect( m_worker_color_computation , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
-  connect( m_worker_color_computation , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( hasDoneColorization() ) ) ;
+  connect( thread , SIGNAL( started() ) , m_worker_color_computation.get() , SLOT( process() ) ) ;
+  connect( m_worker_color_computation.get() , SIGNAL( progress( int ) ) , this , SIGNAL( progressCurrentStage( int ) ) ) ;
+  connect( m_worker_color_computation.get() , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
+  connect( m_worker_color_computation.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( hasDoneColorization() ) ) ;
 
   thread->start() ;
 }
@@ -374,8 +374,7 @@ void WorkerAutomaticReconstruction::hasDoneProjectCreation( void )
 {
   m_project = m_worker_project_creation->project() ;
   // delete project creation
-  delete m_worker_project_creation ;
-  m_worker_project_creation = nullptr ;
+  m_worker_project_creation.reset() ;
 
   hasIncrementedStage() ;
   doThumbnailCreation() ;
@@ -384,7 +383,7 @@ void WorkerAutomaticReconstruction::hasDoneProjectCreation( void )
 void WorkerAutomaticReconstruction::hasDoneThumbnailCreation( void )
 {
   // destroy thumbnail creation
-  delete m_worker_thumbnail_generation ;
+  m_worker_thumbnail_generation.reset() ;
 
   hasIncrementedStage() ;
   doFeatureComputation() ;
@@ -393,8 +392,7 @@ void WorkerAutomaticReconstruction::hasDoneThumbnailCreation( void )
 void WorkerAutomaticReconstruction::hasDoneFeatureComputation( void )
 {
   // destroy worker feature computation
-  delete m_worker_feature_computation ;
-  m_worker_feature_computation = nullptr ;
+  m_worker_feature_computation.reset() ;
 
   hasIncrementedStage() ;
   doFeatureMatching() ;
@@ -405,7 +403,7 @@ void WorkerAutomaticReconstruction::hasDoneRegionProviderLoad( void )
   hasIncrementedStage() ;
 
   std::shared_ptr<openMVG::sfm::Regions_Provider> region =  m_worker_regions_provider_load->regionsProvider() ;
-  m_worker_matches_computation = new WorkerMatchesComputation( m_project , region ) ;
+  m_worker_matches_computation = std::make_shared<WorkerMatchesComputation>( m_project , region ) ;
   int min, max ;
   m_worker_matches_computation->progressRange( min , max ) ;
   emit( progressRangeCurrentStage( min , max ) ) ;
@@ -417,10 +415,10 @@ void WorkerAutomaticReconstruction::hasDoneRegionProviderLoad( void )
 
   // Connections
   //  connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
-  connect( thread , SIGNAL( started() ) , m_worker_matches_computation , SLOT( process() ) ) ;
-  connect( m_worker_matches_computation , SIGNAL( progress( int ) ) , this , SIGNAL( progressCurrentStage( int ) ) ) ;
-  connect( m_worker_matches_computation , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
-  connect( m_worker_matches_computation , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( hasDoneFeatureMatching() ) ) ;
+  connect( thread , SIGNAL( started() ) , m_worker_matches_computation.get() , SLOT( process() ) ) ;
+  connect( m_worker_matches_computation.get() , SIGNAL( progress( int ) ) , this , SIGNAL( progressCurrentStage( int ) ) ) ;
+  connect( m_worker_matches_computation.get() , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
+  connect( m_worker_matches_computation.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( hasDoneFeatureMatching() ) ) ;
 
   thread->start() ;
 }
@@ -432,7 +430,7 @@ void WorkerAutomaticReconstruction::hasDoneFeatureMatching( void )
   // destroy worker putative matches ; worker region provider
   auto putatives = m_worker_matches_computation->putativeMatches() ;
   auto regions =  m_worker_regions_provider_load->regionsProvider() ;
-  m_worker_geometric_filtering = new WorkerGeometricFiltering( m_project , regions , putatives ) ;
+  m_worker_geometric_filtering = std::make_shared<WorkerGeometricFiltering>( m_project , regions , putatives ) ;
   int min, max ;
   m_worker_geometric_filtering->progressRange( min , max ) ;
   emit( progressRangeCurrentStage( min , max ) ) ;
@@ -444,10 +442,10 @@ void WorkerAutomaticReconstruction::hasDoneFeatureMatching( void )
 
   // Connections
   //  connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
-  connect( thread , SIGNAL( started() ) , m_worker_geometric_filtering , SLOT( process() ) ) ;
-  connect( m_worker_geometric_filtering , SIGNAL( progress( int ) ) , this , SIGNAL( progressCurrentStage( int ) ) ) ;
-  connect( m_worker_geometric_filtering , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
-  connect( m_worker_geometric_filtering , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( hasDoneGeometricFiltering() ) ) ;
+  connect( thread , SIGNAL( started() ) , m_worker_geometric_filtering.get() , SLOT( process() ) ) ;
+  connect( m_worker_geometric_filtering.get() , SIGNAL( progress( int ) ) , this , SIGNAL( progressCurrentStage( int ) ) ) ;
+  connect( m_worker_geometric_filtering.get() , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
+  connect( m_worker_geometric_filtering.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( hasDoneGeometricFiltering() ) ) ;
 
   thread->start() ;
 }
@@ -455,12 +453,9 @@ void WorkerAutomaticReconstruction::hasDoneFeatureMatching( void )
 void WorkerAutomaticReconstruction::hasDoneGeometricFiltering( void )
 {
   // destroy : worker matches ; worker regions provider ; worker geometric filtering
-  delete m_worker_matches_computation ;
-  delete m_worker_regions_provider_load ;
-  delete m_worker_geometric_filtering ;
-  m_worker_matches_computation = nullptr ;
-  m_worker_regions_provider_load = nullptr ;
-  m_worker_geometric_filtering = nullptr ;
+  m_worker_matches_computation.reset();
+  m_worker_regions_provider_load.reset();
+  m_worker_geometric_filtering.reset();
 
   hasIncrementedStage() ;
   doSfMReconstruction() ;
@@ -471,7 +466,7 @@ void WorkerAutomaticReconstruction::hasDoneFeatureProviderLoad( void )
   hasIncrementedStage() ;
 
   std::string matches_name = "matches.f.bin" ;
-  m_worker_matches_provider_load = new WorkerMatchesProviderLoad( m_project , matches_name ) ;
+  m_worker_matches_provider_load = std::make_shared<WorkerMatchesProviderLoad>( m_project , matches_name ) ;
   int min, max ;
   m_worker_matches_provider_load->progressRange( min , max ) ;
   emit( progressRangeCurrentStage( min , max ) ) ;
@@ -483,10 +478,10 @@ void WorkerAutomaticReconstruction::hasDoneFeatureProviderLoad( void )
 
   // Connections
   //  connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
-  connect( thread , SIGNAL( started() ) , m_worker_matches_provider_load , SLOT( process() ) ) ;
-  connect( m_worker_matches_provider_load , SIGNAL( progress( int ) ) , this , SIGNAL( progressCurrentStage( int ) ) ) ;
-  connect( m_worker_matches_provider_load , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
-  connect( m_worker_matches_provider_load , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( hasDoneMatchesProviderLoad() ) ) ;
+  connect( thread , SIGNAL( started() ) , m_worker_matches_provider_load.get() , SLOT( process() ) ) ;
+  connect( m_worker_matches_provider_load.get() , SIGNAL( progress( int ) ) , this , SIGNAL( progressCurrentStage( int ) ) ) ;
+  connect( m_worker_matches_provider_load.get() , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
+  connect( m_worker_matches_provider_load.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( hasDoneMatchesProviderLoad() ) ) ;
 
   thread->start() ;
 }
@@ -497,7 +492,7 @@ void WorkerAutomaticReconstruction::hasDoneMatchesProviderLoad( void )
 
   auto features = m_worker_feature_provider_load->featuresProvider() ;
   auto matches  = m_worker_matches_provider_load->matchesProvider() ;
-  m_worker_incremental_sfm_computation = new WorkerIncrementalSfMComputation( m_project , features , matches ) ;
+  m_worker_incremental_sfm_computation = std::make_shared<WorkerIncrementalSfMComputation>( m_project , features , matches ) ;
   int min, max ;
   m_worker_incremental_sfm_computation->progressRange( min , max ) ;
   emit( progressRangeCurrentStage( min , max ) ) ;
@@ -509,23 +504,19 @@ void WorkerAutomaticReconstruction::hasDoneMatchesProviderLoad( void )
 
   // Connections
   //  connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
-  connect( thread , SIGNAL( started() ) , m_worker_incremental_sfm_computation , SLOT( process() ) ) ;
-  connect( m_worker_incremental_sfm_computation , SIGNAL( progress( int ) ) , this , SIGNAL( progressCurrentStage( int ) ) ) ;
-  connect( m_worker_incremental_sfm_computation , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
-  connect( m_worker_incremental_sfm_computation , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( hasDoneSfMReconstruction() ) ) ;
+  connect( thread , SIGNAL( started() ) , m_worker_incremental_sfm_computation.get() , SLOT( process() ) ) ;
+  connect( m_worker_incremental_sfm_computation.get() , SIGNAL( progress( int ) ) , this , SIGNAL( progressCurrentStage( int ) ) ) ;
+  connect( m_worker_incremental_sfm_computation.get() , SIGNAL( finished( const WorkerNextAction & ) ), thread, SLOT( quit() ) );
+  connect( m_worker_incremental_sfm_computation.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( hasDoneSfMReconstruction() ) ) ;
 
   thread->start() ;
 }
 
 void WorkerAutomaticReconstruction::hasDoneSfMReconstruction( void )
 {
-  delete m_worker_matches_provider_load ;
-  delete m_worker_feature_provider_load ;
-  delete m_worker_incremental_sfm_computation ;
-
-  m_worker_matches_provider_load = nullptr ;
-  m_worker_feature_provider_load = nullptr ;
-  m_worker_incremental_sfm_computation = nullptr ;
+  m_worker_matches_provider_load.reset() ;
+  m_worker_feature_provider_load.reset() ;
+  m_worker_incremental_sfm_computation.reset() ;
 
   hasIncrementedStage() ;
   doColorization() ;
@@ -533,8 +524,7 @@ void WorkerAutomaticReconstruction::hasDoneSfMReconstruction( void )
 
 void WorkerAutomaticReconstruction::hasDoneColorization( void )
 {
-  delete m_worker_color_computation ;
-  m_worker_color_computation = nullptr ;
+  m_worker_color_computation.reset() ;
 
   hasIncrementedStage() ;
   m_mutex.unlock() ;

@@ -9,6 +9,7 @@
 #include <QObject>
 #include <QThread>
 
+#include <memory>
 #include <mutex>
 #include <string>
 
@@ -154,16 +155,16 @@ class WorkerAutomaticReconstruction : public QObject , public WorkerInterface
     std::shared_ptr<Project> m_project ;
 
     // The workers
-    WorkerColorComputation          * m_worker_color_computation ;
-    WorkerFeaturesComputation       * m_worker_feature_computation ;
-    WorkerFeaturesProviderLoad      * m_worker_feature_provider_load ;
-    WorkerGeometricFiltering        * m_worker_geometric_filtering ;
-    WorkerIncrementalSfMComputation * m_worker_incremental_sfm_computation ;
-    WorkerMatchesComputation        * m_worker_matches_computation ;
-    WorkerMatchesProviderLoad       * m_worker_matches_provider_load ;
-    WorkerProjectCreation           * m_worker_project_creation ;
-    WorkerRegionsProviderLoad       * m_worker_regions_provider_load ;
-    WorkerThumbnailGeneration       * m_worker_thumbnail_generation ;
+    std::shared_ptr<WorkerColorComputation>          m_worker_color_computation ;
+    std::shared_ptr<WorkerFeaturesComputation>       m_worker_feature_computation ;
+    std::shared_ptr<WorkerFeaturesProviderLoad>      m_worker_feature_provider_load ;
+    std::shared_ptr<WorkerGeometricFiltering>        m_worker_geometric_filtering ;
+    std::shared_ptr<WorkerIncrementalSfMComputation> m_worker_incremental_sfm_computation ;
+    std::shared_ptr<WorkerMatchesComputation>        m_worker_matches_computation ;
+    std::shared_ptr<WorkerMatchesProviderLoad>       m_worker_matches_provider_load ;
+    std::shared_ptr<WorkerProjectCreation>           m_worker_project_creation ;
+    std::shared_ptr<WorkerRegionsProviderLoad>       m_worker_regions_provider_load ;
+    std::shared_ptr<WorkerThumbnailGeneration>       m_worker_thumbnail_generation ;
 
     QThread * m_threadColorComputation ;
     QThread * m_threadFeatureComputation ;
