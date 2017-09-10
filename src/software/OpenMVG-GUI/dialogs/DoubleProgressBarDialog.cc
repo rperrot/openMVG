@@ -111,16 +111,18 @@ void DoubleProgressBarDialog::buildInterface( void )
   progressLayout->addWidget( m_bar_2 ) ;
 
   // Cancel layout
+  /*
   m_push_1 = new QPushButton( "Cancel" ) ;
   QHBoxLayout * cancelLayout = new QHBoxLayout ;
   cancelLayout->addStretch() ;
   cancelLayout->addWidget( m_push_1 ) ;
   cancelLayout->addStretch() ;
+  */
 
   // Final layout
   QVBoxLayout * mainLayout = new QVBoxLayout ;
   mainLayout->addLayout( progressLayout ) ;
-  mainLayout->addLayout( cancelLayout ) ;
+//  mainLayout->addLayout( cancelLayout ) ;
 
   setLayout( mainLayout ) ;
 }
@@ -130,7 +132,7 @@ void DoubleProgressBarDialog::buildInterface( void )
 */
 void DoubleProgressBarDialog::makeConnections( void )
 {
-
+  // TODO connect push button 
 }
 
 } // namespace openMVG_gui
