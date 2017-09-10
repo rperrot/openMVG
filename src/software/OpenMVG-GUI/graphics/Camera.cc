@@ -329,7 +329,7 @@ void Camera::pan( const openMVG::Vec3 & delta )
 {
   m_dest += delta ;
   m_pos += delta ;
-  orthonormalize() ; 
+  orthonormalize() ;
 }
 
 /**

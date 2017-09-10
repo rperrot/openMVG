@@ -8,168 +8,161 @@
 #include <cereal/archives/json.hpp>
 #include <cereal/details/helpers.hpp>
 
+#include "nonFree/sift/SIFT_describer_io.hpp"
 #include "openMVG/features/image_describer_akaze_io.hpp"
 #include "openMVG/features/sift/SIFT_Anatomy_Image_Describer_io.hpp"
-#include "nonFree/sift/SIFT_describer_io.hpp"
 
 #include <QImage>
 
 #include <chrono>
 #include <fstream>
 
-
 namespace openMVG_gui
 {
 
-WorkerFeaturesComputation::WorkerFeaturesComputation( std::shared_ptr<Project> & pro ,
-    const bool overwrite_existing ,
-    const WorkerNextAction & na )
-  :
-  WorkerInterface( na ) ,
-  m_overwrite_existing( overwrite_existing ) ,
-  m_project( pro )
+WorkerFeaturesComputation::WorkerFeaturesComputation( std::shared_ptr<Project> &pro, const bool overwrite_existing, const WorkerNextAction &na )
+  : WorkerInterface( na )
+  , m_overwrite_existing( overwrite_existing )
+  , m_project( pro )
 {
-
 }
 
 /**
-* @brief get progress range
-*/
-void WorkerFeaturesComputation::progressRange( int & min , int & max ) const
+ * @brief get progress range
+ */
+void WorkerFeaturesComputation::progressRange( int &min, int &max ) const
 {
-  const int nb_image = m_project->SfMData()->GetViews().size() ;
-  min = 0 ;
-  max = nb_image ;
+  const int nb_image = m_project->SfMData()->GetViews().size();
+  min                = 0;
+  max                = nb_image;
 }
 
-
 /**
-* @brief Do the computation
-*/
+ * @brief Do the computation
+ */
 void WorkerFeaturesComputation::process( void )
 {
-  std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data = m_project->SfMData() ;
-  const int nb_image = sfm_data->GetViews().size() ;
-  const std::string matches_dir = m_project->matchesPath() ;
+  std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data = m_project->SfMData();
+  const int nb_image                               = sfm_data->GetViews().size();
+  const std::string matches_dir                    = m_project->matchesPath();
 
-  const FeatureParams f_params = m_project->featureParams() ;
-  std::shared_ptr<openMVG::features::Image_describer> image_describer = f_params.describer() ;
-
+  const FeatureParams f_params                                        = m_project->featureParams();
+  std::shared_ptr<openMVG::features::Image_describer> image_describer = f_params.describer();
 
   // Create output feature folder
-  const std::string base_feature_path = m_project->globalFeaturePath() ;
-  std::string base_detector_path ;
-  switch( m_project->featureParams().type() )
+  const std::string base_feature_path = m_project->globalFeaturePath();
+  std::string base_detector_path;
+  switch ( m_project->featureParams().type() )
   {
-    case FEATURE_TYPE_SIFT :
+    case FEATURE_TYPE_SIFT:
     {
-      base_detector_path = stlplus::folder_append_separator( base_feature_path ) + "SIFT" ;
-      break ;
+      base_detector_path = stlplus::folder_append_separator( base_feature_path ) + "SIFT";
+      break;
     }
-    case FEATURE_TYPE_SIFT_ANATOMY :
+    case FEATURE_TYPE_SIFT_ANATOMY:
     {
-      base_detector_path = stlplus::folder_append_separator( base_feature_path ) + "SIFT_ANATOMY" ;
-      break ;
+      base_detector_path = stlplus::folder_append_separator( base_feature_path ) + "SIFT_ANATOMY";
+      break;
     }
-    case FEATURE_TYPE_AKAZE_FLOAT :
-    case FEATURE_TYPE_AKAZE_MLDB :
+    case FEATURE_TYPE_AKAZE_FLOAT:
+    case FEATURE_TYPE_AKAZE_MLDB:
     {
-      base_detector_path = stlplus::folder_append_separator( base_feature_path ) + "AKAZE" ;
-      break ;
+      base_detector_path = stlplus::folder_append_separator( base_feature_path ) + "AKAZE";
+      break;
     }
   }
-  if( ! stlplus::folder_exists( base_detector_path ) )
+  if ( !stlplus::folder_exists( base_detector_path ) )
   {
-    if( ! stlplus::folder_create( base_detector_path ) )
+    if ( !stlplus::folder_create( base_detector_path ) )
     {
-      emit progress( nb_image ) ;
-      emit finished( NEXT_ACTION_ERROR ) ;
-      return ;
+      emit progress( nb_image );
+      emit finished( NEXT_ACTION_ERROR );
+      return;
     }
-    if( ! stlplus::folder_exists( base_detector_path ) )
+    if ( !stlplus::folder_exists( base_detector_path ) )
     {
-      emit progress( nb_image ) ;
-      emit finished( NEXT_ACTION_ERROR ) ;
-      return ;
+      emit progress( nb_image );
+      emit finished( NEXT_ACTION_ERROR );
+      return;
     }
   }
-  std::string base_descriptor_path ;
-  switch( m_project->featureParams().type() )
+  std::string base_descriptor_path;
+  switch ( m_project->featureParams().type() )
   {
-    case FEATURE_TYPE_SIFT :
-    case FEATURE_TYPE_SIFT_ANATOMY :
+    case FEATURE_TYPE_SIFT:
+    case FEATURE_TYPE_SIFT_ANATOMY:
     {
-      base_descriptor_path = stlplus::folder_append_separator( base_detector_path ) + "SIFT" ;
-      break ;
+      base_descriptor_path = stlplus::folder_append_separator( base_detector_path ) + "SIFT";
+      break;
     }
-    case FEATURE_TYPE_AKAZE_FLOAT :
+    case FEATURE_TYPE_AKAZE_FLOAT:
     {
-      base_descriptor_path = stlplus::folder_append_separator( base_detector_path ) + "MSURF" ;
-      break ;
+      base_descriptor_path = stlplus::folder_append_separator( base_detector_path ) + "MSURF";
+      break;
     }
-    case FEATURE_TYPE_AKAZE_MLDB :
+    case FEATURE_TYPE_AKAZE_MLDB:
     {
-      base_descriptor_path = stlplus::folder_append_separator( base_detector_path ) + "MLDB" ;
-      break ;
+      base_descriptor_path = stlplus::folder_append_separator( base_detector_path ) + "MLDB";
+      break;
     }
   }
-  if( ! stlplus::folder_exists( base_descriptor_path ) )
+  if ( !stlplus::folder_exists( base_descriptor_path ) )
   {
-    if( ! stlplus::folder_create( base_descriptor_path ) )
+    if ( !stlplus::folder_create( base_descriptor_path ) )
     {
-      emit progress( nb_image ) ;
-      emit finished( NEXT_ACTION_ERROR ) ;
-      return ;
+      emit progress( nb_image );
+      emit finished( NEXT_ACTION_ERROR );
+      return;
     }
-    if( ! stlplus::folder_exists( base_descriptor_path ) )
+    if ( !stlplus::folder_exists( base_descriptor_path ) )
     {
-      emit progress( nb_image ) ;
-      emit finished( NEXT_ACTION_ERROR ) ;
-      return ;
+      emit progress( nb_image );
+      emit finished( NEXT_ACTION_ERROR );
+      return;
     }
   }
-  std::string feature_path ;
-  switch( m_project->featureParams().preset() )
+  std::string feature_path;
+  switch ( m_project->featureParams().preset() )
   {
-    case FEATURE_PRESET_NORMAL :
+    case FEATURE_PRESET_NORMAL:
     {
-      feature_path = stlplus::folder_append_separator( base_descriptor_path ) + "NORMAL" ;
-      break ;
+      feature_path = stlplus::folder_append_separator( base_descriptor_path ) + "NORMAL";
+      break;
     }
-    case FEATURE_PRESET_HIGH :
+    case FEATURE_PRESET_HIGH:
     {
-      feature_path = stlplus::folder_append_separator( base_descriptor_path ) + "HIGH" ;
-      break ;
+      feature_path = stlplus::folder_append_separator( base_descriptor_path ) + "HIGH";
+      break;
     }
-    case FEATURE_PRESET_ULTRA :
+    case FEATURE_PRESET_ULTRA:
     {
-      feature_path = stlplus::folder_append_separator( base_descriptor_path ) + "ULTRA" ;
-      break ;
+      feature_path = stlplus::folder_append_separator( base_descriptor_path ) + "ULTRA";
+      break;
     }
   }
-  if( ! stlplus::folder_exists( feature_path ) )
+  if ( !stlplus::folder_exists( feature_path ) )
   {
-    if( ! stlplus::folder_create( feature_path ) )
+    if ( !stlplus::folder_create( feature_path ) )
     {
-      emit progress( nb_image ) ;
-      emit finished( NEXT_ACTION_ERROR ) ;
-      return ;
+      emit progress( nb_image );
+      emit finished( NEXT_ACTION_ERROR );
+      return;
     }
-    if( ! stlplus::folder_exists( feature_path ) )
+    if ( !stlplus::folder_exists( feature_path ) )
     {
-      emit progress( nb_image ) ;
-      emit finished( NEXT_ACTION_ERROR ) ;
-      return ;
+      emit progress( nb_image );
+      emit finished( NEXT_ACTION_ERROR );
+      return;
     }
   }
 
   // Save the image_describer
-  const std::string sImage_describer = stlplus::create_filespec( feature_path , "image_describer", "json" );
+  const std::string sImage_describer = stlplus::create_filespec( feature_path, "image_describer", "json" );
   {
     std::ofstream stream( sImage_describer.c_str() );
     if ( !stream.is_open() )
     {
-      return ;
+      return;
     }
     cereal::JSONOutputArchive archive( stream );
     archive( cereal::make_nvp( "image_describer", image_describer ) );
@@ -180,13 +173,13 @@ void WorkerFeaturesComputation::process( void )
   // Try to load a global mask
   openMVG::image::Image<unsigned char> globalMask;
 
-  const std::string sGlobalMask_filename = stlplus::create_filespec( matches_dir , "mask.png" );
+  const std::string sGlobalMask_filename = stlplus::create_filespec( matches_dir, "mask.png" );
   if ( stlplus::file_exists( sGlobalMask_filename ) )
   {
-    QImage img( sGlobalMask_filename.c_str() ) ;
+    QImage img( sGlobalMask_filename.c_str() );
     if ( !img.isNull() ) // ReadImage( sGlobalMask_filename.c_str(), &globalMask ) )
     {
-      globalMask = QImageToOpenMVGImageGrayscale( img ) ;
+      globalMask = QImageToOpenMVGImageGrayscale( img );
       /*
       std::cout
           << "Feature extraction will use a GLOBAL MASK:\n"
@@ -195,43 +188,40 @@ void WorkerFeaturesComputation::process( void )
     }
   }
 
-  emit progress( 0 ) ;
+  emit progress( 0 );
 
   // Now process all the images
-  for( int i = 0; i < static_cast<int>( sfm_data->views.size() ); ++i )
+  for ( int i = 0; i < static_cast<int>( sfm_data->views.size() ); ++i )
   {
     openMVG::sfm::Views::const_iterator iterViews = sfm_data->views.begin();
     std::advance( iterViews, i );
-    const openMVG::sfm::View * view = iterViews->second.get();
-    const std::string sView_filename = stlplus::create_filespec( sfm_data->s_root_path, view->s_Img_path ) ;
-    const std::string sFeat = stlplus::create_filespec( feature_path, stlplus::basename_part( sView_filename ), "feat" ) ;
-    const std::string sDesc = stlplus::create_filespec( feature_path, stlplus::basename_part( sView_filename ), "desc" ) ;
-    const std::string sStat = stlplus::create_filespec( feature_path, stlplus::basename_part( sView_filename ), "stat" ) ;
+    const openMVG::sfm::View *view   = iterViews->second.get();
+    const std::string sView_filename = stlplus::create_filespec( sfm_data->s_root_path, view->s_Img_path );
+    const std::string sFeat          = stlplus::create_filespec( feature_path, stlplus::basename_part( sView_filename ), "feat" );
+    const std::string sDesc          = stlplus::create_filespec( feature_path, stlplus::basename_part( sView_filename ), "desc" );
+    const std::string sStat          = stlplus::create_filespec( feature_path, stlplus::basename_part( sView_filename ), "stat" );
 
-    //If features or descriptors file are missing, compute them
+    // If features or descriptors file are missing, compute them
     if ( !stlplus::file_exists( sFeat ) || !stlplus::file_exists( sDesc ) || m_overwrite_existing )
     {
-      QImage img( sView_filename.c_str() ) ;
-      if( img.isNull() )
+      QImage img( sView_filename.c_str() );
+      if ( img.isNull() )
       {
-        emit progress( i ) ;
+        emit progress( i );
         continue;
       }
       // Convert to gray
-      openMVG::image::Image<unsigned char> imageGray = QImageToOpenMVGImageGrayscale( img ) ;
+      openMVG::image::Image<unsigned char> imageGray = QImageToOpenMVGImageGrayscale( img );
 
-      openMVG::image::Image<unsigned char> * mask = nullptr; // The mask is null by default
+      openMVG::image::Image<unsigned char> *mask = nullptr; // The mask is null by default
 
-
-      const std::string sImageMask_filename =
-        stlplus::create_filespec( sfm_data->s_root_path,
-                                  stlplus::basename_part( sView_filename ) + "_mask", "png" );
+      const std::string sImageMask_filename = stlplus::create_filespec( sfm_data->s_root_path, stlplus::basename_part( sView_filename ) + "_mask", "png" );
 
       openMVG::image::Image<unsigned char> imageMask;
       if ( m_project->maskEnabled( i ) && stlplus::file_exists( sImageMask_filename ) )
       {
-        QImage maskimg( sImageMask_filename.c_str() ) ;
-        imageMask = QImageToOpenMVGImageGrayscale( maskimg ) ;
+        QImage maskimg( sImageMask_filename.c_str() );
+        imageMask = QImageToOpenMVGImageGrayscale( maskimg );
         //        ReadImage( sImageMask_filename.c_str(), &imageMask );
       }
 
@@ -248,25 +238,25 @@ void WorkerFeaturesComputation::process( void )
 
       // Compute features and descriptors and export them to files
       std::unique_ptr<openMVG::features::Regions> regions;
-      const auto start = std::chrono::high_resolution_clock::now() ;
+      const auto start = std::chrono::high_resolution_clock::now();
       image_describer->Describe( imageGray, regions, mask );
-      const auto end = std::chrono::high_resolution_clock::now() ;
-      const std::chrono::duration<double> elapsed_sec = std::chrono::duration_cast<std::chrono::duration<double>>( end - start ) ;
+      const auto end                                  = std::chrono::high_resolution_clock::now();
+      const std::chrono::duration<double> elapsed_sec = std::chrono::duration_cast<std::chrono::duration<double>>( end - start );
 
       // Save description
       image_describer->Save( regions.get(), sFeat, sDesc );
 
       // Save statistics
-      FeaturesStats statistics( regions->RegionCount() , elapsed_sec.count() ) ;
-      statistics.save( sStat ) ;
+      FeaturesStats statistics( regions->RegionCount(), elapsed_sec.count() );
+      statistics.save( sStat );
     }
-    emit progress( i ) ;
+    emit progress( i );
   }
 
   // Save stats
 
-  emit progress( nb_image ) ;
-  emit finished( nextAction() ) ;
+  emit progress( nb_image );
+  emit finished( nextAction() );
 }
 
 } // namespace openMVG_gui

@@ -17,8 +17,8 @@ CameraGizmo::CameraGizmo( std::shared_ptr<ShaderProgram> shad ,
                           const double size )
   : RenderableObject( shad ) ,
     m_pose( pose ) ,
-    m_size( size ) , 
-    m_nb_vert( 0 ) 
+    m_size( size ) ,
+    m_nb_vert( 0 )
 {
 
 }
@@ -385,8 +385,8 @@ void CameraGizmo::destroyGLData( void )
     glFuncs->glDeleteBuffers( 1 , &m_vbo_selection ) ;
 
     m_nb_vert = 0 ;
-    
-    RenderableObject::destroyGLData() ; 
+
+    RenderableObject::destroyGLData() ;
   }
 }
 

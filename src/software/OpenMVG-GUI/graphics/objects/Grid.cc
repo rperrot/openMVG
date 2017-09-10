@@ -25,7 +25,7 @@ Grid::Grid( std::shared_ptr<ShaderProgram> pgm  ,
     m_color_y( col_axis_y ) ,
     m_color_standard( col_standard_lines ) ,
     m_color_major( col_major_lines ) ,
-    m_nb_vert( 0 ) 
+    m_nb_vert( 0 )
 {
 
 }
@@ -247,7 +247,7 @@ void Grid::destroyGLData( void )
 
     m_nb_vert = 0 ;
 
-    RenderableObject::destroyGLData() ; 
+    RenderableObject::destroyGLData() ;
   }
 }
 

@@ -80,8 +80,8 @@ class ClusterComputationSettingsDialog : public QDialog
     QSpinBox * m_spin_upper_bound ;
     QDoubleSpinBox * m_spin_voxel_grid ;
 
-    QPushButton * m_btn_ok ; 
-    QPushButton * m_btn_cancel ; 
+    QPushButton * m_btn_ok ;
+    QPushButton * m_btn_cancel ;
 
     Q_OBJECT
 } ;

@@ -36,7 +36,6 @@
 
 namespace openMVG_gui
 {
-
 /**
 * @brief Main window
 */
@@ -53,24 +52,6 @@ MainWindow::MainWindow()
 
   m_state = STATE_EMPTY ;
   updateInterface() ;
-
-  // Set all workers to nullptr
-  m_worker_project_creation.reset() ;
-  m_worker_thumbnail_generation.reset() ;
-  m_worker_features_computation.reset() ;
-  m_worker_matches_computation.reset() ;
-  m_worker_regions_provide_load.reset() ;
-  m_worker_geometric_filtering.reset() ;
-  m_worker_features_provider_load.reset() ;
-  m_worker_matches_provider_load.reset() ;
-  m_worker_incremental_sfm_computation.reset() ;
-  m_worker_global_sfm_computation.reset() ;
-  m_worker_color_computation.reset() ;
-  m_worker_automatic_reconstruction.reset() ;
-  m_worker_cluster_computation.reset() ;
-  m_worker_export_to_openMVS.reset() ;
-  m_worker_export_to_MVE.reset() ;
-  m_worker_export_to_PMVS.reset() ;
 
   m_progress_dialog = nullptr ;
 
@@ -202,7 +183,43 @@ void MainWindow::onOpenProject( void )
 
   // Update scene state
   m_state = STATE_PROJECT_OPENED ;
-  if( m_project->hasColorComputed() )
+  if( stlplus::folder_exists( stlplus::folder_append_separator( m_project->exportPath() ) + "clusters" ) )
+  {
+    m_state = STATE_CLUSTERING_COMPUTED ;
+
+    // Load the color file
+    std::shared_ptr<SceneManager> mgr = m_project->sceneManager() ;
+    const std::string sparse = m_project->colorizedSfMPlyPath() ;
+
+    // Load from file
+    std::vector< openMVG::Vec3 > pts ;
+    std::vector< openMVG::Vec3 > col ;
+    LoadPly( sparse , pts , col ) ;
+
+    // Add to the scene, to the project and to the result view
+    std::shared_ptr<RenderableObject> sprs  = std::make_shared<PointCloud>( m_result_view->pointShader() , pts , col ) ;
+    mgr->addObject( sprs ) ;
+    m_project->setSparsePointCloud( sprs ) ;
+
+    // Add the camera gizmos
+    std::shared_ptr<openMVG::sfm::SfM_Data> sfm = m_project->SfMData() ;
+    if( sfm )
+    {
+      mgr->removeCameraGizmos() ;
+      std::map<int, std::shared_ptr<RenderableObject>> cam_gizmos ;
+      for( auto & cur_pose : sfm->GetPoses() )
+      {
+        cam_gizmos[ cur_pose.first ] = std::make_shared<CameraGizmo>( m_result_view->pointShader() , cur_pose.second , 0.1 ) ;
+      }
+      mgr->setCameraGizmos( cam_gizmos ) ;
+    }
+
+    m_result_view->prepareObjects() ;
+    m_result_view->updateTrackballSize() ;
+
+    m_result_view->update() ;
+  }
+  else if( m_project->hasColorComputed() )
   {
     m_state = STATE_COLOR_COMPUTED ;
 
@@ -214,20 +231,6 @@ void MainWindow::onOpenProject( void )
     std::vector< openMVG::Vec3 > pts ;
     std::vector< openMVG::Vec3 > col ;
     LoadPly( sparse , pts , col ) ;
-
-    // Fit camera to the point cloud
-    /*
-    if( pts.size() > 0 )
-    {
-      openMVG::Vec3 bsCenter ;
-      double bsRad ;
-      computeBoundingSphere( pts , bsCenter , bsRad ) ;
-      std::shared_ptr<Camera> cam = mgr->camera() ;
-      cam->fitBoundingSphere( bsCenter , bsRad ) ;
-
-      sph_giz->setCenter( bsCenter ) ;
-    }
-    */
 
     // Add to the scene, to the project and to the result view
     std::shared_ptr<RenderableObject> sprs  = std::make_shared<PointCloud>( m_result_view->pointShader() , pts , col ) ;
@@ -1113,7 +1116,55 @@ void MainWindow::onExportToPMVS( void )
 void MainWindow::onExportClustersToOpenMVS( void )
 {
   qInfo( "Export clusters to OpenMVS" ) ;
-  QMessageBox::critical( this , "Sorry" , "This feature is not implemented yet" ) ;
+
+  const std::string output_folder = stlplus::folder_append_separator( m_project->exportPath() ) + "clusters_openMVS" ;
+  const std::string clusters_path  = stlplus::folder_append_separator( m_project->exportPath() ) + "clusters" ;
+
+  // If something exists, remove the folder
+  if( stlplus::folder_exists( output_folder ) )
+  {
+    stlplus::folder_delete( output_folder ) ;
+  }
+
+  // Create folder
+  if( ! stlplus::folder_exists( output_folder ) )
+  {
+    if( ! stlplus::folder_create( output_folder ) )
+    {
+      onHasExportedToPMVS( NEXT_ACTION_ERROR ) ;
+      return ;
+    }
+    if( ! stlplus::folder_exists( output_folder ) )
+    {
+      onHasExportedToPMVS( NEXT_ACTION_ERROR ) ;
+      return ;
+    }
+  }
+
+  m_worker_export_clusters_to_MVS = std::make_shared<WorkerExportClustersToMVS>( clusters_path , output_folder , MVS_EXPORTER_OPENMVS ) ;
+  int min, max ;
+  m_worker_export_clusters_to_MVS->progressRangeOverall( min , max ) ;
+
+  m_double_progress_dialog = new DoubleProgressBarDialog( this ) ;
+  m_double_progress_dialog->setRange1( min , max ) ;
+  m_double_progress_dialog->setValue1( 0 ) ;
+  m_double_progress_dialog->setLabelText2( "Current step progress" ) ;
+  m_double_progress_dialog->setWindowModality( Qt::WindowModal ) ;
+  m_double_progress_dialog->show();
+
+  QThread * thread = new QThread( this ) ;
+  m_worker_export_clusters_to_MVS->moveToThread( thread ) ;
+
+  connect( thread , SIGNAL( started() ) , m_worker_export_clusters_to_MVS.get() , SLOT( process() ) ) ;
+  connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
+  connect( m_worker_export_clusters_to_MVS.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasExportedClustersToMVS( const WorkerNextAction & ) ) ) ;
+  connect( m_worker_export_clusters_to_MVS.get() , SIGNAL( finished( const WorkerNextAction & ) ) , thread , SLOT( quit() ) ) ;
+  connect( m_worker_export_clusters_to_MVS.get() , SIGNAL( progressOverall( int ) ) , m_double_progress_dialog , SLOT( setValue1( int ) ) ) ;
+  connect( m_worker_export_clusters_to_MVS.get() , SIGNAL( progressCurrentStage( int ) ) , m_double_progress_dialog , SLOT( setValue2( int ) ) ) ;
+  connect( m_worker_export_clusters_to_MVS.get() , SIGNAL( progressRangeCurrentStage( int , int ) ) , m_double_progress_dialog , SLOT( setRange2( int , int ) ) ) ;
+  connect( m_worker_export_clusters_to_MVS.get() , SIGNAL( messageCurrentStage( const std::string & ) ) , m_double_progress_dialog , SLOT( setLabelText1( const std::string & ) ) ) ;
+
+  thread->start() ;
 }
 
 /**
@@ -1122,7 +1173,55 @@ void MainWindow::onExportClustersToOpenMVS( void )
 void MainWindow::onExportClustersToMVE( void )
 {
   qInfo( "Export clusters to MVE" ) ;
-  QMessageBox::critical( this , "Sorry" , "This feature is not implemented yet" ) ;
+
+  const std::string output_folder = stlplus::folder_append_separator( m_project->exportPath() ) + "clusters_openMVE" ;
+  const std::string clusters_path  = stlplus::folder_append_separator( m_project->exportPath() ) + "clusters" ;
+
+  // If something exists, remove the folder
+  if( stlplus::folder_exists( output_folder ) )
+  {
+    stlplus::folder_delete( output_folder ) ;
+  }
+
+  // Create folder
+  if( ! stlplus::folder_exists( output_folder ) )
+  {
+    if( ! stlplus::folder_create( output_folder ) )
+    {
+      onHasExportedToPMVS( NEXT_ACTION_ERROR ) ;
+      return ;
+    }
+    if( ! stlplus::folder_exists( output_folder ) )
+    {
+      onHasExportedToPMVS( NEXT_ACTION_ERROR ) ;
+      return ;
+    }
+  }
+
+  m_worker_export_clusters_to_MVS = std::make_shared<WorkerExportClustersToMVS>( clusters_path , output_folder , MVS_EXPORTER_MVE ) ;
+  int min, max ;
+  m_worker_export_clusters_to_MVS->progressRangeOverall( min , max ) ;
+
+  m_double_progress_dialog = new DoubleProgressBarDialog( this ) ;
+  m_double_progress_dialog->setRange1( min , max ) ;
+  m_double_progress_dialog->setValue1( 0 ) ;
+  m_double_progress_dialog->setLabelText2( "Current step progress" ) ;
+  m_double_progress_dialog->setWindowModality( Qt::WindowModal ) ;
+  m_double_progress_dialog->show();
+
+  QThread * thread = new QThread( this ) ;
+  m_worker_export_clusters_to_MVS->moveToThread( thread ) ;
+
+  connect( thread , SIGNAL( started() ) , m_worker_export_clusters_to_MVS.get() , SLOT( process() ) ) ;
+  connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
+  connect( m_worker_export_clusters_to_MVS.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasExportedClustersToMVS( const WorkerNextAction & ) ) ) ;
+  connect( m_worker_export_clusters_to_MVS.get() , SIGNAL( finished( const WorkerNextAction & ) ) , thread , SLOT( quit() ) ) ;
+  connect( m_worker_export_clusters_to_MVS.get() , SIGNAL( progressOverall( int ) ) , m_double_progress_dialog , SLOT( setValue1( int ) ) ) ;
+  connect( m_worker_export_clusters_to_MVS.get() , SIGNAL( progressCurrentStage( int ) ) , m_double_progress_dialog , SLOT( setValue2( int ) ) ) ;
+  connect( m_worker_export_clusters_to_MVS.get() , SIGNAL( progressRangeCurrentStage( int , int ) ) , m_double_progress_dialog , SLOT( setRange2( int , int ) ) ) ;
+  connect( m_worker_export_clusters_to_MVS.get() , SIGNAL( messageCurrentStage( const std::string & ) ) , m_double_progress_dialog , SLOT( setLabelText1( const std::string & ) ) ) ;
+
+  thread->start() ;
 }
 
 /**
@@ -1131,7 +1230,55 @@ void MainWindow::onExportClustersToMVE( void )
 void MainWindow::onExportClustersToPMVS( void )
 {
   qInfo( "Export clusters to PMVS" ) ;
-  QMessageBox::critical( this , "Sorry" , "This feature is not implemented yet" ) ;
+
+  const std::string output_folder = stlplus::folder_append_separator( m_project->exportPath() ) + "clusters_PMVS" ;
+  const std::string clusters_path  = stlplus::folder_append_separator( m_project->exportPath() ) + "clusters" ;
+
+  // If something exists, remove the folder
+  if( stlplus::folder_exists( output_folder ) )
+  {
+    stlplus::folder_delete( output_folder ) ;
+  }
+
+  // Create folder
+  if( ! stlplus::folder_exists( output_folder ) )
+  {
+    if( ! stlplus::folder_create( output_folder ) )
+    {
+      onHasExportedToPMVS( NEXT_ACTION_ERROR ) ;
+      return ;
+    }
+    if( ! stlplus::folder_exists( output_folder ) )
+    {
+      onHasExportedToPMVS( NEXT_ACTION_ERROR ) ;
+      return ;
+    }
+  }
+
+  m_worker_export_clusters_to_MVS = std::make_shared<WorkerExportClustersToMVS>( clusters_path , output_folder , MVS_EXPORTER_PMVS ) ;
+  int min, max ;
+  m_worker_export_clusters_to_MVS->progressRangeOverall( min , max ) ;
+
+  m_double_progress_dialog = new DoubleProgressBarDialog( this ) ;
+  m_double_progress_dialog->setRange1( min , max ) ;
+  m_double_progress_dialog->setValue1( 0 ) ;
+  m_double_progress_dialog->setLabelText2( "Current step progress" ) ;
+  m_double_progress_dialog->setWindowModality( Qt::WindowModal ) ;
+  m_double_progress_dialog->show();
+
+  QThread * thread = new QThread( this ) ;
+  m_worker_export_clusters_to_MVS->moveToThread( thread ) ;
+
+  connect( thread , SIGNAL( started() ) , m_worker_export_clusters_to_MVS.get() , SLOT( process() ) ) ;
+  connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
+  connect( m_worker_export_clusters_to_MVS.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasExportedClustersToMVS( const WorkerNextAction & ) ) ) ;
+  connect( m_worker_export_clusters_to_MVS.get() , SIGNAL( finished( const WorkerNextAction & ) ) , thread , SLOT( quit() ) ) ;
+  connect( m_worker_export_clusters_to_MVS.get() , SIGNAL( progressOverall( int ) ) , m_double_progress_dialog , SLOT( setValue1( int ) ) ) ;
+  connect( m_worker_export_clusters_to_MVS.get() , SIGNAL( progressCurrentStage( int ) ) , m_double_progress_dialog , SLOT( setValue2( int ) ) ) ;
+  connect( m_worker_export_clusters_to_MVS.get() , SIGNAL( progressRangeCurrentStage( int , int ) ) , m_double_progress_dialog , SLOT( setRange2( int , int ) ) ) ;
+  connect( m_worker_export_clusters_to_MVS.get() , SIGNAL( messageCurrentStage( const std::string & ) ) , m_double_progress_dialog , SLOT( setLabelText1( const std::string & ) ) ) ;
+
+  thread->start() ;
 }
 
 /**
@@ -1500,6 +1647,43 @@ void MainWindow::onHasExportedToPMVS( const WorkerNextAction & next_action )
   QMessageBox::information( this , "Information" , "Project exported to the \"export/PMVS\" folder inside the project folder" ) ;
 }
 
+/**
+ * @brief Action to be executed when exporting to PMVS has been done
+ */
+void MainWindow::onHasExportedClustersToMVS( const WorkerNextAction & next_action )
+{
+  m_double_progress_dialog->hide() ;
+  delete m_double_progress_dialog ;
+
+  if( next_action == NEXT_ACTION_ERROR )
+  {
+    QMessageBox::critical( this , "Error" , "There was an error during export of the clusters" ) ;
+    m_worker_export_clusters_to_MVS.reset() ;
+    return ;
+  }
+
+  switch( m_worker_export_clusters_to_MVS->method() )
+  {
+    case MVS_EXPORTER_MVE :
+    {
+      QMessageBox::information( this , "Information" , "Project exported to the \"export/clusters_MVE\" folder inside the project folder" ) ;
+      break ;
+    }
+    case MVS_EXPORTER_OPENMVS:
+    {
+      QMessageBox::information( this , "Information" , "Project exported to the \"export/clusters_openMVS\" folder inside the project folder" ) ;
+      break ;
+    }
+    case MVS_EXPORTER_PMVS:
+    {
+      QMessageBox::information( this , "Information" , "Project exported to the \"export/clusters_PMVS\" folder inside the project folder" ) ;
+      break ;
+    }
+  }
+
+  m_worker_export_clusters_to_MVS.reset() ;
+}
+
 
 /**
 * @brief Action to be executed when SfM has been computed
@@ -1567,6 +1751,7 @@ void MainWindow::onHasDoneAutomaticReconstruction( const WorkerNextAction & next
   m_project = m_worker_automatic_reconstruction->project() ;
 
   m_double_progress_dialog->hide() ;
+  delete m_double_progress_dialog ;
 
   m_worker_automatic_reconstruction.reset() ;
 

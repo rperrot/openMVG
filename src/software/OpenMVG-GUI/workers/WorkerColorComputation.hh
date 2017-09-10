@@ -22,58 +22,54 @@ namespace openMVG_gui
 {
 
 /**
-* @brief worker class used to compute color on current sfm_data
-*/
+ * @brief worker class used to compute color on current sfm_data
+ */
 class WorkerColorComputation : public QObject, public WorkerInterface
 {
   public:
+    /**
+     * @brief Ctr Constructor
+     */
+    WorkerColorComputation( std::shared_ptr<Project> proj );
 
     /**
-    * @brief Ctr Constructor
-    */
-    WorkerColorComputation( std::shared_ptr<Project> proj ) ;
-
-    /**
-    * @brief get progress range
-    */
-    void progressRange( int & min , int & max ) const ;
+     * @brief get progress range
+     */
+    void progressRange( int &min, int &max ) const;
 
   public slots:
 
     /**
-    * @brief Do the computation
-    */
-    void process( void ) ;
+     * @brief Do the computation
+     */
+    void process( void );
 
     /**
-    * @brief internal progress bar has been incremented, now signal it to the external progress dialog
-    */
-    void hasIncremented( int ) ;
+     * @brief internal progress bar has been incremented, now signal it to the external progress dialog
+     */
+    void hasIncremented( int );
 
-    void sendProgress( void ) ;
+    void sendProgress( void );
 
-  signals :
+  signals:
 
     // 0 -> nothing done
     // n -> all done (n : number of points)
-    void progress( int ) ;
+    void progress( int );
 
     // After computation of all features (ie: signal to clear memory)
-    void finished( const WorkerNextAction & na );
+    void finished( const WorkerNextAction &na );
 
   private:
-
-    bool ColorizeTracks( const std::shared_ptr<openMVG::sfm::SfM_Data> & sfm_data,
-                         std::vector<openMVG::Vec3> & vec_3dPoints,
-                         std::vector<openMVG::Vec3> & vec_tracksColor ) ;
+    bool ColorizeTracks( const std::shared_ptr<openMVG::sfm::SfM_Data> &sfm_data, std::vector<openMVG::Vec3> &vec_3dPoints, std::vector<openMVG::Vec3> &vec_tracksColor );
 
     // Internal counter for the number of step already done
-    std::atomic<unsigned int> m_progress_value ;
+    std::atomic<unsigned int> m_progress_value;
 
-    std::shared_ptr<Project> m_project ;
+    std::shared_ptr<Project> m_project;
 
     Q_OBJECT
-} ;
+};
 
 } // namespace openMVG_gui
 

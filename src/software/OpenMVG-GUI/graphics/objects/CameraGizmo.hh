@@ -28,9 +28,9 @@ class CameraGizmo : public RenderableObject , public SelectableObject
                  const double size = 1.0 ) ;
 
     /**
-    * @brief Destructor 
+    * @brief Destructor
     */
-    virtual ~CameraGizmo( void ) ; 
+    virtual ~CameraGizmo( void ) ;
 
     /**
     * @brief Get current size of the gizmo

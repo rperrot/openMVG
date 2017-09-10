@@ -919,17 +919,17 @@ bool Project::createDirectoryStructure( const std::string & base_path )
       return false ;
     }
   }
-  
-  // sfm/exporters 
+
+  // sfm/exporters
   if( ! stlplus::folder_exists( exporter_dir ) )
   {
     if( ! stlplus::folder_create( exporter_dir ) )
     {
-      return false ; 
+      return false ;
     }
     if( ! stlplus::folder_exists( exporter_dir ) )
     {
-      return false ; 
+      return false ;
     }
   }
 

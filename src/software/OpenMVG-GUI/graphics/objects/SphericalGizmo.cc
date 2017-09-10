@@ -276,7 +276,7 @@ void SphericalGizmo::destroyGLData( void )
 
     m_nb_vert = 0 ;
 
-    RenderableObject::destroyGLData() ; 
+    RenderableObject::destroyGLData() ;
   }
 }
 

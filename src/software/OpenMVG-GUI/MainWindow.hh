@@ -7,9 +7,11 @@
 #include "Project.hh"
 #include "ResultViewWidget.hh"
 
+// TODO : make forward declaration for all workers
 #include "workers/WorkerAutomaticReconstruction.hh"
 #include "workers/WorkerClusterComputation.hh"
 #include "workers/WorkerColorComputation.hh"
+#include "workers/WorkerExportClustersToMVS.hh"
 #include "workers/WorkerExportToMVE.hh"
 #include "workers/WorkerExportToOpenMVS.hh"
 #include "workers/WorkerExportToPMVS.hh"
@@ -282,6 +284,11 @@ class MainWindow : public QMainWindow
     void onHasExportedToPMVS( const WorkerNextAction & next_action ) ;
 
     /**
+    * @brief Action to be executed when exporting to PMVS has been done
+    */
+    void onHasExportedClustersToMVS( const WorkerNextAction & next_action ) ;
+
+    /**
     * @brief indicate if some parameters in the project are not saved on disk
     */
     bool hasUnsavedChange( void ) const ;
@@ -441,6 +448,7 @@ class MainWindow : public QMainWindow
     std::shared_ptr<WorkerExportToOpenMVS>           m_worker_export_to_openMVS ;
     std::shared_ptr<WorkerExportToMVE>               m_worker_export_to_MVE ;
     std::shared_ptr<WorkerExportToPMVS>              m_worker_export_to_PMVS ;
+    std::shared_ptr<WorkerExportClustersToMVS>       m_worker_export_clusters_to_MVS ;
 
     Q_OBJECT
 } ;

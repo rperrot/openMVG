@@ -17,53 +17,43 @@
   #include <omp.h>
 #endif
 
-
 namespace openMVG_gui
 {
-WorkerClusterComputation::WorkerClusterComputation( std::shared_ptr<Project> & proj ,
-    const int cluster_lower_bound ,
-    const int cluster_upper_bound ,
-    const float voxelSize )
-  : m_project( proj ) ,
-    m_cluster_lower_bound( cluster_lower_bound ) ,
-    m_cluster_upper_bound( cluster_upper_bound ) ,
-    m_cluster_voxel_grid_size( voxelSize )
+WorkerClusterComputation::WorkerClusterComputation( std::shared_ptr<Project> &proj, const int cluster_lower_bound, const int cluster_upper_bound, const float voxelSize )
+  : m_project( proj )
+  , m_cluster_lower_bound( cluster_lower_bound )
+  , m_cluster_upper_bound( cluster_upper_bound )
+  , m_cluster_voxel_grid_size( voxelSize )
 {
-
 }
 
 /**
-* @brief get progress range
-*/
-void WorkerClusterComputation::progressRange( int & min , int & max ) const
+ * @brief get progress range
+ */
+void WorkerClusterComputation::progressRange( int &min, int &max ) const
 {
   // 0 -> start
   // 1 -> convert to domset
   // 2 -> clustering
   // 3 -> save
-  min = 0 ;
-  max = 3 ;
+  min = 0;
+  max = 3;
 }
 
 /**
-* @brief convert openMVG sfm_data to domset data
-* @param sfm_data openMVG dataset
-* @param[out] cameras list of intrinsics
-* @param[out] view list of views
-* @param[out] points list of points
-* @param[out] map_view map between views added and the global index
-*  We need this map to handle the fact that OpenMVG view Id can be non
-*   contiguous:
-*   - in case of missing pose or intrinsic for some view
-* @retval true if success
-* @retval false if failure
-*/
-static bool domsetImporter(
-  const openMVG::sfm::SfM_Data &sfm_data,
-  std::vector<nomoko::Camera> &cameras,
-  std::vector<nomoko::View> &views,
-  std::vector<nomoko::Point> &points,
-  std::map<openMVG::IndexT, uint32_t> &map_view )
+ * @brief convert openMVG sfm_data to domset data
+ * @param sfm_data openMVG dataset
+ * @param[out] cameras list of intrinsics
+ * @param[out] view list of views
+ * @param[out] points list of points
+ * @param[out] map_view map between views added and the global index
+ *  We need this map to handle the fact that OpenMVG view Id can be non
+ *   contiguous:
+ *   - in case of missing pose or intrinsic for some view
+ * @retval true if success
+ * @retval false if failure
+ */
+static bool domsetImporter( const openMVG::sfm::SfM_Data &sfm_data, std::vector<nomoko::Camera> &cameras, std::vector<nomoko::View> &views, std::vector<nomoko::Point> &points, std::map<openMVG::IndexT, uint32_t> &map_view )
 {
 
   // Convert OpenMVG data to domset library data
@@ -102,25 +92,19 @@ static bool domsetImporter(
     points.push_back( p );
   }
 
-  std::cout << std::endl
-            << "Number of views  = " << views.size() << std::endl
-            << "Number of points = " << points.size() << std::endl
-            << "Loading data took (s): "
-            << loadDataTimer.elapsed() << std::endl;
+  std::cout << std::endl << "Number of views  = " << views.size() << std::endl << "Number of points = " << points.size() << std::endl << "Loading data took (s): " << loadDataTimer.elapsed() << std::endl;
   return true;
 }
 
 /**
-* @brief Export a sfm_data file using a subset of the view of a given sfm_data
-* @param sfm_data The whole data set
-* @param outFilename Output file name
-* @param cluster List of view to consider
-* @retval true if success
-* @retval false if failure
-*/
-static bool exportData( const openMVG::sfm::SfM_Data &sfm_data,
-                        const std::string &outFilename,
-                        const std::set<size_t> &cluster )
+ * @brief Export a sfm_data file using a subset of the view of a given sfm_data
+ * @param sfm_data The whole data set
+ * @param outFilename Output file name
+ * @param cluster List of view to consider
+ * @retval true if success
+ * @retval false if failure
+ */
+static bool exportData( const openMVG::sfm::SfM_Data &sfm_data, const std::string &outFilename, const std::set<size_t> &cluster )
 {
   openMVG::sfm::SfM_Data cl_sfm_data;
   cl_sfm_data.s_root_path = sfm_data.s_root_path;
@@ -134,7 +118,7 @@ static bool exportData( const openMVG::sfm::SfM_Data &sfm_data,
       cl_sfm_data.poses[ view.first ] = sfm_data.GetPoseOrDie( view.second.get() );
       cl_sfm_data.views[ view.first ] = view.second;
 
-      const auto intrinsic  = sfm_data.GetIntrinsics().at( view.second.get()->id_intrinsic );
+      const auto intrinsic = sfm_data.GetIntrinsics().at( view.second.get()->id_intrinsic );
       if ( cl_sfm_data.intrinsics.count( view.second.get()->id_intrinsic ) == 0 )
       {
         cl_sfm_data.intrinsics[ view.second.get()->id_intrinsic ] = intrinsic;
@@ -168,32 +152,32 @@ static bool exportData( const openMVG::sfm::SfM_Data &sfm_data,
 }
 
 /**
-* @brief create the project
-*/
+ * @brief create the project
+ */
 void WorkerClusterComputation::process( void )
 {
-  m_progress_value = 0 ;
-  sendProgress() ;
+  m_progress_value = 0;
+  sendProgress();
 
-  std::string sOutDir = stlplus::folder_append_separator( m_project->exportPath() ) + "clusters" ;
+  std::string sOutDir = stlplus::folder_append_separator( m_project->exportPath() ) + "clusters";
   // erase existing data (if it exists)
-  if( stlplus::folder_exists( sOutDir ) )
+  if ( stlplus::folder_exists( sOutDir ) )
   {
-    stlplus::folder_delete( sOutDir , true ) ;
+    stlplus::folder_delete( sOutDir, true );
   }
 
   // Recreate from scratch
-  if( ! stlplus::folder_exists( sOutDir ) )
+  if ( !stlplus::folder_exists( sOutDir ) )
   {
-    if( ! stlplus::folder_create( sOutDir ) )
+    if ( !stlplus::folder_create( sOutDir ) )
     {
-      emit finished( NEXT_ACTION_ERROR ) ;
-      return ;
+      emit finished( NEXT_ACTION_ERROR );
+      return;
     }
-    if( ! stlplus::folder_exists( sOutDir ) )
+    if ( !stlplus::folder_exists( sOutDir ) )
     {
-      emit finished( NEXT_ACTION_ERROR ) ;
-      return ;
+      emit finished( NEXT_ACTION_ERROR );
+      return;
     }
   }
 
@@ -202,15 +186,15 @@ void WorkerClusterComputation::process( void )
   std::vector<nomoko::View> views;     // stores the poses for each view
   std::vector<nomoko::Point> points;   // 3d point positions
 
-  std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data = m_project->SfMData() ;
+  std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data = m_project->SfMData();
 
   std::map<openMVG::IndexT, uint32_t> origViewMap; // need to keep track of original views ids
   if ( !domsetImporter( *sfm_data, cameras, views, points, origViewMap ) )
   {
-    emit finished( NEXT_ACTION_ERROR ) ;
-    return ;
+    emit finished( NEXT_ACTION_ERROR );
+    return;
   }
-  hasIncremented( 1 ) ;
+  hasIncremented( 1 );
 
   // Clustering
   //---------------------------------------
@@ -221,10 +205,8 @@ void WorkerClusterComputation::process( void )
   nomoko::Domset domset( points, views, cameras, m_cluster_voxel_grid_size );
   domset.clusterViews( m_cluster_lower_bound, m_cluster_upper_bound );
 
-  std::cout << "Clustering view took (s): "
-            << clusteringTimer.elapsed() << std::endl;
-  hasIncremented( 1 ) ;
-
+  std::cout << "Clustering view took (s): " << clusteringTimer.elapsed() << std::endl;
+  hasIncremented( 1 );
 
   // export to ply to visualize
   const std::string viewOut = stlplus::folder_append_separator( sOutDir ) + "views.ply";
@@ -237,7 +219,7 @@ void WorkerClusterComputation::process( void )
 
     // Remap the camera index from contiguous to original view Id
     std::map<openMVG::IndexT, uint32_t> origViewMap_reverse;
-    for ( const auto& it : origViewMap )
+    for ( const auto &it : origViewMap )
     {
       origViewMap_reverse.insert( std::make_pair( it.second, it.first ) );
     }
@@ -277,8 +259,8 @@ void WorkerClusterComputation::process( void )
       std::cout << ss.str();
     }
 
-    const std::string file_path = stlplus::folder_append_separator( sOutDir ) + filename.str() ;
-    if ( !exportData( *sfm_data, file_path , finalClusters[ i ] ) )
+    const std::string file_path = stlplus::folder_append_separator( sOutDir ) + filename.str();
+    if ( !exportData( *sfm_data, file_path, finalClusters[ i ] ) )
     {
       std::stringstream str;
       str << "Could not write cluster : " << filename.str() << std::endl;
@@ -287,26 +269,25 @@ void WorkerClusterComputation::process( void )
   }
 
   hasIncremented( 1 );
-  emit finished( nextAction() ) ;
+  emit finished( nextAction() );
 }
 
 /**
-* @brief internal progress bar has been incremented, now signal it to the external progress dialog
-*/
+ * @brief internal progress bar has been incremented, now signal it to the external progress dialog
+ */
 void WorkerClusterComputation::hasIncremented( int nb )
 {
-  m_progress_value += nb ;
-  sendProgress() ;
+  m_progress_value += nb;
+  sendProgress();
 }
 
 /**
-* @brief set progress value to the main thread
-*/
+ * @brief set progress value to the main thread
+ */
 void WorkerClusterComputation::sendProgress( void )
 {
-  int progress_value = m_progress_value ;
-  emit progress( progress_value ) ;
+  int progress_value = m_progress_value;
+  emit progress( progress_value );
 }
-
 
 } // namespace openMVG_gui

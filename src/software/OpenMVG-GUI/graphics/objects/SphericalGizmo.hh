@@ -23,7 +23,7 @@ class SphericalGizmo: public RenderableObject
                     const openMVG::Vec3 & center ,
                     const double radius ) ;
 
-    virtual ~SphericalGizmo( void ) ; 
+    virtual ~SphericalGizmo( void ) ;
 
     /**
     * @brief Set center of the gizmo

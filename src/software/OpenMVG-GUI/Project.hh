@@ -245,8 +245,8 @@ class Project
     std::string reconstructionSequentialPath( void ) const ;
 
     /**
-    * @brief Get project export path 
-    * @return export path 
+    * @brief Get project export path
+    * @return export path
     */
     std::string exportPath( void ) const;
 
@@ -395,11 +395,11 @@ class Project
     std::string reconstructionSequentialPath( const std::string & base_path ) const ;
 
     /**
-    * @brief Given a base path, get export path 
-    * @param base_path 
-    * @return export path 
+    * @brief Given a base path, get export path
+    * @param base_path
+    * @return export path
     */
-    std::string exportPath( const std::string & base_path ) const ; 
+    std::string exportPath( const std::string & base_path ) const ;
 
     /**
     * @brief Get global feature path
