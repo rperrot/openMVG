@@ -1,6 +1,5 @@
 #include "WorkerSfMDataLoad.hh"
 
-#include "openMVG/sfm/sfm_data.hpp"
 #include "openMVG/sfm/sfm_data_io.hpp"
 
 namespace openMVG_gui

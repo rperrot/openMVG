@@ -4,19 +4,12 @@
 #include "Project.hh"
 #include "WorkerInterface.hh"
 
+#include "openMVG/sfm/sfm_data.hpp"
+
 #include <QObject>
 
 #include <atomic>
 #include <vector>
-
-// Frwd
-namespace openMVG
-{
-namespace sfm
-{
-class SfM_Data;
-} // namespace sfm
-} // namespace openMVG
 
 namespace openMVG_gui
 {

@@ -73,7 +73,7 @@ void WorkerProjectCreation::process( void )
   }
   catch ( std::runtime_error &err )
   {
-    std::cerr << "Error while creating project" << std::endl;
+    std::cerr << "Error while creating project: " << err.what() << std::endl;
     emit progress( vec_image.size() + 2 );
     emit finished( NEXT_ACTION_ERROR );
     return;

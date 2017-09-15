@@ -5,7 +5,6 @@
 #include "openMVG/features/feature.hpp"
 #include "openMVG/image/image_io.hpp"
 #include "openMVG/image/image_resampling.hpp"
-#include "openMVG/sfm/sfm_data.hpp"
 #include "openMVG/sfm/sfm_data_io.hpp"
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"

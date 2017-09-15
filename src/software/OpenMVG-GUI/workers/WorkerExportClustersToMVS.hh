@@ -6,6 +6,7 @@
 #include <QObject>
 #include <QThread>
 
+#include <atomic>
 #include <memory>
 #include <mutex>
 #include <string>

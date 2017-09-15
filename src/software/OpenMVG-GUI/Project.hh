@@ -19,7 +19,7 @@ namespace openMVG
 {
 namespace sfm
 {
-class SfM_Data ;
+struct SfM_Data ;
 }
 }
 

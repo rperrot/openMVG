@@ -10,8 +10,8 @@ namespace openMVG
 {
 namespace sfm
 {
-class Features_Provider;
-class Matches_Provider;
+struct Features_Provider;
+struct Matches_Provider;
 } // namespace sfm
 } // namespace openMVG
 

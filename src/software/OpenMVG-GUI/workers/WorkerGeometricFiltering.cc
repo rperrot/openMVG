@@ -51,10 +51,10 @@ std::shared_ptr<openMVG::matching::PairWiseMatches> WorkerGeometricFiltering::fi
  */
 void WorkerGeometricFiltering::process( void )
 {
-  const std::string sFeaturePath                   = m_project->featuresPath();
-  std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data = m_project->SfMData();
-  const MatchingParams m_params                    = m_project->matchingParams();
-  const int imax_iteration                         = m_params.maxIterationFiltering();
+  const std::string sFeaturePath                         = m_project->featuresPath();
+  const std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data = m_project->SfMData();
+  const MatchingParams m_params                          = m_project->matchingParams();
+  const int imax_iteration                               = m_params.maxIterationFiltering();
 
   std::unique_ptr<openMVG::matching_image_collection::ImageCollectionGeometricFilter> filter_ptr( new openMVG::matching_image_collection::ImageCollectionGeometricFilter( sfm_data.get(), m_regions_provider ) );
 

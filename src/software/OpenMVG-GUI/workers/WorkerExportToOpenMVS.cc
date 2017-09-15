@@ -4,7 +4,6 @@
 #include "openMVG/cameras/Camera_undistort_image.hpp"
 #include "openMVG/image/image_io.hpp"
 #include "openMVG/sfm/sfm.hpp"
-#include "openMVG/sfm/sfm_data.hpp"
 #include "openMVG/sfm/sfm_data_io.hpp"
 
 #define _USE_EIGEN

@@ -243,7 +243,7 @@ void WorkerClusterComputation::process( void )
 #ifdef OPENMVG_USE_OPENMP
   #pragma omp parallel for
 #endif
-  for ( size_t i = 0; i < numClusters; ++i )
+  for ( int i = 0; i < static_cast<int>(numClusters); ++i )
   {
     std::stringstream filename;
     filename << "sfm_data";

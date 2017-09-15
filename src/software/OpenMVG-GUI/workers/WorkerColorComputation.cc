@@ -3,7 +3,6 @@
 #include "OpenMVGImageInterface.hh"
 #include "WorkerProgressInterface.hh"
 
-#include "openMVG/sfm/sfm_data.hpp"
 #include "openMVG/sfm/sfm_data_io.hpp"
 #include "openMVG/stl/stl.hpp"
 #include "openMVG/types.hpp"
