@@ -17,7 +17,7 @@ struct PairWiseMatches;
 } // namespace matching
 namespace sfm
 {
-class Regions_Provider;
+struct Regions_Provider;
 } // namespace sfm
 } // namespace openMVG
 

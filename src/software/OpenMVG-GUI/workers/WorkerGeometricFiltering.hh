@@ -4,22 +4,13 @@
 #include "Project.hh"
 #include "WorkerInterface.hh"
 
+#include "openMVG/sfm/pipelines/sfm_regions_provider.hpp"
+
 #include <QObject>
 
 #include <atomic>
 #include <mutex>
 
-namespace openMVG
-{
-namespace matching
-{
-struct PairWiseMatches;
-} // namespace matching
-namespace sfm
-{
-class Regions_Provider;
-} // namespace sfm
-} // namespace openMVG
 
 namespace openMVG_gui
 {

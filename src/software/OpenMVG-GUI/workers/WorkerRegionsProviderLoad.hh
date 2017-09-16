@@ -13,7 +13,7 @@ namespace openMVG
 {
 namespace sfm
 {
-class Regions_Provider;
+struct Regions_Provider;
 }
 }
 

@@ -5,10 +5,14 @@
 
 #include "openMVG/sfm/pipelines/sfm_regions_provider.hpp"
 
+#include "openMVG/matching_image_collection/Matcher_Regions.hpp"
+#include "openMVG/matching_image_collection/GeometricFilter.hpp"
+
 #include "openMVG/matching/indMatch_utils.hpp"
+#include "openMVG/matching_image_collection/GeometricFilter.hpp"
+#include "openMVG/matching_image_collection/Geometric_Filter_utils.hpp"
 #include "openMVG/matching_image_collection/E_ACRobust.hpp"
 #include "openMVG/matching_image_collection/F_ACRobust.hpp"
-#include "openMVG/matching_image_collection/GeometricFilter.hpp"
 #include "openMVG/matching_image_collection/H_ACRobust.hpp"
 
 #include <QCoreApplication>
