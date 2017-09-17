@@ -12,3 +12,4 @@ target_link_libraries( OpenMVG_gui_workflow_params_widgets Qt5::Widgets Qt5::Ope
 target_include_directories( OpenMVG_gui_workflow_params_widgets PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../ )
 
 set_target_properties( OpenMVG_gui_workflow_params_widgets PROPERTIES CXX_STANDARD 11 )
+set_property(TARGET OpenMVG_gui_workflow_params_widgets PROPERTY FOLDER OpenMVG/software/OpenMVG_gui)

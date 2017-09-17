@@ -23,6 +23,7 @@ target_link_libraries( OpenMVG_gui_graphics OpenMVG_gui_utils
                                             ${OPENGL_LIBRARIES} 
                                             Qt5::OpenGL )
 set_target_properties( OpenMVG_gui_graphics PROPERTIES CXX_STANDARD 11 )
+set_property(TARGET OpenMVG_gui_graphics PROPERTY FOLDER OpenMVG/software/OpenMVG_gui)
 
 
 target_include_directories( OpenMVG_gui_graphics PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../utils )

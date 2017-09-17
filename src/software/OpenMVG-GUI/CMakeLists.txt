@@ -40,7 +40,7 @@ add_executable( OpenMVG-GUI WIN32 main.cc ${OPENMVG_GUI_HEADERS} ${OPENMVG_GUI_S
 #endif( APPLE )
 
 set_target_properties( OpenMVG-GUI PROPERTIES CXX_STANDARD 11 )
-
+set_property(TARGET OpenMVG-GUI PROPERTY FOLDER OpenMVG/software/OpenMVG_gui)
 target_link_libraries( OpenMVG-GUI 
                        # sub libraries 
                        OpenMVG_gui_dialogs

@@ -11,6 +11,7 @@ if( Qt5Widgets_FOUND )
 
   add_executable( openMVG_sample_image_undistort ${OPENMVG_SAMPLE_IMAGE_UNDISTORT_SRCS} ${OPENMVG_SAMPLE_IMAGE_UNDISTORT_HDRS})
   target_link_libraries( openMVG_sample_image_undistort Qt5::Widgets openMVG_image openMVG_multiview )
+  set_property(TARGET openMVG_sample_image_undistort PROPERTY FOLDER OpenMVG/Samples)
 
-   set_property(TARGET openMVG_sample_image_undistort PROPERTY CXX_STANDARD 11)
+  set_property(TARGET openMVG_sample_image_undistort PROPERTY CXX_STANDARD 11)
 endif( Qt5Widgets_FOUND)

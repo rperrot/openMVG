@@ -53,3 +53,4 @@ target_include_directories( OpenMVG_gui_workers PRIVATE ${CMAKE_CURRENT_SOURCE_D
 target_include_directories( OpenMVG_gui_workers PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../graphics )
 
 set_target_properties( OpenMVG_gui_workers PROPERTIES CXX_STANDARD 11 )
+set_property(TARGET OpenMVG_gui_workers PROPERTY FOLDER OpenMVG/software/OpenMVG_gui)
