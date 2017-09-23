@@ -15,6 +15,7 @@
 #include <thread>
 #include <vector>
 
+#include "openMVG/numeric/numeric.h"
 #include "openMVG/matching/matching_interface.hpp"
 #include "openMVG/matching/metric.hpp"
 #include "openMVG/stl/indexed_sort.hpp"

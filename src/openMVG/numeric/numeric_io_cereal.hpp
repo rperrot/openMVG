@@ -1,5 +1,5 @@
-#ifndef _NUMERIC_IO_CEREAL_HPP_
-#define _NUMERIC_IO_CEREAL_HPP_
+#ifndef OPENMVG_NUMERIC_NUMERIC_IO_CEREAL_HPP_
+#define OPENMVG_NUMERIC_NUMERIC_IO_CEREAL_HPP_
 
 #include "openMVG/numeric/numeric.h"
 
@@ -130,6 +130,6 @@ namespace cereal
     ar( mat(2,2) ) ;    
   }
 
-}
+} // namespace cereal
 
 #endif

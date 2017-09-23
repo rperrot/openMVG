@@ -1,7 +1,8 @@
 #ifndef _OPENMVG_MVS_OPENCL_WRAPPER_HH_
 #define _OPENMVG_MVS_OPENCL_WRAPPER_HH_
 
-#include "openMVG/image/image.hpp"
+#include "openMVG/numeric/numeric.h"
+#include "openMVG/image/image_container.hpp"
 
 #ifdef __APPLE__
   #include <OpenCL/OpenCL.h>

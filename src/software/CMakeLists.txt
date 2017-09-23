@@ -21,3 +21,4 @@ if (OpenMVG_BUILD_GUI_SOFTWARES)
 endif (OpenMVG_BUILD_GUI_SOFTWARES)
 
 add_subdirectory( SfMWebGLViewer )
+add_subdirectory( MVS )

@@ -1,7 +1,8 @@
 #ifndef _OPENMVG_MVS_IMAGE_HPP_
 #define _OPENMVG_MVS_IMAGE_HPP_
 
-#include "openMVG/image/image.hpp"
+#include "openMVG/image/image_container.hpp"
+#include "openMVG/image/pixel_types.hpp"
 
 #include "Camera.hpp"
 

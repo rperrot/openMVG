@@ -4,7 +4,7 @@
 #include "Camera.hpp"
 
 #include "openMVG/numeric/numeric.h"
-#include "openMVG/image/image.hpp"
+#include "openMVG/image/image_container.hpp"
 
 #include <string>
 

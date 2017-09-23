@@ -326,7 +326,7 @@ void ComputeMultipleScaleDepthMap( MVS::Camera & cam ,
 #endif
 
     std::cout << " ** Initial cost time : "
-              << chrono::duration_cast<chrono::milliseconds>( end_time - start_time ).count()
+              << std::chrono::duration_cast<std::chrono::milliseconds>( end_time - start_time ).count()
               << " ms "
               << std::endl ;
 
@@ -357,7 +357,7 @@ void ComputeMultipleScaleDepthMap( MVS::Camera & cam ,
 
       end_time = std::chrono::high_resolution_clock::now() ;
       std::cout << " ** Propagation " << id_step << " time : "
-                << chrono::duration_cast<chrono::milliseconds>( end_time - start_time ).count()
+                << std::chrono::duration_cast<std::chrono::milliseconds>( end_time - start_time ).count()
                 << " ms "
                 << std::endl ;
 
@@ -380,7 +380,7 @@ void ComputeMultipleScaleDepthMap( MVS::Camera & cam ,
 
       end_time = std::chrono::high_resolution_clock::now() ;
       std::cout << " ** Refinement " << id_step << " time : "
-                << chrono::duration_cast<chrono::milliseconds>( end_time - start_time ).count()
+                << std::chrono::duration_cast<std::chrono::milliseconds>( end_time - start_time ).count()
                 << " ms "
                 << std::endl ;
 
@@ -489,7 +489,7 @@ void ComputeDepthMap( MVS::Camera & cam ,
 #endif
   auto end_time = std::chrono::high_resolution_clock::now() ;
 
-  std::cout << "Initial cost time : " << chrono::duration_cast<chrono::milliseconds>( end_time - start_time ).count() << " ms " << std::endl ;
+  std::cout << "Initial cost time : " << std::chrono::duration_cast<std::chrono::milliseconds>( end_time - start_time ).count() << " ms " << std::endl ;
 
 #ifdef EXPORT_INTERMEDIATE_RESULT
   map.ExportToGrayscale( "init.png" ) ;
@@ -522,7 +522,7 @@ void ComputeDepthMap( MVS::Camera & cam ,
 #endif
 
     end_time = std::chrono::high_resolution_clock::now() ;
-    std::cout << "Propagation time : " << chrono::duration_cast<chrono::milliseconds>( end_time - start_time ).count() << " ms " << std::endl ;
+    std::cout << "Propagation time : " << std::chrono::duration_cast<std::chrono::milliseconds>( end_time - start_time ).count() << " ms " << std::endl ;
 
 #ifdef EXPORT_INTERMEDIATE_RESULT
     str << "iter_" << id_iteration << ".png" ;
@@ -546,7 +546,7 @@ void ComputeDepthMap( MVS::Camera & cam ,
 #endif
     end_time = std::chrono::high_resolution_clock::now() ;
 
-    std::cout << "Refinement time : " << chrono::duration_cast<chrono::milliseconds>( end_time - start_time ).count() << " ms " << std::endl ;
+    std::cout << "Refinement time : " << std::chrono::duration_cast<std::chrono::milliseconds>( end_time - start_time ).count() << " ms " << std::endl ;
 
 
 #ifdef EXPORT_INTERMEDIATE_RESULT

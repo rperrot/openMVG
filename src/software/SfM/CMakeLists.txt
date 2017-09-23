@@ -352,17 +352,17 @@ ENDIF(OpenMVG_USE_OPENCV)
 #
 # - Quality comparison against a GT camera path (MultiView Evaluation dataset)
 ###
-ADD_EXECUTABLE(openMVG_main_evalQuality main_evalQuality.cpp)
-TARGET_LINK_LIBRARIES(openMVG_main_evalQuality
-  openMVG_system
-  openMVG_features
-  openMVG_sfm
-  stlplus
-  )
+#ADD_EXECUTABLE(openMVG_main_evalQuality main_evalQuality.cpp)
+#TARGET_LINK_LIBRARIES(openMVG_main_evalQuality
+#  openMVG_system
+#  openMVG_features
+#  openMVG_sfm
+#  stlplus
+#  )
 
 #installation rules
-SET_PROPERTY(TARGET openMVG_main_evalQuality PROPERTY FOLDER OpenMVG/software)
-INSTALL(TARGETS openMVG_main_evalQuality DESTINATION bin/)
+#SET_PROPERTY(TARGET openMVG_main_evalQuality PROPERTY FOLDER OpenMVG/software)
+#INSTALL(TARGETS openMVG_main_evalQuality DESTINATION bin/)
 
 ##
 # Export tutorial with valid path thanks to a configuration file
