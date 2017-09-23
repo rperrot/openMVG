@@ -5,9 +5,9 @@
 #include "openMVG/image/image_io.hpp"
 #include "openMVG/image/image_filtering.hpp"
 #include "openMVG/image/image_resampling.hpp"
+#include "openMVG/image/pixel_types_io_cereal.hpp"
 
 #include "openMVG/numeric/numeric_io_cereal.hpp"
-#include "openMVG/image/pixel_types_io_cereal.hpp"
 
 #include <cereal/archives/portable_binary.hpp>
 
@@ -52,11 +52,11 @@ Image::Image( const std::string & path , const int scale , const openMVG::camera
 
   if( ( load & IMAGE_GRADIENT ) != 0 )
   {
-    ComputeGradient() ;
+    computeGradient() ;
   }
   if( ( load & IMAGE_CENSUS ) != 0 )
   {
-    ComputeCensus() ;
+    computeCensus() ;
   }
 }
 
@@ -67,7 +67,7 @@ Image::Image( const std::string & path , const int scale , const openMVG::camera
 */
 Image::Image( const std::string & color_image_path , const std::string & gray_image_path , const std::string & gradient_image_path , const std::string & census_path , const ImageLoadType & load )
 {
-  if( ! Load( color_image_path , gray_image_path , gradient_image_path , census_path , load ) )
+  if( ! this->load( color_image_path , gray_image_path , gradient_image_path , census_path , load ) )
   {
     std::cerr << "Warning : could not create image from serialization" << std::endl ;
   }
@@ -80,7 +80,7 @@ Image::Image( const std::string & color_image_path , const std::string & gray_im
 * @param id_col Index of the column
 * @return intensity at specified position
 */
-unsigned char Image::Intensity( const int id_row , const int id_col ) const
+unsigned char Image::intensity( const int id_row , const int id_col ) const
 {
   return m_grayscale.coeffRef( id_row , id_col ) ;
 }
@@ -90,9 +90,9 @@ unsigned char Image::Intensity( const int id_row , const int id_col ) const
 * @param pos Position ( id_y , id_x )
 * @return intensity at specified position
 */
-unsigned char Image::Intensity( const openMVG::Vec2i & pos ) const
+unsigned char Image::intensity( const openMVG::Vec2i & pos ) const
 {
-  return Intensity( pos[0] , pos[1] ) ;
+  return intensity( pos[0] , pos[1] ) ;
 }
 
 
@@ -102,7 +102,7 @@ unsigned char Image::Intensity( const openMVG::Vec2i & pos ) const
 * @param id_col Index of the column
 * @return census bitstring for corresponding pixel
 */
-unsigned long long Image::Census( const int id_row , const int id_col ) const
+unsigned long long Image::census( const int id_row , const int id_col ) const
 {
   return m_census( id_row , id_col ) ;
 }
@@ -113,7 +113,7 @@ unsigned long long Image::Census( const int id_row , const int id_col ) const
 * @param id_col Index of the column
 * @return Gradient magnitude at specified position
 */
-const openMVG::Vec4 & Image::Gradient( const int id_row , const int id_col ) const
+const openMVG::Vec4 & Image::gradient( const int id_row , const int id_col ) const
 {
   return m_gradient.coeffRef( id_row , id_col ) ;
 }
@@ -123,9 +123,9 @@ const openMVG::Vec4 & Image::Gradient( const int id_row , const int id_col ) con
 * @param pos Position ( id_y , id_x )
 * @return intensity at specified position
 */
-const openMVG::Vec4 & Image::Gradient( const openMVG::Vec2i & pos ) const
+const openMVG::Vec4 & Image::gradient( const openMVG::Vec2i & pos ) const
 {
-  return Gradient( pos[0] , pos[1] ) ;
+  return gradient( pos[0] , pos[1] ) ;
 }
 
 /**
@@ -135,7 +135,7 @@ const openMVG::Vec4 & Image::Gradient( const openMVG::Vec2i & pos ) const
 * @retval true if pixel is in the image
 * @retval false if pixel is outside the image
 */
-bool Image::Inside( const int id_row , const int id_col ) const
+bool Image::inside( const int id_row , const int id_col ) const
 {
   return m_grayscale.Contains( id_row , id_col ) ;
 }
@@ -146,16 +146,16 @@ bool Image::Inside( const int id_row , const int id_col ) const
 * @retval true if position is inside the image
 * @retval false if position is outside the image
 */
-bool Image::Inside( const openMVG::Vec2i & pos ) const
+bool Image::inside( const openMVG::Vec2i & pos ) const
 {
-  return Inside( pos[0] , pos[1] ) ;
+  return inside( pos[0] , pos[1] ) ;
 }
 
 /**
 * @brief Get width of the image
 * @return width of the image
 */
-unsigned long Image::Width( void ) const
+unsigned long Image::width( void ) const
 {
   return m_grayscale.Width() ;
 }
@@ -164,7 +164,7 @@ unsigned long Image::Width( void ) const
 * @brief Get height of the image
 * @return Height of the image
 */
-unsigned long Image::Height( void ) const
+unsigned long Image::height( void ) const
 {
   return m_grayscale.Height() ;
 }
@@ -176,7 +176,7 @@ unsigned long Image::Height( void ) const
  * @retval true If succes
  * @retval false If failure
  */
-bool Image::Save( const std::string & color_path ,
+bool Image::save( const std::string & color_path ,
                   const std::string & grayscale_path ,
                   const std::string & gradient_path ,
                   const std::string & census_path ,
@@ -279,7 +279,7 @@ bool Image::Save( const std::string & color_path ,
  * @retval true If success
  * @retval false If failure
  */
-bool Image::Load( const std::string & color_path ,
+bool Image::load( const std::string & color_path ,
                   const std::string & grayscale_path ,
                   const std::string & gradient_path ,
                   const std::string & census_path ,
@@ -380,12 +380,12 @@ bool Image::Load( const std::string & color_path ,
   return true ;
 }
 
-const openMVG::image::Image<unsigned char> & Image::Intensity( void ) const
+const openMVG::image::Image<unsigned char> & Image::intensity( void ) const
 {
   return m_grayscale ;
 }
 
-const openMVG::image::Image<openMVG::Vec4> & Image::Gradient( void ) const
+const openMVG::image::Image<openMVG::Vec4> & Image::gradient( void ) const
 {
   return m_gradient ;
 }
@@ -393,7 +393,7 @@ const openMVG::image::Image<openMVG::Vec4> & Image::Gradient( void ) const
 /**
 * @brief Get Census image
 */
-const openMVG::image::Image<unsigned long long> & Image::Census( void ) const
+const openMVG::image::Image<unsigned long long> & Image::census( void ) const
 {
   return m_census ;
 }
@@ -412,13 +412,13 @@ std::vector< Image > LoadNeighborImages( const Camera & reference_cam ,
   for( size_t id_neigh = 0 ; id_neigh < reference_cam.m_view_neighbors.size() ; ++id_neigh )
   {
     const int real_id = reference_cam.m_view_neighbors[ id_neigh ] ;
-    const std::string camera_path    = params.GetCameraDirectory( real_id ) ;
-    const std::string color_path     = params.GetColorPath( real_id ) ;
-    const std::string grayscale_path = params.GetGrayscalePath( real_id ) ;
-    const std::string gradient_path  = params.GetGradientPath( real_id ) ;
-    const std::string census_path    = params.GetCensusPath( real_id ) ;
+    const std::string camera_path    = params.getCameraDirectory( real_id ) ;
+    const std::string color_path     = params.getColorPath( real_id ) ;
+    const std::string grayscale_path = params.getGrayscalePath( real_id ) ;
+    const std::string gradient_path  = params.getGradientPath( real_id ) ;
+    const std::string census_path    = params.getCensusPath( real_id ) ;
 
-    neigh_imgs.push_back( Image( color_path , grayscale_path , gradient_path , census_path , load ) ) ;
+    neigh_imgs.emplace_back( Image( color_path , grayscale_path , gradient_path , census_path , load ) ) ;
   }
 
   return neigh_imgs ;
@@ -446,7 +446,7 @@ std::vector< Image > LoadNeighborImages( const Camera & reference_cam ,
     const std::string img_path = neigh_cam.m_img_path ;
 
     // Load image and convert at specific scale
-    neigh_imgs.push_back( Image( img_path , scale , neigh_cam.m_intrinsic , load ) ) ;
+    neigh_imgs.emplace_back( Image( img_path , scale , neigh_cam.m_intrinsic , load ) ) ;
   }
 
   return neigh_imgs ;
@@ -455,7 +455,7 @@ std::vector< Image > LoadNeighborImages( const Camera & reference_cam ,
 /**
 * @brief Compute Census transform
 */
-void Image::ComputeCensus( void )
+void Image::computeCensus( void )
 {
   m_census.resize( m_grayscale.Width() , m_grayscale.Height() , true , 0ul ) ;
 
@@ -488,7 +488,7 @@ void Image::ComputeCensus( void )
 /**
 * @brief Compute Gradient value
 */
-void Image::ComputeGradient( void )
+void Image::computeGradient( void )
 {
   openMVG::image::Image< double > in_d ;
   in_d = m_grayscale.GetMat().cast<double>() ;
@@ -510,4 +510,4 @@ void Image::ComputeGradient( void )
 }
 
 
-}
+} // namespace MVS

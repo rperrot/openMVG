@@ -16,16 +16,16 @@ namespace MVS
   * @param fcomp minimum number of images for a point to be considered as valid
   */
 DepthMapFusionComputationParameters::DepthMapFusionComputationParameters( const std::string &base_path,
-                                                                          const int          scale,
-                                                                          const double       fe,
-                                                                          const double       fang,
-                                                                          const int          fcomp )
-    : m_scale( scale ),
-      m_fe( fe ),
-      m_fang( openMVG::D2R( fang ) ),
-      m_fcomp( fcomp ),
-      m_use_wolff( false ) ,
-      m_base_path( base_path )
+    const int          scale,
+    const double       fe,
+    const double       fang,
+    const int          fcomp )
+  : m_scale( scale ),
+    m_fe( fe ),
+    m_fang( openMVG::D2R( fang ) ),
+    m_fcomp( fcomp ),
+    m_use_wolff( false ) ,
+    m_base_path( base_path )
 {
 }
 
@@ -33,7 +33,7 @@ DepthMapFusionComputationParameters::DepthMapFusionComputationParameters( const 
   * @brief Scale of the computation
   * @return scale
   */
-int DepthMapFusionComputationParameters::Scale( void ) const
+int DepthMapFusionComputationParameters::scale( void ) const
 {
   return m_scale;
 }
@@ -42,7 +42,7 @@ int DepthMapFusionComputationParameters::Scale( void ) const
   * @brief Get working path
   * @return working path
   */
-std::string DepthMapFusionComputationParameters::WorkingDirectory( void ) const
+std::string DepthMapFusionComputationParameters::workingDirectory( void ) const
 {
   return m_base_path;
 }
@@ -51,9 +51,9 @@ std::string DepthMapFusionComputationParameters::WorkingDirectory( void ) const
   * @brief Get directory containing all depth maps
   * @return View directory
   */
-std::string DepthMapFusionComputationParameters::GetDepthDirectory( void ) const
+std::string DepthMapFusionComputationParameters::getDepthDirectory( void ) const
 {
-  const std::string base = WorkingDirectory();
+  const std::string base = workingDirectory();
   return stlplus::create_filespec( base, "depth" );
 }
 
@@ -62,9 +62,9 @@ std::string DepthMapFusionComputationParameters::GetDepthDirectory( void ) const
   * @param id_cam Id of the camera to get
   * @return Camera path
   */
-std::string DepthMapFusionComputationParameters::GetCameraDirectory( const int id_cam ) const
+std::string DepthMapFusionComputationParameters::getCameraDirectory( const int id_cam ) const
 {
-  const std::string depth_dir = GetDepthDirectory();
+  const std::string depth_dir = getDepthDirectory();
 
   std::stringstream str;
   str << "cam_" << id_cam;
@@ -77,9 +77,9 @@ std::string DepthMapFusionComputationParameters::GetCameraDirectory( const int i
   * @param id_cam Id of the camera to get
   * @return Camera path for given camera
   */
-std::string DepthMapFusionComputationParameters::GetCameraPath( const int id_cam ) const
+std::string DepthMapFusionComputationParameters::getCameraPath( const int id_cam ) const
 {
-  const std::string cam_dir = GetCameraDirectory( id_cam );
+  const std::string cam_dir = getCameraDirectory( id_cam );
 
   std::stringstream str;
   str << "cam_" << m_scale << ".bin";
@@ -92,9 +92,9 @@ std::string DepthMapFusionComputationParameters::GetCameraPath( const int id_cam
   * @param id_cam Id of the camera to get
   * @return Grayscale path for given camera
   */
-std::string DepthMapFusionComputationParameters::GetGrayscalePath( const int id_cam ) const
+std::string DepthMapFusionComputationParameters::getGrayscalePath( const int id_cam ) const
 {
-  const std::string cam_dir = GetCameraDirectory( id_cam );
+  const std::string cam_dir = getCameraDirectory( id_cam );
 
   std::stringstream str;
   str << "grayscale_" << m_scale << ".bin";
@@ -107,9 +107,9 @@ std::string DepthMapFusionComputationParameters::GetGrayscalePath( const int id_
   * @param id_cam Id of the camera to get
   * @return Color path for given camera
   */
-std::string DepthMapFusionComputationParameters::GetColorPath( const int id_cam ) const
+std::string DepthMapFusionComputationParameters::getColorPath( const int id_cam ) const
 {
-  const std::string cam_dir = GetCameraDirectory( id_cam );
+  const std::string cam_dir = getCameraDirectory( id_cam );
 
   std::stringstream str;
   str << "color_" << m_scale << ".bin";
@@ -122,9 +122,9 @@ std::string DepthMapFusionComputationParameters::GetColorPath( const int id_cam 
   * @param id_cam Id of the camera to get
   * @return Depth path for given camera
   */
-std::string DepthMapFusionComputationParameters::GetDepthPath( const int id_cam ) const
+std::string DepthMapFusionComputationParameters::getDepthPath( const int id_cam ) const
 {
-  const std::string cam_dir = GetCameraDirectory( id_cam );
+  const std::string cam_dir = getCameraDirectory( id_cam );
 
   std::stringstream str;
   str << "dm_" << m_scale << ".bin";
@@ -137,9 +137,9 @@ std::string DepthMapFusionComputationParameters::GetDepthPath( const int id_cam 
   * @param id_cam Id of the camera to get
   * @reeturn Filtered depth path for the given camera
   */
-std::string DepthMapFusionComputationParameters::GetFilteredDepthPath( const int id_cam ) const
+std::string DepthMapFusionComputationParameters::getFilteredDepthPath( const int id_cam ) const
 {
-  const std::string cam_dir = GetCameraDirectory( id_cam );
+  const std::string cam_dir = getCameraDirectory( id_cam );
 
   std::stringstream str;
   str << "dm_" << m_scale << "_filtered.bin";
@@ -151,9 +151,9 @@ std::string DepthMapFusionComputationParameters::GetFilteredDepthPath( const int
    * @brief Get output model directory
    * @return Path of the output directory
    */
-std::string DepthMapFusionComputationParameters::GetModelDirectory( void ) const
+std::string DepthMapFusionComputationParameters::getModelDirectory( void ) const
 {
-  const std::string base = WorkingDirectory();
+  const std::string base = workingDirectory();
   return stlplus::create_filespec( base, "model" );
 }
 
@@ -161,9 +161,9 @@ std::string DepthMapFusionComputationParameters::GetModelDirectory( void ) const
    * @brief Get model name
    * @return model name for the current scale
    */
-std::string DepthMapFusionComputationParameters::GetModelPath( void ) const
+std::string DepthMapFusionComputationParameters::getModelPath( void ) const
 {
-  const std::string model_folder = GetModelDirectory();
+  const std::string model_folder = getModelDirectory();
 
   std::stringstream str;
   str << "model_" << m_scale << ".ply";
@@ -175,7 +175,7 @@ std::string DepthMapFusionComputationParameters::GetModelPath( void ) const
   * @brief Get depth threshold for two depth to be considered as equal
   * @return threshold
   */
-double DepthMapFusionComputationParameters::DepthThreshold( void ) const
+double DepthMapFusionComputationParameters::depthThreshold( void ) const
 {
   return m_fe;
 }
@@ -184,7 +184,7 @@ double DepthMapFusionComputationParameters::DepthThreshold( void ) const
   * @brief Get angle threshold for two normals to be considered as equal
   * @return threshold
   */
-double DepthMapFusionComputationParameters::AngleThreshold( void ) const
+double DepthMapFusionComputationParameters::angleThreshold( void ) const
 {
   return m_fang;
 }
@@ -193,47 +193,47 @@ double DepthMapFusionComputationParameters::AngleThreshold( void ) const
   * @brief Get number of consistent view for a pixel to be considered as valid
   * @return threshold
   */
-int DepthMapFusionComputationParameters::NbMinimumView( void ) const
+int DepthMapFusionComputationParameters::nbMinimumView( void ) const
 {
   return m_fcomp;
 }
 
 /**
-      * @brief Get depth sigma threshold 
-      * @return depth threshold 
+      * @brief Get depth sigma threshold
+      * @return depth threshold
       */
-double DepthMapFusionComputationParameters::GetSigma( void ) const
+double DepthMapFusionComputationParameters::getSigma( void ) const
 {
   return m_sigma;
 }
 
 /**
-      * @brief Set depth sigma threshold 
-      * @param sig depth threshold 
+      * @brief Set depth sigma threshold
+      * @param sig depth threshold
       */
-void DepthMapFusionComputationParameters::SetSigma( const double sig )
+void DepthMapFusionComputationParameters::setSigma( const double sig )
 {
   m_sigma = sig;
 }
 
-  /**
-  * @brief Indicate if Wolff filtering is used 
-  * @retval true if Wolff filtering is used  
-  * @retval false if Wolff filtering is not used 
-  */
-  bool DepthMapFusionComputationParameters::UseWolff( void ) const 
-  {
-    return m_use_wolff ; 
-  }
-
-  /**
-  * @brief set usage of Wolff filtring 
-  * @param use True to set Wolff filtering 
-  */
-  void DepthMapFusionComputationParameters::SetUseWolff( const bool use ) 
-  {
-    m_use_wolff = use ; 
-  }
-
-
+/**
+* @brief Indicate if Wolff filtering is used
+* @retval true if Wolff filtering is used
+* @retval false if Wolff filtering is not used
+*/
+bool DepthMapFusionComputationParameters::useWolff( void ) const
+{
+  return m_use_wolff ;
 }
+
+/**
+* @brief set usage of Wolff filtring
+* @param use True to set Wolff filtering
+*/
+void DepthMapFusionComputationParameters::setUseWolff( const bool use )
+{
+  m_use_wolff = use ;
+}
+
+
+} // namespace MVS

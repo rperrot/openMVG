@@ -21,7 +21,7 @@ namespace MVS
 */
 DepthMap::DepthMap( const std::string & path )
 {
-  if( ! Load( path ) )
+  if( ! load( path ) )
   {
     std::cerr << "Could not load the depth map file : "  << path << std::endl ;
   }
@@ -103,7 +103,7 @@ DepthMap & DepthMap::operator=( DepthMap && src )
 * @param id_col Column index
 * @return Matching cost at specified position
 */
-double DepthMap::Cost( const int id_row , const int id_col ) const
+double DepthMap::cost( const int id_row , const int id_col ) const
 {
   return m_cost( id_row , id_col ) ;
 }
@@ -113,9 +113,9 @@ double DepthMap::Cost( const int id_row , const int id_col ) const
 * @param pos Requested position
 * @return Matching cost at specified position
 */
-double DepthMap::Cost( const openMVG::Vec2i & pos ) const
+double DepthMap::cost( const openMVG::Vec2i & pos ) const
 {
-  return Cost( pos[0] , pos[1] ) ;
+  return cost( pos[0] , pos[1] ) ;
 }
 
 /**
@@ -124,7 +124,7 @@ double DepthMap::Cost( const openMVG::Vec2i & pos ) const
 * @param id_col Column index
 * @param new_cost New matching cost
 */
-void DepthMap::Cost( const int id_row , const int id_col , const double new_cost )
+void DepthMap::cost( const int id_row , const int id_col , const double new_cost )
 {
   m_cost( id_row , id_col ) = new_cost ;
 }
@@ -134,9 +134,9 @@ void DepthMap::Cost( const int id_row , const int id_col , const double new_cost
 * @param pos Requested position
 * @param new_cost New matching cost
 */
-void DepthMap::Cost( const openMVG::Vec2i & pos , const double new_cost )
+void DepthMap::cost( const openMVG::Vec2i & pos , const double new_cost )
 {
-  Cost( pos[0] , pos[1] , new_cost ) ;
+  cost( pos[0] , pos[1] , new_cost ) ;
 }
 
 
@@ -147,7 +147,7 @@ void DepthMap::Cost( const openMVG::Vec2i & pos , const double new_cost )
 * @param id_col Inex of the column
 * @return depth at specified position
 */
-double DepthMap::Depth( const int id_row , const int id_col ) const
+double DepthMap::depth( const int id_row , const int id_col ) const
 {
   return m_depth( id_row , id_col ) ;
 }
@@ -157,9 +157,9 @@ double DepthMap::Depth( const int id_row , const int id_col ) const
 * @param pos Requested position
 * @return depth at specified position
 */
-double DepthMap::Depth( const openMVG::Vec2i & pos ) const
+double DepthMap::depth( const openMVG::Vec2i & pos ) const
 {
-  return Depth( pos[0] , pos[1] ) ;
+  return depth( pos[0] , pos[1] ) ;
 }
 
 /**
@@ -168,7 +168,7 @@ double DepthMap::Depth( const openMVG::Vec2i & pos ) const
 * @param id_col Column index
 * @param new_depth New depth value
 */
-void DepthMap::Depth( const int id_row , const int id_col , const double new_depth )
+void DepthMap::depth( const int id_row , const int id_col , const double new_depth )
 {
   m_depth( id_row , id_col ) = new_depth ;
 }
@@ -178,15 +178,15 @@ void DepthMap::Depth( const int id_row , const int id_col , const double new_dep
 * @param pos Position index
 * @param new_depth New depth value
 */
-void DepthMap::Depth( const openMVG::Vec2i & pos , const double new_depth )
+void DepthMap::depth( const openMVG::Vec2i & pos , const double new_depth )
 {
-  Depth( pos[0] , pos[1] , new_depth ) ;
+  depth( pos[0] , pos[1] , new_depth ) ;
 }
 
 /**
 * @brief Apply randomization on normals
 */
-void DepthMap::RandomizePlanes( const Camera & cam , const double disp_min , const double disp_max )
+void DepthMap::randomizePlanes( const Camera & cam , const double disp_min , const double disp_max )
 {
 
   const double theta_max = openMVG::D2R( 60.0 ) ;
@@ -205,7 +205,7 @@ void DepthMap::RandomizePlanes( const Camera & cam , const double disp_min , con
   {
     for( int id_col = 0 ; id_col < m_plane.Width() ; ++id_col )
     {
-      openMVG::Vec3 dir = cam.GetViewVector( id_col , id_row ) ; //  cam.GetRay( openMVG::Vec2( id_col , id_row ) ).second ;
+      openMVG::Vec3 dir = cam.getViewVector( id_col , id_row ) ; //  cam.GetRay( openMVG::Vec2( id_col , id_row ) ).second ;
 
       // Generate a sequence q1 , q2 in [-1;1] such as
       // q1^2 + q2^2 < 1
@@ -236,7 +236,7 @@ void DepthMap::RandomizePlanes( const Camera & cam , const double disp_min , con
       // Sample disparity
       const double disp = distrib_d( rng ) ;
       // Convert disparity to depth value
-      const double d = cam.DepthDisparityConversion( disp ) ;
+      const double d = cam.depthDisparityConversion( disp ) ;
 
       // Compute plane_d using the current depth
       //            const openMVG::Vec3 ptX = cam.UnProject( id_col , id_row , d ) ;
@@ -255,7 +255,7 @@ void DepthMap::RandomizePlanes( const Camera & cam , const double disp_min , con
 * @param id_col Inex of the column
 * @return Normal at specified position
 */
-openMVG::Vec4 DepthMap::Plane( const int id_row , const int id_col ) const
+openMVG::Vec4 DepthMap::plane( const int id_row , const int id_col ) const
 {
   return m_plane( id_row , id_col ) ;
 }
@@ -265,9 +265,9 @@ openMVG::Vec4 DepthMap::Plane( const int id_row , const int id_col ) const
 * @param pos Requested position
 * @return Normal at specified position
 */
-openMVG::Vec4 DepthMap::Plane( const openMVG::Vec2i & pos ) const
+openMVG::Vec4 DepthMap::plane( const openMVG::Vec2i & pos ) const
 {
-  return Plane( pos[0] , pos[1] ) ;
+  return plane( pos[0] , pos[1] ) ;
 }
 
 /**
@@ -276,7 +276,7 @@ openMVG::Vec4 DepthMap::Plane( const openMVG::Vec2i & pos ) const
 * @param id_col Column index
 * @param new_normal The new normal
 */
-void DepthMap::Plane( const int id_row , const int id_col , const openMVG::Vec4 & new_normal )
+void DepthMap::plane( const int id_row , const int id_col , const openMVG::Vec4 & new_normal )
 {
   m_plane( id_row , id_col ) = new_normal ;
 }
@@ -286,9 +286,9 @@ void DepthMap::Plane( const int id_row , const int id_col , const openMVG::Vec4 
 * @param pos Requested position
 * @param new_normal The new normal
 */
-void DepthMap::Plane( const openMVG::Vec2i & pos , const openMVG::Vec4 & new_normal )
+void DepthMap::plane( const openMVG::Vec2i & pos , const openMVG::Vec4 & new_normal )
 {
-  Plane( pos[0] , pos[1] , new_normal ) ;
+  plane( pos[0] , pos[1] , new_normal ) ;
 }
 
 /**
@@ -298,7 +298,7 @@ void DepthMap::Plane( const openMVG::Vec2i & pos , const openMVG::Vec4 & new_nor
 * @retval true if the point is inside
 * @retval false if the point is outside
 */
-bool DepthMap::Inside( const int id_row , const int id_col ) const
+bool DepthMap::inside( const int id_row , const int id_col ) const
 {
   return m_depth.Contains( id_row , id_col ) ;
 }
@@ -308,7 +308,7 @@ bool DepthMap::Inside( const int id_row , const int id_col ) const
  * @brief Save depth map to a file
  * @param path Path for the output file
  */
-bool DepthMap::Save( const std::string & path ) const
+bool DepthMap::save( const std::string & path ) const
 {
   std::ofstream file( path , std::ios::binary ) ;
   if( ! file )
@@ -340,7 +340,7 @@ bool DepthMap::Save( const std::string & path ) const
 * @retval true If success
 * @retval false If failure
 */
-bool DepthMap::Load( const std::string & path )
+bool DepthMap::load( const std::string & path )
 {
   std::ifstream file( path , std::ios::binary ) ;
   if( ! file )
@@ -370,7 +370,7 @@ bool DepthMap::Load( const std::string & path )
 * @brief Get width of the dm
 * @return width
 */
-int DepthMap::Width( void ) const
+int DepthMap::width( void ) const
 {
   return m_depth.Width() ;
 }
@@ -379,12 +379,12 @@ int DepthMap::Width( void ) const
 * @brieg Get height of the dm
 * @return heigth
 */
-int DepthMap::Height( void ) const
+int DepthMap::height( void ) const
 {
   return m_depth.Height() ;
 }
 
-const openMVG::image::Image<openMVG::Vec4> & DepthMap::Planes( void ) const
+const openMVG::image::Image<openMVG::Vec4> & DepthMap::planes( void ) const
 {
   return m_plane ;
 }
@@ -393,7 +393,7 @@ const openMVG::image::Image<openMVG::Vec4> & DepthMap::Planes( void ) const
 /**
 * @brief Export to grayscale
 */
-void DepthMap::ExportToGrayscale( const std::string & path ) const
+void DepthMap::exportToGrayscale( const std::string & path ) const
 {
   // Get min - max depth
   double min_depth = std::numeric_limits<double>::max() ;
@@ -431,7 +431,7 @@ void DepthMap::ExportToGrayscale( const std::string & path ) const
   WriteImage( path.c_str() , outImg ) ;
 }
 
-void DepthMap::ExportCost( const std::string & path ) const
+void DepthMap::exportCost( const std::string & path ) const
 {
   // Compute range
   double c_min = std::numeric_limits<double>::max() ;
@@ -468,7 +468,7 @@ void DepthMap::ExportCost( const std::string & path ) const
   WriteImage( path.c_str() , outImg ) ;
 }
 
-void DepthMap::ExportNormal( const std::string & path ) const
+void DepthMap::exportNormal( const std::string & path ) const
 {
   openMVG::image::Image<openMVG::image::RGBColor> outImg( m_plane.Width() , m_plane.Height() ) ;
   for( int id_row = 0 ; id_row < m_plane.Height() ; ++id_row )
@@ -507,7 +507,7 @@ void DepthMap::ExportNormal( const std::string & path ) const
  * @param cam The camera used to compute point position
  * @param cost_threshold Threshold to remove some points (point with cost above are discarted)
  */
-void DepthMap::ExportToPly( const std::string & path , const Camera & cam , const double cost_threshold , const int scale )
+void DepthMap::exportToPly( const std::string & path , const Camera & cam , const double cost_threshold , const int scale )
 {
   std::ofstream file( path ) ;
   if( ! file )
@@ -523,7 +523,7 @@ void DepthMap::ExportToPly( const std::string & path , const Camera & cam , cons
     {
       if( m_cost( id_row , id_col ) < cost_threshold )
       {
-        pts.push_back( cam.UnProject( id_col , id_row , m_depth( id_row , id_col ) , scale ) ) ;
+        pts.emplace_back( cam.unProject( id_col , id_row , m_depth( id_row , id_col ) , scale ) ) ;
         ++nb_valid ;
       }
     }
@@ -551,7 +551,7 @@ void DepthMap::ExportToPly( const std::string & path , const Camera & cam , cons
 * @brief Set ground truth depth for known points
 * @param cam Camera in which ground truth are known
 */
-void DepthMap::SetGroundTruthDepth( const Camera & cam , const DepthMapComputationParameters & params , const int scale )
+void DepthMap::setGroundTruthDepth( const Camera & cam , const DepthMapComputationParameters & params , const int scale )
 {
   int div = 1 ;
   for( int i = 0 ; i < scale ; ++i )
@@ -574,7 +574,7 @@ void DepthMap::SetGroundTruthDepth( const Camera & cam , const DepthMapComputati
  * @note Unknown Depth values are interpolated using neighboring depth values
  * @warning Cost value should be recomputed from scratch because interpolation may be wrong
  */
-DepthMap DepthMap::Upscale( const int target_height , const int target_width ) const
+DepthMap DepthMap::upscale( const int target_height , const int target_width ) const
 {
   DepthMap res( target_height , target_width ) ;
 
@@ -685,7 +685,4 @@ DepthMap DepthMap::Upscale( const int target_height , const int target_width ) c
   return res ;
 }
 
-
-
-
-}
+} // namespace MVS

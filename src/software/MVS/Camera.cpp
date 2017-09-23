@@ -4,7 +4,6 @@
 
 #include "openMVG/cameras/cameras.hpp"
 #include "openMVG/multiview/essential.hpp"
-
 #include "openMVG/numeric/numeric_io_cereal.hpp"
 
 #include <cereal/archives/portable_binary.hpp>
@@ -48,13 +47,13 @@ Camera::Camera( void )
 // Load cameras from serialization file
 Camera::Camera( const std::string & cam )
 {
-  if( ! Load( cam ) )
+  if( ! load( cam ) )
   {
     std::cerr << "Could not load camera file from serialization" << std::endl;
   }
 }
 
-bool Camera::Save( const std::string & path )
+bool Camera::save( const std::string & path )
 {
   std::ofstream file( path , std::ios::binary ) ;
   if( ! file )
@@ -99,7 +98,7 @@ bool Camera::Save( const std::string & path )
   return true ;
 }
 
-bool Camera::Load( const std::string & path )
+bool Camera::load( const std::string & path )
 {
   std::ifstream file( path , std::ios::binary ) ;
   if( ! file )
@@ -180,7 +179,7 @@ std::vector< Camera > LoadCameras( const openMVG::sfm::SfM_Data & sfm_data , con
 
       // TODO: be more robust if not a pinhole (but what to do ?)
       const openMVG::cameras::Pinhole_Intrinsic * cam = dynamic_cast<const openMVG::cameras::Pinhole_Intrinsic*>( intrinsic );
-      const openMVG::Mat3 K = ScaleK( cam->K() , params.Scale() ) ;
+      const openMVG::Mat3 K = ScaleK( cam->K() , params.scale() ) ;
 
       Camera tmp ;
       tmp.m_K = K ;
@@ -198,7 +197,7 @@ std::vector< Camera > LoadCameras( const openMVG::sfm::SfM_Data & sfm_data , con
       tmp.m_t = translation ;
       tmp.m_C = center ;
       tmp.m_img_path = srcImage ;
-      tmp.m_cam_dims = Rescale( std::make_pair( cam->w() , cam->h() ) , params.Scale() ) ;
+      tmp.m_cam_dims = Rescale( std::make_pair( cam->w() , cam->h() ) , params.scale() ) ;
       tmp.m_intrinsic = const_cast<openMVG::cameras::IntrinsicBase *>( intrinsic ) ;
       openMVG::P_From_KRt( tmp.m_K , tmp.m_R , tmp.m_t , &tmp.m_P ) ;
 
@@ -264,7 +263,7 @@ std::vector< Camera > LoadCameras( const openMVG::sfm::SfM_Data & sfm_data , con
 
       const openMVG::Vec2 x = itObs->second.x ;
 
-      const double cur_depth = cur_cam.Depth( X ) ;  //  openMVG::Depth( cur_cam.m_R , cur_cam.m_t , X ) ;
+      const double cur_depth = cur_cam.depth( X ) ;  //  openMVG::Depth( cur_cam.m_R , cur_cam.m_t , X ) ;
       const double tmp_depth = cur_depth ;
       if( cur_depth > 0.0 )
       {
@@ -278,16 +277,16 @@ std::vector< Camera > LoadCameras( const openMVG::sfm::SfM_Data & sfm_data , con
   }
 
   // Compute neighbors (todo: use a more robust scheme) - shen, goesle, bailer, ...
-  const double aRadMin = openMVG::D2R( params.MinimumViewAngle() ) ;
-  const double aRadMax = openMVG::D2R( params.MaximumViewAngle() ) ;
-  const int K = params.NbMaximumViewSelection() ;
+  const double aRadMin = openMVG::D2R( params.minimumViewAngle() ) ;
+  const double aRadMax = openMVG::D2R( params.maximumViewAngle() ) ;
+  const int K = params.nbMaximumViewSelection() ;
 
   for( size_t id_ref_cam = 0 ; id_ref_cam < cams.size() ; ++id_ref_cam )
   {
     // Compute view angle wrt all others cameras
     std::vector< std::pair<int, double> > angle_cam ;
     Camera & cur_ref = cams[ id_ref_cam ] ;
-    const openMVG::Vec3 ref_dir = cur_ref.GetRay( openMVG::Vec2( cur_ref.m_cam_dims.first / 2 , cur_ref.m_cam_dims.second / 2 ) ).second ;
+    const openMVG::Vec3 ref_dir = cur_ref.getRay( openMVG::Vec2( cur_ref.m_cam_dims.first / 2 , cur_ref.m_cam_dims.second / 2 ) ).second ;
 
     std::vector< int > putative_list ;
 
@@ -299,7 +298,7 @@ std::vector< Camera > LoadCameras( const openMVG::sfm::SfM_Data & sfm_data , con
       }
 
       const Camera & cur_cam = cams[ id_cam ] ;
-      const openMVG::Vec3 cur_dir = cur_cam.GetRay( openMVG::Vec2( cur_cam.m_cam_dims.first / 2 , cur_cam.m_cam_dims.second / 2 ) ).second ;
+      const openMVG::Vec3 cur_dir = cur_cam.getRay( openMVG::Vec2( cur_cam.m_cam_dims.first / 2 , cur_cam.m_cam_dims.second / 2 ) ).second ;
 
       const double angle = AngleBetween( cur_dir , ref_dir ) ;
 
@@ -356,7 +355,7 @@ std::vector< Camera > LoadCameras( const openMVG::sfm::SfM_Data & sfm_data , con
 /**
  * @brief Compute Ray (origin, direction), given a 2d pixel
  */
-std::pair< openMVG::Vec3 , openMVG::Vec3 > Camera::GetRay( const openMVG::Vec2 & x ) const
+std::pair< openMVG::Vec3 , openMVG::Vec3 > Camera::getRay( const openMVG::Vec2 & x ) const
 {
   const openMVG::Vec3 pt = m_R.transpose() * ( m_K_inv * openMVG::Vec3( x[0] , x[1] , 1.0 ) ) ;
   const openMVG::Vec3 dir = pt.normalized() ;
@@ -366,7 +365,7 @@ std::pair< openMVG::Vec3 , openMVG::Vec3 > Camera::GetRay( const openMVG::Vec2 &
 /**
 * @brief Get 3d point for a 2d position and it's depth
 */
-openMVG::Vec3 Camera::UnProject( const double x , const double y , const double depth , const int scale ) const
+openMVG::Vec3 Camera::unProject( const double x , const double y , const double depth , const int scale ) const
 {
   const openMVG::Mat3 & Kinv = ( scale == -1 ) ? m_K_inv : m_K_inv_scaled[ scale ] ;
   return m_C + m_R.transpose() * depth * ( Kinv * openMVG::Vec3( x , y , 1.0 ) ) ;
@@ -375,12 +374,12 @@ openMVG::Vec3 Camera::UnProject( const double x , const double y , const double 
 /**
 * @brief Get 3d point in local coordinate frame (ie assuming the camera is at origin)
 */
-openMVG::Vec3 Camera::UnProjectLocal( const double x , const double y , const double depth ) const
+openMVG::Vec3 Camera::unProjectLocal( const double x , const double y , const double depth ) const
 {
   return depth * m_K_inv * openMVG::Vec3( x , y , 1.0 ) ;
 }
 
-double Camera::Depth( const openMVG::Vec3 & pt ) const
+double Camera::depth( const openMVG::Vec3 & pt ) const
 {
   return m_P( 2 , 0 ) * pt[0] +
          m_P( 2 , 1 ) * pt[1] +
@@ -388,13 +387,13 @@ double Camera::Depth( const openMVG::Vec3 & pt ) const
          m_P( 2 , 3 ) ;
 }
 
-double Camera::DepthDisparityConversion( const double d , const int scale ) const
+double Camera::depthDisparityConversion( const double d , const int scale ) const
 {
   const openMVG::Mat3 & K = ( scale == -1 ) ? m_K : m_K_scaled[ scale ] ;
   return K( 0, 0 ) * m_mean_baseline / d ;
 }
 
-double Camera::DepthDisparityConversion( const double d , const double baseline ) const
+double Camera::depthDisparityConversion( const double d , const double baseline ) const
 {
   return m_K( 0 , 0 ) * baseline / d ;
 }
@@ -458,7 +457,7 @@ openMVG::Mat3 ScaleK( const openMVG::Mat3 & K , const int scale )
   return res ;
 }
 
-openMVG::Vec3 Camera::Get3dPoint( const double x , const double y , const int scale ) const
+openMVG::Vec3 Camera::get3dPoint( const double x , const double y , const int scale ) const
 {
   openMVG::Vec3 pt ;
 
@@ -472,9 +471,9 @@ openMVG::Vec3 Camera::Get3dPoint( const double x , const double y , const int sc
   return M_inv * pt ;
 }
 
-openMVG::Vec3 Camera::GetViewVector( const double x , const double y , const int scale ) const
+openMVG::Vec3 Camera::getViewVector( const double x , const double y , const int scale ) const
 {
-  return ( Get3dPoint( x , y , scale ) - m_C ).normalized() ;
+  return ( get3dPoint( x , y , scale ) - m_C ).normalized() ;
 }
 
 /**
@@ -482,7 +481,7 @@ openMVG::Vec3 Camera::GetViewVector( const double x , const double y , const int
 * @param scale The requested scale
 * @return The intrinsic at specified scale
 */
-openMVG::Mat3 Camera::GetK( const int scale )
+openMVG::Mat3 Camera::getK( const int scale )
 {
   return m_K_scaled[ scale ] ;
 }
@@ -515,4 +514,4 @@ double ComputeDepth( const openMVG::Vec4 & plane , const int id_row , const int 
 #endif
 }
 
-}
+} // namespace MVS

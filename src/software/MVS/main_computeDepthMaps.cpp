@@ -9,8 +9,8 @@
 #include "Util.hpp"
 
 #include "openMVG/sfm/sfm.hpp"
-#include "third_party/cmdLine/cmdLine.h"
 
+#include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include <chrono>
@@ -124,7 +124,7 @@ void PrepareOutputDirectory( const std::vector< MVS::Camera > & cams ,
                              const MVS::DepthMapComputationParameters & params )
 {
   std::cout << "Preparing output directory" << std::endl ;
-  const std::string outDirPath = params.WorkingDirectory() ;
+  const std::string outDirPath = params.workingDirectory() ;
   if( ! stlplus::is_folder( outDirPath ) )
   {
     stlplus::folder_create( outDirPath ) ;
@@ -136,7 +136,7 @@ void PrepareOutputDirectory( const std::vector< MVS::Camera > & cams ,
   }
 
   // Create depth folder
-  const std::string depth_folder = params.DepthDirectory() ;
+  const std::string depth_folder = params.depthDirectory() ;
   if( ! stlplus::is_folder( depth_folder ) )
   {
     stlplus::folder_create( depth_folder ) ;
@@ -148,7 +148,7 @@ void PrepareOutputDirectory( const std::vector< MVS::Camera > & cams ,
   }
 
   // create model folder
-  const std::string model_folder = params.GetModelDirectory() ;
+  const std::string model_folder = params.getModelDirectory() ;
   if( ! stlplus::is_folder( model_folder ) )
   {
     stlplus::folder_create( model_folder ) ;
@@ -164,7 +164,7 @@ void PrepareOutputDirectory( const std::vector< MVS::Camera > & cams ,
   {
     std::stringstream str ;
     str << "cam_" << id_cam ;
-    const std::string cam_folder = params.GetCameraDirectory( id_cam ) ;
+    const std::string cam_folder = params.getCameraDirectory( id_cam ) ;
     if( ! stlplus::is_folder( cam_folder ) )
     {
       stlplus::folder_create( cam_folder ) ;
@@ -175,17 +175,17 @@ void PrepareOutputDirectory( const std::vector< MVS::Camera > & cams ,
       }
     }
 
-    const MVS::ImageLoadType load_type = MVS::ComputeLoadType( params.Metric() ) ;
+    const MVS::ImageLoadType load_type = MVS::ComputeLoadType( params.metric() ) ;
 
     // Create images and save it
-    MVS::Image cur_img( cams[ id_cam ].m_img_path , params.Scale() , cams[ id_cam ].m_intrinsic , load_type ) ;
+    MVS::Image cur_img( cams[ id_cam ].m_img_path , params.scale() , cams[ id_cam ].m_intrinsic , load_type ) ;
     // Grayscale path
-    const std::string color_path     = params.GetColorPath( id_cam ) ;
-    const std::string grayscale_path = params.GetGrayscalePath( id_cam ) ;
-    const std::string gradient_path  = params.GetGradientPath( id_cam ) ;
-    const std::string census_path    = params.GetCensusPath( id_cam ) ;
+    const std::string color_path     = params.getColorPath( id_cam ) ;
+    const std::string grayscale_path = params.getGrayscalePath( id_cam ) ;
+    const std::string gradient_path  = params.getGradientPath( id_cam ) ;
+    const std::string census_path    = params.getCensusPath( id_cam ) ;
 
-    cur_img.Save( color_path , grayscale_path , gradient_path , census_path , load_type ) ;
+    cur_img.save( color_path , grayscale_path , gradient_path , census_path , load_type ) ;
   }
   std::cout << "Preparation done" << std::endl ;
 }
@@ -207,11 +207,11 @@ void ComputeMultipleScaleDepthMap( MVS::Camera & cam ,
   std::vector< std::pair< int , int > > imgs_dims ;
   for( int i = 0 ; i <= start_scale ; ++i )
   {
-    if( i < params.Scale() )
+    if( i < params.scale() )
     {
       imgs_dims.push_back( std::make_pair( 0 , 0 ) ) ;
     }
-    else if( i == params.Scale() )
+    else if( i == params.scale() )
     {
       imgs_dims.push_back( std::make_pair( cam.m_cam_dims.second , cam.m_cam_dims.first ) ) ;
     }
@@ -227,11 +227,11 @@ void ComputeMultipleScaleDepthMap( MVS::Camera & cam ,
   MVS::DepthMap map( imgs_dims[ start_scale ].first , imgs_dims[ start_scale ].second ) ;
 
   // Add 20% of the range
-  const double min_disparity = cam.DepthDisparityConversion( cam.m_max_depth * 1.2 ) ;
-  const double max_disparity = cam.DepthDisparityConversion( cam.m_min_depth * 0.8 ) ;
+  const double min_disparity = cam.depthDisparityConversion( cam.m_max_depth * 1.2 ) ;
+  const double max_disparity = cam.depthDisparityConversion( cam.m_min_depth * 0.8 ) ;
 
-  map.RandomizePlanes( cam , min_disparity , max_disparity ) ;
-  map.SetGroundTruthDepth( cam , params , start_scale ) ;
+  map.randomizePlanes( cam , min_disparity , max_disparity ) ;
+  map.setGroundTruthDepth( cam , params , start_scale ) ;
 
   // Compute relative motion between current camera and it's neighbors
   std::vector<std::pair< openMVG::Mat3 , openMVG::Vec3 >> StereoRIG ;
@@ -240,29 +240,29 @@ void ComputeMultipleScaleDepthMap( MVS::Camera & cam ,
     StereoRIG.push_back( MVS::RelativeMotion( cam , cams[cam.m_view_neighbors[id_neigh] ] ) );
   }
 
-  const double MAX_COST = MVS::DepthMapComputationParameters::MetricMaxCostValue( params.Metric() ) ;
-  const MVS::ImageLoadType load_type = MVS::ComputeLoadType( params.Metric() ) ;
+  const double MAX_COST = MVS::DepthMapComputationParameters::metricMaxCostValue( params.metric() ) ;
+  const MVS::ImageLoadType load_type = MVS::ComputeLoadType( params.metric() ) ;
 
 #ifdef USE_OPENCL
   // Build openCL object
   MVS::OpenCLWrapper clWObject( MVS::OpenCLWrapper::OPENCL_DEVICE_GPU ) ;
   std::string cl_kernel_path      = std::string( MVS_BUILD_DIR ) + std::string( "/opencl_kernels.cl" ) ;
-  cl_program cl_pgm               = clWObject.CreateProgramFromSource( MVS::GetFileContent( cl_kernel_path ) ) ;
-  cl_kernel krn_cost_pm           = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_PM" ) ;
-  cl_kernel krn_cost_ncc          = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_NCC" ) ;
-  cl_kernel krn_cost_census       = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_Census" ) ;
-  cl_kernel krn_sum_kernel        = clWObject.GetKernelFromName( cl_pgm , "store_costs" ) ;
-  cl_kernel krn_sort_n_store      = clWObject.GetKernelFromName( cl_pgm , "sort_and_store_costs" ) ;
-  cl_kernel krn_cost_ncc_red      = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_NCC_red" ) ;
-  cl_kernel krn_cost_ncc_black    = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_NCC_black" ) ;
-  cl_kernel krn_cost_pm_red       = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_PM_red" ) ;
-  cl_kernel krn_cost_pm_black     = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_PM_black" ) ;
-  cl_kernel krn_cost_census_red   = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_Census_red" ) ;
-  cl_kernel krn_cost_census_black = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_Census_black" ) ;
-  cl_kernel krn_update_planes     = clWObject.GetKernelFromName( cl_pgm , "update_plane_wrt_cost" ) ;
-  cl_kernel krn_compute_depth     = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_depth" ) ;
-  cl_kernel krn_update_planes2    = clWObject.GetKernelFromName( cl_pgm , "update_plane_wrt_cost2" ) ;
-  cl_kernel krn_compute_planes    = clWObject.GetKernelFromName( cl_pgm , "compute_new_plane" ) ;
+  cl_program cl_pgm               = clWObject.createProgramFromSource( MVS::GetFileContent( cl_kernel_path ) ) ;
+  cl_kernel krn_cost_pm           = clWObject.getKernelFromName( cl_pgm , "compute_pixel_cost_PM" ) ;
+  cl_kernel krn_cost_ncc          = clWObject.getKernelFromName( cl_pgm , "compute_pixel_cost_NCC" ) ;
+  cl_kernel krn_cost_census       = clWObject.getKernelFromName( cl_pgm , "compute_pixel_cost_Census" ) ;
+  cl_kernel krn_sum_kernel        = clWObject.getKernelFromName( cl_pgm , "store_costs" ) ;
+  cl_kernel krn_sort_n_store      = clWObject.getKernelFromName( cl_pgm , "sort_and_store_costs" ) ;
+  cl_kernel krn_cost_ncc_red      = clWObject.getKernelFromName( cl_pgm , "compute_pixel_cost_NCC_red" ) ;
+  cl_kernel krn_cost_ncc_black    = clWObject.getKernelFromName( cl_pgm , "compute_pixel_cost_NCC_black" ) ;
+  cl_kernel krn_cost_pm_red       = clWObject.getKernelFromName( cl_pgm , "compute_pixel_cost_PM_red" ) ;
+  cl_kernel krn_cost_pm_black     = clWObject.getKernelFromName( cl_pgm , "compute_pixel_cost_PM_black" ) ;
+  cl_kernel krn_cost_census_red   = clWObject.getKernelFromName( cl_pgm , "compute_pixel_cost_Census_red" ) ;
+  cl_kernel krn_cost_census_black = clWObject.getKernelFromName( cl_pgm , "compute_pixel_cost_Census_black" ) ;
+  cl_kernel krn_update_planes     = clWObject.getKernelFromName( cl_pgm , "update_plane_wrt_cost" ) ;
+  cl_kernel krn_compute_depth     = clWObject.getKernelFromName( cl_pgm , "compute_pixel_depth" ) ;
+  cl_kernel krn_update_planes2    = clWObject.getKernelFromName( cl_pgm , "update_plane_wrt_cost2" ) ;
+  cl_kernel krn_compute_planes    = clWObject.getKernelFromName( cl_pgm , "compute_new_plane" ) ;
 
   cl_kernel krn_cost_full ;
   cl_kernel krn_cost_red ;
@@ -270,7 +270,7 @@ void ComputeMultipleScaleDepthMap( MVS::Camera & cam ,
 
 
   // Get the correct kernels
-  switch( params.Metric() )
+  switch( params.metric() )
   {
     case MVS::COST_METRIC_NCC :
     {
@@ -300,7 +300,7 @@ void ComputeMultipleScaleDepthMap( MVS::Camera & cam ,
   const int nb_step[] = { 4 , 3 , 3 } ;
 
   int index = 0 ;
-  for( int scale = start_scale ; scale >= params.Scale() ; --scale , ++index )
+  for( int scale = start_scale ; scale >= params.scale() ; --scale , ++index )
   {
     // Compute depth map at given scale
     std::cout << "Depth map computation at scale : " << scale << std::endl ;
@@ -319,10 +319,10 @@ void ComputeMultipleScaleDepthMap( MVS::Camera & cam ,
     auto end_time = std::chrono::high_resolution_clock::now() ;
 
 #ifdef EXPORT_INTERMEDIATE_RESULT
-    map.ExportCost( GetInitCostName( scale ) ) ;
-    map.ExportToGrayscale( GetInitDepthName( scale ) ) ;
-    map.ExportToPly( GetInitPlyName( scale ) , cam , MAX_COST / 20.0 , scale ) ;
-    map.ExportNormal( GetInitNormalName( scale ) ) ;
+    map.exportCost( GetInitCostName( scale ) ) ;
+    map.exportToGrayscale( GetInitDepthName( scale ) ) ;
+    map.exportToPly( GetInitPlyName( scale ) , cam , MAX_COST / 20.0 , scale ) ;
+    map.exportNormal( GetInitNormalName( scale ) ) ;
 #endif
 
     std::cout << " ** Initial cost time : "
@@ -349,10 +349,10 @@ void ComputeMultipleScaleDepthMap( MVS::Camera & cam ,
       Propagate( map , 1 , cam , cams , StereoRIG , reference_image , neigh_imgs , params , scale ) ;
 #endif
 #ifdef EXPORT_INTERMEDIATE_RESULT
-      map.ExportCost( GetPropagationCostName( id_step , scale ) ) ;
-      map.ExportToGrayscale( GetPropagationDepthName( id_step , scale ) ) ;
-      map.ExportToPly( GetPropagationPlyName( id_step , scale ) , cam , MAX_COST / 20.0  ) ;
-      map.ExportNormal( GetPropagationNormalName( id_step , scale ) ) ;
+      map.exportCost( GetPropagationCostName( id_step , scale ) ) ;
+      map.exportToGrayscale( GetPropagationDepthName( id_step , scale ) ) ;
+      map.exportToPly( GetPropagationPlyName( id_step , scale ) , cam , MAX_COST / 20.0  ) ;
+      map.exportNormal( GetPropagationNormalName( id_step , scale ) ) ;
 #endif
 
       end_time = std::chrono::high_resolution_clock::now() ;
@@ -371,10 +371,10 @@ void ComputeMultipleScaleDepthMap( MVS::Camera & cam ,
       Refinement( map , cam , cams , StereoRIG , reference_image , neigh_imgs , params , scale ) ;
 #endif
 #ifdef EXPORT_INTERMEDIATE_RESULT
-      map.ExportCost( GetRefinementCostName( id_step , scale ) ) ;
-      map.ExportToGrayscale( GetRefinementDepthName( id_step , scale ) ) ;
-      map.ExportToPly( GetRefinementPlyName( id_step , scale ) , cam , MAX_COST / 20.0 ) ;
-      map.ExportNormal( GetRefinementNormalName( id_step , scale ) ) ;
+      map.exportCost( GetRefinementCostName( id_step , scale ) ) ;
+      map.exportToGrayscale( GetRefinementDepthName( id_step , scale ) ) ;
+      map.exportToPly( GetRefinementPlyName( id_step , scale ) , cam , MAX_COST / 20.0 ) ;
+      map.exportNormal( GetRefinementNormalName( id_step , scale ) ) ;
 #endif
 
 
@@ -387,14 +387,14 @@ void ComputeMultipleScaleDepthMap( MVS::Camera & cam ,
     }
 
     // 3 - Upscale
-    if( scale != params.Scale() )
+    if( scale != params.scale() )
     {
-      map = map.Upscale( imgs_dims[ scale - 1 ].first , imgs_dims[ scale - 1 ].second ) ;
+      map = map.upscale( imgs_dims[ scale - 1 ].first , imgs_dims[ scale - 1 ].second ) ;
     }
   }
 
   // Save the depth map
-  map.Save( out_path ) ;
+  map.save( out_path ) ;
 }
 
 /**
@@ -415,29 +415,29 @@ void ComputeDepthMap( MVS::Camera & cam ,
 #ifdef USE_OPENCL
   MVS::OpenCLWrapper clWObject( MVS::OpenCLWrapper::OPENCL_DEVICE_GPU ) ;
   std::string cl_kernel_path   = std::string( MVS_BUILD_DIR ) + std::string( "/opencl_kernels.cl" ) ;
-  cl_program cl_pgm               = clWObject.CreateProgramFromSource( MVS::GetFileContent( cl_kernel_path ) ) ;
-  cl_kernel krn_cost_pm           = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_PM" ) ;
-  cl_kernel krn_cost_ncc          = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_NCC" ) ;
-  cl_kernel krn_cost_census       = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_Census" ) ;
-  cl_kernel krn_sum_kernel        = clWObject.GetKernelFromName( cl_pgm , "store_costs" ) ;
-  cl_kernel krn_sort_n_store      = clWObject.GetKernelFromName( cl_pgm , "sort_and_store_costs" ) ;
-  cl_kernel krn_cost_ncc_red      = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_NCC_red" ) ;
-  cl_kernel krn_cost_ncc_black    = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_NCC_black" ) ;
-  cl_kernel krn_cost_pm_red       = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_PM_red" ) ;
-  cl_kernel krn_cost_pm_black     = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_PM_black" ) ;
-  cl_kernel krn_cost_census_red   = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_Census_red" ) ;
-  cl_kernel krn_cost_census_black = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_cost_Census_black" ) ;
-  cl_kernel krn_update_planes     = clWObject.GetKernelFromName( cl_pgm , "update_plane_wrt_cost" ) ;
-  cl_kernel krn_compute_depth     = clWObject.GetKernelFromName( cl_pgm , "compute_pixel_depth" ) ;
-  cl_kernel krn_update_planes2    = clWObject.GetKernelFromName( cl_pgm , "update_plane_wrt_cost2" ) ;
-  cl_kernel krn_compute_planes    = clWObject.GetKernelFromName( cl_pgm , "compute_new_plane" ) ;
+  cl_program cl_pgm               = clWObject.createProgramFromSource( MVS::GetFileContent( cl_kernel_path ) ) ;
+  cl_kernel krn_cost_pm           = clWObject.getKernelFromName( cl_pgm , "compute_pixel_cost_PM" ) ;
+  cl_kernel krn_cost_ncc          = clWObject.getKernelFromName( cl_pgm , "compute_pixel_cost_NCC" ) ;
+  cl_kernel krn_cost_census       = clWObject.getKernelFromName( cl_pgm , "compute_pixel_cost_Census" ) ;
+  cl_kernel krn_sum_kernel        = clWObject.getKernelFromName( cl_pgm , "store_costs" ) ;
+  cl_kernel krn_sort_n_store      = clWObject.getKernelFromName( cl_pgm , "sort_and_store_costs" ) ;
+  cl_kernel krn_cost_ncc_red      = clWObject.getKernelFromName( cl_pgm , "compute_pixel_cost_NCC_red" ) ;
+  cl_kernel krn_cost_ncc_black    = clWObject.getKernelFromName( cl_pgm , "compute_pixel_cost_NCC_black" ) ;
+  cl_kernel krn_cost_pm_red       = clWObject.getKernelFromName( cl_pgm , "compute_pixel_cost_PM_red" ) ;
+  cl_kernel krn_cost_pm_black     = clWObject.getKernelFromName( cl_pgm , "compute_pixel_cost_PM_black" ) ;
+  cl_kernel krn_cost_census_red   = clWObject.getKernelFromName( cl_pgm , "compute_pixel_cost_Census_red" ) ;
+  cl_kernel krn_cost_census_black = clWObject.getKernelFromName( cl_pgm , "compute_pixel_cost_Census_black" ) ;
+  cl_kernel krn_update_planes     = clWObject.getKernelFromName( cl_pgm , "update_plane_wrt_cost" ) ;
+  cl_kernel krn_compute_depth     = clWObject.getKernelFromName( cl_pgm , "compute_pixel_depth" ) ;
+  cl_kernel krn_update_planes2    = clWObject.getKernelFromName( cl_pgm , "update_plane_wrt_cost2" ) ;
+  cl_kernel krn_compute_planes    = clWObject.getKernelFromName( cl_pgm , "compute_new_plane" ) ;
 
   cl_kernel krn_cost_full ;
   cl_kernel krn_cost_red ;
   cl_kernel krn_cost_black ;
 
   // Get the correct kernels
-  switch( params.Metric() )
+  switch( params.metric() )
   {
     case MVS::COST_METRIC_NCC :
     {
@@ -463,7 +463,7 @@ void ComputeDepthMap( MVS::Camera & cam ,
   }
 #endif
 
-  const double MAX_COST = MVS::DepthMapComputationParameters::MetricMaxCostValue( params.Metric() ) ;
+  const double MAX_COST = MVS::DepthMapComputationParameters::metricMaxCostValue( params.metric() ) ;
 
   // Compute relative motion between current camera and it's neighbors
   std::vector<std::pair< openMVG::Mat3 , openMVG::Vec3 >> StereoRIG ;
@@ -474,11 +474,11 @@ void ComputeDepthMap( MVS::Camera & cam ,
 
   // Initialize depth map
   MVS::DepthMap map( cam.m_cam_dims.second , cam.m_cam_dims.first ) ;
-  const double min_disparity = cam.DepthDisparityConversion( cam.m_max_depth * 1.2 ) ;
-  const double max_disparity = cam.DepthDisparityConversion( cam.m_min_depth * 0.8 ) ;
+  const double min_disparity = cam.depthDisparityConversion( cam.m_max_depth * 1.2 ) ;
+  const double max_disparity = cam.depthDisparityConversion( cam.m_min_depth * 0.8 ) ;
 
-  map.RandomizePlanes( cam , min_disparity , max_disparity ) ; // Add 30% of the range
-  map.SetGroundTruthDepth( cam , params , params.Scale() ) ;
+  map.randomizePlanes( cam , min_disparity , max_disparity ) ; // Add 30% of the range
+  map.setGroundTruthDepth( cam , params , params.scale() ) ;
 
   auto start_time = std::chrono::high_resolution_clock::now() ;
   // Compute initial cost
@@ -492,10 +492,10 @@ void ComputeDepthMap( MVS::Camera & cam ,
   std::cout << "Initial cost time : " << std::chrono::duration_cast<std::chrono::milliseconds>( end_time - start_time ).count() << " ms " << std::endl ;
 
 #ifdef EXPORT_INTERMEDIATE_RESULT
-  map.ExportToGrayscale( "init.png" ) ;
-  map.ExportToPly( "init.ply" , cam , MAX_COST / 10.0 ) ;
-  map.ExportCost( "init_cost.png" ) ;
-  map.ExportNormal( "init_normal.png" ) ;
+  map.exportToGrayscale( "init.png" ) ;
+  map.exportToPly( "init.ply" , cam , MAX_COST / 10.0 ) ;
+  map.exportCost( "init_cost.png" ) ;
+  map.exportNormal( "init_normal.png" ) ;
 #endif
 
   int nb_iteration = 8 ;
@@ -529,10 +529,10 @@ void ComputeDepthMap( MVS::Camera & cam ,
     strplyspa << "iter_" << id_iteration << ".ply" ;
     strcost << "iter_" << id_iteration << "_cost.png" ;
     strnor << "iter_" << id_iteration << "_nor.png" ;
-    map.ExportToGrayscale( str.str() );
-    map.ExportToPly( strplyspa.str() , cam , MAX_COST / 10.0 ) ;
-    map.ExportCost( strcost.str() ) ;
-    map.ExportNormal( strnor.str() ) ;
+    map.exportToGrayscale( str.str() );
+    map.exportToPly( strplyspa.str() , cam , MAX_COST / 10.0 ) ;
+    map.exportCost( strcost.str() ) ;
+    map.exportNormal( strnor.str() ) ;
 #endif
 
     // Make perturbation and update cost
@@ -554,15 +554,15 @@ void ComputeDepthMap( MVS::Camera & cam ,
     strply << "iter_" << id_iteration << "_ref.ply" ;
     strcostref << "iter_" << id_iteration << "_cost_ref.png" ;
     strnorref << "iter_" << id_iteration << "_nor_ref.png" ;
-    map.ExportToGrayscale( str2.str() ) ;
-    map.ExportToPly( strply.str() , cam , MAX_COST / 10.0 ) ;
-    map.ExportCost( strcostref.str() ) ;
-    map.ExportNormal( strnorref.str() ) ;
+    map.exportToGrayscale( str2.str() ) ;
+    map.exportToPly( strply.str() , cam , MAX_COST / 10.0 ) ;
+    map.exportCost( strcostref.str() ) ;
+    map.exportNormal( strnorref.str() ) ;
 #endif
   }
 
   // Now save the depth map
-  map.Save( out_path ) ;
+  map.save( out_path ) ;
 }
 
 // -i sfm_data
@@ -678,23 +678,23 @@ int main( int argc , char ** argv )
   for( size_t id_cam = 0 ; id_cam < cams.size() ; ++id_cam )
   {
     // Get path for current objets
-    const std::string cur_depth_path = params.GetDepthPath( id_cam ) ;
-    const std::string cur_cam_path   = params.GetCameraPath( id_cam ) ;
-    const std::string color_path     = params.GetColorPath( id_cam ) ;
-    const std::string grayscale_path = params.GetGrayscalePath( id_cam ) ;
-    const std::string gradient_path  = params.GetGradientPath( id_cam ) ;
-    const std::string census_path    = params.GetCensusPath( id_cam ) ;
+    const std::string cur_depth_path = params.getDepthPath( id_cam ) ;
+    const std::string cur_cam_path   = params.getCameraPath( id_cam ) ;
+    const std::string color_path     = params.getColorPath( id_cam ) ;
+    const std::string grayscale_path = params.getGrayscalePath( id_cam ) ;
+    const std::string gradient_path  = params.getGradientPath( id_cam ) ;
+    const std::string census_path    = params.getCensusPath( id_cam ) ;
 
-    cams[ id_cam ].Save( cur_cam_path ) ;
+    cams[ id_cam ].save( cur_cam_path ) ;
 
     if( ! stlplus::file_exists( cur_depth_path ) || kForceOverwrite )
     {
       std::cout << "Compute Depth for camera : " << id_cam << std::endl ;
 
 #ifdef MULTISCALE
-      ComputeMultipleScaleDepthMap( cams[ id_cam ] , cams , params , params.Scale() + 2 , cur_depth_path ) ;
+      ComputeMultipleScaleDepthMap( cams[ id_cam ] , cams , params , params.scale() + 2 , cur_depth_path ) ;
 #else
-      const MVS::ImageLoadType load_type = MVS::ComputeLoadType( params.Metric() ) ;
+      const MVS::ImageLoadType load_type = MVS::ComputeLoadType( params.metric() ) ;
       const MVS::Image cur_image( color_path , grayscale_path , gradient_path , census_path , load_type ) ;
       ComputeDepthMap( cams[ id_cam ] , cams , params , cur_image , cur_depth_path ) ;
 #endif
