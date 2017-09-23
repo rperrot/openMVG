@@ -9,15 +9,21 @@ language: cpp
 
 matrix:
   include:
-    - compiler: gcc
+    - os: linux
+      compiler: gcc
       addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
+            - ubuntu-sdk-team/ppa
           packages:
             - g++-4.8
+            - qtbase5-dev
+            - libqt5svg5-dev
+            - libqt5opengl5-dev
       env: COMPILER=g++-4.8
-    - compiler: clang
+    - os: linux
+      compiler: clang
       addons:
         apt:
           sources:
@@ -26,6 +32,8 @@ matrix:
           packages:
             - clang-3.7
       env: COMPILER=clang++-3.7
+    - os: osx
+      osx_image: xcode8.2
 
 addons:
   apt:
@@ -40,6 +48,7 @@ addons:
       - libxxf86vm-dev
       - x11proto-xf86vidmode-dev
       - libxrandr-dev
+      - qtbase5-dev
 
 env:
   global:
@@ -50,21 +59,24 @@ before_script:
   # Display cmake version
   - cmake --version
   # Create build folder
+  - rm -rf $OPENMVG_BUILD
   - mkdir $OPENMVG_BUILD
   - cd $OPENMVG_BUILD
   # Classic release build
-  # - SCHUR_SPECIALIZATIONS set to OFF to speed up build time (ceres)
+  #  - Compile only OpenMVG core libraries for unit testing
+  #  - SCHUR_SPECIALIZATIONS set to OFF to speed up build time (ceres)
   - >
     cmake \
       -DCMAKE_CXX_COMPILER=$COMPILER \
       -DCMAKE_BUILD_TYPE=release \
       -DOpenMVG_BUILD_TESTS=ON \
       -DOpenMVG_BUILD_EXAMPLES=ON \
+      -DOpenMVG_BUILD_SOFTWARES=ON \
       -DSCHUR_SPECIALIZATIONS=OFF \
       . $OPENMVG_SOURCE
 
 script:
 # limit GCC builds to a reduced number of thread for the virtual machine
-  - make -j 2
+  - time make all -j 2
   - make test
 

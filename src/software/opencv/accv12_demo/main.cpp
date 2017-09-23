@@ -1,3 +1,4 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
 
 // Copyright (c) 2012, 2013 Pierre MOULON.
 
@@ -80,7 +81,7 @@ int main(int, char**)
   cap.set(CV_CAP_PROP_FRAME_WIDTH, w);
   cap.set(CV_CAP_PROP_FRAME_HEIGHT, h);
 
-  if(!cap.isOpened() )  // check if we succeeded
+  if (!cap.isOpened() )  // check if we succeeded
   {
       std::cerr << "ERROR: Could not open cameras." << std::endl;
       return -1;
@@ -132,7 +133,7 @@ int main(int, char**)
   boost::circular_buffer<double> cb_RANSAC_inlierPourcent(100,0);
 
   cv::namedWindow("WEBCAM STREAM",CV_WINDOW_AUTOSIZE);
-  for(;;)
+  for (;;)
   {
       bool isValid = true;
 
@@ -148,7 +149,7 @@ int main(int, char**)
         extractor->compute( grayFrame, kptsStream, descriptorsStream );
         //std::cout << "KpFound : \t" << kptsStream.size() << std::endl;
       }
-      catch( cv::Exception& e )
+      catch ( cv::Exception& e )
       {
         std::cout << "An exception occurred. Ignoring frame. " << e.err << std::endl;
         isValid = false;
@@ -188,7 +189,7 @@ int main(int, char**)
           }
 
           //-- Homography robust estimation
-          std::vector<size_t> vec_inliers, vec_inliersRansac;
+          std::vector<uint32_t> vec_inliers, vec_inliersRansac;
           Mat3 H;
           Mat3 Hransac;
           double thresholdransac = 2.0;
@@ -386,7 +387,7 @@ int main(int, char**)
           delete [] arrayA;
 
         }
-        catch( cv::Exception& e )
+        catch ( cv::Exception& e )
         {
           std::cout << "An exception occurred. Ignoring frame. " << e.err << std::endl;
         }
@@ -414,4 +415,3 @@ int main(int, char**)
   // the camera object will be automatically released in VideoCapture destructor
   return 0;
 }
-

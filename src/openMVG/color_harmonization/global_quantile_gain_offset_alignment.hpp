@@ -1,3 +1,5 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
+
 // Copyright (c) 2013, 2014 Pierre MOULON.
 
 // This Source Code Form is subject to the terms of the Mozilla Public
@@ -5,7 +7,6 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #ifndef OPENMVG_COLOR_HARMONIZATION_GLOBAL_QUANTILE_GAIN_OFFSET_ALIGNMENT_HPP
 #define OPENMVG_COLOR_HARMONIZATION_GLOBAL_QUANTILE_GAIN_OFFSET_ALIGNMENT_HPP
-
 
 //------------------
 //-- Bibliography --
@@ -15,10 +16,14 @@
 //- Date: November 2013.
 //- Conference: CVMP.
 
-//-- Linear programming
+#include <numeric>
+#include <limits>
+#include <set>
+#include <utility>
+#include <vector>
+
 #include "openMVG/linearProgramming/bisectionLP.hpp"
 #include "openMVG/linearProgramming/linearProgrammingInterface.hpp"
-#include "openMVG/linearProgramming/linearProgrammingMOSEK.hpp"
 #include "openMVG/linearProgramming/linearProgrammingOSI_X.hpp"
 
 namespace openMVG {
@@ -29,7 +34,7 @@ struct relativeColorHistogramEdge
   size_t I,J;
   std::vector<size_t> histoI, histoJ;
 
-  relativeColorHistogramEdge() = default ;
+  relativeColorHistogramEdge() = default;
 
   relativeColorHistogramEdge(
     size_t i, size_t j,
@@ -49,7 +54,7 @@ static void normalizeHisto(const std::vector<T> & vec_df, std::vector<double> & 
 {
   double totalCount = static_cast<double>(std::accumulate(vec_df.begin(), vec_df.end(), 0));
   vec_normalized_df.resize(vec_df.size(), 0.0);
-  for(size_t i=0; i<vec_df.size(); i++)
+  for (size_t i=0; i<vec_df.size(); i++)
     vec_normalized_df[i] = vec_df[i] / totalCount;
 }
 
@@ -58,7 +63,7 @@ template<typename T>
 static void cdf(const std::vector<T> & vec_df, std::vector<T> & vec_cdf)
 {
   vec_cdf = vec_df;
-  for(size_t i=1; i<vec_cdf.size(); i++)
+  for (size_t i=1; i<vec_cdf.size(); i++)
       vec_cdf[i] = vec_cdf[i] + vec_cdf[i-1];
 }
 
@@ -94,9 +99,8 @@ static void Encode_histo_relation(
   vec_sign.resize(Nconstraint);
 
   // By default set free variable:
-  vec_bounds = std::vector< std::pair<double,double> >(NVar);
-  fill( vec_bounds.begin(), vec_bounds.end(),
-    std::make_pair((double)-1e+30, (double)1e+30));
+  vec_bounds.assign(NVar,
+    {std::numeric_limits<double>::lowest(), std::numeric_limits<double>::max()});
 
   // Set gain as positive values
   for (size_t i = 0; i < Nima; ++i)
@@ -105,11 +109,10 @@ static void Encode_histo_relation(
   }
 
   //-- Fix the required image to known gain and offset value
-  for (std::vector<size_t>::const_iterator iter = vec_indexToFix.begin();
-    iter != vec_indexToFix.end(); ++iter)
+  for (const auto & index : vec_indexToFix)
   {
-    vec_bounds[GVAR(*iter)] = std::make_pair(1.0, 1.0);      // gain = 1.0
-    vec_bounds[OFFSETVAR(*iter)] = std::make_pair(0.0, 0.0); // offset = 0
+    vec_bounds[GVAR(index)] = {1.0, 1.0};      // gain = 1.0
+    vec_bounds[OFFSETVAR(index)] = {0.0, 0.0}; // offset = 0
   }
 
   // Setup gamma >= 0
@@ -122,7 +125,7 @@ static void Encode_histo_relation(
   //--
 
   size_t rowPos = 0;
-  double incrementPourcentile = 1./(double) nbQuantile;
+  double incrementPourcentile = 1./ static_cast<double>(nbQuantile);
 
   for (size_t i = 0; i < Nrelative; ++i)
   {
@@ -157,7 +160,7 @@ static void Encode_histo_relation(
 
     std::vector<double>::const_iterator cdf_I_IterBegin = cdf_I.begin();
     std::vector<double>::const_iterator cdf_J_IterBegin = cdf_J.begin();
-    while( currentPourcentile < 1.0)
+    while (currentPourcentile < 1.0)
     {
       std::vector<double>::const_iterator iterFI = std::lower_bound(cdf_I.begin(), cdf_I.end(), currentPourcentile);
       const size_t positionI = std::distance(cdf_I_IterBegin, iterFI);
@@ -175,7 +178,7 @@ static void Encode_histo_relation(
     // pos * ga + offa - pos * gb - offb <= gamma
     // pos * ga + offa - pos * gb - offb >= - gamma
 
-    for(size_t k = 0; k < vec_pourcentilePositionI.size(); ++k)
+    for (size_t k = 0; k < vec_pourcentilePositionI.size(); ++k)
     {
       A.coeffRef(rowPos, GVAR(edge.I)) = vec_pourcentilePositionI[k];
       A.coeffRef(rowPos, OFFSETVAR(edge.I)) = 1.0;

@@ -1,4 +1,4 @@
-
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
 
 // Copyright (c) 2012, 2013, 2015 Pierre MOULON.
 
@@ -6,20 +6,21 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#include "openMVG/sfm/sfm.hpp"
-#include "openMVG/image/image.hpp"
+#include "openMVG/image/image_io.hpp"
+#include "openMVG/multiview/projection.hpp"
+#include "openMVG/sfm/sfm_data.hpp"
+#include "openMVG/sfm/sfm_data_io.hpp"
+
+#include "third_party/cmdLine/cmdLine.h"
+#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
+
+#include <fstream>
 
 using namespace openMVG;
 using namespace openMVG::cameras;
 using namespace openMVG::geometry;
 using namespace openMVG::image;
 using namespace openMVG::sfm;
-
-#include "third_party/cmdLine/cmdLine.h"
-#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
-#include "openMVG/numeric/numeric.h"
-
-#include <fstream>
 
 int main(int argc, char **argv)
 {
@@ -36,7 +37,7 @@ int main(int argc, char **argv)
   try {
       if (argc == 1) throw std::string("Invalid command line parameter.");
       cmd.process(argc, argv);
-  } catch(const std::string& s) {
+  } catch (const std::string& s) {
       std::cerr << "Usage: " << argv[0] << '\n'
       << "[-i|--sfmdata] filename, the SfM_Data file to convert\n"
       << "[-p|--ply] path\n"
@@ -83,7 +84,7 @@ int main(int argc, char **argv)
 
   outfile <<  " <RasterGroup>" << outfile.widen('\n');
 
-  for(Views::const_iterator iter = sfm_data.GetViews().begin();
+  for (Views::const_iterator iter = sfm_data.GetViews().begin();
       iter != sfm_data.GetViews().end(); ++iter)
   {
     const View * view = iter->second.get();
@@ -98,7 +99,7 @@ int main(int argc, char **argv)
     const IntrinsicBase * cam = iterIntrinsic->second.get();
     Mat34 P = cam->get_projective_equivalent(pose);
 
-    for ( int i = 1; i < 3 ; ++i)
+    for ( int i = 1; i < 3; ++i)
       for ( int j = 0; j < 4; ++j)
         P(i, j) *= -1.;
 

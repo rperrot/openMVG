@@ -1,3 +1,5 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
+
 // Copyright (c) 2013-2015 Pierre MOULON.
 
 // This Source Code Form is subject to the terms of the Mozilla Public
@@ -7,14 +9,14 @@
 #ifndef OPENMVG_EXIF_EXIF_IO_EASYEXIF_HPP
 #define OPENMVG_EXIF_EXIF_IO_EASYEXIF_HPP
 
-#include "openMVG/exif/exif_IO.hpp"
-
-#include "third_party/easyexif/exif.h"
-
 #include <fstream>
 #include <limits>
 #include <sstream>
+#include <string>
 #include <vector>
+
+#include "openMVG/exif/exif_IO.hpp"
+#include "third_party/easyexif/exif.h"
 
 namespace openMVG
 {
@@ -27,7 +29,7 @@ namespace exif
 */
 inline std::string trim_copy( const std::string& s )
 {
-  if( s.empty() )
+  if (s.empty() )
   {
     return s;
   }
@@ -59,7 +61,7 @@ class Exif_IO_EasyExif : public Exif_IO
     * @brief Constructor using a file
     * @param sFileName path of the image to analyze
     */
-    Exif_IO_EasyExif( const std::string & sFileName ): bHaveExifInfo_( false )
+    explicit Exif_IO_EasyExif( const std::string & sFileName ): bHaveExifInfo_( false )
     {
       open( sFileName );
     }

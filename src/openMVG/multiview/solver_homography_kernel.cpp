@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
 
 // Copyright (c) 2012, 2013 Pierre MOULON.
 
@@ -27,6 +28,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "openMVG/multiview/solver_homography_kernel.hpp"
+#include "openMVG/numeric/nullspace.hpp"
 
 namespace openMVG {
 namespace homography {
@@ -35,30 +37,27 @@ namespace kernel {
 /// Setup the Direct Linear Transform.
 ///  Use template in order to support fixed or dynamic sized matrix.
 /// Allow solve H as homogeneous(x2) = H homogeneous(x1)
-template<typename Matrix >
-void BuildActionMatrix(Matrix & L, const Mat &x, const Mat &y)  {
-
+void BuildActionMatrix
+(
+  Eigen::Ref<Mat> L,
+  const Mat &x,
+  const Mat &y
+)
+{
   const Mat::Index n = x.cols();
   for (Mat::Index i = 0; i < n; ++i) {
     Mat::Index j = 2 * i;
-    L(j, 0) = x(0, i);
-    L(j, 1) = x(1, i);
-    L(j, 2) = 1.0;
-    L(j, 6) = -y(0, i) * x(0, i);
-    L(j, 7) = -y(0, i) * x(1, i);
-    L(j, 8) = -y(0, i);
-
+    L.row(j) << x.col(i).homogeneous().transpose(),
+                Vec3::Constant(0.0).transpose(),
+                -y.col(i).x() * x.col(i).homogeneous().transpose();
     ++j;
-    L(j, 3) = x(0, i);
-    L(j, 4) = x(1, i);
-    L(j, 5) = 1.0;
-    L(j, 6) = -y(1, i) * x(0, i);
-    L(j, 7) = -y(1, i) * x(1, i);
-    L(j, 8) = -y(1, i);
+    L.row(j) << Vec3::Constant(0.0).transpose(),
+                x.col(i).homogeneous().transpose(),                
+                -y.col(i).y() * x.col(i).homogeneous().transpose();
   }
 }
 
-void FourPointSolver::Solve(const Mat &x, const Mat &y, vector<Mat3> *Hs) {
+void FourPointSolver::Solve(const Mat &x, const Mat &y, std::vector<Mat3> *Hs) {
   assert(2 == x.rows());
   assert(4 <= x.cols());
   assert(x.rows() == y.rows());
@@ -73,15 +72,15 @@ void FourPointSolver::Solve(const Mat &x, const Mat &y, vector<Mat3> *Hs) {
     using Mat16_9 = Eigen::Matrix<double, 16, 9>;
     Mat16_9 L = Mat::Zero(16, 9);
     BuildActionMatrix(L, x, y);
-    Nullspace(&L, &h);
+    Nullspace(L, h);
   }
   else {
     MatX9 L = Mat::Zero(n * 2, 9);
     BuildActionMatrix(L, x, y);
-    Nullspace(&L, &h);
+    Nullspace(L, h);
   }
-  Mat3 H = Map<RMat3>(h.data()); // map the linear vector as the H matrix
-  Hs->push_back(H);
+  // map the linear vector as the H matrix and save it
+  Hs->emplace_back(Map<RMat3>(h.data()));
 }
 
 }  // namespace kernel

@@ -1,3 +1,4 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
 
 // Copyright (c) 2012, 2013 Pierre MOULON.
 
@@ -8,12 +9,13 @@
 #ifndef OPENMVG_ROBUST_ESTIMATION_LMEDS_HPP
 #define OPENMVG_ROBUST_ESTIMATION_LMEDS_HPP
 
-#include "openMVG/robust_estimation/rand_sampling.hpp"
-#include "openMVG/robust_estimation/robust_ransac_tools.hpp"
-
 #include <algorithm>
+#include <numeric>
 #include <limits>
 #include <vector>
+
+#include "openMVG/robust_estimation/rand_sampling.hpp"
+#include "openMVG/robust_estimation/robust_ransac_tools.hpp"
 
 namespace openMVG {
 namespace robust{
@@ -37,39 +39,43 @@ template <typename Kernel>
   const size_t total_samples = kernel.NumSamples();
 
   std::vector<double> residuals(total_samples); // Array for storing residuals
-  std::vector<size_t> vec_sample(min_samples);
+  std::vector<uint32_t> vec_sample(min_samples);
 
   double dBestMedian = std::numeric_limits<double>::max();
 
   // Required number of iterations is evaluated from outliers ratio
-  const size_t N = (min_samples<total_samples)?
+  const uint32_t N = (min_samples<total_samples)?
     getNumSamples(minProba, outlierRatio, min_samples): 0;
-    
+
   // Precompute the index [0,n] that will be used for random sampling
-  std::vector<size_t> all_samples(total_samples);
+  std::vector<uint32_t> all_samples(total_samples);
   std::iota(all_samples.begin(), all_samples.end(), 0);
 
-  for (size_t i=0; i < N; i++)
+  //--
+  // Random number generation
+  std::mt19937 random_generator(std::mt19937::default_seed);
+
+  for (uint32_t i=0; i < N; i++)
   {
     // Get Samples indexes
-    UniformSample(min_samples, &all_samples, &vec_sample);
+    UniformSample(min_samples, random_generator, &all_samples, &vec_sample);
 
     // Estimate parameters: the solutions are stored in a vector
     std::vector<typename Kernel::Model> models;
     kernel.Fit(vec_sample, &models);
 
     // Now test the solutions on the whole data
-    for (size_t k = 0; k < models.size(); ++k)
+    for (const auto& model_it : models)
     {
       //Compute Residuals :
-      for (size_t l = 0; l < total_samples; ++l)
+      for (uint32_t l = 0; l < total_samples; ++l)
       {
-        residuals[l] = kernel.Error(l, models[k]);
+        residuals[l] = kernel.Error(l, model_it);
       }
 
       // Compute median
       const auto itMedian = residuals.begin() +
-        std::size_t( total_samples*(1.-outlierRatio) );
+        uint32_t( total_samples*(1.-outlierRatio) );
       std::nth_element(residuals.begin(), itMedian, residuals.end());
       const double median = *itMedian;
 
@@ -77,7 +83,7 @@ template <typename Kernel>
       if (median < dBestMedian)
       {
         dBestMedian = median;
-        if (model) (*model) = models[k];
+        if (model) (*model) = model_it;
       }
     }
   }
@@ -99,7 +105,7 @@ template <typename Kernel>
   // Evaluate the outlier threshold
   if (outlierThreshold)
   {
-    const double sigma = ICDF[int((1.-outlierRatio)*20.)] *
+    const double sigma = ICDF[uint32_t((1.-outlierRatio)*20.)] *
       (1. + 5. / double(total_samples - min_samples));
     *outlierThreshold = (double)(sigma * sigma * dBestMedian * 4.);
     if (N==0) *outlierThreshold = std::numeric_limits<double>::max();

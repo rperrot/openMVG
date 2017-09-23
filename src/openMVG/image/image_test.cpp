@@ -1,10 +1,14 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
+
 // Copyright (c) 2012, 2013 Pierre MOULON.
 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#include "openMVG/image/image.hpp"
+#include "openMVG/image/image_container.hpp"
+#include "openMVG/image/image_converter.hpp"
+#include "openMVG/image/pixel_types.hpp"
 
 #include "testing/testing.h"
 
@@ -34,7 +38,7 @@ TEST(Image, Basis)
 
   // Construction by matrix
   Eigen::Matrix<unsigned char, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> matrix(5,5);
-  Image<unsigned char> imageGray3 = matrix;
+  const Image<unsigned char> imageGray3(matrix);
 
   //- Get back matrix contained in the image
   matrix = imaGray.GetMat();

@@ -1,3 +1,5 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
+
 // Copyright (c) 2015 Pierre MOULON.
 
 // This Source Code Form is subject to the terms of the Mozilla Public
@@ -39,9 +41,12 @@ The implementation is based on
         http://www.ipol.im/pub/algo/rd_anatomy_sift/
 */
 
+#include <vector>
+
 #include "openMVG/features/feature.hpp"
 #include "openMVG/features/sift/hierarchical_gaussian_scale_space.hpp"
 #include "openMVG/features/sift/sift_keypoint.hpp"
+#include "openMVG/image/image_container.hpp"
 
 namespace openMVG{
 namespace features{
@@ -97,11 +102,11 @@ protected:
     m_Dogs.octave_level = octave.octave_level;
     m_Dogs.delta = octave.delta;
     m_Dogs.sigmas = octave.sigmas;
-    for(int s = 0; s < m_Dogs.slices.size(); ++s)
+    for (int s = 0; s < m_Dogs.slices.size(); ++s)
     {
       const image::Image<float> &P = octave.slices[s+1];
       const image::Image<float> &M = octave.slices[s];
-      m_Dogs.slices[s] = P - M ;
+      m_Dogs.slices[s] = P - M;
     }
     return true;
   }
@@ -123,38 +128,38 @@ protected:
     const size_t id_col
   )
   {
-    const float pix_val = fabsf(slices[id_slice](id_row, id_col));
+    const float pix_val = std::abs(slices[id_slice](id_row, id_col));
 
     const bool is_min_or_max =
       // Current slice
-      (pix_val > fabsf(slices[id_slice](id_row - 1, id_col - 1))) &&
-      (pix_val > fabsf(slices[id_slice](id_row - 1, id_col))) &&
-      (pix_val > fabsf(slices[id_slice](id_row - 1, id_col + 1))) &&
-      (pix_val > fabsf(slices[id_slice](id_row, id_col - 1))) &&
-      (pix_val > fabsf(slices[id_slice](id_row, id_col + 1))) &&
-      (pix_val > fabsf(slices[id_slice](id_row + 1, id_col - 1))) &&
-      (pix_val > fabsf(slices[id_slice](id_row + 1, id_col))) &&
-      (pix_val > fabsf(slices[id_slice](id_row + 1, id_col + 1))) &&
+      (pix_val > std::abs(slices[id_slice](id_row - 1, id_col - 1))) &&
+      (pix_val > std::abs(slices[id_slice](id_row - 1, id_col))) &&
+      (pix_val > std::abs(slices[id_slice](id_row - 1, id_col + 1))) &&
+      (pix_val > std::abs(slices[id_slice](id_row, id_col - 1))) &&
+      (pix_val > std::abs(slices[id_slice](id_row, id_col + 1))) &&
+      (pix_val > std::abs(slices[id_slice](id_row + 1, id_col - 1))) &&
+      (pix_val > std::abs(slices[id_slice](id_row + 1, id_col))) &&
+      (pix_val > std::abs(slices[id_slice](id_row + 1, id_col + 1))) &&
       // Above slice
-      (pix_val > fabsf(slices[id_slice - 1](id_row - 1, id_col - 1))) &&
-      (pix_val > fabsf(slices[id_slice - 1](id_row - 1, id_col))) &&
-      (pix_val > fabsf(slices[id_slice - 1](id_row - 1, id_col + 1))) &&
-      (pix_val > fabsf(slices[id_slice - 1](id_row, id_col - 1))) &&
-      (pix_val > fabsf(slices[id_slice - 1](id_row, id_col))) &&
-      (pix_val > fabsf(slices[id_slice - 1](id_row, id_col + 1))) &&
-      (pix_val > fabsf(slices[id_slice - 1](id_row + 1, id_col - 1))) &&
-      (pix_val > fabsf(slices[id_slice - 1](id_row + 1, id_col))) &&
-      (pix_val > fabsf(slices[id_slice - 1](id_row + 1, id_col + 1))) &&
+      (pix_val > std::abs(slices[id_slice - 1](id_row - 1, id_col - 1))) &&
+      (pix_val > std::abs(slices[id_slice - 1](id_row - 1, id_col))) &&
+      (pix_val > std::abs(slices[id_slice - 1](id_row - 1, id_col + 1))) &&
+      (pix_val > std::abs(slices[id_slice - 1](id_row, id_col - 1))) &&
+      (pix_val > std::abs(slices[id_slice - 1](id_row, id_col))) &&
+      (pix_val > std::abs(slices[id_slice - 1](id_row, id_col + 1))) &&
+      (pix_val > std::abs(slices[id_slice - 1](id_row + 1, id_col - 1))) &&
+      (pix_val > std::abs(slices[id_slice - 1](id_row + 1, id_col))) &&
+      (pix_val > std::abs(slices[id_slice - 1](id_row + 1, id_col + 1))) &&
       // Bottom slice
-      (pix_val > fabsf(slices[id_slice + 1](id_row - 1, id_col - 1))) &&
-      (pix_val > fabsf(slices[id_slice + 1](id_row - 1, id_col))) &&
-      (pix_val > fabsf(slices[id_slice + 1](id_row - 1, id_col + 1))) &&
-      (pix_val > fabsf(slices[id_slice + 1](id_row, id_col - 1))) &&
-      (pix_val > fabsf(slices[id_slice + 1](id_row, id_col))) &&
-      (pix_val > fabsf(slices[id_slice + 1](id_row, id_col + 1))) &&
-      (pix_val > fabsf(slices[id_slice + 1](id_row + 1, id_col - 1))) &&
-      (pix_val > fabsf(slices[id_slice + 1](id_row + 1, id_col))) &&
-      (pix_val > fabsf(slices[id_slice + 1](id_row + 1, id_col + 1)));
+      (pix_val > std::abs(slices[id_slice + 1](id_row - 1, id_col - 1))) &&
+      (pix_val > std::abs(slices[id_slice + 1](id_row - 1, id_col))) &&
+      (pix_val > std::abs(slices[id_slice + 1](id_row - 1, id_col + 1))) &&
+      (pix_val > std::abs(slices[id_slice + 1](id_row, id_col - 1))) &&
+      (pix_val > std::abs(slices[id_slice + 1](id_row, id_col))) &&
+      (pix_val > std::abs(slices[id_slice + 1](id_row, id_col + 1))) &&
+      (pix_val > std::abs(slices[id_slice + 1](id_row + 1, id_col - 1))) &&
+      (pix_val > std::abs(slices[id_slice + 1](id_row + 1, id_col))) &&
+      (pix_val > std::abs(slices[id_slice + 1](id_row + 1, id_col + 1)));
 
     return is_min_or_max;
   }
@@ -201,14 +206,14 @@ protected:
     const int w = m_Dogs.slices[0].Width();
 
     // Loop through the slices of the image stack (one octave)
-    for(int s = 1; s < ns-1; ++s)
+    for (int s = 1; s < ns-1; ++s)
     {
-      for(int id_row = 1; id_row < h-1; ++id_row )
+      for (int id_row = 1; id_row < h-1; ++id_row )
       {
-        for(int id_col = 1; id_col < w-1; ++id_col )
+        for (int id_col = 1; id_col < w-1; ++id_col )
         {
           const float pix_val = m_Dogs.slices[s](id_row, id_col);
-          if (fabsf(pix_val) > m_peak_threshold * percent)
+          if (std::abs(pix_val) > m_peak_threshold * percent)
           if (is_local_min_max(m_Dogs.slices, s, id_row, id_col))
           {
             // if 3d discrete extrema, save a candidate keypoint
@@ -217,8 +222,8 @@ protected:
             key.j = id_row;
             key.s = s;
             key.o = m_Dogs.octave_level;
-            key.x = delta * id_col ;
-            key.y = delta * id_row ;
+            key.x = delta * id_col;
+            key.y = delta * id_row;
             key.sigma = m_Dogs.sigmas[s];
             key.val = pix_val;
             keypoints.emplace_back(key);
@@ -301,11 +306,11 @@ protected:
     *val = slice(j,i) + ofstVal;
 
     // return true is the quadratic model is consistent (to the given range)
-    return fabsf(ofstX) < ofstMax && fabsf(ofstY) < ofstMax && fabsf(ofstS) < ofstMax;
+    return std::abs(ofstX) < ofstMax && std::abs(ofstY) < ofstMax && std::abs(ofstS) < ofstMax;
   }
 
   /**
-  * @brief Tell if a keypoint is close to the border according it's scale
+  * @brief Tell if a keypoint is close to the border according its scale
   * @param key The list of found extrema as Keypoints
   * @param w Slice image width
   * @param h Slice image height
@@ -320,8 +325,8 @@ protected:
     const int octave = key.o;
     const float ratio = 1 << octave; //pow(2,p);
     const float sigma = key.sigma;
-    const bool isIn = (x - lambda * sigma > 0.0 )&&( x + lambda * sigma < (float)w*ratio)
-                   && (y - lambda * sigma > 0.0 )&&( y + lambda * sigma < (float)h*ratio);
+    const bool isIn = (x - lambda * sigma > 0.0 )&&( x + lambda * sigma < (float)w * ratio)
+                   && (y - lambda * sigma > 0.0 )&&( y + lambda * sigma < (float)h * ratio);
     return isIn;
   }
 
@@ -346,7 +351,6 @@ protected:
     const Octave & octave = m_Dogs;
     const int w = octave.slices[0].Width();
     const int h = octave.slices[0].Height();
-    const int ns = octave.slices.size();
     const float delta  = octave.delta;
 
     for (const auto & key : keypoints)
@@ -380,14 +384,14 @@ protected:
         {
           // let's explore the neighbourhood in
           // space...
-          if( ofstX > +ofstMax && (ic+1) < (w-1) ) {++ic;}
-          if( ofstX < -ofstMax && (ic-1) >  0    ) {--ic;}
-          if( ofstY > +ofstMax && (jc+1) < (h-1) ) {++jc;}
-          if( ofstY < -ofstMax && (jc-1) >  0    ) {--jc;}
+          if (ofstX > +ofstMax && (ic+1) < (w-1) ) {++ic;}
+          if (ofstX < -ofstMax && (ic-1) >  0    ) {--ic;}
+          if (ofstY > +ofstMax && (jc+1) < (h-1) ) {++jc;}
+          if (ofstY < -ofstMax && (jc-1) >  0    ) {--jc;}
           // ... and scale.
           /*
-          if( ofstS > +ofstMax && (sc+1) < (ns-1)) {++sc;}
-          if( ofstS < -ofstMax && (sc-1) >    0  ) {--sc;}
+          if (ofstS > +ofstMax && (sc+1) < (ns-1)) {++sc;}
+          if (ofstS < -ofstMax && (sc-1) >    0  ) {--sc;}
           */
         }
       }
@@ -395,7 +399,7 @@ protected:
       if (isConv)
       {
         // Peak threshold check
-        if ( fabsf(val) > m_peak_threshold )
+        if ( std::abs(val) > m_peak_threshold )
         {
           Keypoint kp = key;
           kp.x = (ic + ofstX) * delta;
@@ -406,7 +410,7 @@ protected:
           kp.sigma = octave.sigmas[sc] * pow(sigma_ratio, ofstS); // logarithmic scale
           kp.val = val;
           // Edge check
-          if (Compute_edge_response(kp) >=0 && fabsf(kp.edgeResp) <= edge_thres)
+          if (Compute_edge_response(kp) >=0 && std::abs(kp.edgeResp) <= edge_thres)
           {
             // Border check
             if (Border_Check(kp, w, h))

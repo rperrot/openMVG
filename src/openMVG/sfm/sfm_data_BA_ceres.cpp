@@ -1,3 +1,5 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
+
 // Copyright (c) 2015 Pierre Moulon.
 
 // This Source Code Form is subject to the terms of the Mozilla Public
@@ -9,14 +11,29 @@
 #include "openMVG/robust_estimation/robust_estimator_LMeds.hpp"
 #include "openMVG/sfm/sfm_data.hpp"
 #include "openMVG/sfm/sfm_data_BA_ceres.hpp"
+
+#ifdef OPENMVG_USE_OPENMP
+#include <omp.h>
+#endif
+
+#include "ceres/problem.h"
+#include "ceres/solver.h"
+#include "openMVG/cameras/Camera_Common.hpp"
+#include "openMVG/cameras/Camera_Intrinsics.hpp"
+#include "openMVG/geometry/Similarity3.hpp"
+#include "openMVG/geometry/Similarity3_Kernel.hpp"
+//- Robust estimation - LMeds (since no threshold can be defined)
+#include "openMVG/robust_estimation/robust_estimator_LMeds.hpp"
 #include "openMVG/sfm/sfm_data_BA_ceres_camera_functor.hpp"
-#include "openMVG/sfm/sfm_data_io.hpp"
 #include "openMVG/sfm/sfm_data_transform.hpp"
+#include "openMVG/sfm/sfm_data.hpp"
 #include "openMVG/types.hpp"
 
-
-#include <ceres/ceres.h>
 #include <ceres/rotation.h>
+#include <ceres/types.h>
+
+#include <iostream>
+#include <limits>
 
 namespace openMVG {
 namespace sfm {
@@ -30,19 +47,12 @@ struct PoseCenterConstraintCostFunction
   Vec3 weight_;
   Vec3 pose_center_constraint_;
 
-  // Lever arm: (Transformation from view to pose's center and rotation sensor)
-  Vec3 pose_sensor_translation_;
-  Vec3 pose_sensor_rotation_;
-
   PoseCenterConstraintCostFunction
   (
     const Vec3 & center,
-    const Vec3 & weight,
-    const Pose3 & pose_sensor_transform = Pose3()
+    const Vec3 & weight
   ): weight_(weight), pose_center_constraint_(center)
   {
-      pose_sensor_translation_ = pose_sensor_transform.translation();
-      ceres::RotationMatrixToAngleAxis((const double*)pose_sensor_transform.rotation().data(), pose_sensor_rotation_.data());
   }
 
   template <typename T> bool
@@ -57,46 +67,16 @@ struct PoseCenterConstraintCostFunction
     const T * cam_t = &cam_extrinsics[3];
     const T cam_R_transpose[3] = {-cam_R[0], -cam_R[1], -cam_R[2]};
 
-    const T sensor_R[3] = { T(pose_sensor_rotation_(0)), T(pose_sensor_rotation_(1)), T(pose_sensor_rotation_(2)) };
-    const T sensor_t[3] = { T(pose_sensor_translation_(0)), T(pose_sensor_translation_(1)), T(pose_sensor_translation_(2)) };
-    const T sensor_R_transpose[3] = {-sensor_R[0], -sensor_R[1], -sensor_R[2]};
+    T pose_center[3];
+    // Rotate the point according the camera rotation
+    ceres::AngleAxisRotatePoint(cam_R_transpose, cam_t, pose_center);
+    pose_center[0] *= T(-1);
+    pose_center[1] *= T(-1);
+    pose_center[2] *= T(-1);
 
-
-    // Here is a brief summary of what should happen below:
-    // Calculate sensor's position in world coordinate using camera extrinsics and use that value for residual
-    // ---------------
-    // step 1) C_sensor_in_camera_space = inv(R_sensor) * ([0 0 0] - t_sensor)
-    // step 2) C_sensor_in_world_space  = inv(R_camera) * (C_sensor_in_camera_space - t_camera)
-    // step 3) residual = weight * (C_sensor_in_world_space - pose_center_constraint)
-
-
-    // For validation I'll derive steps 1 and 2 in reverse. (the above is actually reverse and this is forward)
-    // C_sensor_in_camera_space = R_camera * C_sensor_in_world_space + t_camera
-    // [0 0 0] = R_sensor * C_sensor_in_camera_space + t_sensor
-
-
-    T C_sensor_in_camera_space[3];
-    T C_sensor_in_world_space[3];
-
-    // pt = -sensor_t
-    T pt[3] = { -sensor_t[0], -sensor_t[1], -sensor_t[2] }; // temporary storage
-
-    // step 1
-    // this is constant and should be computed in constructor
-    ceres::AngleAxisRotatePoint(sensor_R_transpose, pt, C_sensor_in_camera_space);
-
-    // pt = C_sensor_in_camera_space - t_camera
-    pt[0] = C_sensor_in_camera_space[0] - cam_t[0];
-    pt[1] = C_sensor_in_camera_space[1] - cam_t[1];
-    pt[2] = C_sensor_in_camera_space[2] - cam_t[2];
-
-    // step 2
-    ceres::AngleAxisRotatePoint(cam_R_transpose, pt, C_sensor_in_world_space);
-
-    // step 3
-    residuals[0] = T(weight_[0]) * (C_sensor_in_world_space[0] - T(pose_center_constraint_[0]));
-    residuals[1] = T(weight_[1]) * (C_sensor_in_world_space[1] - T(pose_center_constraint_[1]));
-    residuals[2] = T(weight_[2]) * (C_sensor_in_world_space[2] - T(pose_center_constraint_[2]));
+    residuals[0] = T(weight_[0]) * (pose_center[0] - T(pose_center_constraint_[0]));
+    residuals[1] = T(weight_[1]) * (pose_center[1] - T(pose_center_constraint_[1]));
+    residuals[2] = T(weight_[2]) * (pose_center[2] - T(pose_center_constraint_[2]));
 
     return true;
   }
@@ -111,24 +91,22 @@ ceres::CostFunction * IntrinsicsToCostFunction
   const double weight
 )
 {
-  switch(intrinsic->getType())
+  switch (intrinsic->getType())
   {
     case PINHOLE_CAMERA:
-        return ResidualErrorFunctor_Pinhole_Intrinsic::Create(observation, weight);
-     break;
+      return ResidualErrorFunctor_Pinhole_Intrinsic::Create(observation, weight);
     case PINHOLE_CAMERA_RADIAL1:
       return ResidualErrorFunctor_Pinhole_Intrinsic_Radial_K1::Create(observation, weight);
-    break;
     case PINHOLE_CAMERA_RADIAL3:
       return ResidualErrorFunctor_Pinhole_Intrinsic_Radial_K3::Create(observation, weight);
-    break;
     case PINHOLE_CAMERA_BROWN:
       return ResidualErrorFunctor_Pinhole_Intrinsic_Brown_T2::Create(observation, weight);
-    break;
     case PINHOLE_CAMERA_FISHEYE:
       return ResidualErrorFunctor_Pinhole_Intrinsic_Fisheye::Create(observation, weight);
+    case CAMERA_SPHERICAL:
+      return ResidualErrorFunctor_Intrinsic_Spherical::Create(intrinsic, observation, weight);
     default:
-      return nullptr;
+      return {};
   }
 }
 
@@ -193,7 +171,7 @@ Bundle_Adjustment_Ceres::ceres_options()
 bool Bundle_Adjustment_Ceres::Adjust
 (
   SfM_Data & sfm_data,     // the SfM scene to refine
-  const Optimize_Options options
+  const Optimize_Options & options
 )
 {
   //----------
@@ -283,7 +261,7 @@ bool Bundle_Adjustment_Ceres::Adjust
     // angleAxis + translation
     map_poses[indexPose] = {angleAxis[0], angleAxis[1], angleAxis[2], t(0), t(1), t(2)};
 
-    double * parameter_block = &map_poses[indexPose][0];
+    double * parameter_block = &map_poses.at(indexPose)[0];
     problem.AddParameterBlock(parameter_block, 6);
     if (options.extrinsics_opt == Extrinsic_Parameter_Type::NONE)
     {
@@ -297,17 +275,13 @@ bool Bundle_Adjustment_Ceres::Adjust
       if (options.extrinsics_opt == Extrinsic_Parameter_Type::ADJUST_TRANSLATION)
       {
         // Subset rotation parametrization
-        vec_constant_extrinsic.push_back(0);
-        vec_constant_extrinsic.push_back(1);
-        vec_constant_extrinsic.push_back(2);
+        vec_constant_extrinsic.insert(vec_constant_extrinsic.end(), {0,1,2});
       }
       // If we adjust only the rotation, we must set TRANSLATION as constant
       if (options.extrinsics_opt == Extrinsic_Parameter_Type::ADJUST_ROTATION)
       {
         // Subset translation parametrization
-        vec_constant_extrinsic.push_back(3);
-        vec_constant_extrinsic.push_back(4);
-        vec_constant_extrinsic.push_back(5);
+        vec_constant_extrinsic.insert(vec_constant_extrinsic.end(), {3,4,5});
       }
       if (!vec_constant_extrinsic.empty())
       {
@@ -326,24 +300,26 @@ bool Bundle_Adjustment_Ceres::Adjust
     if (isValid(intrinsic_it.second->getType()))
     {
       map_intrinsics[indexCam] = intrinsic_it.second->getParams();
-
-      double * parameter_block = &map_intrinsics[indexCam][0];
-      problem.AddParameterBlock(parameter_block, map_intrinsics[indexCam].size());
-      if (options.intrinsics_opt == Intrinsic_Parameter_Type::NONE)
+      if (!map_intrinsics.at(indexCam).empty())
       {
-        // set the whole parameter block as constant for best performance
-        problem.SetParameterBlockConstant(parameter_block);
-      }
-      else
-      {
-        const std::vector<int> vec_constant_intrinsic =
-          intrinsic_it.second->subsetParameterization(options.intrinsics_opt);
-        if (!vec_constant_intrinsic.empty())
+        double * parameter_block = &map_intrinsics.at(indexCam)[0];
+        problem.AddParameterBlock(parameter_block, map_intrinsics.at(indexCam).size());
+        if (options.intrinsics_opt == Intrinsic_Parameter_Type::NONE)
         {
-          ceres::SubsetParameterization *subset_parameterization =
-            new ceres::SubsetParameterization(
-              map_intrinsics[indexCam].size(), vec_constant_intrinsic);
-          problem.SetParameterization(parameter_block, subset_parameterization);
+          // set the whole parameter block as constant for best performance
+          problem.SetParameterBlockConstant(parameter_block);
+        }
+        else
+        {
+          const std::vector<int> vec_constant_intrinsic =
+            intrinsic_it.second->subsetParameterization(options.intrinsics_opt);
+          if (!vec_constant_intrinsic.empty())
+          {
+            ceres::SubsetParameterization *subset_parameterization =
+              new ceres::SubsetParameterization(
+                map_intrinsics.at(indexCam).size(), vec_constant_intrinsic);
+            problem.SetParameterization(parameter_block, subset_parameterization);
+          }
         }
       }
     }
@@ -354,7 +330,7 @@ bool Bundle_Adjustment_Ceres::Adjust
   }
 
   // Set a LossFunction to be less penalized by false measurements
-  //  - set it to NULL if you don't want use a lossFunction.
+  //  - set it to nullptr if you don't want use a lossFunction.
   ceres::LossFunction * p_LossFunction =
     ceres_options_.bUse_loss_function_ ?
       new ceres::HuberLoss(Square(4.0))
@@ -374,14 +350,32 @@ bool Bundle_Adjustment_Ceres::Adjust
       // dimensional residual. Internally, the cost function stores the observed
       // image location and compares the reprojection against the observation.
       ceres::CostFunction* cost_function =
-        IntrinsicsToCostFunction(sfm_data.intrinsics[view->id_intrinsic].get(), obs_it.second.x);
+        IntrinsicsToCostFunction(sfm_data.intrinsics.at(view->id_intrinsic).get(),
+                                 obs_it.second.x);
 
       if (cost_function)
-        problem.AddResidualBlock(cost_function,
-          p_LossFunction,
-          &map_intrinsics[view->id_intrinsic][0],
-          &map_poses[view->id_pose][0],
-          structure_landmark_it.second.X.data());
+      {
+        if (!map_intrinsics.at(view->id_intrinsic).empty())
+        {
+          problem.AddResidualBlock(cost_function,
+            p_LossFunction,
+            &map_intrinsics.at(view->id_intrinsic)[0],
+            &map_poses.at(view->id_pose)[0],
+            structure_landmark_it.second.X.data());
+        }
+        else
+        {
+          problem.AddResidualBlock(cost_function,
+            p_LossFunction,
+            &map_poses.at(view->id_pose)[0],
+            structure_landmark_it.second.X.data());
+        }
+      }
+      else
+      {
+        std::cerr << "Cannot create a CostFunction for this camera model." << std::endl;
+        return false;
+      }
     }
     if (options.structure_opt == Structure_Parameter_Type::NONE)
       problem.SetParameterBlockConstant(structure_landmark_it.second.X.data());
@@ -405,16 +399,28 @@ bool Bundle_Adjustment_Ceres::Adjust
         // image location and compares the reprojection against the observation.
         ceres::CostFunction* cost_function =
           IntrinsicsToCostFunction(
-            sfm_data.intrinsics[view->id_intrinsic].get(),
+            sfm_data.intrinsics.at(view->id_intrinsic).get(),
             obs_it.second.x,
             options.control_point_opt.weight);
 
         if (cost_function)
-          problem.AddResidualBlock(cost_function,
-            nullptr,
-            &map_intrinsics[view->id_intrinsic][0],
-            &map_poses[view->id_pose][0],
-            gcp_landmark_it.second.X.data());
+        {
+          if (!map_intrinsics.at(view->id_intrinsic).empty())
+          {
+            problem.AddResidualBlock(cost_function,
+                                     nullptr,
+                                     &map_intrinsics.at(view->id_intrinsic)[0],
+                                     &map_poses.at(view->id_pose)[0],
+                                     gcp_landmark_it.second.X.data());
+          }
+          else
+          {
+            problem.AddResidualBlock(cost_function,
+                                     nullptr,
+                                     &map_poses.at(view->id_pose)[0],
+                                     gcp_landmark_it.second.X.data());
+          }
+        }
       }
       if (obs.empty())
       {
@@ -441,9 +447,13 @@ bool Bundle_Adjustment_Ceres::Adjust
         // Add the cost functor (distance from Pose prior to the SfM_Data Pose center)
         ceres::CostFunction * cost_function =
           new ceres::AutoDiffCostFunction<PoseCenterConstraintCostFunction, 3, 6>(
-            new PoseCenterConstraintCostFunction(prior->pose_center_, prior->center_weight_, prior->pose_sensor_transform_));
+            new PoseCenterConstraintCostFunction(prior->pose_center_, prior->center_weight_));
 
-        problem.AddResidualBlock(cost_function, new ceres::HuberLoss(Square(pose_center_robust_fitting_error)), &map_poses[prior->id_view][0]);
+        problem.AddResidualBlock(
+          cost_function,
+          new ceres::HuberLoss(
+            Square(pose_center_robust_fitting_error)),
+                   &map_poses.at(prior->id_view)[0]);
       }
     }
   }
@@ -452,9 +462,12 @@ bool Bundle_Adjustment_Ceres::Adjust
   //  Make Ceres automatically detect the bundle structure.
   ceres::Solver::Options ceres_config_options;
   ceres_config_options.max_num_iterations = 500;
-  ceres_config_options.preconditioner_type = ceres_options_.preconditioner_type_;
-  ceres_config_options.linear_solver_type = ceres_options_.linear_solver_type_;
-  ceres_config_options.sparse_linear_algebra_library_type = ceres_options_.sparse_linear_algebra_library_type_;
+  ceres_config_options.preconditioner_type =
+    static_cast<ceres::PreconditionerType>(ceres_options_.preconditioner_type_);
+  ceres_config_options.linear_solver_type =
+    static_cast<ceres::LinearSolverType>(ceres_options_.linear_solver_type_);
+  ceres_config_options.sparse_linear_algebra_library_type =
+    static_cast<ceres::SparseLinearAlgebraLibraryType>(ceres_options_.sparse_linear_algebra_library_type_);
   ceres_config_options.minimizer_progress_to_stdout = ceres_options_.bVerbose_;
   ceres_config_options.logging_type = ceres::SILENT;
   ceres_config_options.num_threads = ceres_options_.nb_threads_;
@@ -502,8 +515,8 @@ bool Bundle_Adjustment_Ceres::Adjust
         const IndexT indexPose = pose_it.first;
 
         Mat3 R_refined;
-        ceres::AngleAxisToRotationMatrix(&map_poses[indexPose][0], R_refined.data());
-        Vec3 t_refined(map_poses[indexPose][3], map_poses[indexPose][4], map_poses[indexPose][5]);
+        ceres::AngleAxisToRotationMatrix(&map_poses.at(indexPose)[0], R_refined.data());
+        Vec3 t_refined(map_poses.at(indexPose)[3], map_poses.at(indexPose)[4], map_poses.at(indexPose)[5]);
         // Update the pose
         Pose3 & pose = pose_it.second;
         pose = Pose3(R_refined, -R_refined.transpose() * t_refined);
@@ -517,8 +530,8 @@ bool Bundle_Adjustment_Ceres::Adjust
       {
         const IndexT indexCam = intrinsic_it.first;
 
-        const std::vector<double> & vec_params = map_intrinsics[indexCam];
-        intrinsic_it.second.get()->updateFromParams(vec_params);
+        const std::vector<double> & vec_params = map_intrinsics.at(indexCam);
+        intrinsic_it.second->updateFromParams(vec_params);
       }
     }
 
@@ -540,8 +553,7 @@ bool Bundle_Adjustment_Ceres::Adjust
         const sfm::ViewPriors * prior = dynamic_cast<sfm::ViewPriors*>(view_it.second.get());
         if (prior != nullptr && prior->b_use_pose_center_ && sfm_data.IsPoseAndIntrinsicDefined(prior))
         {
-          const Pose3 & sfm_pose = sfm_data.GetPoses().at(prior->id_pose);
-          X_SfM.push_back( sfm_pose.inverse()(prior->pose_sensor_transform_.center()) );
+          X_SfM.push_back( sfm_data.GetPoses().at(prior->id_pose).center() );
           X_GPS.push_back( prior->pose_center_ );
         }
       }

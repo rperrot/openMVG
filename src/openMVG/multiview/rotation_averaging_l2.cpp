@@ -1,3 +1,4 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
 
 // Copyright (c) 2012, 2013 Pierre MOULON.
 
@@ -6,6 +7,10 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "openMVG/multiview/rotation_averaging_l2.hpp"
+
+#ifdef OPENMVG_USE_OPENMP
+#include <omp.h>
+#endif
 
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
@@ -55,7 +60,7 @@ Mat3 ClosestSVDRotationMatrix
 // <eigenvalue, eigenvector> pair comparator
 bool compare_first_abs(std::pair<double, Vec> const &x, std::pair<double, Vec> const &y)
 {
- return fabs(x.first) < fabs(y.first);
+ return std::abs(x.first) < std::abs(y.first);
 }
 
 //-- Solve the Global Rotation matrix registration for each camera given a list
@@ -103,30 +108,28 @@ bool L2RotationAveraging
   tripletList.reserve(nRotationEstimation*12); // 3*3 + 3
   //-- Encode constraint (6.62 Martinec Thesis page 100):
   sMat::Index cpt = 0;
-  for(RelativeRotations::const_iterator
-    iter = vec_relativeRot.begin();
-    iter != vec_relativeRot.end();
-    iter++, cpt++)
+  for (const auto & iter : vec_relativeRot)
   {
     //-- Encode weight * ( rj - Rij * ri ) = 0
-    const sMat::Index i = iter->i;
-    const sMat::Index j = iter->j;
+    const sMat::Index i = iter.i;
+    const sMat::Index j = iter.j;
 
     // A.block<3,3>(3 * cpt, 3 * i) = - Rij * weight;
-    tripletList.emplace_back(3 * cpt, 3 * i, - iter->Rij(0,0) * iter->weight);
-    tripletList.emplace_back(3 * cpt, 3 * i + 1, - iter->Rij(0,1) * iter->weight);
-    tripletList.emplace_back(3 * cpt, 3 * i + 2, - iter->Rij(0,2) * iter->weight);
-    tripletList.emplace_back(3 * cpt + 1, 3 * i, - iter->Rij(1,0) * iter->weight);
-    tripletList.emplace_back(3 * cpt + 1, 3 * i + 1, - iter->Rij(1,1) * iter->weight);
-    tripletList.emplace_back(3 * cpt + 1, 3 * i + 2, - iter->Rij(1,2) * iter->weight);
-    tripletList.emplace_back(3 * cpt + 2, 3 * i, - iter->Rij(2,0) * iter->weight);
-    tripletList.emplace_back(3 * cpt + 2, 3 * i + 1, - iter->Rij(2,1) * iter->weight);
-    tripletList.emplace_back(3 * cpt + 2, 3 * i + 2, - iter->Rij(2,2) * iter->weight);
+    tripletList.emplace_back(3 * cpt, 3 * i, - iter.Rij(0,0) * iter.weight);
+    tripletList.emplace_back(3 * cpt, 3 * i + 1, - iter.Rij(0,1) * iter.weight);
+    tripletList.emplace_back(3 * cpt, 3 * i + 2, - iter.Rij(0,2) * iter.weight);
+    tripletList.emplace_back(3 * cpt + 1, 3 * i, - iter.Rij(1,0) * iter.weight);
+    tripletList.emplace_back(3 * cpt + 1, 3 * i + 1, - iter.Rij(1,1) * iter.weight);
+    tripletList.emplace_back(3 * cpt + 1, 3 * i + 2, - iter.Rij(1,2) * iter.weight);
+    tripletList.emplace_back(3 * cpt + 2, 3 * i, - iter.Rij(2,0) * iter.weight);
+    tripletList.emplace_back(3 * cpt + 2, 3 * i + 1, - iter.Rij(2,1) * iter.weight);
+    tripletList.emplace_back(3 * cpt + 2, 3 * i + 2, - iter.Rij(2,2) * iter.weight);
 
-   // A.block<3,3>(3 * cpt, 3 * j) = Id * weight;
-    tripletList.emplace_back(3 * cpt, 3 * j, iter->weight);
-    tripletList.emplace_back(3 * cpt + 1, 3 * j + 1, iter->weight);
-    tripletList.emplace_back(3 * cpt + 2, 3 * j + 2, iter->weight);
+    // A.block<3,3>(3 * cpt, 3 * j) = Id * weight;
+    tripletList.emplace_back(3 * cpt, 3 * j, iter.weight);
+    tripletList.emplace_back(3 * cpt + 1, 3 * j + 1, iter.weight);
+    tripletList.emplace_back(3 * cpt + 2, 3 * j + 2, iter.weight);
+    ++cpt;
   }
 
   // nCamera * 3 because each columns have 3 elements.
@@ -141,14 +144,6 @@ bool L2RotationAveraging
     AtA = Mat(AtAsparse); // convert to dense
   }
 
-  // You can use either SVD or eigen solver (eigen solver will be faster) to solve Ax=0
-
-  // Solve Ax=0 => SVD
-  //Eigen::JacobiSVD<Mat> svd(A,Eigen::ComputeFullV);
-  //const Vec & NullspaceVector0 = svd.matrixV().col(A.cols()-1);
-  //const Vec & NullspaceVector1 = svd.matrixV().col(A.cols()-2);
-  //const Vec & NullspaceVector2 = svd.matrixV().col(A.cols()-3);
-
   // Solve Ax=0 => eigen vectors
   Eigen::SelfAdjointEigenSolver<Mat> es(AtA, Eigen::ComputeEigenvectors);
 
@@ -156,13 +151,13 @@ bool L2RotationAveraging
   {
     return false;
   }
-  else
+  // else
   {
     // Sort abs(eigenvalues)
     std::vector<std::pair<double, Vec> > eigs(AtA.cols());
     for (Mat::Index i = 0; i < AtA.cols(); ++i)
     {
-      eigs[i] = std::make_pair(es.eigenvalues()[i], es.eigenvectors().col(i));
+      eigs[i] = {es.eigenvalues()[i], es.eigenvectors().col(i)};
     }
     std::stable_sort(eigs.begin(), eigs.end(), &compare_first_abs);
 
@@ -178,7 +173,7 @@ bool L2RotationAveraging
     //--
     global_rotations.clear();
     global_rotations.reserve(nCamera);
-    for(size_t i=0; i < nCamera; ++i)
+    for (size_t i=0; i < nCamera; ++i)
     {
       Mat3 Rotation;
       Rotation << NullspaceVector0.segment(3 * i, 3),
@@ -190,7 +185,7 @@ bool L2RotationAveraging
     }
     // Force R0 to be Identity
     const Mat3 R0T = global_rotations[0].transpose();
-    for(size_t i = 0; i < nCamera; ++i) {
+    for (size_t i = 0; i < nCamera; ++i) {
       global_rotations[i] *= R0T;
     }
   }
@@ -329,5 +324,3 @@ bool L2RotationAveraging_Refine
 } // namespace l2
 } // namespace rotation_averaging
 } // namespace openMVG
-
-

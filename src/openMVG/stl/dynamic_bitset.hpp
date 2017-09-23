@@ -1,3 +1,4 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
 
 // Copyright (c) 2015 Pierre MOULON.
 
@@ -16,6 +17,7 @@
 #define OPENMVG_STL_DYNAMIC_BITSET_HPP
 
 #include <cassert>
+#include <cstddef>
 #include <limits>
 #include <vector>
 
@@ -84,7 +86,7 @@ namespace stl
     size_t num_blocks() const { return vec_bits.size(); }
 
     // Constructor
-    dynamic_bitset(size_t num_bits = 0)
+    explicit dynamic_bitset(size_t num_bits = 0)
     {
       vec_bits.resize(calc_num_blocks(num_bits));
       m_num_bits = num_bits;

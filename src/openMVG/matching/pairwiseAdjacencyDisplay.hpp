@@ -1,3 +1,4 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
 
 // Copyright (c) 2012, 2013 Pierre MOULON.
 
@@ -8,10 +9,11 @@
 #ifndef OPENMVG_PAIRWISE_ADJACENCY_DISPLAY_HPP
 #define OPENMVG_PAIRWISE_ADJACENCY_DISPLAY_HPP
 
+#include <string>
+
 #include "openMVG/matching/indMatch.hpp"
 
 #include "third_party/vectorGraphics/svgDrawer.hpp"
-
 
 namespace openMVG  {
 namespace matching {
@@ -32,7 +34,7 @@ void PairWiseMatchingToAdjacencyMatrixSVG
     for (size_t I = 0; I < NbImages; ++I) {
       for (size_t J = 0; J < NbImages; ++J) {
         // If the pair have matches display a blue boxes at I,J position.
-        auto iterSearch = map_Matches.find(std::make_pair(I,J));
+        auto iterSearch = map_Matches.find({I,J});
         if (iterSearch != map_Matches.end() && !iterSearch->second.empty())
         {
           // Display as a tooltip: (IndexI, IndexJ NbMatches)

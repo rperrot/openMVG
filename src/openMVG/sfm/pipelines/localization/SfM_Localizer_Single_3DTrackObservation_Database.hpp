@@ -1,3 +1,4 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
 
 // Copyright (c) 2015 Pierre MOULON.
 
@@ -8,8 +9,17 @@
 #ifndef OPENMVG_SFM_PIPELINES_LOCALIZATION_SFM_LOCALIZER_STO_DB_HPP
 #define OPENMVG_SFM_PIPELINES_LOCALIZATION_SFM_LOCALIZER_STO_DB_HPP
 
-#include "openMVG/matching/regions_matcher.hpp"
+#include <vector>
+
 #include "openMVG/sfm/pipelines/localization/SfM_Localizer.hpp"
+#include "openMVG/types.hpp"
+
+namespace openMVG { namespace cameras { struct IntrinsicBase; } }
+namespace openMVG { namespace features { class Regions; } }
+namespace openMVG { namespace geometry { class Pose3; } }
+namespace openMVG { namespace matching { class Matcher_Regions_Database; } }
+namespace openMVG { namespace sfm { struct Regions_Provider; } }
+namespace openMVG { namespace sfm { struct SfM_Data; } }
 
 namespace openMVG {
 namespace sfm {
@@ -17,7 +27,7 @@ namespace sfm {
 // Implementation of a naive method:
 // - init the database of descriptor from the structure and the observations.
 // - create a large array with all the used descriptors and init a Matcher with it
-// - to localize an input image compare it's regions to the database and robust estimate
+// - to localize an input image compare its regions to the database and robust estimate
 //   the pose from found 2d-3D correspondences
 
 class SfM_Localization_Single_3DTrackObservation_Database : public SfM_Localizer
@@ -37,11 +47,12 @@ public:
   (
     const SfM_Data & sfm_data,
     const Regions_Provider & regions_provider
-  );
+  ) override;
 
   /**
   * @brief Try to localize an image in the database
   *
+  * @param[in] solver_type the type of absolute pose solver to use
   * @param[in] image_size the w,h image size
   * @param[in] optional_intrinsics camera intrinsic if known (else nullptr)
   * @param[in] query_regions the image regions (type must be the same as the database)
@@ -51,12 +62,13 @@ public:
   */
   bool Localize
   (
+    const resection::SolverType & solver_type,
     const Pair & image_size,
     const cameras::IntrinsicBase * optional_intrinsics,
     const features::Regions & query_regions,
     geometry::Pose3 & pose,
-    Image_Localizer_Match_Data * resection_data_ptr = NULL // optional
-  ) const;
+    Image_Localizer_Match_Data * resection_data_ptr = nullptr
+  ) const override;
 
 private:
   // Reference to the scene
@@ -67,7 +79,7 @@ private:
   std::vector<IndexT> index_to_landmark_id_;
   /// A matching interface to find matches between 2D descriptor matches
   ///  and 3D points observation descriptors
-  std::unique_ptr<matching::Matcher_Regions_Database> matching_interface_;
+  std::shared_ptr<matching::Matcher_Regions_Database> matching_interface_;
 };
 
 } // namespace sfm

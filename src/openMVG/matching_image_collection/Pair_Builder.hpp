@@ -1,3 +1,5 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
+
 // Copyright (c) 2014 Pierre MOULON.
 
 // This Source Code Form is subject to the terms of the Mozilla Public
@@ -7,13 +9,15 @@
 #ifndef OPENMVG_MATCHING_IMAGE_COLLECTION_PAIR_BUILDER_HPP
 #define OPENMVG_MATCHING_IMAGE_COLLECTION_PAIR_BUILDER_HPP
 
+#include <fstream>
+#include <iostream>
+#include <set>
+#include <sstream>
+#include <string>
+#include <vector>
+
 #include "openMVG/types.hpp"
 #include "openMVG/stl/split.hpp"
-
-#include <set>
-#include <iostream>
-#include <fstream>
-#include <sstream>
 
 namespace openMVG {
 
@@ -23,7 +27,7 @@ inline Pair_Set exhaustivePairs(const size_t N)
   Pair_Set pairs;
   for (IndexT I = 0; I < static_cast<IndexT>(N); ++I)
     for (IndexT J = I+1; J < static_cast<IndexT>(N); ++J)
-      pairs.insert(std::make_pair(I,J));
+      pairs.insert({I,J});
 
   return pairs;
 }
@@ -35,7 +39,7 @@ inline Pair_Set contiguousWithOverlap(const size_t N, const size_t overlapSize)
   Pair_Set pairs;
   for (IndexT I = 0; I < static_cast<IndexT>(N); ++I)
     for (IndexT J = I+1; J < I+1+overlapSize && J < static_cast<IndexT>(N); ++J)
-      pairs.insert(std::make_pair(I,J));
+      pairs.insert({I,J});
   return pairs;
 }
 
@@ -47,7 +51,7 @@ inline bool loadPairs(
      Pair_Set & pairs)  // output pairs read from the list file
 {
   std::ifstream in(sFileName.c_str());
-  if(!in.is_open())
+  if (!in.is_open())
   {
     std::cerr << std::endl
       << "loadPairs: Impossible to read the specified file: \"" << sFileName << "\"." << std::endl;
@@ -69,7 +73,7 @@ inline bool loadPairs(
     oss.clear(); oss.str(vec_str[0]);
     IndexT I, J;
     oss >> I;
-    for (IndexT i=1; i<str_size ; ++i)
+    for (IndexT i=1; i<str_size; ++i)
     {
       oss.clear(); oss.str(vec_str[i]);
       oss >> J;
@@ -85,7 +89,8 @@ inline bool loadPairs(
         std::cerr << "loadPairs: Invalid input file. Image " << I << " see itself. File: \"" << sFileName << "\"." << std::endl;
         return false;
       }
-      pairs.insert( (I < J) ? std::make_pair(I, J) : std::make_pair(J, I) );
+      // Insert the pair such that .first < .second
+      pairs.insert( {std::min(I, J), std::max(I,J)} );
     }
   }
   in.close();
@@ -99,16 +104,16 @@ inline bool loadPairs(
 inline bool savePairs(const std::string &sFileName, const Pair_Set & pairs)
 {
   std::ofstream outStream(sFileName.c_str());
-  if(!outStream.is_open())  {
+  if (!outStream.is_open())  {
     std::cerr << std::endl
       << "savePairs: Impossible to open the output specified file: \"" << sFileName << "\"." << std::endl;
     return false;
   }
-  for ( const auto & cur_pair : pairs ) 
-    {
+  for ( const auto & cur_pair : pairs )
+  {
     outStream << cur_pair.first << ' ' << cur_pair.second << '\n';
   }
-  bool bOk = !outStream.bad();
+  const bool bOk = !outStream.bad();
   outStream.close();
   return bOk;
 }

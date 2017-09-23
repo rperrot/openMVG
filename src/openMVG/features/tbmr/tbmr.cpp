@@ -1,3 +1,5 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
+
 // Copyright (c) 2014-2016 Yongchao Xu, Pascal Monasse, Thierry Géraud, Laurent Najman
 // Copyright (c) 2016 Pierre Moulon.
 
@@ -6,6 +8,10 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "openMVG/features/tbmr/tbmr.hpp"
+#include "openMVG/features/feature.hpp"
+#include "openMVG/image/image_container.hpp"
+
+#include <numeric>
 
 namespace openMVG
 {
@@ -38,7 +44,10 @@ namespace tbmr
     const unsigned int pixel_count = input.Width()*input.Height();
     std::vector<unsigned int> v(pixel_count);
     std::iota(v.begin(), v.end(), 0);
-    std::sort(v.begin(), v.begin() + pixel_count, [&input, cmp](unsigned int x, unsigned int y) { return cmp(input[x], input[y]); });
+    std::sort(v.begin(), v.begin() + pixel_count,
+      [&input, cmp](unsigned int x, unsigned int y)
+      { return cmp(input[x], input[y]); }
+    );
     return v;
   }
 
@@ -47,7 +56,7 @@ namespace tbmr
   (
   )
   {
-    return std::vector<Vec2i>{ { 0,-1 }, {0,1}, {-1, 0}, {1,0} };
+    return { { 0,-1 }, {0,1}, {-1, 0}, {1,0} };
   }
 
   //for incremental computation of region information
@@ -132,7 +141,7 @@ namespace tbmr
     std::vector<attribute> imaAttribute(ima.Width() * ima.Height());
     image::Image<unsigned int> zpar(ima.Width(), ima.Height());
 
-    const std::vector<Vec2i> offsets = wrt_delta_index();
+    const std::vector<Vec2i> offsets(wrt_delta_index());
 
     for (int i = S.size()-1; i >= 0; --i)
     {
@@ -271,7 +280,7 @@ namespace tbmr
       const double i11 = imaAttribute[p].sum_xy - imaAttribute[p].area*x*y;
       const double n = i20*i02 - i11*i11;
 
-      if(n != 0)
+      if (n != 0)
       {
         const double a = i02/n * (imaAttribute[p].area-1)/4;
         const double b = -i11/n * (imaAttribute[p].area-1)/4;
@@ -279,7 +288,7 @@ namespace tbmr
 
         const features::AffinePointFeature affineFP (x, y, a, b, c);
 
-        // Check feature validity	(avoid tiny and thick ellipses)
+        // Check feature validity  (avoid tiny and thick ellipses)
         const double lMin = std::min(affineFP.l1(), affineFP.l2());
         if (lMin < 1.5)
           continue;

@@ -1,3 +1,4 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
 
 // Copyright (c) 2015 Pierre MOULON.
 
@@ -7,17 +8,22 @@
 
 #include "openMVG/sfm/pipelines/localization/SfM_Localizer_Single_3DTrackObservation_Database.hpp"
 
-#include "openMVG/cameras/cameras.hpp"
+#include "openMVG/cameras/Camera_Intrinsics.hpp"
 #include "openMVG/matching/indMatch.hpp"
+#include "openMVG/matching/regions_matcher.hpp"
 #include "openMVG/sfm/pipelines/sfm_regions_provider.hpp"
 #include "openMVG/sfm/sfm_data.hpp"
+
+using namespace openMVG::matching;
 
 namespace openMVG {
 namespace sfm {
 
   SfM_Localization_Single_3DTrackObservation_Database::
-  SfM_Localization_Single_3DTrackObservation_Database()
-  :SfM_Localizer(), sfm_data_(nullptr), matching_interface_(nullptr)
+  SfM_Localization_Single_3DTrackObservation_Database():
+    SfM_Localizer(),
+    sfm_data_(nullptr),
+    matching_interface_(nullptr)
   {}
 
   bool
@@ -69,6 +75,7 @@ namespace sfm {
   bool
   SfM_Localization_Single_3DTrackObservation_Database::Localize
   (
+    const resection::SolverType & solver_type,
     const Pair & image_size,
     const cameras::IntrinsicBase * optional_intrinsics,
     const features::Regions & query_regions,
@@ -110,7 +117,7 @@ namespace sfm {
     }
 
     const bool bResection =  SfM_Localizer::Localize(
-      image_size, optional_intrinsics, resection_data, pose);
+      solver_type, image_size, optional_intrinsics, resection_data, pose);
 
     resection_data.pt2D = std::move(pt2D_original); // restore original image domain points
 

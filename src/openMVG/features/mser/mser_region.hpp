@@ -1,3 +1,5 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
+
 // Copyright (c) 2015 Romuald PERROT.
 
 // This Source Code Form is subject to the terms of the Mozilla Public
@@ -17,9 +19,9 @@ namespace MSER
 {
 
     /**
-     * @brief Class holding a MSER region 
-     * @note User should not deal with construction of the class but only use MSERExtractor to build regions 
-     * User should only use the FitEllipse method 
+     * @brief Class holding a MSER region
+     * @note User should not deal with construction of the class but only use MSERExtractor to build regions
+     * User should only use the FitEllipse method
      */
     class MSERRegion
     {
@@ -62,7 +64,7 @@ namespace MSER
       void FitEllipse( double &x, double &y ) const;
 
       private:
-      
+
       // Connectivity
       MSERRegion *m_parent; // Pointer to the parent region
       MSERRegion *m_child;  // Pointer to the first child of the region
@@ -104,7 +106,7 @@ namespace MSER
       void MergeRegion( MSERRegion *child );
 
       /**
-        * @brief Compute MSER stability , compress parent path, and check if the region (and it's children) is stable
+        * @brief Compute MSER stability , compress parent path, and check if the region (and its children) is stable
         * @param delta distance (in level) to the other region to compute stability (stability is not made up to delta level)
         * @param minimumArea Minimum area to be accepted as stable
         * @param maximumArea Maximum area to be accepted as stable
@@ -116,12 +118,12 @@ namespace MSER
         * @brief check criteria on the whole region
         * @param variation Minimum variation to validate the criteria
         * @param area Maximum area to validate the criteria
-        * @return true if it as minimum variation and maximum area (on the whole region, ie: region and it's child)
+        * @return true if it as minimum variation and maximum area (on the whole region, ie: region and its child)
         */
       bool CheckCriteria( const double variation, const int area ) const;
 
       /**
-        * @brief Export region and it's children if it validate the MSER diversity criterion
+        * @brief Export region and its children if it validate the MSER diversity criterion
         * @param minDiversity Minimum diversity to validate the region
         * @param[out] regions Region that validate the criterion
         */
@@ -139,8 +141,8 @@ namespace MSER
       void ComputeMSER( const int delta, const int minArea, const int maxArea, const double maxVariation, const double minDiversity, std::vector<MSERRegion> &regions );
     };
 
-} // namespace MSER 
-} // namespace features 
-} // namespace openMVG 
+} // namespace MSER
+} // namespace features
+} // namespace openMVG
 
 #endif // OPENMVG_MSER_MSER_REGION_HPP

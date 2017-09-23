@@ -1,3 +1,5 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
+
 // Copyright (c) 2015 Chris Sweeney (cmsweeney@cs.ucsb.edu)
 // Copyright (c) 2016 Pierre Moulon
 
@@ -123,7 +125,7 @@ class L1Solver {
   )
   {
     // Since constructor was called before we check Compute status
-    if(linear_solver_.info() != Eigen::Success)
+    if (linear_solver_.info() != Eigen::Success)
     {
       std::cerr << "Cannot compute the matrix factorization" << std::endl;
       return false;

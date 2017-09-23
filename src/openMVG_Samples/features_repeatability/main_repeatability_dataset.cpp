@@ -1,3 +1,4 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
 
 // Copyright (c) 2015 Pierre MOULON.
 
@@ -5,14 +6,14 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#include "openMVG/image/image.hpp"
-#include "openMVG/features/features.hpp"
-#include "openMVG/robust_estimation/guided_matching.hpp"
-#include "openMVG/multiview/solver_homography_kernel.hpp"
+#include "openMVG/features/feature.hpp"
+#include "openMVG/features/akaze/image_describer_akaze.hpp"
+#include "openMVG/image/image_io.hpp"
 #include "openMVG/matching/regions_matcher.hpp"
+#include "openMVG/multiview/solver_homography_kernel.hpp"
+#include "openMVG/robust_estimation/guided_matching.hpp"
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
-#include "third_party/vectorGraphics/svgDrawer.hpp"
 #include "third_party/cmdLine/cmdLine.h"
 
 #include <string>
@@ -21,7 +22,6 @@
 using namespace openMVG;
 using namespace openMVG::image;
 using namespace openMVG::matching;
-using namespace svg;
 using namespace std;
 
 #include "openMVG/features/sift/SIFT_Anatomy_Image_Describer.hpp"
@@ -33,9 +33,11 @@ using namespace std;
 class RepeatabilityDataset
 {
 public:
-  RepeatabilityDataset
-    (const std::string& folderPath)
-    : folderPath_(folderPath)
+  explicit RepeatabilityDataset
+  (
+    const std::string& folderPath
+  ):
+    folderPath_(folderPath)
   {
     loadImages();
     loadGroundTruthHs();
@@ -149,7 +151,7 @@ void PointsToMat(
   m0.resize(2, matches.size());
   m1.resize(2, matches.size());
 
-  for( size_t i = 0; i < matches.size(); ++i)
+  for (size_t i = 0; i < matches.size(); ++i)
   {
     const ValueT & feat0 = vec_feats0[matches[i].i_];
     m0.col(i) << feat0.x(), feat0.y();
@@ -166,9 +168,9 @@ struct RepeatabilityResults_Matching
   {
     std::ofstream ofs(sFile, std::ofstream::out | std::ofstream::app);
 
-    if( ! ofs.good() )
+    if ( ! ofs.good() )
     {
-        return false ;
+        return false;
     }
 
     ofs << sdatasetName << "\n";
@@ -182,14 +184,14 @@ struct RepeatabilityResults_Matching
     }
     ofs.close();
 
-    return true ;
+    return true;
   }
 };
 
 features::EDESCRIBER_PRESET stringToEnum(const std::string & sPreset)
 {
   features::EDESCRIBER_PRESET preset;
-  if(sPreset == "NORMAL")
+  if (sPreset == "NORMAL")
     preset = features::NORMAL_PRESET;
   else
   if (sPreset == "HIGH")
@@ -230,7 +232,7 @@ int main(int argc, char **argv)
   try {
       if (argc == 1) throw std::string("Invalid command line parameter.");
       cmd.process(argc, argv);
-  } catch(const std::string& s) {
+  } catch (const std::string& s) {
       std::cerr << "Usage: " << argv[0] << '\n'
       << "[-i|--input_dataset] the path to the datasets \n"
       << "\n[Optional]\n"
@@ -301,8 +303,8 @@ int main(int argc, char **argv)
       else
       if (sImage_Describer_Method == "AKAZE_FLOAT")
       {
-        image_describer.reset(new AKAZE_Image_describer
-          (AKAZE_Image_describer::Params(AKAZE::Params(), AKAZE_MSURF)));
+        image_describer = AKAZE_Image_describer::create
+          (AKAZE_Image_describer::Params(AKAZE::Params(), AKAZE_MSURF));
       }
 
       if (!image_describer)

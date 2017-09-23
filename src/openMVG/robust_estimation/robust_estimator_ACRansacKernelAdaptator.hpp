@@ -1,3 +1,4 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
 
 // Copyright (c) 2012, 2013 Pierre MOULON.
 
@@ -27,8 +28,10 @@
 //  by the generic ACRANSAC routine.
 //
 
-#include "openMVG/numeric/numeric.h"
+#include <vector>
+
 #include "openMVG/multiview/conditioning.hpp"
+#include "openMVG/numeric/extract_columns.hpp"
 
 namespace openMVG {
 namespace robust{
@@ -63,10 +66,10 @@ public:
     NormalizePoints(x2, &x2_, &N2_, w2, h2);
 
     // LogAlpha0 is used to make error data scale invariant
-    if(bPointToLine)  {
+    if (bPointToLine)  {
       // Ratio of containing diagonal image rectangle over image area
-      double D = sqrt(w2*(double)w2 + h2*(double)h2); // diameter
-      double A = w2*(double)h2; // area
+      const double D = std::hypot(w2, h2); // diameter
+      const double A = w2*(double)h2; // area
       logalpha0_ = log10(2.0*D/A /N2_(0,0));
     }
     else  {
@@ -78,20 +81,20 @@ public:
   enum { MINIMUM_SAMPLES = Solver::MINIMUM_SAMPLES };
   enum { MAX_MODELS = Solver::MAX_MODELS };
 
-  void Fit(const std::vector<size_t> &samples, std::vector<Model> *models) const {
+  void Fit(const std::vector<uint32_t> &samples, std::vector<Model> *models) const {
     const Mat x1 = ExtractColumns(x1_, samples);
     const Mat x2 = ExtractColumns(x2_, samples);
     Solver::Solve(x1, x2, models);
   }
 
-  double Error(size_t sample, const Model &model) const {
+  double Error(uint32_t sample, const Model &model) const {
     return ErrorT::Error(model, x1_.col(sample), x2_.col(sample));
   }
 
   void Errors(const Model & model, std::vector<double> & vec_errors) const
   {
     vec_errors.resize(x1_.cols());
-    for (size_t sample = 0; sample < x1_.cols(); ++sample)
+    for (uint32_t sample = 0; sample < x1_.cols(); ++sample)
       vec_errors[sample] = ErrorT::Error(model, x1_.col(sample), x2_.col(sample));
   }
 
@@ -151,20 +154,20 @@ public:
   enum { MINIMUM_SAMPLES = Solver::MINIMUM_SAMPLES };
   enum { MAX_MODELS = Solver::MAX_MODELS };
 
-  void Fit(const std::vector<size_t> &samples, std::vector<Model> *models) const {
+  void Fit(const std::vector<uint32_t> &samples, std::vector<Model> *models) const {
     const Mat x1 = ExtractColumns(x2d_, samples);
     const Mat x2 = ExtractColumns(x3D_, samples);
     Solver::Solve(x1, x2, models);
   }
 
-  double Error(int sample, const Model &model) const {
+  double Error(uint32_t sample, const Model &model) const {
     return ErrorT::Error(model, x2d_.col(sample), x3D_.col(sample));
   }
 
   void Errors(const Model & model, std::vector<double> & vec_errors) const
   {
     vec_errors.resize(x2d_.cols());
-    for (size_t sample = 0; sample < x2d_.cols(); ++sample)
+    for (uint32_t sample = 0; sample < x2d_.cols(); ++sample)
       vec_errors[sample] = ErrorT::Error(model, x2d_.col(sample), x3D_.col(sample));
   }
 
@@ -200,36 +203,43 @@ public:
   using Model = ModelArg;
   using ErrorT = ErrorArg;
 
-  ACKernelAdaptorResection_K(const Mat &x2d, const Mat &x3D, const Mat3 & K)
-    : x2d_(x2d.rows(), x2d.cols()), x3D_(x3D),
+  ACKernelAdaptorResection_K
+  (
+    const Mat &x2d,
+    const Mat &x3D,
+    const Mat3 & K
+  ):x2d_(x2d.rows(), x2d.cols()),
+    x3D_(x3D),
     N1_(K.inverse()),
-    logalpha0_(log10(M_PI)), K_(K)
+    logalpha0_(log10(M_PI)),
+    K_(K)
   {
     assert(2 == x2d_.rows());
     assert(3 == x3D_.rows());
     assert(x2d_.cols() == x3D_.cols());
 
     // Normalize points by inverse(K)
-    x2d_ = (N1_ * x2d.colwise().homogeneous()).colwise().hnormalized();
+    bearing_vectors_ = (N1_ * x2d.colwise().homogeneous());
+    x2d_ = bearing_vectors_.colwise().hnormalized();
   }
 
   enum { MINIMUM_SAMPLES = Solver::MINIMUM_SAMPLES };
   enum { MAX_MODELS = Solver::MAX_MODELS };
 
-  void Fit(const std::vector<size_t> &samples, std::vector<Model> *models) const {
-    const Mat x1 = ExtractColumns(x2d_, samples);
-    const Mat x2 = ExtractColumns(x3D_, samples);
-    Solver::Solve(x1, x2, models);
+  void Fit(const std::vector<uint32_t> &samples, std::vector<Model> *models) const {
+    Solver::Solve(ExtractColumns(bearing_vectors_, samples), // bearing vectors
+                  ExtractColumns(x3D_, samples), // 3D points
+                  models); // Found model hypothesis
   }
 
-  double Error(size_t sample, const Model &model) const {
+  double Error(uint32_t sample, const Model &model) const {
     return ErrorT::Error(model, x2d_.col(sample), x3D_.col(sample));
   }
 
   void Errors(const Model & model, std::vector<double> & vec_errors) const
   {
     vec_errors.resize(x2d_.cols());
-    for (size_t sample = 0; sample < x2d_.cols(); ++sample)
+    for (uint32_t sample = 0; sample < x2d_.cols(); ++sample)
       vec_errors[sample] = ErrorT::Error(model, x2d_.col(sample), x3D_.col(sample));
   }
 
@@ -247,10 +257,10 @@ public:
   double unormalizeError(double val) const {return sqrt(val) / N1_(0,0);}
 
 private:
-  Mat x2d_;
+  Mat x2d_, bearing_vectors_;
   const Mat & x3D_;
-  Mat3 N1_;      // Matrix used to normalize data
-  double logalpha0_; // Alpha0 is used to make the error adaptive to the image size
+  Mat3 N1_;           // Matrix used to normalize data
+  double logalpha0_;  // Alpha0 is used to make the error adaptive to the image size
   Mat3 K_;            // Intrinsic camera parameter
 };
 
@@ -265,14 +275,15 @@ public:
   using Model = ModelArg;
   using ErrorT = ErrorArg;
 
-  ACKernelAdaptorEssential(
+  ACKernelAdaptorEssential
+  (
     const Mat &x1, int w1, int h1,
     const Mat &x2, int w2, int h2,
-    const Mat3 & K1, const Mat3 & K2)
-    : x1_(x1), x2_(x2),
+    const Mat3 & K1, const Mat3 & K2
+  ):x1_(x1), x2_(x2),
     N1_(Mat3::Identity()), N2_(Mat3::Identity()), logalpha0_(0.0),
     K1_(K1), K2_(K2)
-{
+  {
     assert(2 == x1_.rows());
     assert(x1_.rows() == x2_.rows());
     assert(x1_.cols() == x2_.cols());
@@ -281,7 +292,7 @@ public:
     x2k_ = (K2_.inverse() * x2_.colwise().homogeneous()).colwise().hnormalized();
 
     //Point to line probability (line is the epipolar line)
-    const double D = sqrt(w2*(double)w2 + h2*(double)h2); // diameter
+    const double D = std::hypot(w2, h2); // diameter
     const double A = w2*(double)h2; // area
     logalpha0_ = log10(2.0*D/A * .5);
   }
@@ -289,13 +300,13 @@ public:
   enum { MINIMUM_SAMPLES = Solver::MINIMUM_SAMPLES };
   enum { MAX_MODELS = Solver::MAX_MODELS };
 
-  void Fit(const std::vector<size_t> &samples, std::vector<Model> *models) const {
+  void Fit(const std::vector<uint32_t> &samples, std::vector<Model> *models) const {
     const Mat x1 = ExtractColumns(x1k_, samples);
     const Mat x2 = ExtractColumns(x2k_, samples);
     Solver::Solve(x1, x2, models);
   }
 
-  double Error(size_t sample, const Model &model) const {
+  double Error(uint32_t sample, const Model &model) const {
     Mat3 F;
     FundamentalFromEssential(model, K1_, K2_, &F);
     return ErrorT::Error(F, this->x1_.col(sample), this->x2_.col(sample));
@@ -306,7 +317,7 @@ public:
     Mat3 F;
     FundamentalFromEssential(model, K1_, K2_, &F);
     vec_errors.resize(x1_.cols());
-    for (size_t sample = 0; sample < x1_.cols(); ++sample)
+    for (uint32_t sample = 0; sample < x1_.cols(); ++sample)
       vec_errors[sample] = ErrorT::Error(F, this->x1_.col(sample), this->x2_.col(sample));
   }
 
@@ -351,20 +362,20 @@ public:
   enum { MINIMUM_SAMPLES = Solver::MINIMUM_SAMPLES };
   enum { MAX_MODELS = Solver::MAX_MODELS };
 
-  void Fit(const std::vector<size_t> &samples, std::vector<Model> *models) const {
+  void Fit(const std::vector<uint32_t> &samples, std::vector<Model> *models) const {
     const Mat x1 = ExtractColumns(x1_, samples);
     const Mat x2 = ExtractColumns(x2_, samples);
     Solver::Solve(x1, x2, models);
   }
 
-  double Error(size_t sample, const Model &model) const {
+  double Error(uint32_t sample, const Model &model) const {
     return Square(ErrorT::Error(model, x1_.col(sample), x2_.col(sample)));
   }
 
   void Errors(const Model & model, std::vector<double> & vec_errors) const
   {
     vec_errors.resize(x1_.cols());
-    for (size_t sample = 0; sample < x1_.cols(); ++sample)
+    for (uint32_t sample = 0; sample < x1_.cols(); ++sample)
       vec_errors[sample] = Square(ErrorT::Error(model, x1_.col(sample), x2_.col(sample)));
   }
 

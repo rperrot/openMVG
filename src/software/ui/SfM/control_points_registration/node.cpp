@@ -1,3 +1,5 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
+
 // Copyright (c) 2015 Pierre MOULON.
 
 // This Source Code Form is subject to the terms of the Mozilla Public
@@ -113,4 +115,3 @@ void control_point_2DNode::mouseReleaseEvent
   update();
   QGraphicsItem::mouseReleaseEvent(event);
 }
-

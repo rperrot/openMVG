@@ -1,3 +1,4 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
 
 // Copyright (c) 2013, 2014 openMVG authors.
 
@@ -38,10 +39,10 @@ int main( int argc, char **argv )
 
   try
   {
-    if( argc == 1 ) throw std::string( "Invalid command line parameter." );
+    if (argc == 1 ) throw std::string( "Invalid command line parameter." );
     cmd.process( argc, argv );
   }
-  catch( const std::string& s )
+  catch ( const std::string& s )
   {
     std::cerr << "Usage: " << argv[ 0 ] << '\n'
     << "[-i|--input_file] path to a SfM_Data scene\n"
@@ -88,9 +89,7 @@ int main( int argc, char **argv )
 
     return EXIT_SUCCESS;
   }
-  else
-  {
-    std::cerr << "\n Something goes wrong in the process" << std::endl;
-  }
+
+  std::cerr << "\n Something goes wrong in the process" << std::endl;
   return EXIT_FAILURE;
 }

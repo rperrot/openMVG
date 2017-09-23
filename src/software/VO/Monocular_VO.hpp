@@ -1,3 +1,4 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
 
 // Copyright (c) 2014 Pierre MOULON.
 
@@ -8,12 +9,15 @@
 #ifndef MONOCULAR_VO_HPP
 #define MONOCULAR_VO_HPP
 
-#include "openMVG/features/features.hpp"
-#include <openMVG/numeric/numeric.h>
-
-#include <software/VO/Abstract_Tracker.hpp>
 #include <deque>
 #include <set>
+#include <numeric>
+
+#include "openMVG/features/feature.hpp"
+#include "openMVG/image/image_container.hpp"
+#include "openMVG/numeric/eigen_alias_definition.hpp"
+
+#include "software/VO/Abstract_Tracker.hpp"
 
 namespace openMVG  {
 namespace VO  {
@@ -27,7 +31,7 @@ struct Measurement
     const Vec2f & p
   ): frameId_(frameId), pos_(p)
   { }
-  Measurement( const Measurement & src ) = default ;
+  Measurement( const Measurement & src ) = default;
 
   uint32_t frameId_;
   Vec2f pos_;
@@ -55,7 +59,7 @@ struct VO_Monocular
 
   // Tracking
   Abstract_Tracker * tracker_;
-  uint32_t maxTrackedFeatures_ ;
+  uint32_t maxTrackedFeatures_;
   std::vector<features::PointFeature> pt_to_track_, pt_tracked_;
   std::vector<bool> tracking_status_;
 
@@ -129,7 +133,7 @@ struct VO_Monocular
       if (frameId > 0 && landmarkListPerFrame_.size() > 1)
       {
         size_t lastKf = frameId-1;
-        std::vector<size_t> ids;
+        std::vector<uint32_t> ids;
         std::set_intersection(
           landmarkListPerFrame_[lastKf].begin(), landmarkListPerFrame_[lastKf].end(),
           landmarkListPerFrame_[frameId].begin(), landmarkListPerFrame_[frameId].end(),

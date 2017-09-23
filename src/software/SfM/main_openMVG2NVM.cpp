@@ -1,14 +1,24 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
+
 // Copyright (c) 2016 Romuald Perrot, Pierre Moulon
 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#include "openMVG/sfm/sfm.hpp"
+#include "openMVG/cameras/Camera_Pinhole.hpp"
+#include "openMVG/cameras/Camera_undistort_image.hpp"
+#include "openMVG/features/feature.hpp"
+#include "openMVG/image/image_io.hpp"
+#include "openMVG/sfm/sfm_data.hpp"
+#include "openMVG/sfm/sfm_data_io.hpp"
 
 #include "third_party/cmdLine/cmdLine.h"
-#include "third_party/progress/progress.hpp"
+#include "third_party/progress/progress_display.hpp"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
+
+#include <iomanip>
+#include <cstdlib>
 
 #ifdef OPENMVG_USE_OPENMP
 #include <omp.h>
@@ -28,30 +38,30 @@ using namespace openMVG::features;
 * @param filename Name of the file to create
 */
 bool CreateNVMFile( const SfM_Data & sfm_data ,
-                    const std::string sOutDirectory ,
-                    const std::string filename )
+                    const std::string & sOutDirectory ,
+                    const std::string & filename )
 {
-  const string sOutViewsDirectory = stlplus::folder_append_separator( sOutDirectory ) + "views";
+  const std::string sOutViewsDirectory = stlplus::folder_append_separator( sOutDirectory ) + "views";
   if ( !stlplus::folder_exists( sOutViewsDirectory ) )
   {
-    cout << "\033[1;31mCreating directory:  " << sOutViewsDirectory << "\033[0m\n";
+    std::cout << "\033[1;31mCreating directory:  " << sOutViewsDirectory << "\033[0m\n";
     stlplus::folder_create( sOutViewsDirectory );
   }
 
   // Header
-  std::ofstream file( filename ) ;
+  std::ofstream file( filename );
 
-  if( ! file )
+  if ( ! file )
   {
-    std::cerr << "Cannot write file" << filename << std::endl ;
-    return false ;
+    std::cerr << "Cannot write file" << filename << std::endl;
+    return false;
   }
-  file << "NVM_V3" << std::endl ;
+  file << "NVM_V3" << std::endl;
 
   // we reindex the poses to ensure a contiguous pose list.
   Hash_Map<IndexT, IndexT> map_viewIdToContiguous;
-  int nb_cam = 0 ;
-  for( Views::const_iterator iter = sfm_data.GetViews().begin();
+  int nb_cam = 0;
+  for (Views::const_iterator iter = sfm_data.GetViews().begin();
        iter != sfm_data.GetViews().end(); ++iter )
   {
     const View * view = iter->second.get();
@@ -60,14 +70,14 @@ bool CreateNVMFile( const SfM_Data & sfm_data ,
       continue;
     }
 
-    nb_cam ++ ;
+    nb_cam ++;
     map_viewIdToContiguous.insert( std::make_pair( view->id_view, map_viewIdToContiguous.size() ) );
   }
 
   // Number of cameras
   // For each camera : File_name Focal Qw Qx Qy Qz Cx Cy Cz D0 0
 
-  file << nb_cam << std::endl ;
+  file << nb_cam << std::endl;
 
   // Export undistorted images
   {
@@ -131,9 +141,6 @@ bool CreateNVMFile( const SfM_Data & sfm_data ,
           WriteImage( dstImage.c_str(), image );
         }
       }
-      #ifdef OPENMVG_USE_OPENMP
-        #pragma omp critical
-      #endif
       ++my_progress_bar;
     }
   }
@@ -141,7 +148,7 @@ bool CreateNVMFile( const SfM_Data & sfm_data ,
   // Export camera parameters
   {
     C_Progress_display my_progress_bar( sfm_data.GetViews().size(), std::cout, "\n- EXPORT CAMERA PARAMETERS -\n" );
-    for( Views::const_iterator iter = sfm_data.GetViews().begin();
+    for (Views::const_iterator iter = sfm_data.GetViews().begin();
          iter != sfm_data.GetViews().end(); ++iter, ++my_progress_bar)
     {
       const View * view = iter->second.get();
@@ -159,20 +166,20 @@ bool CreateNVMFile( const SfM_Data & sfm_data ,
       Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find( view->id_intrinsic );
       const IntrinsicBase * cam = iterIntrinsic->second.get();
       const Pinhole_Intrinsic * pinhole_cam = static_cast<const Pinhole_Intrinsic *>( cam );
-      const double flen = pinhole_cam->focal() ;
+      const double flen = pinhole_cam->focal();
       const Pose3 pose = sfm_data.GetPoseOrDie( view );
       const Mat3 rotation = pose.rotation();
       const Vec3 center = pose.center();
 
-      const double Cx = center[0] ;
-      const double Cy = center[1] ;
-      const double Cz = center[2] ;
-      Eigen::Quaterniond q( rotation ) ;
-      const double Qx = q.x() ;
-      const double Qy = q.y() ;
-      const double Qz = q.z() ;
-      const double Qw = q.w() ;
-      const double d0 = 0.0 ;
+      const double Cx = center[0];
+      const double Cy = center[1];
+      const double Cz = center[2];
+      Eigen::Quaterniond q( rotation );
+      const double Qx = q.x();
+      const double Qy = q.y();
+      const double Qz = q.z();
+      const double Qw = q.w();
+      const double d0 = 0.0;
 
       file << dstImage << " "
          << flen << " "
@@ -186,7 +193,7 @@ bool CreateNVMFile( const SfM_Data & sfm_data ,
          << Cy << " "
          << Cz << " "
          << d0 << " "
-         << 0 << std::endl ;
+         << 0 << std::endl;
     }
   }
 
@@ -195,8 +202,8 @@ bool CreateNVMFile( const SfM_Data & sfm_data ,
   // For each points : X Y Z R G B Nm [ measurements ]
   // mesurements : Img_idx Feat_idx X Y
   const Landmarks & landmarks = sfm_data.GetLandmarks();
-  const size_t featureCount = landmarks.size() ;
-  file << featureCount << std::endl ;
+  const size_t featureCount = landmarks.size();
+  file << featureCount << std::endl;
   C_Progress_display my_progress_bar( featureCount, std::cout, "\n- EXPORT LANDMARKS DATA -\n" );
   for ( Landmarks::const_iterator iterLandmarks = landmarks.begin();
         iterLandmarks != landmarks.end(); ++iterLandmarks, ++my_progress_bar )
@@ -212,18 +219,18 @@ bool CreateNVMFile( const SfM_Data & sfm_data ,
 
     for ( Observations::const_iterator itObs = obs.begin(); itObs != obs.end(); ++itObs )
     {
-      const IndexT viewId = map_viewIdToContiguous.at(itObs->first) ;
+      const IndexT viewId = map_viewIdToContiguous.at(itObs->first);
       const IndexT featId = itObs->second.id_feat;
       const Observation & ob = itObs->second;
 
-      file << " " << viewId << " " << featId << " " << ob.x( 0 ) << " " << ob.x( 1 ) << " " ;
+      file << " " << viewId << " " << featId << " " << ob.x( 0 ) << " " << ob.x( 1 ) << " ";
     }
     file << "\n";
   }
   // EOF indicator
   file << "0";
 
-  return true ;
+  return true;
 }
 
 /**
@@ -234,16 +241,16 @@ bool CreateNVMFile( const SfM_Data & sfm_data ,
 bool exportToNVM( const SfM_Data & sfm_data , const std::string & sOutDirectory  )
 {
   // Create output directory
-  bool bOk = false ;
+  bool bOk = false;
   if ( !stlplus::is_folder( sOutDirectory ) )
   {
-    cout << "\033[1;31mCreating directory:  " << sOutDirectory << "\033[0m\n";
+    std::cout << "\033[1;31mCreating directory:  " << sOutDirectory << "\033[0m\n";
     stlplus::folder_create( sOutDirectory );
     bOk = stlplus::is_folder( sOutDirectory );
   }
   else
   {
-    bOk = true ;
+    bOk = true;
   }
 
   if ( !bOk )
@@ -251,13 +258,13 @@ bool exportToNVM( const SfM_Data & sfm_data , const std::string & sOutDirectory 
     std::cerr << "Cannot access one of the desired output directories" << std::endl;
     return false;
   }
-  const std::string sFilename = stlplus::create_filespec( sOutDirectory , "scene.nvm" ) ;
-  if( ! CreateNVMFile( sfm_data , sOutDirectory , sFilename ) )
+  const std::string sFilename = stlplus::create_filespec( sOutDirectory , "scene.nvm" );
+  if ( ! CreateNVMFile( sfm_data , sOutDirectory , sFilename ) )
   {
-    std::cerr << "There was an error exporting project" << std::endl ;
-    return false ;
+    std::cerr << "There was an error exporting project" << std::endl;
+    return false;
   }
-  return true ;
+  return true;
 
 }
 
@@ -285,7 +292,7 @@ int main( int argc , char ** argv )
     }
     cmd.process( argc, argv );
   }
-  catch( const std::string& s )
+  catch ( const std::string& s )
   {
     std::cerr << "Usage: " << argv[0] << '\n'
               << "[-i|--sfmdata] filename, the SfM_Data file to convert\n"
@@ -323,11 +330,11 @@ int main( int argc , char ** argv )
     return EXIT_FAILURE;
   }
 
-  if( ! exportToNVM( sfm_data , sOutDir ) )
+  if ( ! exportToNVM( sfm_data , sOutDir ) )
   {
     std::cerr << "There was an error during export of the file" << std::endl;
-    exit( EXIT_FAILURE ) ;
+    exit( EXIT_FAILURE );
   }
 
-  return EXIT_SUCCESS ;
+  return EXIT_SUCCESS;
 }

@@ -1,3 +1,4 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
 
 // Copyright (c) 2012, 2013 Pierre MOULON.
 
@@ -8,6 +9,7 @@
 #ifndef OPENMVG_STL_INDEXED_SORT_HPP
 #define OPENMVG_STL_INDEXED_SORT_HPP
 
+#include <algorithm>
 #include <vector>
 
 namespace stl
@@ -48,7 +50,7 @@ namespace indexed_sort
                       const eT* in_mem, int NN = -1)  {
     const size_t n_elem = packet_vec.size();
 
-    for(size_t i=0; i<n_elem; ++i)  {
+    for (size_t i=0; i<n_elem; ++i)  {
       packet_vec[i].val   = in_mem[i];
       packet_vec[i].index = i;
     }

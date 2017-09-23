@@ -1,3 +1,5 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
+
 // Copyright (c) 2013 Pierre MOULON.
 
 // This Source Code Form is subject to the terms of the Mozilla Public
@@ -18,7 +20,7 @@ namespace stl
  */
 inline bool split
 (
-  const std::string rhs,
+  const std::string & rhs,
   const char delim,
   std::vector<std::string> & items
 )
@@ -32,7 +34,7 @@ inline bool split
   }
 
   // return true if the delimiter is present in the input string
-  return ( rhs.find(delim) != std::string::npos );
+  return rhs.find(delim) != std::string::npos;
 }
 } // namespace stl
 #endif // OPENMVG_STL_SPLIT_HPP

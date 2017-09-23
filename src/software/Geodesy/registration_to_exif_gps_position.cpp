@@ -1,19 +1,23 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
+
 // Copyright (c) 2016 Pierre MOULON.
 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#include "openMVG/sfm/sfm.hpp"
+#include "openMVG/geometry/rigid_transformation3D_srt.hpp"
+#include "openMVG/geometry/Similarity3.hpp"
+#include "openMVG/geometry/Similarity3_Kernel.hpp"
+#include "openMVG/sfm/sfm_data.hpp"
+#include "openMVG/sfm/sfm_data_io.hpp"
+#include "openMVG/sfm/sfm_data_transform.hpp"
 
 #include "openMVG/exif/exif_IO_EasyExif.hpp"
 #include "openMVG/geodesy/geodesy.hpp"
-#include "openMVG/geometry/rigid_transformation3D_srt.hpp"
-#include "openMVG/geometry/Similarity3.hpp"
 
-//- Robust estimation - LMeds (since no threshold can be defined)
+// //- Robust estimation - LMeds (since no threshold can be defined)
 #include "openMVG/robust_estimation/robust_estimator_LMeds.hpp"
-#include "openMVG/geometry/Similarity3_Kernel.hpp"
 
 #include "software/SfM/SfMPlyHelper.hpp"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
@@ -32,7 +36,7 @@ using namespace std;
 
 int main(int argc, char **argv)
 {
-  enum
+  enum ERegistrationType
   {
     ROBUST_RIGID_REGISTRATION = 0,
     RIGID_REGISTRATION_ALL_POINTS = 1
@@ -40,7 +44,7 @@ int main(int argc, char **argv)
   std::string
     sSfM_Data_Filename_In,
     sSfM_Data_Filename_Out;
-  unsigned int rigid_registration_method = RIGID_REGISTRATION_ALL_POINTS;
+  unsigned int rigid_registration_method = ERegistrationType::RIGID_REGISTRATION_ALL_POINTS;
 
   CmdLine cmd;
   cmd.add(make_option('i', sSfM_Data_Filename_In, "input_file"));
@@ -52,7 +56,7 @@ int main(int argc, char **argv)
     if (argc == 1) throw std::string("Invalid command line parameter.");
     cmd.process(argc, argv);
   }
-  catch(const std::string& s)
+  catch (const std::string& s)
   {
     std::cerr
       << "Usage: " << argv[0] << '\n'
@@ -157,7 +161,7 @@ int main(int argc, char **argv)
     // - using a robust scheme (using partial points - robust estimation)
     switch (rigid_registration_method)
     {
-      case ROBUST_RIGID_REGISTRATION:
+      case ERegistrationType::ROBUST_RIGID_REGISTRATION:
       {
         using namespace openMVG::robust;
         using namespace openMVG::geometry;
@@ -194,7 +198,7 @@ int main(int argc, char **argv)
         }
       }
       break;
-      case RIGID_REGISTRATION_ALL_POINTS:
+      case ERegistrationType::RIGID_REGISTRATION_ALL_POINTS:
       {
         Vec3 t;
         Mat3 R;
@@ -255,4 +259,3 @@ int main(int argc, char **argv)
   }
   return EXIT_FAILURE;
 }
-

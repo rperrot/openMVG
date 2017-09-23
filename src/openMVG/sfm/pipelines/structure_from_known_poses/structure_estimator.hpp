@@ -1,3 +1,5 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
+
 // Copyright (c) 2015 Pierre Moulon.
 
 // This Source Code Form is subject to the terms of the Mozilla Public
@@ -7,7 +9,12 @@
 #ifndef OPENMVG_SFM_PIPELINES_SFKP_STRUCTURE_ESTIMATOR_HPP
 #define OPENMVG_SFM_PIPELINES_SFKP_STRUCTURE_ESTIMATOR_HPP
 
+#include <memory>
+
 #include "openMVG/matching/indMatch.hpp"
+
+namespace openMVG { namespace sfm { struct Regions_Provider; } }
+namespace openMVG { namespace sfm { struct SfM_Data; } }
 
 namespace openMVG {
 namespace sfm {
@@ -19,7 +26,7 @@ class SfM_Data_Structure_Estimation_From_Known_Poses
 {
 public:
 
-  SfM_Data_Structure_Estimation_From_Known_Poses
+  explicit SfM_Data_Structure_Estimation_From_Known_Poses
   (
     double max_reprojection_error // pixels
   );

@@ -1,3 +1,5 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
+
 // Copyright (c) 2013 Pierre MOULON.
 
 // This Source Code Form is subject to the terms of the Mozilla Public
@@ -7,12 +9,14 @@
 #ifndef OPENMVG_ROBUST_ESTIMATION_GUIDED_MATCHING_HPP
 #define OPENMVG_ROBUST_ESTIMATION_GUIDED_MATCHING_HPP
 
+#include <algorithm>
+#include <limits>
+#include <vector>
+
 #include "openMVG/cameras/Camera_Intrinsics.hpp"
 #include "openMVG/features/regions.hpp"
 #include "openMVG/matching/indMatch.hpp"
 #include "openMVG/numeric/numeric.h"
-
-#include <vector>
 
 
 namespace openMVG{
@@ -88,7 +92,7 @@ struct distanceRatio
       std::swap(bd, sbd);
       return true;
     }
-    else if(dist < sbd)
+    else if (dist < sbd)
     {
       sbd = dist;
       return true;
@@ -172,9 +176,9 @@ template<
   >
 void GuidedMatching(
   const ModelArg & mod, // The model
-  const cameras::IntrinsicBase * camL, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
+  const cameras::IntrinsicBase * camL, // Optional camera (in order to undistord on the fly feature positions, can be nullptr)
   const features::Regions & lRegions,  // regions (point features & corresponding descriptors)
-  const cameras::IntrinsicBase * camR, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
+  const cameras::IntrinsicBase * camR, // Optional camera (in order to undistord on the fly feature positions, can be nullptr)
   const features::Regions & rRegions,  // regions (point features & corresponding descriptors)
   double errorTh,       // Maximal authorized error threshold
   double distRatio,     // Maximal authorized distance ratio
@@ -223,53 +227,53 @@ void GuidedMatching(
 
 /// Compute a bucket index from an epipolar point
 ///  (the one that is closer to image border intersection)
-static unsigned int pix_to_bucket(const Vec2i &x, int W, int H)
+static inline unsigned int pix_to_bucket(const Vec2i &x, int W, int H)
 {
-	if (x(1) == 0) return x(0); // Top border
-	if (x(0) == W-1) return W-1 + x(1); // Right border
-	if (x(1) == H-1) return 2*W + H-3 - x(0); // Bottom border
-	return 2*(W+H-2) - x(1); // Left border
+  if (x(1) == 0) return x(0); // Top border
+  if (x(0) == W-1) return W-1 + x(1); // Right border
+  if (x(1) == H-1) return 2*W + H-3 - x(0); // Bottom border
+  return 2*(W+H-2) - x(1); // Left border
 }
 
 /// Compute intersection of the epipolar line with the image border
-static bool line_to_endPoints(const Vec3 & line, int W, int H, Vec2 & x0, Vec2 & x1)
+static inline bool line_to_endPoints(const Vec3 & line, int W, int H, Vec2 & x0, Vec2 & x1)
 {
   const double a = line(0), b = line(1), c = line(2);
 
   float r1, r2;
   // Intersection with Y axis (0 or W-1)
-	if (b!=0)
-	{
-		double x = (b<0) ? 0 : W-1;
-		double y = -(a*x+c)/b;
-		if (y < 0) y = 0.;
-		else if (y >= H) y = H-1;
-		r1 = fabs(a*x + b*y + c);
-		x0 << x,y;
-	}
-	else  {
-		return false;
-	}
-
-	// Intersection with X axis (0 or H-1)
-	if (a!=0)
-	{
-		double y = (a<0) ? H-1 : 0;
-		double x = -(b*y+c)/a;
-		if (x < 0) x = 0.;
-		else if (x >= W) x = W-1;
-		r2 = fabs(a*x + b*y + c);
-		x1 << x,y;
-	}
-	else  {
+  if (b!=0)
+  {
+    double x = (b<0) ? 0 : W-1;
+    double y = -(a*x+c)/b;
+    if (y < 0) y = 0.;
+    else if (y >= H) y = H-1;
+    r1 = std::abs(a*x + b*y + c);
+    x0 << x,y;
+  }
+  else  {
     return false;
-	}
+  }
 
-	// Choose x0 to be as close as the intersection axis
-	if (r1>r2)
+  // Intersection with X axis (0 or H-1)
+  if (a!=0)
+  {
+    double y = (a<0) ? H-1 : 0;
+    double x = -(b*y+c)/a;
+    if (x < 0) x = 0.;
+    else if (x >= W) x = W-1;
+    r2 = std::abs(a*x + b*y + c);
+    x1 << x,y;
+  }
+  else  {
+    return false;
+  }
+
+  // Choose x0 to be as close as the intersection axis
+  if (r1>r2)
     std::swap(x0,x1);
 
-	return true;
+  return true;
 }
 
 /// Guided Matching (features + descriptors with distance ratio):
@@ -287,9 +291,9 @@ template<
 void GuidedMatching_Fundamental_Fast(
   const Mat3 & FMat,    // The fundamental matrix
   const Vec3 & epipole2,// Epipole2 (camera center1 in image plane2; must not be normalized)
-  const cameras::IntrinsicBase * camL, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
+  const cameras::IntrinsicBase * camL, // Optional camera (in order to undistord on the fly feature positions, can be nullptr)
   const features::Regions & lRegions,  // regions (point features & corresponding descriptors)
-  const cameras::IntrinsicBase * camR, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
+  const cameras::IntrinsicBase * camR, // Optional camera (in order to undistord on the fly feature positions, can be nullptr)
   const features::Regions & rRegions,  // regions (point features & corresponding descriptors)
   const int widthR, const int heightR,
   double errorTh,       // Maximal authorized error threshold (consider it's a square threshold)
@@ -317,8 +321,8 @@ void GuidedMatching_Fundamental_Fast(
   //-- Store point in the corresponding epipolar line bucket
   //--
   using Bucket_vec = std::vector<IndexT>;
-	using Buckets_vec = std::vector<Bucket_vec>;
-	const int nb_buckets = 2*(widthR + heightR-2);
+  using Buckets_vec = std::vector<Bucket_vec>;
+  const int nb_buckets = 2*(widthR + heightR-2);
 
   Buckets_vec buckets(nb_buckets);
   for (size_t i = 0; i < lRegions.RegionCount(); ++i) {
@@ -341,24 +345,24 @@ void GuidedMatching_Fundamental_Fast(
   for (size_t j = 0; j < rRegions.RegionCount(); ++j)
   {
     // According the point:
-    // - Compute it's epipolar line from the epipole
+    // - Compute the epipolar line from the epipole
     // - compute the range of possible bucket by computing
     //    the epipolar line gauge limitation introduced by the tolerated pixel error
 
     const Vec2 xR = camR ? camR->get_ud_pixel(rRegions.GetRegionPosition(j)) : rRegions.GetRegionPosition(j);
-    const Vec3 l2 = ep2.cross(Vec3(xR(0), xR(1), 1.));
-		const Vec2 n = l2.head<2>() * (sqrt(errorTh) / l2.head<2>().norm());
+    const Vec3 l2 = ep2.cross(xR.homogeneous());
+    const Vec2 n = l2.head<2>() * (sqrt(errorTh) / l2.head<2>().norm());
 
-		const Vec3 l2min = ep2.cross(Vec3(xR(0) - n(0), xR(1) - n(1), 1.));
-		const Vec3 l2max = ep2.cross(Vec3(xR(0) + n(0), xR(1) + n(1), 1.));
+    const Vec3 l2min = ep2.cross(Vec3(xR(0) - n(0), xR(1) - n(1), 1.));
+    const Vec3 l2max = ep2.cross(Vec3(xR(0) + n(0), xR(1) + n(1), 1.));
 
     // Compute corresponding buckets
-		Vec2 x0, x1;
-		if (!line_to_endPoints(l2min, widthR, heightR, x0, x1))
+    Vec2 x0, x1;
+    if (!line_to_endPoints(l2min, widthR, heightR, x0, x1))
       continue;
     const int bucket_start = pix_to_bucket(x0.cast<int>(), widthR, heightR);
 
- 		if (!line_to_endPoints(l2max, widthR, heightR, x0, x1))
+     if (!line_to_endPoints(l2max, widthR, heightR, x0, x1))
       continue;
     const int bucket_stop = pix_to_bucket(x0.cast<int>(), widthR, heightR);
 
@@ -367,7 +371,7 @@ void GuidedMatching_Fundamental_Fast(
       itBs != buckets.begin() + bucket_stop; ++itBs)
     {
       const Bucket_vec & bucket = *itBs;
-      for( const auto & i : bucket )
+      for (const auto & i : bucket )
       {
         // Compute descriptor distance
         const double descDist = lRegions.SquaredDescriptorDistance(i, &rRegions, j);

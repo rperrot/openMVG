@@ -1,3 +1,4 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
 
 // Copyright (c) 2012, 2013 Pierre MOULON.
 
@@ -8,7 +9,7 @@
 #ifndef OPENMVG_SFM_IO_H
 #define OPENMVG_SFM_IO_H
 
-#include "openMVG/numeric/numeric.h"
+#include "openMVG/numeric/eigen_alias_definition.hpp"
 #include "openMVG/stl/split.hpp"
 
 #include <fstream>
@@ -65,13 +66,13 @@ static bool loadImageList( std::vector<CameraInfo> & vec_camImageName,
                            bool bVerbose = true )
 {
   std::ifstream in(sFileName.c_str());
-  if(!in.is_open())  {
+  if (!in.is_open())  {
     std::cerr << std::endl
       << "Impossible to read the specified file." << std::endl;
   }
   std::string sValue;
   std::vector<std::string> vec_str;
-  while(getline( in, sValue ) )
+  while (getline( in, sValue ) )
   {
     vec_str.clear();
     stl::split(sValue, ';', vec_str);
@@ -110,7 +111,7 @@ static bool loadImageList( std::vector<CameraInfo> & vec_camImageName,
          intrinsicCamInfo.m_sCameraModel = vec_str[4];
       }
       break;
-      case  6 : // a camera with exif data found in the database
+      case 6 : // a camera with exif data found in the database
       {
          oss.clear(); oss.str(vec_str[3]);
          float focal;
@@ -157,7 +158,7 @@ static bool loadImageList( std::vector<CameraInfo> & vec_camImageName,
         intrinsicCamInfo.m_focal = static_cast<float>(K(0,0)); // unknown sensor size;
       }
       break;
-      default :
+      default:
       {
         std::cerr << "Invalid image list line: wrong number of arguments" << std::endl;
         in.close();
@@ -219,4 +220,3 @@ inline bool loadImageList
 } // namespace openMVG
 
 #endif // OPENMVG_SFM_IO_H
-

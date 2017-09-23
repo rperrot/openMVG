@@ -1,3 +1,4 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
 
 // Copyright (c) 2012, 2013 Pierre MOULON.
 
@@ -5,7 +6,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <stdio.h>
 #include <cmath>
 #include <iterator>
@@ -22,7 +23,7 @@
 #include <GLFW/glfw3.h>
 
 #include "openMVG/sfm/sfm.hpp"
-#include "openMVG/image/image.hpp"
+#include "openMVG/image/image_io.hpp"
 #include "third_party/progress/progress.hpp"
 
 #include "third_party/cmdLine/cmdLine.h"
@@ -48,11 +49,8 @@ static std::vector<IndexT> vec_cameras;
 struct GLWImage {
     int width, height;
     GLuint texture;
-    double opacity;
-    int camera;
  };
 
-//static GLWImage m_cur_image;
 static std::vector< GLWImage > m_image_vector;
 
 /* close callback */
@@ -66,15 +64,14 @@ void load_textures()
   const size_t nbCams = vec_cameras.size();
   m_image_vector.resize(nbCams);
 
-  C_Progress_display my_progress_bar( nbCams, std::cout,
-    "\n", " " , "Textures loading, Please wait...\n" );
+  C_Progress_display my_progress_bar( nbCams, std::cout, "Textures loading, Please wait...\n" );
   for ( size_t i_cam=0; i_cam < nbCams; ++i_cam, ++my_progress_bar) {
     const View * view = sfm_data.GetViews().at(vec_cameras[i_cam]).get();
     const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->s_Img_path);
 
   std::vector<unsigned char> img;
   int w,h,depth;
-  if (ReadImage(srcImage.c_str(),	&img,	&w,	&h,	&depth)) {
+  if (ReadImage(srcImage.c_str(), &img, &w, &h, &depth)) {
     glEnable(GL_TEXTURE_2D);
     //std::cout << "Read image : " << sImageName << "\n" << std::endl;
     glDeleteTextures(1, &m_image_vector[i_cam].texture);
@@ -113,7 +110,7 @@ void reshape( GLFWwindow* window, int width, int height )
 
 void key(GLFWwindow* window, int k, int scancode, int action, int mod)
 {
-  if( action != GLFW_PRESS ) {
+  if (action != GLFW_PRESS ) {
     return;
   }
 
@@ -348,7 +345,7 @@ int main(int argc, char *argv[]) {
   try {
     if (argc == 1) throw std::string("Invalid command line parameter.");
     cmd.process(argc, argv);
-  } catch(const std::string& s) {
+  } catch (const std::string& s) {
     std::cerr << "Usage: " << argv[0] << '\n'
     << "[-i|--sfmdata filename, the SfM_Data file to read]\n"
     << std::endl;
@@ -365,7 +362,7 @@ int main(int argc, char *argv[]) {
   }
 
   // List valid camera (view that have a pose & a valid intrinsic data)
-  for(Views::const_iterator iter = sfm_data.GetViews().begin();
+  for (Views::const_iterator iter = sfm_data.GetViews().begin();
     iter != sfm_data.GetViews().end(); ++iter)
   {
     const View * view = iter->second.get();
@@ -376,7 +373,7 @@ int main(int argc, char *argv[]) {
   }
 
   current_cam = 0;
-  std::cout << "Press left or right key to navigate between cameras ;-)" << std::endl
+  std::cout << "Press left or right key to navigate between cameras." << std::endl
     << "Move viewpoint with Q,W,E,A,S,D" << std::endl
     << "Change Normalized focal (camera cones size) with '+' and '-'" << std::endl
     << "Reset viewpoint position with R" << std::endl
@@ -386,7 +383,7 @@ int main(int argc, char *argv[]) {
   GLFWwindow* window;
   int width, height;
 
-  if( !glfwInit() )
+  if ( !glfwInit() )
   {
     fprintf( stderr, "Failed to initialize GLFW\n" );
     exit( EXIT_FAILURE );
@@ -394,7 +391,7 @@ int main(int argc, char *argv[]) {
 
   glfwWindowHint(GLFW_DEPTH_BITS, 16);
 
-  window = glfwCreateWindow( 1000, 600, "SfmViewer", NULL, NULL );
+  window = glfwCreateWindow( 1000, 600, "SfmViewer", nullptr, nullptr );
   if (!window)
   {
     fprintf( stderr, "Failed to open GLFW window\n" );
@@ -416,7 +413,7 @@ int main(int argc, char *argv[]) {
   load_textures();
 
   // Main loop
-  while( running )
+  while (running)
   {
     // Draw SfM Scene
     draw();

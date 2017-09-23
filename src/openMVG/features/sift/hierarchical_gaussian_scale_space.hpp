@@ -1,3 +1,5 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
+
 // Copyright (c) 2015 Pierre MOULON, Romuald PERROT.
 
 // This Source Code Form is subject to the terms of the Mozilla Public
@@ -7,9 +9,13 @@
 #ifndef OPENMVG_FEATURES_SIFT_HIERARCHICAL_GAUSSIAN_SCALE_SPACE_HPP
 #define OPENMVG_FEATURES_SIFT_HIERARCHICAL_GAUSSIAN_SCALE_SPACE_HPP
 
-#include "openMVG/features/sift/octaver.hpp"
-
+#include <algorithm>
 #include <vector>
+
+#include "openMVG/features/sift/octaver.hpp"
+#include "openMVG/image/image_filtering.hpp"
+#include "openMVG/image/image_resampling.hpp"
+#include "openMVG/numeric/numeric.h"
 
 namespace openMVG{
 namespace features{
@@ -78,8 +84,9 @@ struct HierarchicalGaussianScaleSpace: public Octaver<Octave>
   HierarchicalGaussianScaleSpace(
     const int nb_octave = 6,
     const int nb_slice = 3,
-    const GaussianScaleSpaceParams & params = GaussianScaleSpaceParams())
-    :Octaver<Octave>(nb_octave, nb_slice),
+    const GaussianScaleSpaceParams & params =
+      std::move(GaussianScaleSpaceParams())
+  ) :Octaver<Octave>(nb_octave, nb_slice),
     m_params(params),
     m_cur_octave_id(0)
   {
@@ -93,7 +100,7 @@ struct HierarchicalGaussianScaleSpace: public Octaver<Octave>
   {
     const double sigma_extra =
       sqrt(Square(m_params.sigma_min) - Square(m_params.sigma_in)) / m_params.delta_min;
-    if(m_params.delta_min == 1.0f)
+    if (m_params.delta_min == 1.0f)
     {
       image::ImageGaussianFilter(img, sigma_extra, m_cur_base_octave_image);
     }
@@ -144,7 +151,7 @@ struct HierarchicalGaussianScaleSpace: public Octaver<Octave>
       // init the "blur"/sigma scale spaces values
       octave.slices.resize(m_nb_slice + m_params.supplementary_levels);
       octave.sigmas.resize(m_nb_slice + m_params.supplementary_levels);
-      for(int s = 0; s < m_nb_slice  + m_params.supplementary_levels; ++s)
+      for (int s = 0; s < m_nb_slice  + m_params.supplementary_levels; ++s)
       {
         octave.sigmas[s] =
           octave.delta / m_params.delta_min * m_params.sigma_min * pow(2.0,(float)s/(float)m_nb_slice);
@@ -152,7 +159,7 @@ struct HierarchicalGaussianScaleSpace: public Octaver<Octave>
 
       // Build the octave iteratively
       octave.slices[0] = m_cur_base_octave_image;
-      for(int s = 1; s < octave.sigmas.size(); ++s)
+      for (int s = 1; s < octave.sigmas.size(); ++s)
       {
         // Iterative blurring the previous image
         const image::Image<float> & im_prev = octave.slices[s-1];
@@ -165,7 +172,7 @@ struct HierarchicalGaussianScaleSpace: public Octaver<Octave>
       }
       /*
       // Debug: Export DoG scale space on disk
-      for(int s = 0; s < octave.sigmas.size(); ++s)
+      for (int s = 0; s < octave.sigmas.size(); ++s)
       {
         std::stringstream os;
         os << "DoG_out_00" << m_cur_octave_id << "_s" << "00" << s << ".png";
