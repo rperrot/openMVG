@@ -461,6 +461,10 @@ void ComputeDepthMap( MVS::Camera & cam ,
       break ;
     }
   }
+#else
+  const MVS::ImageLoadType load_type = ComputeLoadType( params.metric() );
+  const std::vector< MVS::Image > neigh_imgs = LoadNeighborImages( cam , params , load_type ) ;
+
 #endif
 
   const double MAX_COST = MVS::DepthMapComputationParameters::metricMaxCostValue( params.metric() ) ;
@@ -485,7 +489,7 @@ void ComputeDepthMap( MVS::Camera & cam ,
 #ifdef USE_OPENCL
   ComputeCost( map , cam , cams , StereoRIG , image_ref , params , clWObject , krn_cost_full , krn_sum_kernel , krn_sort_n_store ) ;
 #else
-  ComputeCost( map , cam , cams , StereoRIG , image_ref , params ) ;
+  ComputeCost( map , cam , cams , StereoRIG , image_ref , neigh_imgs, params ) ;
 #endif
   auto end_time = std::chrono::high_resolution_clock::now() ;
 
@@ -516,9 +520,12 @@ void ComputeDepthMap( MVS::Camera & cam ,
                krn_sort_n_store , krn_update_planes , krn_compute_depth ) ;
 #else
     // Red
-    Propagate( map , 0 , cam , cams , StereoRIG , image_ref , params ) ;
+    Propagate( map , 0 , cam , cams , StereoRIG , image_ref , neigh_imgs , params ) ;
     // Black
-    Propagate( map , 1 , cam , cams , StereoRIG , image_ref , params ) ;
+    Propagate( map , 1 , cam , cams , StereoRIG , image_ref , neigh_imgs , params ) ;
+
+    // Propagate( map , 0 , cam , cams , StereoRIG , image_ref , params ) ;
+    // Propagate( map , 1 , cam , cams , StereoRIG , image_ref , params ) ;
 #endif
 
     end_time = std::chrono::high_resolution_clock::now() ;
@@ -541,8 +548,9 @@ void ComputeDepthMap( MVS::Camera & cam ,
     Refinement( map , cam , cams , StereoRIG , image_ref , params ,
                 clWObject , krn_cost_full , krn_sum_kernel , krn_sort_n_store , krn_update_planes2 , krn_compute_planes ) ;
 #else
+    Refinement( map , cam , cams , StereoRIG , image_ref , neigh_imgs , params ) ;
 
-    Refinement( map , cam , cams , StereoRIG , image_ref , params ) ;
+    //    Refinement( map , cam , cams , StereoRIG , image_ref , params ) ;
 #endif
     end_time = std::chrono::high_resolution_clock::now() ;
 

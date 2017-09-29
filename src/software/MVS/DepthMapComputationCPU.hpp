@@ -2,6 +2,7 @@
 #define _OPENMVG_MVS_DEPTH_MAP_COMPUTATION_CPU_HPP_
 
 #include "Camera.hpp"
+#include "CostMetricFunctors.hpp"
 #include "DepthMap.hpp"
 #include "DepthMapComputationParameters.hpp"
 #include "Image.hpp"
@@ -10,57 +11,6 @@
 
 namespace MVS
 {
-
-/**
-* @brief Compute cost value at specified pixel position
-* @param id_row Y coordinate of the pixel
-* @param id_col X coordinate of the pixel
-* @param H Homography that maps points in first image to points in the second image
-* @param params Computation parameters
-* @param image_ref Image data of the first view
-* @param image_other Image data of the second view
-* @return Pixel cost using NCC value
-*/
-double ComputePixelCostNCC( const int id_row , const int id_col ,
-                            const openMVG::Mat3 & H ,
-                            const DepthMapComputationParameters & params ,
-                            const Image & image_ref ,
-                            const Image & image_other ) ;
-
-
-/**
-* @brief Compute pixel cost using Patch Match metric
-* @param id_row Y-coordinate of the pixel
-* @param id_col X-coordinate of the pixel
-* @param H Homography that maps points in first image to points in the second image
-* @param params Computation parameters
-* @param image_ref Image data of the first view
-* @param image_other Image data of the second view
-* @return Pixel cost using PatchMatch metric
-*/
-double ComputePixelCostPM( const int id_row ,
-                           const int id_col ,
-                           const openMVG::Mat3 & H ,
-                           const DepthMapComputationParameters & params ,
-                           const Image & image_ref ,
-                           const Image & image_other ) ;
-
-
-/**
-* @brief Compute cost value at specified pixel position
-* @param id_row Y coordinate of the pixel
-* @param id_col X coordinate of the pixel
-* @param H Homography that maps points in first image to points in the second image
-* @param params Computation parameters
-* @param image_ref Image data of the first view
-* @param image_other Image data of the second view
-* @return Pixel cost using Census transform value
-*/
-double ComputePixelCostCensus( const int id_row , const int id_col ,
-                               const openMVG::Mat3 & H ,
-                               const DepthMapComputationParameters & params ,
-                               const Image & image_ref ,
-                               const Image & image_other ) ;
 
 /**
 * @brief compute cost between two images
@@ -82,6 +32,7 @@ void ComputeImagePairCost( openMVG::image::Image<double> & cost ,
                            const Image & image_ref ,
                            const Image & image_other ,
                            const DepthMapComputationParameters & params ,
+                           std::shared_ptr<AbstractCostMetric> cost_metric ,
                            const int scale = -1 ) ;
 
 /**
@@ -130,23 +81,8 @@ double ComputeMultiViewCost( const int id_row , const int id_col ,
                              const Image & image_ref ,
                              const std::vector< Image > & neigh_imgs ,
                              const DepthMapComputationParameters & params ,
+                             std::vector< std::shared_ptr<AbstractCostMetric>> cost_metrics ,
                              const int scale = -1 ) ;
-
-/**
-* @brief Compute initial matching cost of specified camera
-* @param map The depth map of the reference image
-* @param reference_cam The reference view camera
-* @param cams Array of neighboring cameras
-* @param stereo_rig Array of all motions between reference and it's neighbors
-* @param image_ref Reference image
-* @param params Computation parameters
-*/
-void ComputeCost( DepthMap & map ,
-                  const Camera & reference_cam ,
-                  const std::vector< Camera > & cams ,
-                  const std::vector< std::pair< openMVG::Mat3 , openMVG::Vec3 > > & stereo_rig ,
-                  const Image & image_ref ,
-                  const DepthMapComputationParameters & params ) ;
 
 /**
 * @brief Compute initial cost at a specific scale
@@ -166,24 +102,7 @@ void ComputeCost( DepthMap & map ,
                   const Image & image_ref ,
                   const std::vector< Image > & neigh_imgs ,
                   const DepthMapComputationParameters & params ,
-                  const int scale ) ;
-
-/**
-* @brief Perform propagation using Red or Black scheme
-* @param[in,out] map The depth map to optimize
-* @param id_start 0 if propagate Red , 1 if propagate Black
-* @param cam Reference camera
-* @param cams Neighboring cameras
-* @param stereo_rig Array of motion between reference and it's neighbors
-* @param image_ref Image data of the reference view
-* @param params Computation parameters
-*/
-void Propagate( DepthMap & map , const int id_start ,
-                Camera & cam ,
-                const std::vector< Camera > & cams ,
-                const std::vector< std::pair< openMVG::Mat3 , openMVG::Vec3 > > & stereo_rig ,
-                const Image & image_ref ,
-                const DepthMapComputationParameters & params ) ;
+                  const int scale = -1 );
 
 
 /**
@@ -205,24 +124,7 @@ void Propagate( DepthMap & map , const int id_start ,
                 const Image & image_ref ,
                 const std::vector< Image > & neigh_imgs ,
                 const DepthMapComputationParameters & params ,
-                const int scale ) ;
-
-
-/**
-* @brief Perform plane refinement
-* @param map Depth map to refine
-* @param cam Reference camera
-* @param cams Array of all neighboring cameras
-* @param stereo_rig Array of motion between reference and its neighbors
-* @param image_ref Image data of the reference view
-* @param params Computation parameters
-*/
-void Refinement( DepthMap & map ,
-                 const Camera & cam ,
-                 const std::vector< Camera > & cams ,
-                 const std::vector< std::pair< openMVG::Mat3 , openMVG::Vec3 > > & stereo_rig ,
-                 const Image & image_ref ,
-                 const DepthMapComputationParameters & params ) ;
+                const int scale = -1 ) ;
 
 /**
 * @brief Perform plane refinement at specific scale
@@ -240,7 +142,7 @@ void Refinement( DepthMap & map ,
                  const Image & image_ref ,
                  const std::vector< Image > & neigh_imgs ,
                  const DepthMapComputationParameters & params ,
-                 const int scale ) ;
+                 const int scale = -1 ) ;
 
 
 

@@ -10,6 +10,7 @@ FIND_PACKAGE( OpenCL )
 
 # DEPTH MAP GENERATION 
 SET( OPENMVG_COMPUTE_DEPTH_MAPS_SOURCES Camera.cpp 
+                                        CostMetricFunctors.cpp
                                         DepthMap.cpp 
                                         DepthMapComputationCommon.cpp 
                                         DepthMapComputationCPU.cpp 
@@ -22,7 +23,8 @@ SET( OPENMVG_COMPUTE_DEPTH_MAPS_SOURCES Camera.cpp
                                         Util.cpp 
                                         main_computeDepthMaps.cpp )
 
-SET( OPENMVG_COMPUTE_DEPTH_MAPS_HEADERS Camera.hpp 
+SET( OPENMVG_COMPUTE_DEPTH_MAPS_HEADERS Camera.hpp
+                                        CostMetricFunctors.hpp 
                                         DepthMap.hpp 
                                         DepthMapComputationCommon.hpp 
                                         DepthMapComputationCPU.hpp 
