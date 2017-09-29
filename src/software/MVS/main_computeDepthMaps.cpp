@@ -18,8 +18,8 @@
 #include <random>
 
 #define MULTISCALE
-#define USE_OPENCL
-// #define EXPORT_INTERMEDIATE_RESULT
+// #define USE_OPENCL
+#define EXPORT_INTERMEDIATE_RESULT
 
 
 #ifdef EXPORT_INTERMEDIATE_RESULT
@@ -209,16 +209,16 @@ void ComputeMultipleScaleDepthMap( MVS::Camera & cam ,
   {
     if( i < params.scale() )
     {
-      imgs_dims.push_back( std::make_pair( 0 , 0 ) ) ;
+      imgs_dims.emplace_back( std::make_pair( 0 , 0 ) ) ;
     }
     else if( i == params.scale() )
     {
-      imgs_dims.push_back( std::make_pair( cam.m_cam_dims.second , cam.m_cam_dims.first ) ) ;
+      imgs_dims.emplace_back( std::make_pair( cam.m_cam_dims.second , cam.m_cam_dims.first ) ) ;
     }
     else
     {
       const std::pair< int, int> & prev = imgs_dims[ i - 1 ] ;
-      imgs_dims.push_back( std::make_pair( prev.first / 2 , prev.second / 2 ) ) ;
+      imgs_dims.emplace_back( std::make_pair( prev.first / 2 , prev.second / 2 ) ) ;
     }
   }
 
@@ -237,7 +237,7 @@ void ComputeMultipleScaleDepthMap( MVS::Camera & cam ,
   std::vector<std::pair< openMVG::Mat3 , openMVG::Vec3 >> StereoRIG ;
   for( size_t id_neigh = 0 ; id_neigh < cam.m_view_neighbors.size() ; ++id_neigh )
   {
-    StereoRIG.push_back( MVS::RelativeMotion( cam , cams[cam.m_view_neighbors[id_neigh] ] ) );
+    StereoRIG.emplace_back( MVS::RelativeMotion( cam , cams[cam.m_view_neighbors[id_neigh] ] ) );
   }
 
   const double MAX_COST = MVS::DepthMapComputationParameters::metricMaxCostValue( params.metric() ) ;
@@ -469,7 +469,7 @@ void ComputeDepthMap( MVS::Camera & cam ,
   std::vector<std::pair< openMVG::Mat3 , openMVG::Vec3 >> StereoRIG ;
   for( size_t id_neigh = 0 ; id_neigh < cam.m_view_neighbors.size() ; ++id_neigh )
   {
-    StereoRIG.push_back( MVS::RelativeMotion( cam , cams[cam.m_view_neighbors[id_neigh] ] ) );
+    StereoRIG.emplace_back( MVS::RelativeMotion( cam , cams[cam.m_view_neighbors[id_neigh] ] ) );
   }
 
   // Initialize depth map

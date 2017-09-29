@@ -74,10 +74,12 @@ double ComputePixelCostNCC( const int id_row , const int id_col ,
     }
   }
 
-  const double v1m = sum1 / ( double ) nb ;
-  const double v2m = sum2 / ( double ) nb ;
-  const double v12m = ( sum1 * sum1 ) / ( double ) nb ;
-  const double v22m = ( sum2 * sum2 ) / ( double ) nb ;
+  const double inv_nb = 1.0 / nb ;
+
+  const double v1m = sum1 * inv_nb ;
+  const double v2m = sum2 * inv_nb ; // / ( double ) nb ;
+  const double v12m = ( sum1 * sum1 ) * inv_nb ; // / ( double ) nb ;
+  const double v22m = ( sum2 * sum2 ) * inv_nb ; // / ( double ) nb ;
 
   const double denom = std::sqrt( ( sum3 - v12m ) * ( sum4 - v22m ) ) ;
   const double ncc = ( sum5 - ( ( double ) nb ) * v1m * v2m ) / denom ;
@@ -88,6 +90,7 @@ double ComputePixelCostNCC( const int id_row , const int id_col ,
   }
   else
   {
+    // Result in range [0;2]
     return 1.0 - Clamp( ncc , -1.0 , 1.0 ) ;
   }
 }

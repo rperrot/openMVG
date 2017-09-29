@@ -19,9 +19,9 @@ PointCloud::PointCloud( void )
 */
 void PointCloud::addPoint( const openMVG::Vec3 & vec , const openMVG::Vec3 & n , const openMVG::Vec3 & c )
 {
-  m_pts.push_back( vec ) ;
-  m_normals.push_back( n ) ;
-  m_colors.push_back( c ) ;
+  m_pts.emplace_back( vec ) ;
+  m_normals.emplace_back( n ) ;
+  m_colors.emplace_back( c ) ;
 }
 
 /**

@@ -189,8 +189,8 @@ std::vector< Camera > LoadCameras( const openMVG::sfm::SfM_Data & sfm_data , con
       for( int scale = 0 ; scale < 5 ; ++scale )
       {
         const openMVG::Mat3 cur_K = ScaleK( cam->K() , scale ) ;
-        tmp.m_K_scaled.push_back( cur_K ) ;
-        tmp.m_K_inv_scaled.push_back( cur_K.inverse() ) ;
+        tmp.m_K_scaled.emplace_back( cur_K ) ;
+        tmp.m_K_inv_scaled.emplace_back( cur_K.inverse() ) ;
       }
 
       tmp.m_R = rotation ;
@@ -206,7 +206,7 @@ std::vector< Camera > LoadCameras( const openMVG::sfm::SfM_Data & sfm_data , con
         const openMVG::Mat3 & cur_K = tmp.m_K_scaled[ scale ] ;
         openMVG::Mat34 P ;
         openMVG::P_From_KRt( cur_K , tmp.m_R , tmp.m_t , &P ) ;
-        tmp.m_P_scaled.push_back( P ) ;
+        tmp.m_P_scaled.emplace_back( P ) ;
       }
 
       {
@@ -219,10 +219,10 @@ std::vector< Camera > LoadCameras( const openMVG::sfm::SfM_Data & sfm_data , con
       {
         const openMVG::Mat34 & P = tmp.m_P_scaled[ scale ] ;
         const openMVG::Mat3 M = tmp.m_P_scaled[ scale ].block<3, 3>( 0 , 0 ) ;
-        tmp.m_M_inv_scaled.push_back( M.inverse() ) ;
+        tmp.m_M_inv_scaled.emplace_back( M.inverse() ) ;
       }
 
-      cams.push_back( tmp ) ;
+      cams.emplace_back( tmp ) ;
       map_view_id[ view ] = id ;
       ++id ;
     }
@@ -271,7 +271,7 @@ std::vector< Camera > LoadCameras( const openMVG::sfm::SfM_Data & sfm_data , con
         cur_cam.m_max_depth = std::max( cur_cam.m_max_depth , cur_depth ) ;
 
         // Push the ground gruth data
-        cur_cam.m_ground_truth.push_back( std::make_pair( x , X ) ) ;
+        cur_cam.m_ground_truth.emplace_back( std::make_pair( x , X ) ) ;
       }
     }
   }
@@ -304,7 +304,7 @@ std::vector< Camera > LoadCameras( const openMVG::sfm::SfM_Data & sfm_data , con
 
       if( angle > aRadMin && angle < aRadMax && cur_dir.dot( ref_dir ) > 0.0 )
       {
-        putative_list.push_back( id_cam ) ;
+        putative_list.emplace_back( id_cam ) ;
       }
     }
 
@@ -314,7 +314,7 @@ std::vector< Camera > LoadCameras( const openMVG::sfm::SfM_Data & sfm_data , con
     }
     for( size_t id_putative = 0 ; id_putative < putative_list.size() && id_putative < static_cast<size_t>( K ) ; ++id_putative )
     {
-      cur_ref.m_view_neighbors.push_back( putative_list[ id_putative ] ) ;
+      cur_ref.m_view_neighbors.emplace_back( putative_list[ id_putative ] ) ;
     }
   }
 
@@ -333,7 +333,7 @@ std::vector< Camera > LoadCameras( const openMVG::sfm::SfM_Data & sfm_data , con
         const Camera & other = cams[ cur_ref.m_view_neighbors[id_other] ] ;
 
         const double b = ( cur_ref.m_C - other.m_C ).norm() ;
-        cur_ref.m_baseline.push_back( b ) ;
+        cur_ref.m_baseline.emplace_back( b ) ;
 
         cur_ref.m_min_baseline = std::min( cur_ref.m_min_baseline , b ) ;
         cur_ref.m_max_baseline = std::max( cur_ref.m_max_baseline , b ) ;

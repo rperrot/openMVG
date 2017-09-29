@@ -40,11 +40,11 @@ double AngleBetween( const openMVG::Vec3 & v1 , const openMVG::Vec3 & v2 )
 
 std::vector< double > GetExpTable( const double gamma )
 {
-  std::vector< double > res ;
+  std::vector< double > res( 255 ) ;
 
   for( int i = 0 ; i < 255 ; ++i )
   {
-    res.push_back( std::exp( -static_cast<double>( i ) / gamma ) );
+    res[i] = std::exp( -static_cast<double>( i ) / gamma ) ;
   }
   return res ;
 }

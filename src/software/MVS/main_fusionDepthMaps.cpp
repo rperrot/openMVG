@@ -392,7 +392,7 @@ void FilterDepthMaps( const std::vector<std::string> &          in_dm_paths,
   std::vector<MVS::Camera> all_cams;
   for ( size_t id_cam = 0; id_cam < in_cams_paths.size(); ++id_cam )
   {
-    all_cams.push_back( MVS::Camera( in_cams_paths[ id_cam ] ) );
+    all_cams.emplace_back( MVS::Camera( in_cams_paths[ id_cam ] ) );
   }
 
   if ( use_wolfe )
@@ -610,7 +610,7 @@ MVS::PointCloud FusionDepthMap( const std::vector<std::string> &                
   std::vector<MVS::Camera> all_cams;
   for ( size_t id_cam = 0; id_cam < cam_paths.size(); ++id_cam )
   {
-    all_cams.push_back( MVS::Camera( cam_paths[ id_cam ] ) );
+    all_cams.emplace_back( MVS::Camera( cam_paths[ id_cam ] ) );
   }
 
   MVS::PointCloud pcloud;
@@ -655,7 +655,7 @@ std::vector<std::string> GetInputDepthMapsPaths( const std::string &            
       break;
     }
 
-    res.push_back( dm_path );
+    res.emplace_back( dm_path );
 
     ++id_cam;
   }
@@ -683,7 +683,7 @@ std::vector<std::string> GetInputCameraPaths( const std::string &               
       break;
     }
 
-    res.push_back( cam_path );
+    res.emplace_back( cam_path );
 
     ++id_cam;
   }
@@ -706,7 +706,7 @@ std::vector<std::string> GetOutputDepthMapsPaths( const std::string &base_path, 
 
     const std::string dm_path = params.getFilteredDepthPath( id_cam );
 
-    res.push_back( dm_path );
+    res.emplace_back( dm_path );
 
     ++id_cam;
   }
