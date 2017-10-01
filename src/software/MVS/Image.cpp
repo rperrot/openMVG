@@ -452,6 +452,8 @@ std::vector< Image > LoadNeighborImages( const Camera & reference_cam ,
   return neigh_imgs ;
 }
 
+#define MEAN_CENSUS_TRANSFORM 1
+
 /**
 * @brief Compute Census transform
 */
@@ -459,17 +461,93 @@ void Image::computeCensus( void )
 {
   m_census.resize( m_grayscale.Width() , m_grayscale.Height() , true , 0ul ) ;
 
-  for( int id_row = 0 ; id_row < m_gradient.Height() ; ++id_row )
-  {
-    for( int id_col = 0 ; id_col < m_gradient.Width() ; ++id_col )
-    {
+  const int half_h = 3 ;
+  const int half_w = 4 ;
 
-      // 9x7 window
-      const unsigned char c = m_grayscale( id_row , id_col ) ;
-      unsigned long long  census = 0 ;
-      for( int y = id_row - 4 ; y <= id_row + 4 ; ++y )
+  // { y , x } -> { y , x }
+  const int star_pattern_idx[24][2][2] =
+  {
+    { { -2 , -2 } , { -2 , 0 } } ,
+    { { -2 , -1 } , { -1 , 1 } } ,
+    { { -2 , 0 } , { -1 , -2 } } ,
+    { { -2 , 1 } , { -2 , -1 } } ,
+    { { -2 , 2 } , { 0 , 2 } } ,
+
+    { { -1 , -2 } , { 1 , -2 } } ,
+    { { -1 , -1 } , { 0 , 1 } } ,
+    { { -1 , 0 } , { -2 , -2 } } ,
+    { { -1 , 1 } , { 1 , 0 } } ,
+    { { -1 , 2 } , { 1 , 1 } } ,
+
+    { { 0 , -2 } , { 2 , 1 } } ,
+    { { 0 , -1 } , { 2 , -2 } } ,
+    { { 0 , 1 } , { -2 , 2 } } ,
+    { { 0 , 2 } , { -2 , 1 } } ,
+
+    { { 1 , -2 } , { -1 , -1 } } ,
+    { { 1 , -1 } , { -1 , 0 } } ,
+    { { 1 , 0 } , { 2 , 2 } } ,
+    { { 1 , 1 } , { 0 , -1 } } ,
+    { { 1 , 2 } , { -1 , 2 } } ,
+
+    { { 2 , -2 } , { 0 , -2 } } ,
+    { { 2 , -1 } , { 2 , 1 } } ,
+    { { 2 , 0 } , { 1 , 2 } } ,
+    { { 2 , 1 } , { 1 , -1 } } ,
+    { { 2 , 2 } , { 2 , 0 } }
+  } ;
+
+  for( int id_row = half_h ; id_row < m_gradient.Height() - half_h ; ++id_row )
+  {
+    for( int id_col = half_w ; id_col < m_gradient.Width() - half_w ; ++id_col )
+    {
+      // Compute mean inside 9x7 window
+#ifdef MEAN_CENSUS_TRANSFORM
+      int sum = 0 ;
+      int nb = 0 ;
+      for( int y = id_row - half_h ; y <= id_row + half_h ; ++y )
       {
-        for( int x = id_col - 3 ; x <= id_col + 3 ; ++x )
+        for( int x = id_col - half_w ; x <= id_col + half_w ; ++x )
+        {
+          sum += m_grayscale( y , x ) ;
+          ++nb ;
+        }
+      }
+      const unsigned char c = static_cast<unsigned char>( sum / nb ) ;
+#elif defined CENSUS_TRANSFORM
+      const unsigned char c = m_grayscale( id_row , id_col ) ;
+#elif defined STAR_CENSUS_TRANSFORM
+
+#endif
+
+      unsigned long long  census = 0 ;
+
+#ifdef STAR_CENSUS_TRANSFORM
+      // Ref : https://www.spiedigitallibrary.org/journals/Optical-Engineering/volume-55/issue-06/063107/Improved-census-transform-for-noise-robust-stereo-matching/10.1117/1.OE.55.6.063107.full?SSO=1
+      // use 24-2-1 pattern
+      for( int sample = 0 ; sample < 24 ; ++sample )
+      {
+        const int ipy = id_row + star_pattern_idx[ sample ][ 0 ][ 0 ] ;
+        const int ipx = id_col + star_pattern_idx[ sample ][ 0 ][ 1 ] ;
+
+        const int iqy = id_row + star_pattern_idx[ sample ][ 1 ][ 0 ] ;
+        const int iqx = id_col + star_pattern_idx[ sample ][ 1 ][ 1 ] ;
+
+        const unsigned char Ip = m_grayscale( ipy , ipy ) ;
+        const unsigned char Iq = m_grayscale( iqy , iqx ) ;
+
+        const int val = Ip < Iq ;
+
+        census <<= 1 ;
+        census |= val & 0x1 ;
+      }
+
+#else
+      // Standard census transform and mean census
+      // 9x7 window
+      for( int y = id_row - half_h ; y <= id_row + half_h ; ++y )
+      {
+        for( int x = id_col - half_w ; x <= id_col + half_w ; ++x )
         {
           if( ! ( x == id_col && y == id_row ) )
           {
@@ -480,6 +558,7 @@ void Image::computeCensus( void )
           }
         }
       }
+#endif
       m_census( id_row , id_col ) = census ;
     }
   }
