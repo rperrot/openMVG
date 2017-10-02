@@ -252,10 +252,17 @@ double CensusCostMetric::operator()( const int id_row , const int id_col , const
   static constexpr int window = 15 ;
   static constexpr int half_w = window / 2 ;
 
+
+#define MODIFIED_AD_COST 1 
   // @todo: pass as parameters instead of fixed values
-  const double lambda_census = 30.0 ;
-  const double lambda_ad     = 10.0 ;
+#ifdef STANDARD_AD_COST
+  const double lambda_census = 20.0 ;
+  const double lambda_ad     = 20.0 ; // 60 if use RGB difference
   const double tau = 60.0 ;
+#elif defined MODIFIED_AD_COST
+  const double lambda_census = 30.0 ;
+  const double lambda_ad     = 10.0 ; // 60 if use RGB difference
+#endif
 
   double total_distance = 0.0 ;
   for( int y = id_row - half_w ; y <= id_row + half_w ; y += 2 )
@@ -292,10 +299,19 @@ double CensusCostMetric::operator()( const int id_row , const int id_col , const
       // AD distance
       const double val_p_grayscale = m_image_ref.intensity( y , x ) ;
       const double val_q_grayscale = m_image_other.intensity( qy , qx ) ;
+#ifdef STANDARD_AD_COST
       const double grayscale_dist = std::min( tau , std::fabs( val_p_grayscale - val_q_grayscale ) ) ;
+      total_distance += std::min( census_dist , lambda_census ) + std::min( grayscale_dist , lambda_ad ) ;
+#elif defined MODIFIED_AD_COST
+      // Modified version :
+      // http://www.nlpr.ia.ac.cn/2011papers/gjhy/gh75.pdf
+      const double grayscale_dist = /* std::min( tau , */ std::fabs( val_p_grayscale - val_q_grayscale ) ; // ) ;
 
       total_distance += Proba( census_dist , lambda_census ) +
                         Proba( grayscale_dist , lambda_ad ) ;
+#endif
+
+
     }
   }
 
