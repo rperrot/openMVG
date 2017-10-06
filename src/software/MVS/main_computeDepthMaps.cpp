@@ -230,7 +230,7 @@ void ComputeMultipleScaleDepthMap( MVS::Camera & cam ,
   const double min_disparity = cam.depthDisparityConversion( cam.m_max_depth * 1.2 ) ;
   const double max_disparity = cam.depthDisparityConversion( cam.m_min_depth * 0.8 ) ;
 
-  map.randomizePlanes( cam , min_disparity , max_disparity ) ;
+  map.randomizePlanes( cam , min_disparity , max_disparity , start_scale ) ;
   map.setGroundTruthDepth( cam , params , start_scale ) ;
 
   // Compute relative motion between current camera and it's neighbors

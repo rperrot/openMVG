@@ -104,7 +104,7 @@ unsigned char Image::intensity( const openMVG::Vec2i & pos ) const
 */
 unsigned long long Image::census( const int id_row , const int id_col ) const
 {
-  return m_census( id_row , id_col ) ;
+  return m_census.coeffRef( id_row , id_col ) ;
 }
 
 /**

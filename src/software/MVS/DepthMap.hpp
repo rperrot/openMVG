@@ -35,25 +35,25 @@ struct DepthMap
     * @brief Copy ctr
     * @param src Source
     */
-    DepthMap( const DepthMap & src ) ;
+    DepthMap( const DepthMap & src ) = default ;
     /**
     * @brief Move ctr
     * @param src Source
     */
-    DepthMap( DepthMap && src ) ;
+    DepthMap( DepthMap && src ) = default ;
 
     /**
     * @brief Assignment operator
     * @param src Source
     * @return self after assignement
     */
-    DepthMap & operator=( const DepthMap & src ) ;
+    DepthMap & operator=( const DepthMap & src ) = default ;
     /**
     * @brief Move assignment operator
     * @param src Source
     * @return self after assignement
     */
-    DepthMap & operator=( DepthMap && src ) ;
+    DepthMap & operator=( DepthMap && src ) = default ;
 
     /**
     * @brief Get matching cost at specified position
@@ -121,8 +121,9 @@ struct DepthMap
     * @param cam Camera associated with the depth
     * @param d_min Minimum disparity
     * @param d_max Maximum disparity
+    * @param scale Scale of the computation
     */
-    void randomizePlanes( const Camera & cam , const double d_min , const double d_max ) ;
+    void randomizePlanes( const Camera & cam , const double d_min , const double d_max , const int scale = -1 ) ;
 
     /**
     * @brief Get plane at specified position

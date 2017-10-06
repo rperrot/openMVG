@@ -454,7 +454,9 @@ void Refinement( DepthMap & map ,
       const double min_disparity = cam.depthDisparityConversion( cam.m_max_depth , scale ) ;
       const double max_disparity = cam.depthDisparityConversion( cam.m_min_depth , scale ) ;
 
-      double delta_disparity = max_disparity / 2.0 ;
+      const double disparity_range = ( max_disparity - min_disparity ) ; 
+
+      double delta_disparity = disparity_range / 2.0 ; // max_disparity / 2.0 ;
       double delta_angle     = openMVG::D2R( 60.0 ) ;
 
       while( delta_disparity > disparity_threshold )
@@ -470,10 +472,10 @@ void Refinement( DepthMap & map ,
         const double        cur_d = map.depth( id_row , id_col ) ;
         const double        cur_disp = cam.depthDisparityConversion( cur_d , scale ) ;
 
-        const double min_delta  = - std::min( delta_disparity , cur_disp + min_disparity ) ;
+        const double min_delta  = - std::min( delta_disparity , min_disparity + cur_disp  ) ;
         const double max_delta  = std::min( delta_disparity , max_disparity - cur_disp ) ;
         const double delta_disp = u1 * ( max_delta - min_delta ) + min_delta ;
-        const double new_disp   = Clamp( cur_disp + delta_disp , min_disparity , max_disparity ) ;
+        const double new_disp   = Clamp( cur_disp + delta_disp , std::min( min_disparity , max_disparity ) , std::max( min_disparity , max_disparity ) ) ;
         const double new_d      = cam.depthDisparityConversion( new_disp , scale ) ;
 
         // Compute new normal
@@ -484,22 +486,62 @@ void Refinement( DepthMap & map ,
           new_n = - new_n ;
         }
 
-        // Compute plane d
-        const double d_plane    = GetPlaneD( cam , id_row , id_col , new_d , new_n , scale ) ;
+        // Compute three planes : (new_n,new_d) - (new_n,old_d) - (old_n,new_d)
+
+        // Compute plane parameter d with new_d, new_n
+        const double d_plane_new_d_new_n    = GetPlaneD( cam , id_row , id_col , new_d , new_n , scale ) ;
+        const double d_plane_old_d_new_n    = GetPlaneD( cam , id_row , id_col , cur_d , new_n , scale ) ;
+        const double d_plane_new_d_old_n    = GetPlaneD( cam , id_row , id_col , new_d , cur_n , scale ) ;
 
         // Compute cost
-        const double new_cost = ComputeMultiViewCost( id_row , id_col , new_n , d_plane , cam , cams , stereo_rig , image_ref , neigh_imgs , params , c_metrics , scale ) ;
+        const double cost_new_d_new_n = ComputeMultiViewCost( id_row , id_col , new_n , d_plane_new_d_new_n , cam , cams , stereo_rig , image_ref , neigh_imgs , params , c_metrics , scale ) ;
+        const double cost_old_d_new_n = ComputeMultiViewCost( id_row , id_col , new_n , d_plane_old_d_new_n , cam , cams , stereo_rig , image_ref , neigh_imgs , params , c_metrics , scale ) ;
+        const double cost_new_d_old_n = ComputeMultiViewCost( id_row , id_col , cur_n , d_plane_new_d_old_n , cam , cams , stereo_rig , image_ref , neigh_imgs , params , c_metrics , scale ) ;
 
-        if( new_cost < map.cost( id_row , id_col ) )
+        double best_cost = std::numeric_limits<double>::max() ;
+        openMVG::Vec3 best_n ;
+        double best_d_plane ;
+        double best_depth ; 
+
+        if( cost_new_d_new_n < cost_new_d_old_n &&
+            cost_new_d_new_n < cost_old_d_new_n )
+        {
+          best_cost = cost_new_d_new_n ;
+          best_n = new_n ;
+          best_d_plane = d_plane_new_d_new_n ;
+          best_depth = new_d ; 
+        }
+        else if( cost_new_d_old_n < cost_new_d_new_n &&
+                 cost_new_d_old_n < cost_old_d_new_n )
+        {
+          best_cost = cost_new_d_old_n ;
+          best_n = cur_n ;
+          best_d_plane = d_plane_new_d_old_n ;
+          best_depth = new_d ; 
+        }
+        else
+        {
+          best_cost = cost_old_d_new_n ;
+          best_n = new_n ;
+          best_d_plane = d_plane_old_d_new_n ;
+          best_depth = cur_d ; 
+        }
+
+        // {
+        //   const double best_cost = std::min( cost_new_d_new_n , std::min( cost_new_d_old_n , cost_old_d_new_n ) ) ;
+        // }
+        //        const double new_cost = ComputeMultiViewCost( id_row , id_col , new_n , d_plane , cam , cams , stereo_rig , image_ref , neigh_imgs , params , c_metrics , scale ) ;
+
+        if( best_cost < map.cost( id_row , id_col ) )
         {
           // Update value
-          map.cost( id_row , id_col , new_cost ) ;
-          map.plane( id_row , id_col , openMVG::Vec4( new_n[0] , new_n[1] , new_n[2] , d_plane ) ) ;
-          map.depth( id_row , id_col , new_d ) ;
+          map.cost( id_row , id_col , best_cost ) ;
+          map.plane( id_row , id_col , openMVG::Vec4( best_n[0] , best_n[1] , best_n[2] , best_d_plane ) ) ;
+          map.depth( id_row , id_col , best_depth ) ;
         }
 
         // Halve the range
-        delta_disparity /= 2.0 ;
+        delta_disparity /= 4.0 ;
         delta_angle /= 2.0 ;
       }
     }

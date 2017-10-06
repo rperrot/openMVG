@@ -42,60 +42,61 @@ DepthMap::DepthMap( const int height , const int width , const double depth , co
 
 }
 
-/**
-* @brief Copy ctr
-* @param src Source
-*/
-DepthMap::DepthMap( const DepthMap & src )
-  : m_cost( src.m_cost ) ,
-    m_depth( src.m_depth ) ,
-    m_plane( src.m_plane )
-{
 
-}
+// /**
+// * @brief Copy ctr
+// * @param src Source
+// */
+// DepthMap::DepthMap( const DepthMap & src )
+//   : m_cost( src.m_cost ) ,
+//     m_depth( src.m_depth ) ,
+//     m_plane( src.m_plane )
+// {
 
-/**
-* @brief Move ctr
-* @param src Source
-*/
-DepthMap::DepthMap( DepthMap && src )
-  : m_cost( std::move( src.m_cost ) ) ,
-    m_depth( std::move( src.m_depth ) ) ,
-    m_plane( std::move( src.m_plane ) )
-{
+// }
 
-}
+// /**
+// * @brief Move ctr
+// * @param src Source
+// */
+// DepthMap::DepthMap( DepthMap && src )
+//   : m_cost( std::move( src.m_cost ) ) ,
+//     m_depth( std::move( src.m_depth ) ) ,
+//     m_plane( std::move( src.m_plane ) )
+// {
 
-/**
-* @brief Assignment operator
-* @param src Source
-* @return self after assignement
-*/
-DepthMap & DepthMap::operator=( const DepthMap & src )
-{
-  if( this != &src )
-  {
-    m_cost = src.m_cost ;
-    m_depth = src.m_depth ;
-    m_plane = src.m_plane ;
-  }
-  return *this ;
-}
-/**
-* @brief Move assignment operator
-* @param src Source
-* @return self after assignement
-*/
-DepthMap & DepthMap::operator=( DepthMap && src )
-{
-  if( this != &src )
-  {
-    m_cost = std::move( src.m_cost ) ;
-    m_depth = std::move( src.m_depth ) ;
-    m_plane = std::move( src.m_plane ) ;
-  }
-  return *this ;
-}
+// }
+
+// /**
+// * @brief Assignment operator
+// * @param src Source
+// * @return self after assignement
+// */
+// DepthMap & DepthMap::operator=( const DepthMap & src )
+// {
+//   if( this != &src )
+//   {
+//     m_cost = src.m_cost ;
+//     m_depth = src.m_depth ;
+//     m_plane = src.m_plane ;
+//   }
+//   return *this ;
+// }
+// /**
+// * @brief Move assignment operator
+// * @param src Source
+// * @return self after assignement
+// */
+// DepthMap & DepthMap::operator=( DepthMap && src )
+// {
+//   if( this != &src )
+//   {
+//     m_cost = std::move( src.m_cost ) ;
+//     m_depth = std::move( src.m_depth ) ;
+//     m_plane = std::move( src.m_plane ) ;
+//   }
+//   return *this ;
+// }
 
 /**
 * @brief Get matching cost at specified position
@@ -105,7 +106,7 @@ DepthMap & DepthMap::operator=( DepthMap && src )
 */
 double DepthMap::cost( const int id_row , const int id_col ) const
 {
-  return m_cost( id_row , id_col ) ;
+  return m_cost.coeffRef( id_row , id_col ) ;
 }
 
 /**
@@ -126,7 +127,7 @@ double DepthMap::cost( const openMVG::Vec2i & pos ) const
 */
 void DepthMap::cost( const int id_row , const int id_col , const double new_cost )
 {
-  m_cost( id_row , id_col ) = new_cost ;
+  m_cost.coeffRef( id_row , id_col ) = new_cost ;
 }
 
 /**
@@ -149,7 +150,7 @@ void DepthMap::cost( const openMVG::Vec2i & pos , const double new_cost )
 */
 double DepthMap::depth( const int id_row , const int id_col ) const
 {
-  return m_depth( id_row , id_col ) ;
+  return m_depth.coeffRef( id_row , id_col ) ;
 }
 
 /**
@@ -170,7 +171,7 @@ double DepthMap::depth( const openMVG::Vec2i & pos ) const
 */
 void DepthMap::depth( const int id_row , const int id_col , const double new_depth )
 {
-  m_depth( id_row , id_col ) = new_depth ;
+  m_depth.coeffRef( id_row , id_col ) = new_depth ;
 }
 
 /**
@@ -186,7 +187,7 @@ void DepthMap::depth( const openMVG::Vec2i & pos , const double new_depth )
 /**
 * @brief Apply randomization on normals
 */
-void DepthMap::randomizePlanes( const Camera & cam , const double disp_min , const double disp_max )
+void DepthMap::randomizePlanes( const Camera & cam , const double disp_min , const double disp_max , const int scale )
 {
 
   const double theta_max = openMVG::D2R( 60.0 ) ;
@@ -236,7 +237,7 @@ void DepthMap::randomizePlanes( const Camera & cam , const double disp_min , con
       // Sample disparity
       const double disp = distrib_d( rng ) ;
       // Convert disparity to depth value
-      const double d = cam.depthDisparityConversion( disp ) ;
+      const double d = cam.depthDisparityConversion( disp , scale ) ;
 
       // Compute plane_d using the current depth
       //            const openMVG::Vec3 ptX = cam.UnProject( id_col , id_row , d ) ;
@@ -597,7 +598,7 @@ DepthMap DepthMap::upscale( const int target_height , const int target_width ) c
   {
     for( int id_col = 0 ; id_col < res.m_cost.Width() ; ++id_col )
     {
-      if( id_row % 2 == 0 && id_col % 2 == 0 )
+      if( ( ( id_row % 2 ) == 0 ) && ( ( id_col % 2 ) == 0 ) )
       {
         const int src_row   = Clamp( id_row / 2 , 0 , m_cost.Height() - 1 ) ;
         const int src_col = Clamp( id_col / 2 , 0 , m_cost.Width() - 1 ) ;
@@ -607,9 +608,9 @@ DepthMap DepthMap::upscale( const int target_height , const int target_width ) c
         res.m_depth( id_row , id_col ) = m_depth( src_row , src_col ) ;
         res.m_plane( id_row , id_col ) = m_plane( src_row , src_col ) ;
       }
-      else if( id_row % 2 == 0 )
+      else if( ( id_row % 2 ) == 0 )
       {
-        // Case A
+        // Case B
         // Interpolate with left and right values
         const int src_row   = Clamp( id_row / 2 , 0 , m_cost.Height() - 1 ) ;
         const int src_col_1 = Clamp( id_col / 2 , 0 , m_cost.Width() - 1 ) ;
@@ -627,9 +628,9 @@ DepthMap DepthMap::upscale( const int target_height , const int target_width ) c
 
         res.m_plane( id_row , id_col ) = interpolated_plane ;
       }
-      else if( id_col % 2 == 0 )
+      else if( ( id_col % 2 ) == 0 )
       {
-        // Case B
+        // Case A
         // Interpolate with top and bottom values
         const int src_col = Clamp( id_col / 2 , 0 , m_cost.Width() - 1 ) ;
         const int src_row_1 = Clamp( id_row / 2 , 0 , m_cost.Height() - 1 ) ;
@@ -649,6 +650,7 @@ DepthMap DepthMap::upscale( const int target_height , const int target_width ) c
       }
       else
       {
+        // id_row % 2 != 0 && id_col %2 != 0
         // Case C
         // Interpolate with the four values
         const int src_row_1 = Clamp( id_row / 2 , 0 , m_cost.Height() - 1 ) ;
