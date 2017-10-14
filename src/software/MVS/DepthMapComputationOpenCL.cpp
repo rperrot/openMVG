@@ -969,7 +969,7 @@ void Refinement( DepthMap & map ,
 
   cl_float theta_max = 60.0f ;
   cl_float cos_theta_max = std::cos( openMVG::D2R( theta_max ) ) ;
-  cl_float delta_disparity = max_disparity_f / 2.0f ;
+  cl_float delta_disparity = ( max_disparity_f - min_disparity_f ) / 2.0f ;
 
   cl_mem P    = wrapper.createBuffer( cam.m_P ) ;
   cl_mem Minv = wrapper.createBuffer( cam.m_M_inv ) ;
@@ -1212,14 +1212,14 @@ void Refinement( DepthMap & map ,
 
   cl_float * rng_numbers = new cl_float[ 4 * nb_pixel ] ;
 
-  const double min_disparity = cam.depthDisparityConversion( cam.m_max_depth ) ;
-  const double max_disparity = cam.depthDisparityConversion( cam.m_min_depth ) ;
+  const double min_disparity = cam.depthDisparityConversion( cam.m_max_depth , scale ) ;
+  const double max_disparity = cam.depthDisparityConversion( cam.m_min_depth , scale ) ;
   const cl_float min_disparity_f = static_cast<cl_float>( min_disparity ) ;
   const cl_float max_disparity_f = static_cast<cl_float>( max_disparity ) ;
 
   cl_float theta_max =  60.0f ;
   cl_float cos_theta_max = std::cos( openMVG::D2R( theta_max ) ) ;
-  cl_float delta_disparity = max_disparity_f / 2.0f ;
+  cl_float delta_disparity = ( max_disparity_f - min_disparity_f ) / 2.0f ;
 
   cl_mem P    = wrapper.createBuffer( cam.m_P_scaled[ scale ] ) ;
   cl_mem Minv = wrapper.createBuffer( cam.m_M_inv_scaled[ scale ] ) ;

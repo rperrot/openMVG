@@ -481,7 +481,7 @@ void ComputeDepthMap( MVS::Camera & cam ,
   const double min_disparity = cam.depthDisparityConversion( cam.m_max_depth * 1.2 ) ;
   const double max_disparity = cam.depthDisparityConversion( cam.m_min_depth * 0.8 ) ;
 
-  map.randomizePlanes( cam , min_disparity , max_disparity ) ; // Add 30% of the range
+  map.randomizePlanes( cam , min_disparity , max_disparity ) ; 
   map.setGroundTruthDepth( cam , params , params.scale() ) ;
 
   auto start_time = std::chrono::high_resolution_clock::now() ;

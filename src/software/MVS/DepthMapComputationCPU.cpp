@@ -465,7 +465,6 @@ void Refinement( DepthMap & map ,
         const double u2 = distrib_01( rng ) ;
         const double u3 = distrib_01( rng ) ;
 
-
         // Compute new depth :
         const openMVG::Vec4 & plane = map.plane( id_row , id_col ) ;
         const openMVG::Vec3 cur_n( plane[0] , plane[1] , plane[2] ) ;
