@@ -158,7 +158,7 @@ int main(int argc, char **argv)
     // Dynamically load the image_describer from the file (will restore old used settings)
     std::ifstream stream(sImage_describer.c_str());
     if (!stream.is_open())
-      return false;
+      return EXIT_FAILURE;
 
     try
     {
@@ -341,7 +341,8 @@ int main(int argc, char **argv)
 
     // Try to localize the image in the database thanks to its regions
     if (!localizer.Localize(
-      Pair(imageGray.Width(), imageGray.Height()),
+      optional_intrinsic ? resection::SolverType::P3P_KE_CVPR17 : resection::SolverType::DLT_6POINTS,
+      {imageGray.Width(), imageGray.Height()},
       optional_intrinsic.get(),
       *(query_regions.get()),
       pose,
