@@ -185,11 +185,14 @@ void MainWindow::onOpenProject( void )
   m_state = STATE_PROJECT_OPENED ;
   if( stlplus::folder_exists( stlplus::folder_append_separator( m_project->projectPaths().exportPath() ) + "clusters" ) )
   {
-    m_state = STATE_CLUSTERING_COMPUTED ;
 
     // Load the color file
     std::shared_ptr<SceneManager> mgr = m_project->sceneManager() ;
     const std::string sparse = m_project->projectPaths().colorizedPlyCloud( m_project->sfMMethod() ) ;
+
+    postSfMComputation() ;
+    postColorComputation() ;
+    m_state = STATE_CLUSTERING_COMPUTED ;
 
     // Load from file
     std::vector< openMVG::Vec3 > pts ;
@@ -227,6 +230,9 @@ void MainWindow::onOpenProject( void )
     std::shared_ptr<SceneManager> mgr = m_project->sceneManager() ;
     const std::string sparse = m_project->projectPaths().colorizedPlyCloud( m_project->sfMMethod() ) ;
 
+    postSfMComputation() ;
+    postColorComputation() ;
+
     // Load from file
     std::vector< openMVG::Vec3 > pts ;
     std::vector< openMVG::Vec3 > col ;
@@ -258,6 +264,7 @@ void MainWindow::onOpenProject( void )
   else if( m_project->hasSfMComputed() )
   {
     m_state = STATE_SFM_COMPUTED ;
+    postSfMComputation();
 
     // Load the cloud file
     std::shared_ptr<SceneManager> mgr = m_project->sceneManager() ;
@@ -805,6 +812,15 @@ void MainWindow::onShowHideDetail( void )
   const bool visible = m_show_hide_detail_list_act->isChecked() ;
   m_detail_list->setVisible( visible ) ;
   m_result_view->update() ;
+}
+
+
+/**
+ * @brief Action to be executed when user wants to show/hide report
+ */
+void MainWindow::onShowReconstructionReport( void )
+{
+  m_result_summary_widget->show() ;
 }
 
 /**
@@ -1928,7 +1944,8 @@ void MainWindow::postSfMComputation( void )
   m_result_view->update() ;
 
   // 2 - Load statistics from file
-  // TODO :
+  const std::string summaryPath = m_project->projectPaths().htmlReportPath( m_project->sfMMethod() );
+  m_result_summary_widget->setPath( summaryPath ) ;
 
   // 3 - Update interface
   m_state = STATE_SFM_COMPUTED ;
@@ -2231,6 +2248,7 @@ void MainWindow::buildInterface( void )
 
   m_result_view = new ResultViewWidget( this ) ;
 
+
   // Add everything to the main window
   QWidget * mainWidget = new QWidget ;
   QHBoxLayout * mainLayout = new QHBoxLayout ;
@@ -2241,6 +2259,9 @@ void MainWindow::buildInterface( void )
 
   // Result part
   mainLayout->addWidget( m_result_view, 5 ) ;
+
+  m_result_summary_widget = new ReconstructionSummaryWidget( nullptr ) ;
+  m_result_summary_widget->hide() ;
 
   mainWidget->setLayout( mainLayout ) ;
   setCentralWidget( mainWidget ) ;
@@ -2392,6 +2413,7 @@ void MainWindow::makeConnections( void )
   connect( m_show_hide_detail_list_act , SIGNAL( triggered() ) , this , SLOT( onShowHideDetail() ) );
   connect( m_view_projection_orthographic , SIGNAL( triggered() ) , this , SLOT( onSetOrthographicProjection() ) ) ;
   connect( m_view_projection_perspective , SIGNAL( triggered() ) , this , SLOT( onSetPerspectiveProjection() ) ) ;
+  connect( m_show_hide_reconstruction_summary_act , SIGNAL( triggered() ) , this , SLOT( onShowReconstructionReport() ) ) ;
 
   // Interface
   connect( m_image_list , SIGNAL( hasSelectedAnImage( int ) ) , this , SLOT( onSelectImage( int ) ) );

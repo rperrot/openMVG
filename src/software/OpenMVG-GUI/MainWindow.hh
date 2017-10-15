@@ -154,6 +154,11 @@ class MainWindow : public QMainWindow
     void onShowHideDetail( void ) ;
 
     /**
+     * @brief Action to be executed when user wants to show/hide report
+     */
+    void onShowReconstructionReport( void ) ;
+
+    /**
     * @brief Action to be executed when user has selected an image in the image list
     * @param id Id of the selected image
     */
@@ -425,6 +430,8 @@ class MainWindow : public QMainWindow
 
     /// The result (3d view ?)
     ResultViewWidget * m_result_view ;
+    /// The result summary
+    ReconstructionSummaryWidget * m_result_summary_widget ;
 
     ApplicationState m_state ;
 

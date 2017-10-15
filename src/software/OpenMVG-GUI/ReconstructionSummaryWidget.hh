@@ -27,14 +27,21 @@ class ReconstructionSummaryWidget : public QWidget
      */
     void setPath( const std::string & path ) ;
 
-  private:
 
+
+  private slots:
+
+    void hasLoadedURL( bool ok ) ;
+
+  private:
     /**
      * @brief build interface widgets
      */
     void buildInterface( void ) ;
 
     QWebEngineView * m_view ;
+
+    Q_OBJECT
 } ;
 
 } // namespace openMVG_gui

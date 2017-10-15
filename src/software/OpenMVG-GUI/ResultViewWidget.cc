@@ -20,7 +20,13 @@ ResultViewWidget::ResultViewWidget( QWidget * parent )
   : QOpenGLWidget( parent ) ,
     m_scn( nullptr )
 {
-
+  /*
+  QOpenGLContext * context = new QOpenGLContext ;
+  context->setFormat( format ) ;
+  context->create() ;
+  setFormat( context->format() ) ;
+  makeCurrent() ;
+  */
 }
 
 ResultViewWidget::~ResultViewWidget( void )

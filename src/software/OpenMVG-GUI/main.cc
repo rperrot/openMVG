@@ -11,6 +11,13 @@ using namespace openMVG_gui ;
 
 int main( int argc , char ** argv )
 {
+  // OpenGL
+  // OpenGL use 3.2 minimum
+  QSurfaceFormat format = QSurfaceFormat::defaultFormat() ;
+  format.setVersion( 3 , 2 );
+  format.setProfile( QSurfaceFormat::CoreProfile );
+  QSurfaceFormat::setDefaultFormat( format );
+
   QApplication app( argc , argv ) ;
   setlocale( LC_ALL, "C" ) ;
   setlocale( LC_NUMERIC, "C" ) ;
@@ -18,12 +25,6 @@ int main( int argc , char ** argv )
   qRegisterMetaType<openMVG_gui::WorkerNextAction>( "WorkerNextAction" );
   qRegisterMetaType<std::string>( "std::string" ) ;
 
-  // OpenGL
-  // OpenGL use 3.3 minimum
-  QSurfaceFormat format;
-  format.setVersion( 3 , 2 );
-  format.setProfile( QSurfaceFormat::CoreProfile );
-  QSurfaceFormat::setDefaultFormat( format );
 
 
   MainWindow win ;
