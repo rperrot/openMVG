@@ -38,30 +38,17 @@
       typedef vector_base::iterator iterator;                                \
       explicit vector(const allocator_type& a = allocator_type())            \
         : vector_base(a) {}                                                \
-<<<<<<< HEAD
-      template <typename InputIterator>                                      \
-      vector(InputIterator first, InputIterator last,                        \
-             const allocator_type& a = allocator_type())                     \
-=======
     template <typename InputIterator>                                      \
     explicit vector(InputIterator first, InputIterator last,                        \
            const allocator_type& a = allocator_type())                     \
->>>>>>> upstream/develop
         : vector_base(first, last, a) {}                                   \
       vector(const vector& c) = default;                                     \
       explicit vector(size_type num, const value_type& val = value_type())   \
         : vector_base(num, val) {}                                         \
-<<<<<<< HEAD
-      vector(iterator start, iterator end) : vector_base(start, end) {}      \
-      vector& operator=(const vector& x) = default;                          \
-      /* Add initializer list constructor support*/                          \
-      vector(initializer_list<__VA_ARGS__> list)                             \
-=======
     explicit vector(iterator start, iterator end) : vector_base(start, end) {}      \
     vector& operator=(const vector& x) = default;                          \
     /* Add initializer list constructor support*/                          \
     vector(std::initializer_list<__VA_ARGS__> list)                             \
->>>>>>> upstream/develop
         : vector_base(list.begin(), list.end()) {}                         \
   };                                                                       \
   }  // namespace std

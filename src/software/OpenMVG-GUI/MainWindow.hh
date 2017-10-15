@@ -5,6 +5,7 @@
 #include "DetailListWidget.hh"
 #include "ImageListWidget.hh"
 #include "Project.hh"
+#include "ReconstructionSummaryWidget.hh"
 #include "ResultViewWidget.hh"
 
 // TODO : make forward declaration for all workers
@@ -412,6 +413,7 @@ class MainWindow : public QMainWindow
     QAction * m_show_hide_camera_gizmos_act ;
     QAction * m_show_hide_image_list_act ;
     QAction * m_show_hide_detail_list_act ;
+    QAction * m_show_hide_reconstruction_summary_act ;
     QMenu * m_view_projection_menu ;
     QAction * m_view_projection_perspective ;
     QAction * m_view_projection_orthographic ;

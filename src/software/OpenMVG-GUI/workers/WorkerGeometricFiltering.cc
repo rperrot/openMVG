@@ -55,7 +55,7 @@ std::shared_ptr<openMVG::matching::PairWiseMatches> WorkerGeometricFiltering::fi
  */
 void WorkerGeometricFiltering::process( void )
 {
-  const std::string sFeaturePath                         = m_project->featuresPath();
+  const std::string sFeaturePath                         = m_project->projectPaths().featuresPath( m_project->featureParams() );
   const std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data = m_project->SfMData();
   const MatchingParams m_params                          = m_project->matchingParams();
   const int imax_iteration                               = m_params.maxIterationFiltering();

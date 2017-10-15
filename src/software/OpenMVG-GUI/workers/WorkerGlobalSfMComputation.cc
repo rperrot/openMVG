@@ -56,7 +56,7 @@ void WorkerGlobalSfMComputation::process( void )
     sfm_data->poses.clear();
     sfm_data->structure.clear();
 
-    const std::string sMatches_dir       = m_project->matchesPath();
+    const std::string sMatches_dir       = m_project->projectPaths().matchesPath();
     const std::string sSfM_Data_Filename = stlplus::create_filespec( sMatches_dir, "sfm_data.json" );
 
     // Load from matches
@@ -75,7 +75,7 @@ void WorkerGlobalSfMComputation::process( void )
     sfm_data->structure.clear();
   }
 
-  const std::string globalPath = m_project->reconstructionGlobalPath();
+  const std::string globalPath = m_project->projectPaths().reconstructionGlobalPath();
 
   openMVG::sfm::GlobalSfMReconstructionEngine_RelativeMotions sfmEngine( *sfm_data, globalPath, stlplus::create_filespec( globalPath, "Reconstruction_Report.html" ) );
 

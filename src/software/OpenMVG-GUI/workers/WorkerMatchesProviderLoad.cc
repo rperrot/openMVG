@@ -39,7 +39,7 @@ void WorkerMatchesProviderLoad::process( void )
   emit progress( 0 );
 
   std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data = m_project->SfMData();
-  const std::string sFeaturePath                   = m_project->featuresPath();
+  const std::string sFeaturePath                   = m_project->projectPaths().featuresPath( m_project->featureParams() );
 
   // Matches reading
   m_matches_provider = std::make_shared<openMVG::sfm::Matches_Provider>();

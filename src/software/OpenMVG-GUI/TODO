@@ -1,13 +1,12 @@
 - Provide clickable cameras 
-- Provide a finer feedback for loads (init)
 
 - Interface to interact with sfm_data (intrinsics) 
 - Interface to show matches between pairs 
 
 - "Save as..." project 
 
-- Error feedback for workers 
-  (pass params to finished signal ?) 
-
 - When computing Matches and SfM and there exist more than one valid feature combination, ask the user to select the method to use 
-  -> 
+
+- Get back GPS priors 
+- Provide SFM summary as a new dialog 
+- Provide console during computation 

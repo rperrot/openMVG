@@ -3,7 +3,8 @@ set( WORKFLOW_PARAMS_HEADERS FeatureParams.hh
                              IncrementalSfMParams.hh 
                              IntrinsicParams.hh 
                              IntrinsicRefinerOptions.hh 
-                             MatchingParams.hh )
+                             MatchingParams.hh 
+                             SfMMethod.hh )
 set( WORKFLOW_PARAMS_SOURCES FeatureParams.cc
                              GlobalSfMParams.cc 
                              IncrementalSfMParams.cc 

@@ -40,7 +40,7 @@ void WorkerThumbnailGeneration::process( void )
 
   std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data = m_project->SfMData() ;
 
-  const std::string thumbnail_path = m_project->thumbnailsPath() ;
+  const std::string thumbnail_path = m_project->projectPaths().thumbnailsPath() ;
 
   emit progress( 0 ) ;
   for( int i = 0; i < nb_image ; ++i )

@@ -159,7 +159,7 @@ void WorkerClusterComputation::process( void )
   m_progress_value = 0;
   sendProgress();
 
-  std::string sOutDir = stlplus::folder_append_separator( m_project->exportPath() ) + "clusters";
+  std::string sOutDir = stlplus::folder_append_separator( m_project->projectPaths().exportPath() ) + "clusters";
   // erase existing data (if it exists)
   if ( stlplus::folder_exists( sOutDir ) )
   {
@@ -243,7 +243,7 @@ void WorkerClusterComputation::process( void )
 #ifdef OPENMVG_USE_OPENMP
   #pragma omp parallel for
 #endif
-  for ( int i = 0; i < static_cast<int>(numClusters); ++i )
+  for ( int i = 0; i < static_cast<int>( numClusters ); ++i )
   {
     std::stringstream filename;
     filename << "sfm_data";

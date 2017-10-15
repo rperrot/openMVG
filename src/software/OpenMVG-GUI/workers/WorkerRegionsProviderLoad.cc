@@ -46,7 +46,7 @@ void WorkerRegionsProviderLoad::process( void )
 
   std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data = m_project->SfMData();
   const int nb_region                              = sfm_data->GetViews().size();
-  const std::string featurePath                    = m_project->featuresPath();
+  const std::string featurePath                    = m_project->projectPaths().featuresPath( m_project->featureParams() );
 
   // Get region type
   const std::string sImage_describer = stlplus::create_filespec( featurePath, "image_describer", "json" );

@@ -84,7 +84,7 @@ void WorkerProjectCreation::process( void )
 
   std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data = m_project->SfMData();
 
-  const std::string matchesPath = m_project->matchesPath();
+  const std::string matchesPath = m_project->projectPaths().matchesPath();
 
   if ( !Save( *sfm_data, stlplus::create_filespec( matchesPath, "sfm_data.json" ).c_str(),
               openMVG::sfm::ESfM_Data( openMVG::sfm::ESfM_Data::VIEWS | openMVG::sfm::ESfM_Data::INTRINSICS ) ) )

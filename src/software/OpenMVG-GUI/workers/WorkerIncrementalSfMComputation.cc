@@ -49,14 +49,14 @@ void WorkerIncrementalSfMComputation::process( void )
 {
   std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data = m_project->SfMData();
 
-  const std::string incremental_path = m_project->reconstructionSequentialPath();
+  const std::string incremental_path = m_project->projectPaths().reconstructionSequentialPath();
 
   if ( m_reload_initial_intrinsics )
   {
     sfm_data->poses.clear();
     sfm_data->structure.clear();
 
-    const std::string sMatches_dir       = m_project->matchesPath();
+    const std::string sMatches_dir       = m_project->projectPaths().matchesPath();
     const std::string sSfM_Data_Filename = stlplus::create_filespec( sMatches_dir, "sfm_data.json" );
 
     // Load from matches

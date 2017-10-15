@@ -1,9 +1,10 @@
 find_package( Qt5Widgets REQUIRED )
 find_package( Qt5OpenGL REQUIRED )
+find_package( Qt5WebEngineWidgets REQUIRED )
 find_package( OpenGL REQUIRED )
 
 # Ensure Qt and openGL are present, and Qt >= 5.6 
-if( Qt5Widgets_FOUND AND Qt5OpenGL_FOUND AND OPENGL_FOUND  AND NOT (Qt5Widgets_VERSION LESS 5.6.0))
+if( Qt5Widgets_FOUND AND Qt5OpenGL_FOUND AND OPENGL_FOUND AND Qt5WebEngineWidgets_FOUND AND NOT (Qt5Widgets_VERSION LESS 5.6.0))
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
@@ -22,6 +23,8 @@ set( OPENMVG_GUI_HEADERS ApplicationState.hh
                          MainWindow.hh 
                          OpenMVGImageInterface.hh
                          Project.hh 
+                         ProjectPaths.hh
+                         ReconstructionSummaryWidget.hh
                          ResultViewWidget.hh 
                          Version.hh )
 set( OPENMVG_GUI_SOURCES DetailListWidget.cc
@@ -29,6 +32,8 @@ set( OPENMVG_GUI_SOURCES DetailListWidget.cc
                          MainWindow.cc 
                          OpenMVGImageInterface.cc
                          Project.cc 
+                         ProjectPaths.cc
+                         ReconstructionSummaryWidget.cc
                          ResultViewWidget.cc )
 
 #if( APPLE )
@@ -52,6 +57,7 @@ target_link_libraries( OpenMVG-GUI
                        # Qt 
                        Qt5::Widgets 
                        Qt5::OpenGL 
+                       Qt5::WebEngineWidgets
                        # openGL 
                        ${OPENGL_LIBRARIES}
                        # openMVG

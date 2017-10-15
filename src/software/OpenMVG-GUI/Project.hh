@@ -6,9 +6,12 @@
 #include "workflow_params/IncrementalSfMParams.hh"
 #include "workflow_params/IntrinsicParams.hh"
 #include "workflow_params/MatchingParams.hh"
+#include "workflow_params/SfMMethod.hh"
 
 #include "graphics/Camera.hh"
 #include "graphics/SceneManager.hh"
+
+#include "ProjectPaths.hh"
 
 #include "third_party/progress/progress.hpp"
 
@@ -25,12 +28,6 @@ struct SfM_Data ;
 
 namespace openMVG_gui
 {
-
-enum SfMMethod
-{
-  SFM_METHOD_INCREMENTAL ,
-  SFM_METHOD_GLOBAL
-} ;
 
 /**
 * @brief This class manage a whole openMVG project
@@ -202,63 +199,12 @@ class Project
     */
     std::vector< int > imageIds( void ) const ;
 
-    /**
-    * @brief Given a base path, get thumbnail base path
-    * @param return thumbnail base path
-    */
-    std::string thumbnailsPath( void ) const ;
 
     /**
-    * @brief Given a base path, get matches base path
-    * @param return matches base path
-    */
-    std::string matchesPath( void ) const ;
-
-    /**
-    * @brief Get features path relative to the current features params
-    * @return feature path
-    */
-    std::string featuresPath( void ) const ;
-
-    /**
-    * @brief Get paths of all computed features
-    * @return Path of all computed features
-    */
-    std::vector< std::string > featuresPaths( void ) const ;
-
-    /**
-    * @brief Get project global feature path
-    * @return global feature path
-    */
-    std::string globalFeaturePath( void ) const ;
-
-    /**
-    * @brief Get project global reconstruction path
-    * @return reconstruction global path
-    */
-    std::string reconstructionGlobalPath( void ) const ;
-
-    /**
-    * @brief Get project sequential reconstruction path
-    * @return reconstruction sequential path
-    */
-    std::string reconstructionSequentialPath( void ) const ;
-
-    /**
-    * @brief Get project export path
-    * @return export path
-    */
-    std::string exportPath( void ) const;
-
-    /**
-    * @brief Get path of the sfm data output ply file
-    */
-    std::string sfMDataPlyPath( void ) const ;
-
-    /**
-    * @brief Get colorized sfm data output ply file
-    */
-    std::string colorizedSfMPlyPath( void ) const ;
+     * @brief Get warper to get project paths
+     * @return object containing project paths
+     */
+    ProjectPaths projectPaths( void ) const ;
 
     /**
     * @brief get access to the sfm data structure
@@ -351,63 +297,6 @@ class Project
     */
     bool createDirectoryStructure( const std::string & base_path ) ;
 
-    /**
-    * @brief Given a base path, get gui base path
-    * @param base_path project base path
-    * @param return thumbnail base path
-    */
-    std::string guiPath( const std::string & base_path ) const ;
-
-    /**
-    * @brief Given a base path, get sfm base path
-    * @param base_path project base path
-    * @param return thumbnail base path
-    */
-    std::string sfmPath( const std::string & base_path ) const ;
-
-
-    /**
-    * @brief Given a base path, get thumbnail base path
-    * @param base_path project base path
-    * @param return thumbnail base path
-    */
-    std::string thumbnailsPath( const std::string & base_path ) const ;
-
-    /**
-    * @brief Given a base path, get matches base path
-    * @param base_path project base path
-    * @param return matches base path
-    */
-    std::string matchesPath( const std::string & base_path ) const ;
-
-    /**
-    * @brief Given a base path, get global reconstruction path
-    * @param base_path project base path
-    * @return reconstruction global path
-    */
-    std::string reconstructionGlobalPath( const std::string & base_path ) const ;
-
-    /**
-    * @brief Given a base path, get sequential reconstruction path
-    * @param base_path project base path
-    * @return reconstruction sequential path
-    */
-    std::string reconstructionSequentialPath( const std::string & base_path ) const ;
-
-    /**
-    * @brief Given a base path, get export path
-    * @param base_path
-    * @return export path
-    */
-    std::string exportPath( const std::string & base_path ) const ;
-
-    /**
-    * @brief Get global feature path
-    * @param base_path project base path
-    * @return global feature path
-    */
-    std::string globalFeaturePath( const std::string & base_path ) const ;
-
     /// Indicate if the project on disk is the last one (ie: save is up to date)
     bool m_saved ;
 
@@ -415,6 +304,8 @@ class Project
     std::string m_project_base_path ;
     /// The base path where the image of the project reside
     std::string m_project_image_path ;
+    /// All paths and subpaths of the project
+    ProjectPaths m_project_paths ;
 
     /// Features params used to compute features
     FeatureParams m_feature_params ;

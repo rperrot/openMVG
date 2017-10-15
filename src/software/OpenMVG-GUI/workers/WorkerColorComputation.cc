@@ -8,6 +8,8 @@
 #include "openMVG/types.hpp"
 #include "software/SfM/SfMPlyHelper.hpp"
 
+#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
+
 #include <QImage>
 
 using namespace openMVG;
@@ -166,15 +168,8 @@ void WorkerColorComputation::process( void )
   std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data = m_project->SfMData();
   const int last                                   = sfm_data->GetLandmarks().size();
 
-  std::string sOutputPLY_Out;
-  if ( m_project->sfMMethod() == SFM_METHOD_INCREMENTAL )
-  {
-    sOutputPLY_Out = stlplus::create_filespec( m_project->reconstructionSequentialPath(), "colorized.ply" );
-  }
-  else
-  {
-    sOutputPLY_Out = stlplus::create_filespec( m_project->reconstructionGlobalPath(), "colorized.ply" );
-  }
+  const std::string sfm_path = m_project->projectPaths().sfmReconstructionPath( m_project->sfMMethod() );
+  const std::string sOutputPLY_Out = stlplus::create_filespec( sfm_path , "colorized.ply" );
 
   m_progress_value = 0;
   sendProgress();

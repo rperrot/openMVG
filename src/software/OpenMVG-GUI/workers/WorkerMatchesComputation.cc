@@ -58,7 +58,7 @@ std::shared_ptr<openMVG::matching::PairWiseMatches> WorkerMatchesComputation::pu
  */
 void WorkerMatchesComputation::process( void )
 {
-  const std::string sFeaturePath = m_project->featuresPath();
+  const std::string sFeaturePath = m_project->projectPaths().featuresPath( m_project->featureParams() );
 
   std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data                     = m_project->SfMData();
   std::shared_ptr<openMVG::matching_image_collection::Matcher> matcher = m_project->matchingParams().matcher();

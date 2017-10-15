@@ -183,13 +183,13 @@ void MainWindow::onOpenProject( void )
 
   // Update scene state
   m_state = STATE_PROJECT_OPENED ;
-  if( stlplus::folder_exists( stlplus::folder_append_separator( m_project->exportPath() ) + "clusters" ) )
+  if( stlplus::folder_exists( stlplus::folder_append_separator( m_project->projectPaths().exportPath() ) + "clusters" ) )
   {
     m_state = STATE_CLUSTERING_COMPUTED ;
 
     // Load the color file
     std::shared_ptr<SceneManager> mgr = m_project->sceneManager() ;
-    const std::string sparse = m_project->colorizedSfMPlyPath() ;
+    const std::string sparse = m_project->projectPaths().colorizedPlyCloud( m_project->sfMMethod() ) ;
 
     // Load from file
     std::vector< openMVG::Vec3 > pts ;
@@ -225,7 +225,7 @@ void MainWindow::onOpenProject( void )
 
     // Load the color file
     std::shared_ptr<SceneManager> mgr = m_project->sceneManager() ;
-    const std::string sparse = m_project->colorizedSfMPlyPath() ;
+    const std::string sparse = m_project->projectPaths().colorizedPlyCloud( m_project->sfMMethod() ) ;
 
     // Load from file
     std::vector< openMVG::Vec3 > pts ;
@@ -261,7 +261,7 @@ void MainWindow::onOpenProject( void )
 
     // Load the cloud file
     std::shared_ptr<SceneManager> mgr = m_project->sceneManager() ;
-    const std::string sparse = m_project->sfMDataPlyPath() ;
+    const std::string sparse = m_project->projectPaths().plyCloud( m_project->sfMMethod() ) ;
 
     // Load from file
     std::vector< openMVG::Vec3 > pts ;
@@ -625,7 +625,7 @@ void MainWindow::onChangeMatchesSettings( void )
   MatchingParamsDialog dlg( this , m_project->matchingParams() ) ;
 
   // Load the image describer (if it exists)
-  const std::string featuresPath = m_project->featuresPath() ;
+  const std::string featuresPath = m_project->projectPaths().featuresPath( m_project->featureParams() ) ;
   const std::string describerPath = stlplus::create_filespec( featuresPath , "image_describer.json" ) ;
   if( stlplus::file_exists( describerPath ) )
   {
@@ -725,7 +725,7 @@ void MainWindow::onUpdateImageList( void )
   m_worker_thumbnail_generation.reset() ;
 
   const std::vector< std::pair< int , std::string > > images_path = m_project->GetImageNames() ;
-  const std::string thumb_path = m_project->thumbnailsPath() ;
+  const std::string thumb_path = m_project->projectPaths().thumbnailsPath() ;
 
   std::vector< std::pair<int, std::string>> images_full_path ;
   std::map< int , std::string > image_id_names ;
@@ -967,7 +967,7 @@ void MainWindow::onExportToOpenMVS( void )
 {
   qInfo( "Export to OpenMVS" ) ;
 
-  const std::string output_folder = stlplus::folder_append_separator( m_project->exportPath() ) + "openMVS" ;
+  const std::string output_folder = stlplus::folder_append_separator( m_project->projectPaths().exportPath() ) + "openMVS" ;
   const std::string output_file   = stlplus::create_filespec( output_folder , "scene.mvs" );
   const std::string output_undist_folder = stlplus::folder_append_separator( output_folder ) + "undist" ;
 
@@ -1018,7 +1018,7 @@ void MainWindow::onExportToMVE( void )
 {
   qInfo( "Export to MVE" ) ;
 
-  const std::string output_folder_path = stlplus::folder_append_separator( m_project->exportPath() ) + "MVE" ;
+  const std::string output_folder_path = stlplus::folder_append_separator( m_project->projectPaths().exportPath() ) + "MVE" ;
 
   // If something exists, remove the folder
   if( stlplus::folder_exists( output_folder_path ) )
@@ -1066,7 +1066,7 @@ void MainWindow::onExportToPMVS( void )
 {
   qInfo( "Export to PMVS" ) ;
 
-  const std::string output_folder_path = stlplus::folder_append_separator( m_project->exportPath() ) + "PMVS" ;
+  const std::string output_folder_path = stlplus::folder_append_separator( m_project->projectPaths().exportPath() ) + "PMVS" ;
 
   // If something exists, remove the folder
   if( stlplus::folder_exists( output_folder_path ) )
@@ -1117,8 +1117,8 @@ void MainWindow::onExportClustersToOpenMVS( void )
 {
   qInfo( "Export clusters to OpenMVS" ) ;
 
-  const std::string output_folder = stlplus::folder_append_separator( m_project->exportPath() ) + "clusters_openMVS" ;
-  const std::string clusters_path  = stlplus::folder_append_separator( m_project->exportPath() ) + "clusters" ;
+  const std::string output_folder = stlplus::folder_append_separator( m_project->projectPaths().exportPath() ) + "clusters_openMVS" ;
+  const std::string clusters_path  = stlplus::folder_append_separator( m_project->projectPaths().exportPath() ) + "clusters" ;
 
   // If something exists, remove the folder
   if( stlplus::folder_exists( output_folder ) )
@@ -1174,8 +1174,8 @@ void MainWindow::onExportClustersToMVE( void )
 {
   qInfo( "Export clusters to MVE" ) ;
 
-  const std::string output_folder = stlplus::folder_append_separator( m_project->exportPath() ) + "clusters_openMVE" ;
-  const std::string clusters_path  = stlplus::folder_append_separator( m_project->exportPath() ) + "clusters" ;
+  const std::string output_folder = stlplus::folder_append_separator( m_project->projectPaths().exportPath() ) + "clusters_openMVE" ;
+  const std::string clusters_path  = stlplus::folder_append_separator( m_project->projectPaths().exportPath() ) + "clusters" ;
 
   // If something exists, remove the folder
   if( stlplus::folder_exists( output_folder ) )
@@ -1231,8 +1231,8 @@ void MainWindow::onExportClustersToPMVS( void )
 {
   qInfo( "Export clusters to PMVS" ) ;
 
-  const std::string output_folder = stlplus::folder_append_separator( m_project->exportPath() ) + "clusters_PMVS" ;
-  const std::string clusters_path  = stlplus::folder_append_separator( m_project->exportPath() ) + "clusters" ;
+  const std::string output_folder = stlplus::folder_append_separator( m_project->projectPaths().exportPath() ) + "clusters_PMVS" ;
+  const std::string clusters_path  = stlplus::folder_append_separator( m_project->projectPaths().exportPath() ) + "clusters" ;
 
   // If something exists, remove the folder
   if( stlplus::folder_exists( output_folder ) )
@@ -1790,7 +1790,7 @@ void MainWindow::postFeaturesComputation( void )
   /**
   * Select a matching method that is compatible with the features computed
   */
-  const std::string featuresPath = m_project->featuresPath() ;
+  const std::string featuresPath = m_project->projectPaths().featuresPath( m_project->featureParams() ) ;
   const std::string describerPath = stlplus::create_filespec( featuresPath , "image_describer.json" ) ;
   if( stlplus::file_exists( describerPath ) )
   {
@@ -1812,7 +1812,7 @@ void MainWindow::postFeaturesComputation( void )
     return ;
   }
 
-  std::vector< std::string > valid_features_path = m_project->featuresPaths() ;
+  std::vector< std::string > valid_features_path = m_project->projectPaths().featuresPaths() ;
   for( const auto & feature_path : valid_features_path )
   {
     std::map< std::string , FeaturesStats > infos ;
@@ -1853,7 +1853,7 @@ void MainWindow::postFeaturesComputation( void )
 void MainWindow::postMatchesComputation( void )
 {
   // Load matches statistics
-  std::string matching_path = m_project->featuresPath() ;
+  std::string matching_path = m_project->projectPaths().featuresPath( m_project->featureParams() ) ;
   std::vector<std::string> matching_hierarchy = stlplus::folder_elements( matching_path );
   while( matching_hierarchy.size() > 3 )
   {
@@ -1896,7 +1896,7 @@ void MainWindow::postSfMComputation( void )
   }
 
   // Load sparse point cloud
-  const std::string sparse = m_project->sfMDataPlyPath() ;
+  const std::string sparse = m_project->projectPaths().plyCloud( m_project->sfMMethod() ) ;
 
   if( stlplus::file_exists( sparse ) )
   {
@@ -1948,7 +1948,7 @@ void MainWindow::postColorComputation( void )
     mgr->removeObject( sprs ) ;
   }
   // Load the colorized one
-  const std::string colorized = m_project->colorizedSfMPlyPath() ;
+  const std::string colorized = m_project->projectPaths().colorizedPlyCloud( m_project->sfMMethod() ) ;
   if( stlplus::file_exists( colorized ) )
   {
     // Add colorized object
@@ -2305,6 +2305,7 @@ void MainWindow::buildMenus( void )
   m_show_hide_detail_list_act = m_view_menu->addAction( "Detail list" ) ;
   m_show_hide_detail_list_act->setCheckable( true ) ;
   m_show_hide_detail_list_act->setChecked( false ) ;
+  m_show_hide_reconstruction_summary_act = m_view_menu->addAction( "Reconstruction summary" ) ;
 
   m_view_menu->addSeparator() ;
   m_show_hide_grid_act = m_view_menu->addAction( "Grid" ) ;

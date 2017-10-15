@@ -38,7 +38,8 @@ namespace openMVG_gui
 * @param projectFile The path of the project file
 */
 Project::Project( const std::string & projectFile , std::shared_ptr<SceneManager> scn )
-  : m_scene_mgr( scn ) ,
+  : m_project_paths( "" ) ,
+    m_scene_mgr( scn ) ,
     m_sfm_data( nullptr ) ,
     m_sparse_point_cloud( nullptr )
 {
@@ -62,6 +63,7 @@ Project::Project( const std::string & base_path ,
   :
   m_project_base_path( base_path ) ,
   m_project_image_path( image_path ) ,
+  m_project_paths( base_path ) ,
   m_sfm_method( SFM_METHOD_INCREMENTAL ) ,
   m_scene_mgr( scn ) ,
   m_sparse_point_cloud( nullptr )
@@ -150,6 +152,7 @@ void Project::open( const std::string & projectFile )
   archive( cereal::make_nvp( "revision_version" , revision_version ) ) ;
 
   archive( cereal::make_nvp( "project_path" , m_project_base_path ) ) ;
+  m_project_paths = ProjectPaths( m_project_base_path ) ;
   archive( cereal::make_nvp( "image_path" , m_project_image_path ) ) ;
   archive( cereal::make_nvp( "sfm_method" , m_sfm_method ) ) ;
 
@@ -168,9 +171,9 @@ void Project::open( const std::string & projectFile )
 
   // Load sfm_data ?
   // either from reconstruction path or at least from matches path
-  const std::string matchesSfMDataPath = stlplus::create_filespec( matchesPath() , "sfm_data.json" );
-  const std::string reconstructionSeqSfMDataPath = stlplus::create_filespec( reconstructionSequentialPath() , "sfm_data.bin" ) ;
-  const std::string reconstructionGloSfMDataPath = stlplus::create_filespec( reconstructionGlobalPath() , "sfm_data.bin" ) ;
+  const std::string matchesSfMDataPath = stlplus::create_filespec( m_project_paths.matchesPath() , "sfm_data.json" );
+  const std::string reconstructionSeqSfMDataPath = stlplus::create_filespec( m_project_paths.reconstructionSequentialPath() , "sfm_data.bin" ) ;
+  const std::string reconstructionGloSfMDataPath = stlplus::create_filespec( m_project_paths.reconstructionGlobalPath() , "sfm_data.bin" ) ;
 
   if( stlplus::file_exists( reconstructionSeqSfMDataPath ) )
   {
@@ -236,7 +239,7 @@ std::string Project::getMaskImagePath( const size_t id_image ) const
 */
 bool Project::hasAllFeaturesComputed( void ) const
 {
-  const std::string matches_dir = featuresPath() ;
+  const std::string matches_dir = m_project_paths.featuresPath( featureParams() ) ;
   for( int i = 0; i < static_cast<int>( m_sfm_data->views.size() ); ++i )
   {
     openMVG::sfm::Views::const_iterator iterViews = m_sfm_data->views.begin();
@@ -261,7 +264,7 @@ bool Project::hasAllFeaturesComputed( void ) const
 bool Project::hasPartialFeaturesComputed( void ) const
 {
   size_t nb_computed = 0 ;
-  const std::string matches_dir = matchesPath() ;
+  const std::string matches_dir = m_project_paths.matchesPath() ;
   for( int i = 0; i < static_cast<int>( m_sfm_data->views.size() ); ++i )
   {
     openMVG::sfm::Views::const_iterator iterViews = m_sfm_data->views.begin();
@@ -294,7 +297,7 @@ bool Project::hasAllMatchesComputed( void ) const
   // Just check if the matches.f.bin (or matches.e.bin or matches.h.bin) is here
   // TODO : check if it's a reasonable test :
   // -> If any of the matches.X.bin is present, it should be enough ?
-  const std::string matchesPath = this->featuresPath() ;
+  const std::string matchesPath = projectPaths().featuresPath( featureParams() ) ;
   const MatchingParams matchesParams = this->matchingParams() ;
 
   std::string matchesName ;
@@ -326,7 +329,7 @@ bool Project::hasAllMatchesComputed( void ) const
 bool Project::hasSfMComputed( void ) const
 {
   // Check if the cloud_and_poses is present
-  const std::string cloudPath = sfMDataPlyPath() ;
+  const std::string cloudPath = m_project_paths.plyCloud( sfMMethod() ) ;
   return stlplus::file_exists( cloudPath ) ;
 }
 
@@ -336,7 +339,7 @@ bool Project::hasSfMComputed( void ) const
 bool Project::hasColorComputed( void ) const
 {
   // Check if the colorized is present
-  const std::string colorizedPath = colorizedSfMPlyPath() ;
+  const std::string colorizedPath = m_project_paths.colorizedPlyCloud( sfMMethod() ) ;
   return stlplus::file_exists( colorizedPath ) ;
 }
 
@@ -347,7 +350,7 @@ bool Project::hasColorComputed( void ) const
 */
 bool Project::hasMatchesFundamentalFiltered( void ) const
 {
-  const std::string matches_path = featuresPath() ;
+  const std::string matches_path = m_project_paths.featuresPath( featureParams() ) ;
   return stlplus::file_exists( stlplus::create_filespec( matches_path , "matches.f.bin" ) );
 }
 
@@ -358,7 +361,7 @@ bool Project::hasMatchesFundamentalFiltered( void ) const
 */
 bool Project::hasMatchesEssentialFiltered( void ) const
 {
-  const std::string matches_path = featuresPath() ;
+  const std::string matches_path = m_project_paths.featuresPath( featureParams() ) ;
   return stlplus::file_exists( stlplus::create_filespec( matches_path , "matches.e.bin" ) );
 }
 
@@ -369,7 +372,7 @@ bool Project::hasMatchesEssentialFiltered( void ) const
 */
 bool Project::hasMatchesHomographyFiltered( void ) const
 {
-  const std::string matches_path = featuresPath() ;
+  const std::string matches_path = m_project_paths.featuresPath( featureParams() ) ;
   return stlplus::file_exists( stlplus::create_filespec( matches_path , "matches.h.bin" ) );
 }
 
@@ -478,76 +481,13 @@ std::vector< int > Project::imageIds( void ) const
   return res ;
 }
 
-
 /**
-* @brief Given a base path, get thumbnail base path
-* @param return thumbnail base path
-*/
-std::string Project::thumbnailsPath( void ) const
+ * @brief Get warper to get project paths
+ * @return object containing project paths
+ */
+ProjectPaths Project::projectPaths( void ) const
 {
-  return stlplus::folder_append_separator( stlplus::folder_append_separator( m_project_base_path ) + "gui" ) + "thumbnails" ;
-}
-
-/**
-* @brief Given a base path, get matches base path
-* @param return matches base path
-*/
-std::string Project::matchesPath( void ) const
-{
-  //  return featuresPath() ;
-  return stlplus::folder_append_separator( stlplus::folder_append_separator( m_project_base_path ) + "sfm" ) + "matches" ;
-}
-
-/**
-* @brief Given a base path, get global reconstruction path
-* @return reconstruction global path
-*/
-std::string Project::reconstructionGlobalPath( void ) const
-{
-  return stlplus::folder_append_separator( stlplus::folder_append_separator( m_project_base_path ) + "sfm" ) + "reconstruction_global" ;
-}
-
-/**
-* @brief Given a base path, get sequential reconstruction path
-* @return reconstruction sequential path
-*/
-std::string Project::reconstructionSequentialPath( void ) const
-{
-  return stlplus::folder_append_separator( stlplus::folder_append_separator( m_project_base_path ) + "sfm" ) + "reconstruction_sequential" ;
-}
-
-/**
-* @brief Get path of the sfm data output ply file
-*/
-std::string Project::sfMDataPlyPath( void ) const
-{
-  if( m_sfm_method == SFM_METHOD_GLOBAL )
-  {
-    const std::string base_path = reconstructionGlobalPath() ;
-    return stlplus::create_filespec( base_path , "cloud_and_poses.ply" ) ;
-  }
-  else
-  {
-    const std::string base_path = reconstructionSequentialPath() ;
-    return stlplus::create_filespec( base_path , "cloud_and_poses.ply" ) ;
-  }
-}
-
-/**
-* @brief Get colorized sfm data output ply file
-*/
-std::string Project::colorizedSfMPlyPath( void ) const
-{
-  if( m_sfm_method == SFM_METHOD_GLOBAL )
-  {
-    const std::string base_path = reconstructionGlobalPath() ;
-    return stlplus::create_filespec( base_path , "colorized.ply" ) ;
-  }
-  else
-  {
-    const std::string base_path = reconstructionSequentialPath() ;
-    return stlplus::create_filespec( base_path , "colorized.ply" ) ;
-  }
+  return m_project_paths ;
 }
 
 /**
@@ -797,14 +737,15 @@ bool Project::createDirectoryStructure( const std::string & base_path )
   * base_path / sfm / exporters
   */
 
-  const std::string gui_path = guiPath( base_path ) ;
-  const std::string thumb_path = thumbnailsPath( base_path ) ;
-  const std::string sfm_path = sfmPath( base_path ) ;
-  const std::string matches_path = matchesPath( base_path ) ;
-  const std::string rec_global_path = reconstructionGlobalPath( base_path ) ;
-  const std::string rec_sequen_path = reconstructionSequentialPath( base_path ) ;
-  const std::string global_features_dir = globalFeaturePath( base_path ) ;
-  const std::string exporter_dir = exportPath( base_path ) ;
+  ProjectPaths prjPaths( base_path ) ;
+  const std::string gui_path = prjPaths.guiPath( ) ;
+  const std::string thumb_path = prjPaths.thumbnailsPath( ) ;
+  const std::string sfm_path = prjPaths.sfmBasePath( ) ;
+  const std::string matches_path = prjPaths.matchesPath( ) ;
+  const std::string rec_global_path = prjPaths.reconstructionGlobalPath( ) ;
+  const std::string rec_sequen_path = prjPaths.reconstructionSequentialPath( ) ;
+  const std::string global_features_dir = prjPaths.globalFeaturePath( ) ;
+  const std::string exporter_dir = prjPaths.exportPath( ) ;
 
   if( !stlplus::folder_exists( base_path ) )
   {
@@ -934,230 +875,6 @@ bool Project::createDirectoryStructure( const std::string & base_path )
   }
 
   return true ;
-}
-
-/**
-* @brief Given a base path, get gui base path
-* @param base_path project base path
-* @param return thumbnail base path
-*/
-std::string Project::guiPath( const std::string & base_path ) const
-{
-  return stlplus::folder_append_separator( base_path ) + "gui" ;
-}
-
-/**
-* @brief Given a base path, get sfm base path
-* @param base_path project base path
-* @param return thumbnail base path
-*/
-std::string Project::sfmPath( const std::string & base_path ) const
-{
-  return stlplus::folder_append_separator( base_path ) + "sfm" ;
-}
-
-/**
-* @brief Given a base path, get thumbnail base path
-* @param base_path project base path
-* @param return thumbnail base path
-*/
-std::string Project::thumbnailsPath( const std::string & base_path ) const
-{
-  return stlplus::folder_append_separator( guiPath( base_path ) ) + "thumbnails" ;
-}
-
-/**
-* @brief Given a base path, get matches base path
-* @param base_path project base path
-* @param return matches base path
-*/
-std::string Project::matchesPath( const std::string & base_path ) const
-{
-  return stlplus::folder_append_separator( sfmPath( base_path ) ) + "matches" ;
-}
-
-/**
-* @brief Get features path relative to the current features params
-* @return feature path
-*/
-std::string Project::featuresPath( void ) const
-{
-  // Feature path :
-  // folder_feature_detector / folder_descriptor / folder_preset
-
-  std::string folder_detector ;
-  std::string folder_descriptor ;
-  std::string folder_preset ;
-
-  switch( m_feature_params.type() )
-  {
-    case FEATURE_TYPE_SIFT :
-    {
-      folder_detector = "SIFT" ;
-      break ;
-    }
-    case FEATURE_TYPE_SIFT_ANATOMY :
-    {
-      folder_detector = "SIFT_ANATOMY" ;
-      break ;
-    }
-    case FEATURE_TYPE_AKAZE_FLOAT :
-    case FEATURE_TYPE_AKAZE_MLDB :
-    {
-      folder_detector = "AKAZE" ;
-      break ;
-    }
-  }
-
-  switch( m_feature_params.type() )
-  {
-    case FEATURE_TYPE_SIFT :
-    case FEATURE_TYPE_SIFT_ANATOMY :
-    {
-      folder_descriptor = "SIFT" ;
-      break ;
-    }
-    case FEATURE_TYPE_AKAZE_FLOAT :
-    {
-      folder_descriptor = "MSURF" ;
-      break ;
-    }
-    case FEATURE_TYPE_AKAZE_MLDB :
-    {
-      folder_descriptor = "MLDB" ;
-      break ;
-    }
-  }
-
-  switch( m_feature_params.preset() )
-  {
-    case FEATURE_PRESET_NORMAL :
-    {
-      folder_preset = "NORMAL" ;
-      break ;
-    }
-    case FEATURE_PRESET_HIGH :
-    {
-      folder_preset = "HIGH" ;
-      break ;
-    }
-    case FEATURE_PRESET_ULTRA :
-    {
-      folder_preset = "ULTRA" ;
-      break ;
-    }
-  }
-
-  return
-    stlplus::folder_append_separator(
-      stlplus::folder_append_separator(
-        stlplus::folder_append_separator( globalFeaturePath() ) + folder_detector ) +
-      folder_descriptor ) + folder_preset ;
-}
-
-/**
-* @brief Get paths of all computed features
-* @return Path of all computed features
-*/
-std::vector< std::string > Project::featuresPaths( void ) const
-{
-  // All valid combinations
-  // DETECTOR / DESCRIPTOR / PRESET
-  const std::vector< std::vector< std::string > > combinations =
-  {
-    // SIFT
-    { "SIFT" , "SIFT" , "NORMAL" } ,
-    { "SIFT" , "SIFT" , "HIGH" } ,
-    { "SIFT" , "SIFT" , "ULTRA" } ,
-    // SIFT ANATOMY
-    { "SIFT_ANATOMY" , "SIFT" , "NORMAL" } ,
-    { "SIFT_ANATOMY" , "SIFT" , "HIGH" } ,
-    { "SIFT_ANATOMY" , "SIFT" , "ULTRA" } ,
-    // AKAZE
-    { "AKAZE" , "MSURF" , "NORMAL" } ,
-    { "AKAZE" , "MSURF" , "HIGH" } ,
-    { "AKAZE" , "MSURF" , "ULTRA" } ,
-    { "AKAZE" , "MLDB" , "NORMAL" } ,
-    { "AKAZE" , "MLDB" , "HIGH" } ,
-    { "AKAZE" , "MLDB" , "ULTRA" }
-  } ;
-
-  std::vector< std::string > res ;
-  for( const auto & cur_combi : combinations )
-  {
-    std::string path = globalFeaturePath() ;
-    for( const auto & param_combi : cur_combi )
-    {
-      path = stlplus::folder_append_separator( path ) + param_combi ;
-    }
-
-    if( stlplus::folder_exists( path ) )
-    {
-      res.emplace_back( path ) ;
-    }
-  }
-  return res ;
-}
-
-
-/**
-* @brief Get global feature path
-* @return global feature path
-*/
-std::string Project::globalFeaturePath( void ) const
-{
-  return stlplus::folder_append_separator( stlplus::folder_append_separator( m_project_base_path ) + "sfm" ) + "features" ;
-}
-
-/**
-* @brief Get global feature path
-* @param base_path project base path
-* @return global feature path
-*/
-std::string Project::globalFeaturePath( const std::string & base_path ) const
-{
-  return stlplus::folder_append_separator( sfmPath( base_path ) ) + "features" ;
-}
-
-
-
-/**
-* @brief Given a base path, get global reconstruction path
-* @param base_path project base path
-* @return reconstruction global path
-*/
-std::string Project::reconstructionGlobalPath( const std::string & base_path ) const
-{
-  return stlplus::folder_append_separator( sfmPath( base_path ) ) + "reconstruction_global" ;
-}
-
-/**
-* @brief Given a base path, get sequential reconstruction path
-* @param base_path project base path
-* @return reconstruction sequential path
-*/
-std::string Project::reconstructionSequentialPath( const std::string & base_path ) const
-{
-  return stlplus::folder_append_separator( sfmPath( base_path ) ) + "reconstruction_sequential" ;
-}
-
-/**
-* @brief Get project export path
-* @return export path
-*/
-std::string Project::exportPath( void ) const
-{
-  return exportPath( m_project_base_path ) ;
-}
-
-/**
-* @brief Given a base path, get export path
-* @param base_path
-* @return export path
-*/
-std::string Project::exportPath( const std::string & base_path ) const
-{
-  return stlplus::folder_append_separator( base_path ) + "export" ;
 }
 
 

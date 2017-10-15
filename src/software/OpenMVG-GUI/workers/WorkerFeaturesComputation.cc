@@ -44,13 +44,13 @@ void WorkerFeaturesComputation::process( void )
 {
   std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data = m_project->SfMData();
   const int nb_image                               = sfm_data->GetViews().size();
-  const std::string matches_dir                    = m_project->matchesPath();
+  const std::string matches_dir                    = m_project->projectPaths().matchesPath();
 
   const FeatureParams f_params                                        = m_project->featureParams();
   std::shared_ptr<openMVG::features::Image_describer> image_describer = f_params.describer();
 
   // Create output feature folder
-  const std::string base_feature_path = m_project->globalFeaturePath();
+  const std::string base_feature_path = m_project->projectPaths().globalFeaturePath();
   std::string base_detector_path;
   switch ( m_project->featureParams().type() )
   {

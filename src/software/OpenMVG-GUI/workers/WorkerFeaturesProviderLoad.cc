@@ -42,7 +42,7 @@ void WorkerFeaturesProviderLoad::process( void )
   emit progress( 0 );
 
   std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data = m_project->SfMData();
-  const std::string sFeaturePath                   = m_project->featuresPath();
+  const std::string sFeaturePath                   = m_project->projectPaths().featuresPath( m_project->featureParams() );
 
   const std::string sImage_describer                       = stlplus::create_filespec( sFeaturePath, "image_describer", "json" );
   std::unique_ptr<openMVG::features::Regions> regions_type = openMVG::features::Init_region_type_from_file( sImage_describer );
