@@ -1,7 +1,16 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
+
+// Copyright (c) 2017 Romuald PERROT.
+
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 #ifndef _OPENMVG_SOFTWARE_OPENMVG_GUI_MAINWINDOW_HH_
 #define _OPENMVG_SOFTWARE_OPENMVG_GUI_MAINWINDOW_HH_
 
 #include "ApplicationState.hh"
+#include "ConsoleWidget.hh"
 #include "DetailListWidget.hh"
 #include "ImageListWidget.hh"
 #include "Project.hh"
@@ -157,6 +166,11 @@ class MainWindow : public QMainWindow
      * @brief Action to be executed when user wants to show/hide report
      */
     void onShowReconstructionReport( void ) ;
+
+    /**
+     * @brief Action to be executed when user wants to show/hide console
+     */
+    void onShowHideConsoleWindow( void ) ;
 
     /**
     * @brief Action to be executed when user has selected an image in the image list
@@ -419,6 +433,7 @@ class MainWindow : public QMainWindow
     QAction * m_show_hide_image_list_act ;
     QAction * m_show_hide_detail_list_act ;
     QAction * m_show_hide_reconstruction_summary_act ;
+    QAction * m_show_hide_console_act ;
     QMenu * m_view_projection_menu ;
     QAction * m_view_projection_perspective ;
     QAction * m_view_projection_orthographic ;
@@ -432,6 +447,8 @@ class MainWindow : public QMainWindow
     ResultViewWidget * m_result_view ;
     /// The result summary
     ReconstructionSummaryWidget * m_result_summary_widget ;
+    /// The console and their handlers
+    ConsoleWidget * m_console_widget ;
 
     ApplicationState m_state ;
 

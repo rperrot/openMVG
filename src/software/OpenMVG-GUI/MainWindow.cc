@@ -1,3 +1,11 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
+
+// Copyright (c) 2017 Romuald PERROT.
+
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 #include "MainWindow.hh"
 
 // Dialogs
@@ -820,8 +828,33 @@ void MainWindow::onShowHideDetail( void )
  */
 void MainWindow::onShowReconstructionReport( void )
 {
-  m_result_summary_widget->show() ;
+  const bool visible = m_show_hide_reconstruction_summary_act->isChecked() ;
+  if( visible )
+  {
+    m_result_summary_widget->show() ;
+  }
+  else
+  {
+    m_result_summary_widget->hide() ;
+  }
 }
+
+/**
+ * @brief Action to be executed when user wants to show/hide console
+ */
+void MainWindow::onShowHideConsoleWindow( void )
+{
+  const bool visible = m_show_hide_console_act->isChecked() ;
+  if( visible )
+  {
+    m_console_widget->show() ;
+  }
+  else
+  {
+    m_console_widget->hide() ;
+  }
+}
+
 
 /**
 * @brief Action to be executed when user has selected an image in the image list
@@ -2263,6 +2296,8 @@ void MainWindow::buildInterface( void )
   m_result_summary_widget = new ReconstructionSummaryWidget( nullptr ) ;
   m_result_summary_widget->hide() ;
 
+  m_console_widget = new ConsoleWidget( nullptr ) ;
+
   mainWidget->setLayout( mainLayout ) ;
   setCentralWidget( mainWidget ) ;
 }
@@ -2327,6 +2362,11 @@ void MainWindow::buildMenus( void )
   m_show_hide_detail_list_act->setCheckable( true ) ;
   m_show_hide_detail_list_act->setChecked( false ) ;
   m_show_hide_reconstruction_summary_act = m_view_menu->addAction( "Reconstruction summary" ) ;
+  m_show_hide_reconstruction_summary_act->setCheckable( true ) ;
+  m_show_hide_reconstruction_summary_act->setChecked( false ) ;
+  m_show_hide_console_act = m_view_menu->addAction( "Console" ) ;
+  m_show_hide_console_act->setCheckable( true ) ;
+  m_show_hide_console_act->setChecked( false ) ;
 
   m_view_menu->addSeparator() ;
   m_show_hide_grid_act = m_view_menu->addAction( "Grid" ) ;
@@ -2414,6 +2454,7 @@ void MainWindow::makeConnections( void )
   connect( m_view_projection_orthographic , SIGNAL( triggered() ) , this , SLOT( onSetOrthographicProjection() ) ) ;
   connect( m_view_projection_perspective , SIGNAL( triggered() ) , this , SLOT( onSetPerspectiveProjection() ) ) ;
   connect( m_show_hide_reconstruction_summary_act , SIGNAL( triggered() ) , this , SLOT( onShowReconstructionReport() ) ) ;
+  connect( m_show_hide_console_act , SIGNAL( triggered() ) , this , SLOT( onShowHideConsoleWindow() ) ) ;
 
   // Interface
   connect( m_image_list , SIGNAL( hasSelectedAnImage( int ) ) , this , SLOT( onSelectImage( int ) ) );

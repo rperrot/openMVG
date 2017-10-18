@@ -7,6 +7,4 @@
 
 - When computing Matches and SfM and there exist more than one valid feature combination, ask the user to select the method to use 
 
-- Get back GPS priors 
-- Provide SFM summary as a new dialog 
-- Provide console during computation 
+- Get back GPS priors

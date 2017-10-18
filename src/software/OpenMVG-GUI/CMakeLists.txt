@@ -18,6 +18,7 @@ add_subdirectory( workflow_params )
 
 
 set( OPENMVG_GUI_HEADERS ApplicationState.hh 
+                         ConsoleWidget.hh
                          DetailListWidget.hh 
                          ImageListWidget.hh 
                          MainWindow.hh 
@@ -27,7 +28,8 @@ set( OPENMVG_GUI_HEADERS ApplicationState.hh
                          ReconstructionSummaryWidget.hh
                          ResultViewWidget.hh 
                          Version.hh )
-set( OPENMVG_GUI_SOURCES DetailListWidget.cc
+set( OPENMVG_GUI_SOURCES ConsoleWidget.cc 
+                         DetailListWidget.cc
                          ImageListWidget.cc
                          MainWindow.cc 
                          OpenMVGImageInterface.cc
