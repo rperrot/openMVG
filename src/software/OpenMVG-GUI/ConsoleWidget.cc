@@ -26,9 +26,9 @@ ConsoleWidget::ConsoleWidget( QWidget * parent )
   resize( 1024, 600 ) ;
 
   // Handle std::cout
-  handler_cout = new StdStreamHandlers( std::cout , m_text_element ) ;
+  m_handler_cout = std::make_shared<StdStreamHandlers>( std::cout , m_text_element ) ;
   // Handle std::cerr
-  handler_cerr = new StdStreamHandlers( std::cerr , m_text_element ) ;
+  m_handler_cerr = std::make_shared<StdStreamHandlers>( std::cerr , m_text_element ) ;
 }
 
 /**

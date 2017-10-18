@@ -39,8 +39,8 @@ class ConsoleWidget : public QWidget
 
     QTextEdit * m_text_element ;
 
-    StdStreamHandlers * handler_cout ;
-    StdStreamHandlers * handler_cerr ;
+    std::shared_ptr<StdStreamHandlers> m_handler_cout ;
+    std::shared_ptr<StdStreamHandlers> m_handler_cerr ;
 } ;
 
 } // namespace openMVG_gui
