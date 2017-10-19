@@ -264,25 +264,25 @@ void CameraGizmo::prepare( void )
     dataSelection[ id_vert * 6 ] = A[0] ;
     dataSelection[ id_vert * 6 + 1] = A[1] ;
     dataSelection[ id_vert * 6 + 2] = A[2] ;
-    dataSelection[ id_vert * 6 + 3] = 1.0 ;
-    dataSelection[ id_vert * 6 + 4] = 0.0 ;
-    dataSelection[ id_vert * 6 + 5] = 0.0 ;
+    dataSelection[ id_vert * 6 + 3] = 60.0 / 255.0 ;
+    dataSelection[ id_vert * 6 + 4] = 254.0 / 255.0 ;
+    dataSelection[ id_vert * 6 + 5] = 39.0 / 255.0 ;
 
     ++id_vert ;
     dataSelection[ id_vert * 6 ] = B[0] ;
     dataSelection[ id_vert * 6 + 1] = B[1] ;
     dataSelection[ id_vert * 6 + 2] = B[2] ;
-    dataSelection[ id_vert * 6 + 3] = 1.0 ;
-    dataSelection[ id_vert * 6 + 4] = 0.0 ;
-    dataSelection[ id_vert * 6 + 5] = 0.0 ;
+    dataSelection[ id_vert * 6 + 3] = 60.0 / 255.0 ;
+    dataSelection[ id_vert * 6 + 4] = 254.0 / 255.0 ;
+    dataSelection[ id_vert * 6 + 5] = 39.0 / 255.0 ;
 
     ++id_vert ;
     dataSelection[ id_vert * 6 ] = C[0] ;
     dataSelection[ id_vert * 6 + 1] = C[1] ;
     dataSelection[ id_vert * 6 + 2] = C[2] ;
-    dataSelection[ id_vert * 6 + 3] = 1.0 ;
-    dataSelection[ id_vert * 6 + 4] = 0.0 ;
-    dataSelection[ id_vert * 6 + 5] = 0.0 ;
+    dataSelection[ id_vert * 6 + 3] = 60.0 / 255.0 ;
+    dataSelection[ id_vert * 6 + 4] = 254.0 / 255.0 ;
+    dataSelection[ id_vert * 6 + 5] = 39.0 / 255.0 ;
   }
 
 
