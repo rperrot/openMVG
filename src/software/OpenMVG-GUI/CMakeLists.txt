@@ -12,6 +12,7 @@ set(CMAKE_AUTORCC ON)
 
 add_subdirectory( dialogs ) 
 add_subdirectory( graphics )
+#add_subdirectory( node_edition )
 add_subdirectory( utils )
 add_subdirectory( workers ) 
 add_subdirectory( workflow_params )
@@ -38,13 +39,12 @@ set( OPENMVG_GUI_SOURCES ConsoleWidget.cc
                          ReconstructionSummaryWidget.cc
                          ResultViewWidget.cc )
 
-#if( APPLE )
-#add_executable( OpenMVG-GUI MACOSX_BUNDLE main.cc ${OPENMVG_GUI_HEADERS} ${OPENMVG_GUI_SOURCES} )
-#else( APPLE )
+if( APPLE )
+add_executable( OpenMVG-GUI MACOSX_BUNDLE main.cc ${OPENMVG_GUI_HEADERS} ${OPENMVG_GUI_SOURCES} application.rc ressources/ressources.qrc )
+set_target_properties(OpenMVG-GUI  PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/ressources/Info.plist.in )
+else( APPLE )
 add_executable( OpenMVG-GUI WIN32 main.cc ${OPENMVG_GUI_HEADERS} ${OPENMVG_GUI_SOURCES} application.rc ressources/ressources.qrc )
-
-# create ressource dirs 
-#endif( APPLE )
+endif( APPLE )
 
 set_target_properties( OpenMVG-GUI PROPERTIES CXX_STANDARD 11 )
 set_property(TARGET OpenMVG-GUI PROPERTY FOLDER OpenMVG/software/OpenMVG_gui)
@@ -52,6 +52,7 @@ target_link_libraries( OpenMVG-GUI
                        # sub libraries 
                        OpenMVG_gui_dialogs
                        OpenMVG_gui_graphics
+#                       OpenMVG_gui_node_edition 
                        OpenMVG_gui_utils
                        OpenMVG_gui_workers 
                        OpenMVG_gui_workflow_params

@@ -471,6 +471,12 @@ void MainWindow::onComputeAutomaticReconstruction( void )
   }
 }
 
+void MainWindow::onOpenPipelineEditor()
+{
+/*  PipelineEditor * editor = new PipelineEditor( nullptr ) ;
+  editor->show() ;
+  */
+}
 
 
 /**
@@ -2333,6 +2339,7 @@ void MainWindow::buildMenus( void )
 
   // Workflow actions
   m_automatic_workflow_act = m_workflow_menu->addAction( "Automatic reconstruction" ) ;
+//  m_pipeline_editor_act = m_workflow_menu->addAction( "Pipeline editor" ) ;
   m_workflow_menu->addSeparator() ;
   m_compute_features_act = m_workflow_menu->addAction( "Compute features" ) ;
   m_compute_matches_act = m_workflow_menu->addAction( "Compute matches" ) ;
@@ -2432,6 +2439,7 @@ void MainWindow::makeConnections( void )
   connect( m_file_close_act , SIGNAL( triggered() ) , this , SLOT( onCloseProject() ) ) ;
   connect( m_file_quit_act , SIGNAL( triggered() ) , this , SLOT( onQuit() ) ) ;
   connect( m_automatic_workflow_act , SIGNAL( triggered() ) , this , SLOT( onComputeAutomaticReconstruction() ) ) ;
+//  connect( m_pipeline_editor_act , SIGNAL( triggered() ) , this , SLOT( onOpenPipelineEditor() ) );
   connect( m_compute_features_act , SIGNAL( triggered() ) , this , SLOT( onComputeFeatures() ) ) ;
   connect( m_compute_matches_act , SIGNAL( triggered() ) , this , SLOT( onComputeMatches() ) ) ;
   connect( m_compute_sfm_act , SIGNAL( triggered() ) , this , SLOT( onComputeSfM() ) ) ;

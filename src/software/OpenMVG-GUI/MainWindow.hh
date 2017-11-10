@@ -13,6 +13,7 @@
 #include "ConsoleWidget.hh"
 #include "DetailListWidget.hh"
 #include "ImageListWidget.hh"
+//#include "node_edition/PipelineEditor.hh"
 #include "Project.hh"
 #include "ReconstructionSummaryWidget.hh"
 #include "ResultViewWidget.hh"
@@ -100,6 +101,11 @@ class MainWindow : public QMainWindow
     * @brief Action to be executed when user wants to compute automatic reconstruction
     */
     void onComputeAutomaticReconstruction( void ) ;
+
+    /**
+     * @brief Action to be executed when user wants to edit or create a pipeline
+     */
+    void onOpenPipelineEditor( void ) ;
 
     /**
     * @brief Action to be executed when user wants to compute features
@@ -392,6 +398,7 @@ class MainWindow : public QMainWindow
     QMenu * m_workflow_menu ;
     /// Full workflow
     QAction * m_automatic_workflow_act ;
+    QAction * m_pipeline_editor_act ;
     /// Compute features
     QAction * m_compute_features_act ;
     QAction * m_compute_features_act_tb ;

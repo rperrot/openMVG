@@ -11,6 +11,7 @@
 #include "workers/WorkerNextAction.hh"
 
 #include <QApplication>
+#include <QFontDatabase>
 
 #include <clocale>
 #include <string>
@@ -33,6 +34,8 @@ int main( int argc , char ** argv )
   qRegisterMetaType<openMVG_gui::WorkerNextAction>( "WorkerNextAction" );
   qRegisterMetaType<std::string>( "std::string" ) ;
 
+  // Fonts 
+  QFontDatabase::addApplicationFont( ":/fonts/SourceCodeVariable-Roman.otf" ) ;
 
 
   MainWindow win ;

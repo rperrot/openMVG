@@ -2,5 +2,6 @@
     <qresource>
         <file>icons/minus.svg</file>
         <file>icons/plus.svg</file>
+        <file>fonts/SourceCodeVariable-Roman.otf</file>
     </qresource>
 </RCC>
