@@ -36,10 +36,10 @@
 #include "workers/WorkerProjectCreation.hh"
 #include "workers/WorkerRegionsProviderLoad.hh"
 #include "workers/WorkerThumbnailGeneration.hh"
-
 #include "workers/WorkerNextAction.hh"
 
 #include "DoubleProgressBarDialog.hh"
+#include "FeaturesViewerWidget.hh"
 
 #include <QAction>
 #include <QCheckBox>
@@ -177,6 +177,11 @@ class MainWindow : public QMainWindow
      * @brief Action to be executed when user wants to show/hide console
      */
     void onShowHideConsoleWindow( void ) ;
+
+    /**
+     * @brief Show features on a given image
+     */
+    void onShowHideFeatureViewer( void ) ;
 
     /**
     * @brief Action to be executed when user has selected an image in the image list
@@ -439,6 +444,7 @@ class MainWindow : public QMainWindow
     QAction * m_show_hide_camera_gizmos_act ;
     QAction * m_show_hide_image_list_act ;
     QAction * m_show_hide_detail_list_act ;
+    QAction * m_show_hide_features_viewer ;
     QAction * m_show_hide_reconstruction_summary_act ;
     QAction * m_show_hide_console_act ;
     QMenu * m_view_projection_menu ;
@@ -456,6 +462,8 @@ class MainWindow : public QMainWindow
     ReconstructionSummaryWidget * m_result_summary_widget ;
     /// The console and their handlers
     ConsoleWidget * m_console_widget ;
+    /// Feature viewer
+    FeaturesViewerWidget * m_feature_viewer_widget ;
 
     ApplicationState m_state ;
 

@@ -21,6 +21,7 @@ add_subdirectory( workflow_params )
 set( OPENMVG_GUI_HEADERS ApplicationState.hh 
                          ConsoleWidget.hh
                          DetailListWidget.hh 
+                         FeaturesViewerWidget.hh
                          ImageListWidget.hh 
                          MainWindow.hh 
                          OpenMVGImageInterface.hh
@@ -31,6 +32,7 @@ set( OPENMVG_GUI_HEADERS ApplicationState.hh
                          Version.hh )
 set( OPENMVG_GUI_SOURCES ConsoleWidget.cc 
                          DetailListWidget.cc
+                         FeaturesViewerWidget.cc
                          ImageListWidget.cc
                          MainWindow.cc 
                          OpenMVGImageInterface.cc
@@ -40,10 +42,12 @@ set( OPENMVG_GUI_SOURCES ConsoleWidget.cc
                          ResultViewWidget.cc )
 
 if( APPLE )
-add_executable( OpenMVG-GUI MACOSX_BUNDLE main.cc ${OPENMVG_GUI_HEADERS} ${OPENMVG_GUI_SOURCES} application.rc ressources/ressources.qrc )
-set_target_properties(OpenMVG-GUI  PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/ressources/Info.plist.in )
+  add_executable( OpenMVG-GUI MACOSX_BUNDLE main.cc ${OPENMVG_GUI_HEADERS} ${OPENMVG_GUI_SOURCES} application.rc ressources/ressources.qrc )
+  set_target_properties(OpenMVG-GUI  PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/ressources/Info.plist.in )
+  set( OpenMVG_GUI_PATH "${EXECUTABLE_OUTPUT_PATH}/OpenMVG-GUI.app/Contents/MacOS/" )
 else( APPLE )
-add_executable( OpenMVG-GUI WIN32 main.cc ${OPENMVG_GUI_HEADERS} ${OPENMVG_GUI_SOURCES} application.rc ressources/ressources.qrc )
+  add_executable( OpenMVG-GUI WIN32 main.cc ${OPENMVG_GUI_HEADERS} ${OPENMVG_GUI_SOURCES} application.rc ressources/ressources.qrc )
+  set( OpenMVG_GUI_PATH "${EXECUTABLE_OUTPUT_PATH}" ) 
 endif( APPLE )
 
 set_target_properties( OpenMVG-GUI PROPERTIES CXX_STANDARD 11 )
@@ -78,26 +82,26 @@ target_include_directories( OpenMVG-GUI PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/grap
 target_include_directories( OpenMVG-GUI PRIVATE ${OPENGL_INCLUDE_DIR} )
 
 add_custom_command( TARGET OpenMVG-GUI POST_BUILD 
-  COMMAND ${CMAKE_COMMAND} -E make_directory "${EXECUTABLE_OUTPUT_PATH}/ressources" )
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${OpenMVG_GUI_PATH}/ressources" )
 add_custom_command( TARGET OpenMVG-GUI POST_BUILD 
-  COMMAND ${CMAKE_COMMAND} -E make_directory "${EXECUTABLE_OUTPUT_PATH}/ressources/sensor_database" )
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${OpenMVG_GUI_PATH}/ressources/sensor_database" )
 add_custom_command( TARGET OpenMVG-GUI POST_BUILD 
   COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/../../openMVG/exif/sensor_width_database/sensor_width_camera_database.txt" 
-    "${EXECUTABLE_OUTPUT_PATH}/ressources/sensor_database/sensor_width_camera_database.txt" ) 
+    "${OpenMVG_GUI_PATH}/ressources/sensor_database/sensor_width_camera_database.txt" ) 
 add_custom_command( TARGET OpenMVG-GUI POST_BUILD 
   COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/ressources/point_shader.frag" 
-    "${EXECUTABLE_OUTPUT_PATH}/ressources/point_shader.frag" ) 
+    "${OpenMVG_GUI_PATH}/ressources/point_shader.frag" ) 
 add_custom_command( TARGET OpenMVG-GUI POST_BUILD 
   COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/ressources/point_shader.vert" 
-    "${EXECUTABLE_OUTPUT_PATH}/ressources/point_shader.vert" ) 
+    "${OpenMVG_GUI_PATH}/ressources/point_shader.vert" ) 
 add_custom_command( TARGET OpenMVG-GUI POST_BUILD 
-  COMMAND ${CMAKE_COMMAND} -E make_directory "${EXECUTABLE_OUTPUT_PATH}/icons" )
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${OpenMVG_GUI_PATH}/icons" )
 add_custom_command( TARGET OpenMVG-GUI POST_BUILD 
   COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/ressources/icons/plus.svg" 
-    "${EXECUTABLE_OUTPUT_PATH}/icons/plus.svg" ) 
+    "${OpenMVG_GUI_PATH}/icons/plus.svg" ) 
 add_custom_command( TARGET OpenMVG-GUI POST_BUILD 
   COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/ressources/icons/minus.svg" 
-    "${EXECUTABLE_OUTPUT_PATH}/icons/minus.svg" ) 
+    "${OpenMVG_GUI_PATH}/icons/minus.svg" ) 
 
 
 

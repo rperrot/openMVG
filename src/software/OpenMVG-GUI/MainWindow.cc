@@ -164,6 +164,9 @@ void MainWindow::onOpenProject( void )
     return ;
   }
 
+
+  m_feature_viewer_widget->setProject( m_project ) ; 
+
   m_project->sceneManager()->setCamera( m_project->viewportCamera() ) ;
   m_result_view->setScene( m_project->sceneManager() );
   m_result_view->prepareObjects() ;
@@ -473,9 +476,9 @@ void MainWindow::onComputeAutomaticReconstruction( void )
 
 void MainWindow::onOpenPipelineEditor()
 {
-/*  PipelineEditor * editor = new PipelineEditor( nullptr ) ;
-  editor->show() ;
-  */
+  /*  PipelineEditor * editor = new PipelineEditor( nullptr ) ;
+    editor->show() ;
+    */
 }
 
 
@@ -710,6 +713,8 @@ void MainWindow::onHasCreatedProject( const WorkerNextAction & next_action  )
   m_project = m_worker_project_creation->project() ;
   m_worker_project_creation.reset() ;
 
+  m_feature_viewer_widget->setProject( m_project ) ; 
+
   // Initialize the 3d view
   m_result_view->setScene( m_project->sceneManager() );
   m_result_view->prepareObjects() ;
@@ -858,6 +863,22 @@ void MainWindow::onShowHideConsoleWindow( void )
   else
   {
     m_console_widget->hide() ;
+  }
+}
+
+/**
+ * @brief Show features on a given image
+ */
+void MainWindow::onShowHideFeatureViewer( void )
+{
+  const bool visible = m_show_hide_features_viewer->isChecked() ;
+  if( visible )
+  {
+    m_feature_viewer_widget->show() ;
+  }
+  else
+  {
+    m_feature_viewer_widget->hide() ;
   }
 }
 
@@ -1810,6 +1831,8 @@ void MainWindow::onHasDoneAutomaticReconstruction( const WorkerNextAction & next
 
   m_worker_automatic_reconstruction.reset() ;
 
+  m_feature_viewer_widget->setProject( m_project ) ; 
+
   // Initialize the 3d view
   m_result_view->setScene( m_project->sceneManager() );
   m_result_view->prepareObjects() ;
@@ -2302,6 +2325,9 @@ void MainWindow::buildInterface( void )
   m_result_summary_widget = new ReconstructionSummaryWidget( nullptr ) ;
   m_result_summary_widget->hide() ;
 
+  m_feature_viewer_widget = new FeaturesViewerWidget( nullptr ) ;
+  m_feature_viewer_widget->hide() ;
+
   m_console_widget = new ConsoleWidget( nullptr ) ;
 
   mainWidget->setLayout( mainLayout ) ;
@@ -2339,7 +2365,7 @@ void MainWindow::buildMenus( void )
 
   // Workflow actions
   m_automatic_workflow_act = m_workflow_menu->addAction( "Automatic reconstruction" ) ;
-//  m_pipeline_editor_act = m_workflow_menu->addAction( "Pipeline editor" ) ;
+  //  m_pipeline_editor_act = m_workflow_menu->addAction( "Pipeline editor" ) ;
   m_workflow_menu->addSeparator() ;
   m_compute_features_act = m_workflow_menu->addAction( "Compute features" ) ;
   m_compute_matches_act = m_workflow_menu->addAction( "Compute matches" ) ;
@@ -2368,6 +2394,9 @@ void MainWindow::buildMenus( void )
   m_show_hide_detail_list_act = m_view_menu->addAction( "Detail list" ) ;
   m_show_hide_detail_list_act->setCheckable( true ) ;
   m_show_hide_detail_list_act->setChecked( false ) ;
+  m_show_hide_features_viewer = m_view_menu->addAction( "Features Viewer" ) ;
+  m_show_hide_features_viewer->setCheckable( true ) ;
+  m_show_hide_features_viewer->setChecked( false ) ;
   m_show_hide_reconstruction_summary_act = m_view_menu->addAction( "Reconstruction summary" ) ;
   m_show_hide_reconstruction_summary_act->setCheckable( true ) ;
   m_show_hide_reconstruction_summary_act->setChecked( false ) ;
@@ -2439,7 +2468,7 @@ void MainWindow::makeConnections( void )
   connect( m_file_close_act , SIGNAL( triggered() ) , this , SLOT( onCloseProject() ) ) ;
   connect( m_file_quit_act , SIGNAL( triggered() ) , this , SLOT( onQuit() ) ) ;
   connect( m_automatic_workflow_act , SIGNAL( triggered() ) , this , SLOT( onComputeAutomaticReconstruction() ) ) ;
-//  connect( m_pipeline_editor_act , SIGNAL( triggered() ) , this , SLOT( onOpenPipelineEditor() ) );
+  //  connect( m_pipeline_editor_act , SIGNAL( triggered() ) , this , SLOT( onOpenPipelineEditor() ) );
   connect( m_compute_features_act , SIGNAL( triggered() ) , this , SLOT( onComputeFeatures() ) ) ;
   connect( m_compute_matches_act , SIGNAL( triggered() ) , this , SLOT( onComputeMatches() ) ) ;
   connect( m_compute_sfm_act , SIGNAL( triggered() ) , this , SLOT( onComputeSfM() ) ) ;
@@ -2461,6 +2490,7 @@ void MainWindow::makeConnections( void )
   connect( m_show_hide_detail_list_act , SIGNAL( triggered() ) , this , SLOT( onShowHideDetail() ) );
   connect( m_view_projection_orthographic , SIGNAL( triggered() ) , this , SLOT( onSetOrthographicProjection() ) ) ;
   connect( m_view_projection_perspective , SIGNAL( triggered() ) , this , SLOT( onSetPerspectiveProjection() ) ) ;
+  connect( m_show_hide_features_viewer , SIGNAL( triggered() ) , this , SLOT( onShowHideFeatureViewer() ) ) ;
   connect( m_show_hide_reconstruction_summary_act , SIGNAL( triggered() ) , this , SLOT( onShowReconstructionReport() ) ) ;
   connect( m_show_hide_console_act , SIGNAL( triggered() ) , this , SLOT( onShowHideConsoleWindow() ) ) ;
 
