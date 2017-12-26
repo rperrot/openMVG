@@ -165,7 +165,7 @@ void MainWindow::onOpenProject( void )
   }
 
 
-  m_feature_viewer_widget->setProject( m_project ) ; 
+  m_feature_viewer_widget->setProject( m_project ) ;
 
   m_project->sceneManager()->setCamera( m_project->viewportCamera() ) ;
   m_result_view->setScene( m_project->sceneManager() );
@@ -713,7 +713,7 @@ void MainWindow::onHasCreatedProject( const WorkerNextAction & next_action  )
   m_project = m_worker_project_creation->project() ;
   m_worker_project_creation.reset() ;
 
-  m_feature_viewer_widget->setProject( m_project ) ; 
+  m_feature_viewer_widget->setProject( m_project ) ;
 
   // Initialize the 3d view
   m_result_view->setScene( m_project->sceneManager() );
@@ -1831,7 +1831,7 @@ void MainWindow::onHasDoneAutomaticReconstruction( const WorkerNextAction & next
 
   m_worker_automatic_reconstruction.reset() ;
 
-  m_feature_viewer_widget->setProject( m_project ) ; 
+  m_feature_viewer_widget->setProject( m_project ) ;
 
   // Initialize the 3d view
   m_result_view->setScene( m_project->sceneManager() );
@@ -1906,7 +1906,7 @@ void MainWindow::postFeaturesComputation( void )
     }
     // Add to the detail path
     if( infos.size() > 0 )
-    {
+    { 
       std::vector<std::string> feature_hierarchy = stlplus::folder_elements( feature_path );
       while( feature_hierarchy.size() > 3 )
       {
@@ -1914,6 +1914,9 @@ void MainWindow::postFeaturesComputation( void )
       }
       m_detail_list->setFeaturesInfos( feature_hierarchy , infos ) ;
     }
+
+    // Update feature viewer 
+    m_feature_viewer_widget->setProject( m_project ) ;
   }
 
 

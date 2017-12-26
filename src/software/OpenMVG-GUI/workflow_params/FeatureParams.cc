@@ -159,4 +159,36 @@ void FeatureParams::createDescriber( void )
   }
 }
 
+/**
+ * @brief Get all kinds of combinations (features_type/feature_presets)
+ * @return All valid (usable) combinations
+ */
+std::vector< FeatureParams > FeatureParams::allFeatures( void )
+{
+  std::vector< FeatureParams > res ;
+
+  // SIFT 
+  res.emplace_back( FEATURE_TYPE_SIFT , FEATURE_PRESET_NORMAL ) ;
+  res.emplace_back( FEATURE_TYPE_SIFT , FEATURE_PRESET_HIGH ) ;
+  res.emplace_back( FEATURE_TYPE_SIFT , FEATURE_PRESET_ULTRA ) ;
+
+  // SIFT ANATOMY 
+  res.emplace_back( FEATURE_TYPE_SIFT_ANATOMY , FEATURE_PRESET_NORMAL ) ;
+  res.emplace_back( FEATURE_TYPE_SIFT_ANATOMY , FEATURE_PRESET_HIGH ) ;
+  res.emplace_back( FEATURE_TYPE_SIFT_ANATOMY , FEATURE_PRESET_ULTRA ) ;
+
+  // AKAZE FLOAT (SURF)
+  res.emplace_back( FEATURE_TYPE_AKAZE_FLOAT , FEATURE_PRESET_NORMAL ) ;
+  res.emplace_back( FEATURE_TYPE_AKAZE_FLOAT , FEATURE_PRESET_HIGH ) ;
+  res.emplace_back( FEATURE_TYPE_AKAZE_FLOAT , FEATURE_PRESET_ULTRA ) ;
+
+  // AKAZE MLDB 
+  res.emplace_back( FEATURE_TYPE_AKAZE_MLDB , FEATURE_PRESET_NORMAL ) ;
+  res.emplace_back( FEATURE_TYPE_AKAZE_MLDB , FEATURE_PRESET_HIGH ) ;
+  res.emplace_back( FEATURE_TYPE_AKAZE_MLDB , FEATURE_PRESET_ULTRA ) ;
+
+  return res ;
+}
+
+
 } // namespace openMVG_gui

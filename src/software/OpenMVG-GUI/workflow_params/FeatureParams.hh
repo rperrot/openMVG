@@ -10,6 +10,7 @@
 #define _OPENMVG_SOFTWARE_OPENMVG_GUI_FEATURE_PARAMS_HH_
 
 #include <memory>
+#include <vector>
 
 namespace openMVG
 {
@@ -133,6 +134,11 @@ class FeatureParams
     template <class Archive>
     void save( Archive & ar ) const ;
 
+    /**
+     * @brief Get all kinds of combinations (features_type/feature_presets)
+     * @return All valid (usable) combinations
+     */
+    static std::vector< FeatureParams > allFeatures( void ) ;
 
   private:
 

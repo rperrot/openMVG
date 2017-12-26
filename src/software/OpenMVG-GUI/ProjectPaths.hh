@@ -51,9 +51,18 @@ class ProjectPaths
     std::string globalFeaturePath( void ) const ;
 
     /**
-     * @brief Path of the features depending on the given parameters
+     * @brief Path (folder) of the features depending on the given parameters
      */
     std::string featuresPath( const FeatureParams & params ) const ;
+
+    /**
+     * @brief Get feature file path corresdonding to an image 
+     * @param params Current features params
+     * @param image_name Name of the image 
+     * @return absolute feature path  
+     */
+    std::string featuresFilePath( const FeatureParams & params , const std::string & image_name ) const ; 
+
 
     /**
      * @brief Get all combinations of paths for all features modes

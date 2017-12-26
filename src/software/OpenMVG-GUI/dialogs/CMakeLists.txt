@@ -1,16 +1,20 @@
 set( OPENMVG_GUI_DIALOGS_HEADERS AutomaticReconstructionDialog.hh 
                                  ClusterComputationSettingsDialog.hh
                                  DoubleProgressBarDialog.hh
+                                 FeaturesViewerWidget.hh
                                  MaskDefinitionDialog.hh
                                  MaskView.hh
-                                 NewProjectDialog.hh )
+                                 NewProjectDialog.hh 
+                                 ZoomableGraphicsView.hh )
 
 set( OPENMVG_GUI_DIALOGS_SOURCES AutomaticReconstructionDialog.cc  
                                  ClusterComputationSettingsDialog.cc
                                  DoubleProgressBarDialog.cc
+                                 FeaturesViewerWidget.cc
                                  MaskDefinitionDialog.cc
                                  MaskView.cc 
-                                 NewProjectDialog.cc )
+                                 NewProjectDialog.cc
+                                 ZoomableGraphicsView.cc )
 
 
 add_library( OpenMVG_gui_dialogs STATIC ${OPENMVG_GUI_DIALOGS_HEADERS} ${OPENMVG_GUI_DIALOGS_SOURCES} )

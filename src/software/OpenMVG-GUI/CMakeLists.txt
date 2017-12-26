@@ -21,7 +21,6 @@ add_subdirectory( workflow_params )
 set( OPENMVG_GUI_HEADERS ApplicationState.hh 
                          ConsoleWidget.hh
                          DetailListWidget.hh 
-                         FeaturesViewerWidget.hh
                          ImageListWidget.hh 
                          MainWindow.hh 
                          OpenMVGImageInterface.hh
@@ -32,7 +31,6 @@ set( OPENMVG_GUI_HEADERS ApplicationState.hh
                          Version.hh )
 set( OPENMVG_GUI_SOURCES ConsoleWidget.cc 
                          DetailListWidget.cc
-                         FeaturesViewerWidget.cc
                          ImageListWidget.cc
                          MainWindow.cc 
                          OpenMVGImageInterface.cc

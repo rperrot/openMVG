@@ -13,6 +13,10 @@
 #include "openMVG/exif/exif_IO_EasyExif.hpp"
 #include "openMVG/exif/sensor_width_database/ParseDatabase.hpp"
 
+#include "openMVG/features/feature.hpp"
+#include "openMVG/features/feature_container.hpp"
+#include "openMVG/features/regions.hpp"
+
 #include "openMVG/image/image_io.hpp"
 
 #include "openMVG/sfm/sfm_data.hpp"
@@ -1009,6 +1013,76 @@ void Project::setMaskEnabled( const int id , const bool value )
 std::shared_ptr<Camera> Project::viewportCamera( void ) const
 {
   return m_viewport_camera ;
+}
+
+/**
+ * @brief Given an image ID, get all its computed features
+ * @param id_image Id of the image to query
+ * @return map <feature_name,features_positions>
+ */
+std::map< std::string , std::vector< openMVG::Vec2 > > Project::getFeaturesPositions( const size_t id_image ) const
+{
+  // Base image name
+  const std::string image_name = m_sfm_data->GetViews().at( id_image )->s_Img_path ;
+
+  // All features
+  const std::vector< FeatureParams > all_params = FeatureParams::allFeatures() ;
+
+  // path of the features files
+  std::vector< std::string > valid_features_file_paths ;
+  std::vector< std::string > valid_features_paths ;
+  std::vector< FeatureParams > valid_features_type ;
+
+  for( const auto & it : all_params )
+  {
+    const std::string path = projectPaths().featuresFilePath( it , image_name ) ;
+    if( stlplus::file_exists( path ) )
+    {
+      // Features
+      valid_features_type.emplace_back( it ) ;
+      // Base path of this feature
+      valid_features_paths.emplace_back( projectPaths().featuresPath( it ) ) ;
+      // Path of the feature for this image using these params
+      valid_features_file_paths.emplace_back( projectPaths().featuresFilePath( it , image_name ) ) ;
+    }
+  }
+
+  std::map< std::string , std::vector< openMVG::Vec2 > > res ;
+
+  // Load features for all valid params (ie: feature file exists)
+  for( int i = 0 ; i < valid_features_paths.size() ; ++i )
+  {
+    const auto & it = valid_features_paths[ i ] ;
+    const auto & featFile = valid_features_file_paths[ i ] ;
+
+    // Load the region type for this element
+    const std::string sImage_describer                       = stlplus::create_filespec( it , "image_describer", "json" );
+    std::unique_ptr<openMVG::features::Regions> regions_type = openMVG::features::Init_region_type_from_file( sImage_describer );
+
+    std::unique_ptr<features::Regions> regions( regions_type->EmptyClone() );
+    regions->LoadFeatures( featFile ) ;
+
+    // Convert region to feature positions
+    openMVG::features::PointFeatures pFeats = regions->GetRegionsPositions() ;
+
+    std::vector<std::string> feature_hierarchy = stlplus::folder_elements( it );
+    while( feature_hierarchy.size() > 3 )
+    {
+      feature_hierarchy.erase( feature_hierarchy.begin() ) ;
+    }
+    std::stringstream out_hierarchy ;
+    out_hierarchy << feature_hierarchy[0] << " - " << feature_hierarchy[1] << " - " << feature_hierarchy[2] ;
+
+    res.insert( { out_hierarchy.str() , std::vector<openMVG::Vec2>() } ) ;
+
+    // Convert to vector of openMVG::Vec2
+    for( auto & it_feat : pFeats )
+    {
+      res[ out_hierarchy.str() ].emplace_back( it_feat.coords().cast<double>() ) ;
+    }
+  }
+
+  return res ;
 }
 
 

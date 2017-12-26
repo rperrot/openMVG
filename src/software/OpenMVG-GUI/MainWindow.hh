@@ -39,7 +39,7 @@
 #include "workers/WorkerNextAction.hh"
 
 #include "DoubleProgressBarDialog.hh"
-#include "FeaturesViewerWidget.hh"
+#include "dialogs/FeaturesViewerWidget.hh"
 
 #include <QAction>
 #include <QCheckBox>

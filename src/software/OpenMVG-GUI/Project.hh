@@ -282,6 +282,13 @@ class Project
     */
     std::shared_ptr<Camera> viewportCamera( void ) const ;
 
+    /**
+     * @brief Given an image ID, get all its computed features
+     * @param id_image Id of the image to query
+     * @return map <feature_name,features_positions>
+     */
+    std::map< std::string , std::vector< openMVG::Vec2 > > getFeaturesPositions( const size_t id_image ) const ;
+
   private:
 
     /**

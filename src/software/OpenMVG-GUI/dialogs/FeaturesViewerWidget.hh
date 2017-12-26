@@ -6,15 +6,17 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#ifndef _OPENMVG_SOFTWARE_OPENMVG_GUI_FEATURES_VIEWER_WIDGET_HH_
-#define _OPENMVG_SOFTWARE_OPENMVG_GUI_FEATURES_VIEWER_WIDGET_HH_
+#ifndef _OPENMVG_SOFTWARE_OPENMVG_GUI_DIALOGS_FEATURES_VIEWER_WIDGET_HH_
+#define _OPENMVG_SOFTWARE_OPENMVG_GUI_DIALOGS_FEATURES_VIEWER_WIDGET_HH_
 
 #include "openMVG/numeric/numeric.h"
 
+#include "ZoomableGraphicsView.hh"
+
+#include <QAction>
 #include <QComboBox>
 #include <QGraphicsPixmapItem>
 #include <QGraphicsScene>
-#include <QGraphicsView>
 #include <QLabel>
 #include <QWidget>
 
@@ -64,6 +66,26 @@ class FeaturesViewerWidget : public QWidget
     void onSelectFeatureSet( void ) ;
 
     /**
+     * @brief Action to be executed when user wants to zoom images in order to fit the window
+     */
+    void onZoomToFit( void ) ;
+
+    /**
+     * @brief Action to be executed when user wants to zoom images in order to be real size
+     */
+    void onZoom11( void ) ;
+
+    /**
+     * @brief Action to be executed when user wants to zoom in
+     */
+    void onZoomIn( void ) ;
+
+    /**
+     * @brief Action to be executed when user wants to zoom out
+     */
+    void onZoomOut( void ) ;
+
+    /**
      * @brief Add a feature set to the current set
      * @param Name to be displayed for this set
      * @param pts a set of point
@@ -89,13 +111,18 @@ class FeaturesViewerWidget : public QWidget
 
     std::shared_ptr<Project> m_project ;
 
+    QLabel * m_image_lbl ;
     QComboBox * m_image_list ;
+    QLabel * m_featureset_lbl ;
     QComboBox * m_feature_set ;
-    QGraphicsPixmapItem * m_base_image ;
+    QPixmap m_cur_image ;
     QGraphicsScene * m_graphics_scn ;
-    QGraphicsView * m_image_view ;
+    ZoomableGraphicsView * m_image_view ;
 
-
+    QAction * m_zoom_to_fill_act ;
+    QAction * m_zoom_1_1_act ;
+    QAction * m_zoom_in_act ;
+    QAction * m_zoom_out_act ;
 
     /// Map between feature_name and id
     std::map< std::string , int > m_name_index ;

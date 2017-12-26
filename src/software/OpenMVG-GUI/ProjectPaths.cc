@@ -115,6 +115,23 @@ std::string ProjectPaths::featuresPath( const FeatureParams & params ) const
 }
 
 /**
+ * @brief Get feature file name given an image name
+ * @param params Current features params
+ * @param image_name Name of the image
+ * @return absolute feature path
+ */
+std::string ProjectPaths::featuresFilePath( const FeatureParams & params , const std::string & image_name ) const
+{
+  const std::string folder_path = featuresPath( params ) ;
+
+  const std::string basename = stlplus::basename_part( image_name );
+  const std::string featFile = stlplus::create_filespec( folder_path , basename , ".feat" );
+
+  return featFile ;
+}
+
+
+/**
  * @brief Get all combinations of paths for all features modes
  */
 std::vector< std::string > ProjectPaths::featuresPaths( void ) const
