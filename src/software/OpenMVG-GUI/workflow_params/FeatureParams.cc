@@ -27,11 +27,13 @@ namespace openMVG_gui
 */
 FeatureParams::FeatureParams( const FeatureType & type ,
                               const FeaturePreset & preset ,
-                              const bool upright  )
+                              const bool upright ,
+                              const int nb_parallel_job )
   : m_feat_type( type ) ,
     m_feat_preset( preset ) ,
     m_upright( upright ) ,
-    m_describer( nullptr )
+    m_describer( nullptr ) ,
+    m_nb_parallel_job( nb_parallel_job )
 {
   createDescriber() ;
 }
@@ -95,6 +97,24 @@ void FeatureParams::setUpright( const bool ur )
     m_upright = ur ;
     createDescriber() ;
   }
+}
+
+/**
+ * @brief Get number of parallel feature computation job
+ * @return nb parallel job
+ */
+int FeatureParams::nbParallelJob( void ) const
+{
+  return m_nb_parallel_job ;
+}
+
+/**
+ * @brief Set number of parallel feature extraction to perform
+ * @param nb_j New number of parallel job
+ */
+void FeatureParams::setNbParallelJob( const int nb_j )
+{
+  m_nb_parallel_job = nb_j ;
 }
 
 /**
@@ -167,12 +187,12 @@ std::vector< FeatureParams > FeatureParams::allFeatures( void )
 {
   std::vector< FeatureParams > res ;
 
-  // SIFT 
+  // SIFT
   res.emplace_back( FEATURE_TYPE_SIFT , FEATURE_PRESET_NORMAL ) ;
   res.emplace_back( FEATURE_TYPE_SIFT , FEATURE_PRESET_HIGH ) ;
   res.emplace_back( FEATURE_TYPE_SIFT , FEATURE_PRESET_ULTRA ) ;
 
-  // SIFT ANATOMY 
+  // SIFT ANATOMY
   res.emplace_back( FEATURE_TYPE_SIFT_ANATOMY , FEATURE_PRESET_NORMAL ) ;
   res.emplace_back( FEATURE_TYPE_SIFT_ANATOMY , FEATURE_PRESET_HIGH ) ;
   res.emplace_back( FEATURE_TYPE_SIFT_ANATOMY , FEATURE_PRESET_ULTRA ) ;
@@ -182,7 +202,7 @@ std::vector< FeatureParams > FeatureParams::allFeatures( void )
   res.emplace_back( FEATURE_TYPE_AKAZE_FLOAT , FEATURE_PRESET_HIGH ) ;
   res.emplace_back( FEATURE_TYPE_AKAZE_FLOAT , FEATURE_PRESET_ULTRA ) ;
 
-  // AKAZE MLDB 
+  // AKAZE MLDB
   res.emplace_back( FEATURE_TYPE_AKAZE_MLDB , FEATURE_PRESET_NORMAL ) ;
   res.emplace_back( FEATURE_TYPE_AKAZE_MLDB , FEATURE_PRESET_HIGH ) ;
   res.emplace_back( FEATURE_TYPE_AKAZE_MLDB , FEATURE_PRESET_ULTRA ) ;

@@ -15,6 +15,7 @@
 #include <QComboBox>
 #include <QDialog>
 #include <QPushButton>
+#include <QSpinBox>
 
 namespace openMVG_gui
 {
@@ -66,6 +67,7 @@ class FeatureParamsDialog : public QDialog
     QComboBox * m_feature_method ;
     QComboBox * m_feature_preset ;
     QCheckBox * m_check_upright ;
+    QSpinBox * m_spin_nb_parallel_job ;
 
     QPushButton * m_ok_btn ;
     QPushButton * m_cancel_btn ;

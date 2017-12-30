@@ -45,6 +45,7 @@ FeatureParams FeatureParamsDialog::params( void ) const
   const int idx_name   = m_feature_method->currentIndex() ;
   const int idx_preset = m_feature_preset->currentIndex() ;
   const bool upright   = m_check_upright->isChecked() ;
+  const int nb_parallel = m_spin_nb_parallel_job->value() ;
 
   FeatureType type = FEATURE_TYPE_SIFT ;
   switch( idx_name )
@@ -103,7 +104,7 @@ FeatureParams FeatureParamsDialog::params( void ) const
     }
   }
 
-  return FeatureParams( type , preset , upright ) ;
+  return FeatureParams( type , preset , upright , nb_parallel ) ;
 }
 
 /**
@@ -141,6 +142,7 @@ void FeatureParamsDialog::setParams( const FeatureParams & value )
   const FeatureType type = value.type() ;
   const FeaturePreset preset = value.preset() ;
   const bool upright = value.upright() ;
+  const int nb_parallel_job = value.nbParallelJob() ;
 
   switch( type )
   {
@@ -186,6 +188,7 @@ void FeatureParamsDialog::setParams( const FeatureParams & value )
   }
 
   m_check_upright->setCheckState( upright ? Qt::Checked : Qt::Unchecked ) ;
+  m_spin_nb_parallel_job->setValue( nb_parallel_job ) ;
 }
 
 void FeatureParamsDialog::buildInterface( void )
@@ -196,6 +199,7 @@ void FeatureParamsDialog::buildInterface( void )
   QLabel * labelFeatType = new QLabel( "Type" ) ;
   QLabel * labelFeatPreset = new QLabel( "Preset" ) ;
   QLabel * labelUpRight = new QLabel( "Upright" ) ;
+  QLabel * labelNbParallelJob = new QLabel( "Nb parallel job" ) ;
 
   m_feature_method = new QComboBox( this ) ;
   m_feature_method->addItem( "SIFT" ) ;
@@ -211,12 +215,17 @@ void FeatureParamsDialog::buildInterface( void )
   m_check_upright = new QCheckBox( this ) ;
   m_check_upright->setTristate( false ) ;
 
+  m_spin_nb_parallel_job = new QSpinBox( this ) ;
+  m_spin_nb_parallel_job->setRange( 1 , 128 ) ;
+
   glayout->addWidget( labelFeatType , 0 , 0 ) ;
   glayout->addWidget( m_feature_method , 0 , 1 ) ;
   glayout->addWidget( labelFeatPreset , 1 , 0 ) ;
   glayout->addWidget( m_feature_preset , 1 , 1 ) ;
   glayout->addWidget( labelUpRight , 2 , 0 ) ;
   glayout->addWidget( m_check_upright , 2 , 1 ) ;
+  glayout->addWidget( labelNbParallelJob , 3 , 0 ) ;
+  glayout->addWidget( m_spin_nb_parallel_job , 3 , 1 ) ;
 
   // Btns
   QHBoxLayout * btnLayout = new QHBoxLayout ;

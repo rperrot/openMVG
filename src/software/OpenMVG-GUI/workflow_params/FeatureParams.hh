@@ -64,10 +64,12 @@ class FeatureParams
     * @param type The feature type to use
     * @param preset The feature preset to use
     * @param upright Indicate if feature are extracted using upright orientation
+    * @param nb_parallel_job Number of parallel feature computation to do
     */
     FeatureParams( const FeatureType & type = FEATURE_TYPE_SIFT ,
                    const FeaturePreset & preset = FEATURE_PRESET_NORMAL ,
-                   const bool upright = false ) ;
+                   const bool upright = false ,
+                   const int nb_parallel_job = 1 ) ;
 
     /**
     * @brief copy ctr
@@ -114,6 +116,18 @@ class FeatureParams
     void setUpright( const bool ur ) ;
 
     /**
+     * @brief Get number of parallel feature computation job
+     * @return nb parallel job
+     */
+    int nbParallelJob( void ) const ;
+
+    /**
+     * @brief Set number of parallel feature extraction to perform
+     * @param nb_j New number of parallel job
+     */
+    void setNbParallelJob( const int nb_j ) ;
+
+    /**
     * @brief Get describer
     * @return the describer corresponding to the current parameters
     */
@@ -151,6 +165,7 @@ class FeatureParams
     FeatureType m_feat_type ;
     FeaturePreset m_feat_preset ;
     bool m_upright;
+    int m_nb_parallel_job ;
 
     // The current describer
     std::shared_ptr<openMVG::features::Image_describer> m_describer ;

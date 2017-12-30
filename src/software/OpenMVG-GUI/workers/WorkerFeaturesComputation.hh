@@ -12,7 +12,11 @@
 #include "Project.hh"
 #include "WorkerInterface.hh"
 
+#include "openMVG/image/image_container.hpp"
+
 #include <QObject>
+
+#include <atomic>
 
 namespace openMVG_gui
 {
@@ -24,7 +28,16 @@ namespace openMVG_gui
 class WorkerFeaturesComputation : public QObject, public WorkerInterface
 {
   public:
-    WorkerFeaturesComputation( std::shared_ptr<Project> &pro, const bool overwrite_existing, const WorkerNextAction &na = NEXT_ACTION_NONE );
+
+    /**
+     * @brief Ctr
+     * @param pro The project to get inputs and parameters
+     * @param overwrite_existing Indicate to overwrite existing computation
+     * @param na Next action to transmit after computation finished
+     */
+    WorkerFeaturesComputation( std::shared_ptr<Project> &pro,
+                               const bool overwrite_existing,
+                               const WorkerNextAction &na = NEXT_ACTION_NONE );
 
     /**
      * @brief get progress range
@@ -48,8 +61,28 @@ class WorkerFeaturesComputation : public QObject, public WorkerInterface
     void finished( const WorkerNextAction &na );
 
   private:
-    bool m_overwrite_existing;
-    std::shared_ptr<Project> m_project;
+
+    /**
+     * @brief Thread function
+     * @param sfm_data Sfm Data
+     * @param id_start Start id to process
+     * @param id_end End id to process (not included)
+     * @param nb_processed Number of images processed to far (in order to emit correct values to the interface)
+     * @param feature_path Path where features are exported
+     * @param globalMask global mask image
+     * @param image_describer functor used to compute description of the images
+    * @param[out] ok Handle if computation was a success (true) or failure (false)
+     */
+    void processThread( std::shared_ptr<openMVG::sfm::SfM_Data> & sfm_data , const int id_start , const int id_end ,
+                        const std::string & feature_path ,
+                        const openMVG::image::Image<unsigned char> & globalMask ,
+                        std::shared_ptr<openMVG::features::Image_describer> & image_describer ,
+                        bool & ok ) ;
+
+    bool m_overwrite_existing ;
+    std::shared_ptr<Project> m_project ;
+
+    std::atomic<int> m_nb_processed ;
 
     Q_OBJECT
 };
