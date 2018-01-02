@@ -21,6 +21,7 @@
 
 #include "openMVG/sfm/sfm_data.hpp"
 #include "openMVG/sfm/sfm_data_io.hpp"
+#include "openMVG/sfm/sfm_data_utils.hpp"
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
@@ -728,6 +729,11 @@ void Project::createProject( const std::string & base_path ,
   // Create default camera
   m_viewport_camera = std::make_shared<Camera>() ;
   m_scene_mgr->setCamera( m_viewport_camera ) ;
+
+  if( intrin_params.groupedModels() )
+  {
+    GroupSharedIntrinsics( *m_sfm_data );
+  }
 
   m_saved = false ;
 }

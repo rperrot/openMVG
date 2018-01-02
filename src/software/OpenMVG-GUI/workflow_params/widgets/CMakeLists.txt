@@ -1,7 +1,9 @@
 set( WORKFLOW_PARAMS_WIDGETS_HEADERS FeatureParamsDialog.hh 
+                                     IntrinsicSelectorParamsDialog.hh
                                      MatchingParamsDialog.hh 
                                      SfMParamsDialog.hh )
 set( WORKFLOW_PARAMS_WIDGETS_SOURCES FeatureParamsDialog.cc 
+                                     IntrinsicSelectorParamsDialog.cc
                                      MatchingParamsDialog.cc 
                                      SfMParamsDialog.cc )
 

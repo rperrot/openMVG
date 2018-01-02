@@ -129,6 +129,11 @@ class MainWindow : public QMainWindow
 
 
     /**
+     * @brief Action to be executed when user wants to change intrinsics for view
+     */
+    void onChangeIntrinsicsSettings( void ) ;
+
+    /**
     * @brief Action to be executed when user wants to change features computation settings
     */
     void onChangeFeatureSettings( void ) ;
@@ -435,6 +440,7 @@ class MainWindow : public QMainWindow
 
     /// Settings
     QMenu * m_settings_menu ;
+    QAction * m_setting_intrinsics_act ;
     QAction * m_setting_features_act ;
     QAction * m_setting_matches_act ;
     QAction * m_setting_sfm_act ;

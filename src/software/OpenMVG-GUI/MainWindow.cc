@@ -14,6 +14,7 @@
 #include "MaskDefinitionDialog.hh"
 #include "NewProjectDialog.hh"
 
+#include "workflow_params/widgets/IntrinsicSelectorParamsDialog.hh"
 #include "workflow_params/widgets/FeatureParamsDialog.hh"
 #include "workflow_params/widgets/MatchingParamsDialog.hh"
 #include "workflow_params/widgets/SfMParamsDialog.hh"
@@ -623,6 +624,23 @@ void MainWindow::onComputeColor( void )
 
   thread->start() ;
 }
+
+/**
+ * @brief Action to be executed when user wants to change intrinsics for view
+ */
+void MainWindow::onChangeIntrinsicsSettings( void )
+{
+  qInfo( "Change intrinsics " ) ;
+  IntrinsicSelectorParamsDialog dlg( this , m_project ) ;
+
+  int res = dlg.exec() ;
+  if( res == QDialog::Accepted )
+  {
+    // Get list of intrinsics
+    // Get list of intrinsics per views
+  }
+}
+
 
 /**
 * @brief Action to be executed when user wants to change features computation settings
@@ -1906,7 +1924,7 @@ void MainWindow::postFeaturesComputation( void )
     }
     // Add to the detail path
     if( infos.size() > 0 )
-    { 
+    {
       std::vector<std::string> feature_hierarchy = stlplus::folder_elements( feature_path );
       while( feature_hierarchy.size() > 3 )
       {
@@ -1915,7 +1933,7 @@ void MainWindow::postFeaturesComputation( void )
       m_detail_list->setFeaturesInfos( feature_hierarchy , infos ) ;
     }
 
-    // Update feature viewer 
+    // Update feature viewer
     m_feature_viewer_widget->setProject( m_project ) ;
   }
 
@@ -2107,6 +2125,7 @@ void MainWindow::updateInterface( void )
       m_export_to_clusters_MVE_act->setEnabled( false ) ;
       m_export_to_clusters_PMVS_act->setEnabled( false ) ;
 
+      m_setting_intrinsics_act->setEnabled( false ) ;
       m_setting_features_act->setEnabled( false );
       m_setting_matches_act->setEnabled( false ) ;
       m_setting_sfm_act->setEnabled( false ) ;
@@ -2138,6 +2157,7 @@ void MainWindow::updateInterface( void )
       m_export_to_clusters_MVE_act->setEnabled( false ) ;
       m_export_to_clusters_PMVS_act->setEnabled( false ) ;
 
+      m_setting_intrinsics_act->setEnabled( true ) ;
       m_setting_features_act->setEnabled( true );
       m_setting_matches_act->setEnabled( true ) ;
       m_setting_sfm_act->setEnabled( true ) ;
@@ -2169,6 +2189,7 @@ void MainWindow::updateInterface( void )
       m_export_to_clusters_MVE_act->setEnabled( false ) ;
       m_export_to_clusters_PMVS_act->setEnabled( false ) ;
 
+      m_setting_intrinsics_act->setEnabled( true ) ;
       m_setting_features_act->setEnabled( true );
       m_setting_matches_act->setEnabled( true ) ;
       m_setting_sfm_act->setEnabled( true ) ;
@@ -2201,6 +2222,7 @@ void MainWindow::updateInterface( void )
       m_export_to_clusters_MVE_act->setEnabled( false ) ;
       m_export_to_clusters_PMVS_act->setEnabled( false ) ;
 
+      m_setting_intrinsics_act->setEnabled( true ) ;
       m_setting_features_act->setEnabled( true );
       m_setting_matches_act->setEnabled( true ) ;
       m_setting_sfm_act->setEnabled( true ) ;
@@ -2232,6 +2254,7 @@ void MainWindow::updateInterface( void )
       m_export_to_clusters_MVE_act->setEnabled( false ) ;
       m_export_to_clusters_PMVS_act->setEnabled( false ) ;
 
+      m_setting_intrinsics_act->setEnabled( true ) ;
       m_setting_features_act->setEnabled( true );
       m_setting_matches_act->setEnabled( true ) ;
       m_setting_sfm_act->setEnabled( true ) ;
@@ -2263,6 +2286,7 @@ void MainWindow::updateInterface( void )
       m_export_to_clusters_MVE_act->setEnabled( false ) ;
       m_export_to_clusters_PMVS_act->setEnabled( false ) ;
 
+      m_setting_intrinsics_act->setEnabled( true ) ;
       m_setting_features_act->setEnabled( true );
       m_setting_matches_act->setEnabled( true ) ;
       m_setting_sfm_act->setEnabled( true ) ;
@@ -2294,6 +2318,7 @@ void MainWindow::updateInterface( void )
       m_export_to_clusters_MVE_act->setEnabled( true ) ;
       m_export_to_clusters_PMVS_act->setEnabled( true ) ;
 
+      m_setting_intrinsics_act->setEnabled( true ) ;
       m_setting_features_act->setEnabled( true );
       m_setting_matches_act->setEnabled( true ) ;
       m_setting_sfm_act->setEnabled( true ) ;
@@ -2386,6 +2411,7 @@ void MainWindow::buildMenus( void )
   m_export_to_clusters_PMVS_act = m_clustered_exports_menu->addAction( "clusters to PMVS" ) ;
 
   // Settings actions
+  m_setting_intrinsics_act = m_settings_menu->addAction( "Intrinsics" ) ;
   m_setting_features_act = m_settings_menu->addAction( "Features" ) ;
   m_setting_matches_act = m_settings_menu->addAction( "Matching" ) ;
   m_setting_sfm_act = m_settings_menu->addAction( "SfM" ) ;
@@ -2484,6 +2510,7 @@ void MainWindow::makeConnections( void )
   connect( m_export_to_clusters_MVE_act , SIGNAL( triggered() ) , this , SLOT( onExportClustersToMVE() ) ) ;
   connect( m_export_to_clusters_PMVS_act , SIGNAL( triggered() ) , this , SLOT( onExportClustersToPMVS() ) ) ;
 
+  connect( m_setting_intrinsics_act , SIGNAL( triggered() ) , this , SLOT( onChangeIntrinsicsSettings() ) ) ;
   connect( m_setting_features_act , SIGNAL( triggered() ) , this , SLOT( onChangeFeatureSettings() ) ) ;
   connect( m_setting_matches_act , SIGNAL( triggered() ) , this , SLOT( onChangeMatchesSettings() ) ) ;
   connect( m_setting_sfm_act , SIGNAL( triggered() ) , this , SLOT( onChangeSfMSettings() ) ) ;
