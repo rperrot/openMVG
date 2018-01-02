@@ -84,7 +84,7 @@ void WorkerMatchesComputation::process( void )
   m_map_PutativesMatches = std::make_shared<openMVG::matching::PairWiseMatches>();
 
   const auto start = std::chrono::high_resolution_clock::now();
-  matcher->Match( *sfm_data, m_regions_provider, pairs, *m_map_PutativesMatches, progressInterface );
+  matcher->Match( m_regions_provider, pairs, *m_map_PutativesMatches, progressInterface );
   const auto end                                  = std::chrono::high_resolution_clock::now();
   const std::chrono::duration<double> elapsed_sec = std::chrono::duration_cast<std::chrono::duration<double>>( end - start );
 
