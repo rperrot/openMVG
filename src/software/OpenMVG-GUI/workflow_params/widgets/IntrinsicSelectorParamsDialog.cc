@@ -1,3 +1,11 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
+
+// Copyright (c) 2018 Romuald PERROT.
+
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 #include "IntrinsicSelectorParamsDialog.hh"
 
 #include "Project.hh"
@@ -59,10 +67,10 @@ void IntrinsicSelectorParamsDialog::onReset( void )
 
 void IntrinsicSelectorParamsDialog::populateLists( std::shared_ptr<Project> proj )
 {
-  std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data = proj->SfMData() ;
+  const std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data = proj->SfMData() ;
 
   m_intrinsic_model->clear() ;
-  m_intrinsic_model->setHorizontalHeaderItem( 0 , new QStandardItem( "ID" ) ) ;
+  m_intrinsic_model->setHorizontalHeaderItem( 0 , new QStandardItem( "Intrinsic ID" ) ) ;
   m_intrinsic_model->setHorizontalHeaderItem( 1 , new QStandardItem( "Type" ) ) ;
   m_intrinsic_model->setHorizontalHeaderItem( 2 , new QStandardItem( "Width" ) ) ;
   m_intrinsic_model->setHorizontalHeaderItem( 3 , new QStandardItem( "Height" ) ) ;
@@ -72,7 +80,7 @@ void IntrinsicSelectorParamsDialog::populateLists( std::shared_ptr<Project> proj
   m_intrinsic_view->horizontalHeader()->setSectionResizeMode( QHeaderView::ResizeToContents );
 
   m_views_model->clear() ;
-  m_views_model->setHorizontalHeaderItem( 0 , new QStandardItem( "ID" ) ) ;
+  m_views_model->setHorizontalHeaderItem( 0 , new QStandardItem( "View ID" ) ) ;
   m_views_model->setHorizontalHeaderItem( 1 , new QStandardItem( "Name" ) ) ;
   m_views_model->setHorizontalHeaderItem( 2 , new QStandardItem( "Intrinsic ID" ) ) ;
   m_views_view->horizontalHeader()->setSectionResizeMode( QHeaderView::ResizeToContents );
@@ -98,27 +106,27 @@ void IntrinsicSelectorParamsDialog::populateLists( std::shared_ptr<Project> proj
     rowItems.append( new QStandardItem( QString( "%1" ).arg( real_id ) ) ) ;
 
     // 1 - Type
-    if( std::dynamic_pointer_cast<openMVG::cameras::Pinhole_Intrinsic_Radial_K1>( cur_intrin ) != nullptr )
+    if( std::dynamic_pointer_cast<openMVG::cameras::Pinhole_Intrinsic_Radial_K1>( cur_intrin ) )
     {
       rowItems.append( new QStandardItem( "Radial K1" ) ) ;
     }
-    else if( std::dynamic_pointer_cast<openMVG::cameras::Pinhole_Intrinsic_Radial_K3>( cur_intrin ) != nullptr )
+    else if( std::dynamic_pointer_cast<openMVG::cameras::Pinhole_Intrinsic_Radial_K3>( cur_intrin ) )
     {
       rowItems.append( new QStandardItem( "Radial K3" ) ) ;
     }
-    else if( std::dynamic_pointer_cast<openMVG::cameras::Pinhole_Intrinsic_Brown_T2>( cur_intrin ) != nullptr )
+    else if( std::dynamic_pointer_cast<openMVG::cameras::Pinhole_Intrinsic_Brown_T2>( cur_intrin ) )
     {
       rowItems.append( new QStandardItem( "Brown T2" ) ) ;
     }
-    else if( std::dynamic_pointer_cast<openMVG::cameras::Pinhole_Intrinsic_Fisheye>( cur_intrin ) != nullptr )
+    else if( std::dynamic_pointer_cast<openMVG::cameras::Pinhole_Intrinsic_Fisheye>( cur_intrin ) )
     {
       rowItems.append( new QStandardItem( "Fisheye" ) ) ;
     }
-    else if( std::dynamic_pointer_cast<openMVG::cameras::Pinhole_Intrinsic>( cur_intrin ) != nullptr )
+    else if( std::dynamic_pointer_cast<openMVG::cameras::Pinhole_Intrinsic>( cur_intrin ) )
     {
       rowItems.append( new QStandardItem( "Pinhole" ) ) ;
     }
-    else if( std::dynamic_pointer_cast<openMVG::cameras::Intrinsic_Spherical>( cur_intrin ) != nullptr )
+    else if( std::dynamic_pointer_cast<openMVG::cameras::Intrinsic_Spherical>( cur_intrin ) )
     {
       rowItems.append( new QStandardItem( "Spherical" ) ) ;
     }
