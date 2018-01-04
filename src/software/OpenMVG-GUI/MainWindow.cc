@@ -29,6 +29,8 @@
 #include "utils/PlyLoader.hh"
 
 #include "openMVG/sfm/sfm_data.hpp"
+#include "openMVG/sfm/sfm_data_io.hpp"
+
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include <QApplication>
@@ -636,8 +638,27 @@ void MainWindow::onChangeIntrinsicsSettings( void )
   int res = dlg.exec() ;
   if( res == QDialog::Accepted )
   {
-    // Get list of intrinsics
-    // Get list of intrinsics per views
+    std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data = m_project->SfMData() ;
+
+    // Replace intrinsics
+    sfm_data->intrinsics.clear() ;
+    for( auto it : dlg.intrinsics() )
+    {
+      sfm_data->intrinsics.insert( { it.first , it.second } ) ;
+    }
+    // Replace intrinsics reference in the views
+    for( auto it : dlg.indexes() )
+    {
+      sfm_data->views.at( it.first )->id_intrinsic = it.second ;
+    }
+
+    // Save the sfm_data.json
+    const std::string matchesPath = m_project->projectPaths().matchesPath();
+    if ( !Save( *sfm_data, stlplus::create_filespec( matchesPath, "sfm_data.json" ).c_str(),
+                openMVG::sfm::ESfM_Data( openMVG::sfm::ESfM_Data::VIEWS | openMVG::sfm::ESfM_Data::INTRINSICS ) ) )
+    {
+      std::cerr << "Error while saving sfm_data.json" << std::endl;
+    }
   }
 }
 
@@ -1988,11 +2009,14 @@ void MainWindow::postSfMComputation( void )
 
   // Remove old object in the project
   std::shared_ptr<SceneManager> mgr = m_project->sceneManager() ;
+  mgr->removePointClouds() ; 
+  /*
   std::shared_ptr<RenderableObject> sprs = m_project->sparsePointCloud() ;
   if( sprs )
   {
     mgr->removeObject( sprs ) ;
   }
+  */
 
   // Load sparse point cloud
   const std::string sparse = m_project->projectPaths().plyCloud( m_project->sfMMethod() ) ;
@@ -2004,7 +2028,7 @@ void MainWindow::postSfMComputation( void )
     LoadPly( sparse , pts , col ) ;
 
     // Add to the scene, to the project and to the result view
-    sprs = std::make_shared<PointCloud>( m_result_view->pointShader() , pts , col ) ;
+    std::shared_ptr<RenderableObject> sprs = std::make_shared<PointCloud>( m_result_view->pointShader() , pts , col ) ;
     mgr->addObject( sprs ) ;
     m_project->setSparsePointCloud( sprs ) ;
   }
@@ -2042,11 +2066,14 @@ void MainWindow::postColorComputation( void )
 {
   // Remove old object
   std::shared_ptr<SceneManager> mgr = m_project->sceneManager() ;
+  mgr->removePointClouds() ; 
+  /*
   std::shared_ptr<RenderableObject> sprs = m_project->sparsePointCloud() ;
   if( sprs )
   {
     mgr->removeObject( sprs ) ;
   }
+  */
   // Load the colorized one
   const std::string colorized = m_project->projectPaths().colorizedPlyCloud( m_project->sfMMethod() ) ;
   if( stlplus::file_exists( colorized ) )
@@ -2056,7 +2083,7 @@ void MainWindow::postColorComputation( void )
     std::vector< openMVG::Vec3 > col ;
     LoadPly( colorized , pts , col ) ;
 
-    sprs = std::make_shared<PointCloud>( m_result_view->pointShader() , pts , col ) ;
+    std::shared_ptr<RenderableObject> sprs = std::make_shared<PointCloud>( m_result_view->pointShader() , pts , col ) ;
     mgr->addObject( sprs ) ;
     m_project->setSparsePointCloud( sprs ) ;
     m_result_view->prepareObjects() ;

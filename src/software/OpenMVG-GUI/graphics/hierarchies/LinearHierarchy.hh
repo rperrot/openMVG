@@ -38,6 +38,16 @@ class LinearHierarchy : public SceneHierarchy
     void removeObject( std::shared_ptr<RenderableObject> obj ) override ;
 
     /**
+     * @brief remove all objects that are point clouds
+     */
+    void removePointClouds() override ; 
+
+    /**
+     * @brief Clear the scene
+     */
+    void clear( void ) override ;
+
+    /**
     * @brief Build internal structure
     */
     void prepare( void ) override ;

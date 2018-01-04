@@ -43,6 +43,16 @@ class SceneManager : public std::enable_shared_from_this<SceneManager>
     void removeObject( std::shared_ptr<RenderableObject> obj ) ;
 
     /**
+     * @brief Remove point clouds
+     */
+    void removePointClouds( void ) ; 
+
+    /**
+     * @brief Clear all scene
+     */
+    void clear( void ) ;
+
+    /**
     * @brief Get camera
     * @return current camera
     */

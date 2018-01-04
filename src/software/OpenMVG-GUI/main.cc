@@ -12,6 +12,7 @@
 
 #include <QApplication>
 #include <QFontDatabase>
+#include <QLocale>
 
 #include <clocale>
 #include <string>
@@ -30,6 +31,9 @@ int main( int argc , char ** argv )
   QApplication app( argc , argv ) ;
   setlocale( LC_ALL, "C" ) ;
   setlocale( LC_NUMERIC, "C" ) ;
+
+  QLocale locale( QLocale::C ) ; 
+  QLocale::setDefault( locale ) ; 
 
   qRegisterMetaType<openMVG_gui::WorkerNextAction>( "WorkerNextAction" );
   qRegisterMetaType<std::string>( "std::string" ) ;

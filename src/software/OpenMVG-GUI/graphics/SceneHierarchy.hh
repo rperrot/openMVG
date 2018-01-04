@@ -42,6 +42,16 @@ class SceneHierarchy
     virtual void removeObject( std::shared_ptr<RenderableObject> obj ) = 0 ;
 
     /**
+     * @brief remove all objects that are point clouds
+     */
+    virtual void removePointClouds() = 0 ;
+
+    /**
+     * @brief Clear the scene
+     */
+    virtual void clear( void ) = 0 ;
+
+    /**
     * @brief Build internal structure
     */
     virtual void prepare( void ) = 0 ;

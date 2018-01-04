@@ -39,6 +39,23 @@ void SceneManager::removeObject( std::shared_ptr<RenderableObject> obj )
   m_hierarchy->removeObject( obj ) ;
 }
 
+/**
+ * @brief Remove point clouds
+ */
+void SceneManager::removePointClouds( void )
+{
+  m_hierarchy->removePointClouds() ;
+}
+
+/**
+ * @brief Clear all scene
+ */
+void SceneManager::clear( void )
+{
+  m_hierarchy->clear() ;
+}
+
+
 
 /**
 * @brief Get camera

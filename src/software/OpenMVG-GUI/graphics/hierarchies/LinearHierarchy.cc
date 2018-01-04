@@ -11,6 +11,8 @@
 #include "SceneManager.hh"
 #include "ShaderProgram.hh"
 
+#include "objects/PointCloud.hh"
+
 namespace openMVG_gui
 {
 
@@ -31,7 +33,7 @@ void LinearHierarchy::removeObject( std::shared_ptr<RenderableObject> obj )
   auto it = m_objects.begin() ;
   while( it != m_objects.end() )
   {
-    if( *it == obj )
+    if( it->get() == obj.get() )
     {
       it = m_objects.erase( it ) ;
     }
@@ -40,6 +42,34 @@ void LinearHierarchy::removeObject( std::shared_ptr<RenderableObject> obj )
       ++it ;
     }
   }
+}
+
+/**
+ * @brief remove all objects that are point clouds
+ */
+void LinearHierarchy::removePointClouds()
+{
+  auto it = m_objects.begin() ;
+  while( it != m_objects.end() )
+  {
+    if( std::dynamic_pointer_cast<PointCloud>( *it ) )
+    {
+      it = m_objects.erase( it ) ;
+    }
+    else
+    {
+      ++it ;
+    }
+  }
+}
+
+
+/**
+ * @brief Clear the scene
+ */
+void LinearHierarchy::clear( void )
+{
+  m_objects.clear() ;
 }
 
 /**
