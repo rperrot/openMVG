@@ -224,9 +224,20 @@ void MainWindow::onOpenProject( void )
     {
       mgr->removeCameraGizmos() ;
       std::map<int, std::shared_ptr<RenderableObject>> cam_gizmos ;
+
+      // Get all spherical cameras
+      std::map<int, bool> map_is_spherical ;
+      for( auto & cur_view : sfm->GetViews() )
+      {
+        const auto & cur_intrin = sfm->GetIntrinsics().at( cur_view.second->id_intrinsic ) ;
+        const bool is_spherical = std::dynamic_pointer_cast<openMVG::cameras::Intrinsic_Spherical>( cur_intrin ) != nullptr ;
+        map_is_spherical.insert( { cur_view.second->id_pose , is_spherical } );
+      }
+
       for( auto & cur_pose : sfm->GetPoses() )
       {
-        cam_gizmos[ cur_pose.first ] = std::make_shared<CameraGizmo>( m_result_view->pointShader() , cur_pose.second , 0.1 ) ;
+        const bool is_spherical = map_is_spherical[ cur_pose.first ] ;
+        cam_gizmos[ cur_pose.first ] = std::make_shared<CameraGizmo>( m_result_view->pointShader() , cur_pose.second , is_spherical ,  0.1 ) ;
       }
       mgr->setCameraGizmos( cam_gizmos ) ;
     }
@@ -263,9 +274,20 @@ void MainWindow::onOpenProject( void )
     {
       mgr->removeCameraGizmos() ;
       std::map<int, std::shared_ptr<RenderableObject>> cam_gizmos ;
+
+      // Get all spherical cameras
+      std::map<int, bool> map_is_spherical ;
+      for( auto & cur_view : sfm->GetViews() )
+      {
+        const auto & cur_intrin = sfm->GetIntrinsics().at( cur_view.second->id_intrinsic ) ;
+        const bool is_spherical = std::dynamic_pointer_cast<openMVG::cameras::Intrinsic_Spherical>( cur_intrin ) != nullptr ;
+        map_is_spherical.insert( { cur_view.second->id_pose , is_spherical } );
+      }
+
       for( auto & cur_pose : sfm->GetPoses() )
       {
-        cam_gizmos[ cur_pose.first ] = std::make_shared<CameraGizmo>( m_result_view->pointShader() , cur_pose.second , 0.1 ) ;
+        const bool is_spherical = map_is_spherical[ cur_pose.first ] ;
+        cam_gizmos[ cur_pose.first ] = std::make_shared<CameraGizmo>( m_result_view->pointShader() , cur_pose.second , is_spherical , 0.1 ) ;
       }
       mgr->setCameraGizmos( cam_gizmos ) ;
     }
@@ -314,9 +336,20 @@ void MainWindow::onOpenProject( void )
     {
       mgr->removeCameraGizmos() ;
       std::map<int, std::shared_ptr<RenderableObject>> cam_gizmos ;
+
+      // Get all spherical cameras
+      std::map<int, bool> map_is_spherical ;
+      for( auto & cur_view : sfm->GetViews() )
+      {
+        const auto & cur_intrin = sfm->GetIntrinsics().at( cur_view.second->id_intrinsic ) ;
+        const bool is_spherical = std::dynamic_pointer_cast<openMVG::cameras::Intrinsic_Spherical>( cur_intrin ) != nullptr ;
+        map_is_spherical.insert( { cur_view.second->id_pose , is_spherical } );
+      }
+
       for( auto & cur_pose : sfm->GetPoses() )
       {
-        cam_gizmos[ cur_pose.first ] = std::make_shared<CameraGizmo>( m_result_view->pointShader() , cur_pose.second , 0.1 ) ;
+        const bool is_spherical = map_is_spherical[ cur_pose.first ] ;
+        cam_gizmos[ cur_pose.first ] = std::make_shared<CameraGizmo>( m_result_view->pointShader() , cur_pose.second , is_spherical , 0.1 ) ;
       }
       mgr->setCameraGizmos( cam_gizmos ) ;
     }
@@ -2009,7 +2042,7 @@ void MainWindow::postSfMComputation( void )
 
   // Remove old object in the project
   std::shared_ptr<SceneManager> mgr = m_project->sceneManager() ;
-  mgr->removePointClouds() ; 
+  mgr->removePointClouds() ;
   /*
   std::shared_ptr<RenderableObject> sprs = m_project->sparsePointCloud() ;
   if( sprs )
@@ -2039,9 +2072,20 @@ void MainWindow::postSfMComputation( void )
   {
     mgr->removeCameraGizmos() ;
     std::map<int, std::shared_ptr<RenderableObject>> cam_gizmos ;
+
+    // Get all spherical cameras
+    std::map<int, bool> map_is_spherical ;
+    for( auto & cur_view : sfm->GetViews() )
+    {
+      const auto & cur_intrin = sfm->GetIntrinsics().at( cur_view.second->id_intrinsic ) ;
+      const bool is_spherical = std::dynamic_pointer_cast<openMVG::cameras::Intrinsic_Spherical>( cur_intrin ) != nullptr ;
+      map_is_spherical.insert( { cur_view.second->id_pose , is_spherical } );
+    }
+
     for( auto & cur_pose : sfm->GetPoses() )
     {
-      cam_gizmos[ cur_pose.first ] = std::make_shared<CameraGizmo>( m_result_view->pointShader() , cur_pose.second , 0.1 ) ;
+      const bool is_spherical = map_is_spherical[ cur_pose.first ] ;
+      cam_gizmos[ cur_pose.first ] = std::make_shared<CameraGizmo>( m_result_view->pointShader() , cur_pose.second , is_spherical , 0.1 ) ;
     }
     mgr->setCameraGizmos( cam_gizmos ) ;
   }
@@ -2066,7 +2110,7 @@ void MainWindow::postColorComputation( void )
 {
   // Remove old object
   std::shared_ptr<SceneManager> mgr = m_project->sceneManager() ;
-  mgr->removePointClouds() ; 
+  mgr->removePointClouds() ;
   /*
   std::shared_ptr<RenderableObject> sprs = m_project->sparsePointCloud() ;
   if( sprs )

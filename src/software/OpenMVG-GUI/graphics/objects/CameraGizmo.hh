@@ -33,6 +33,7 @@ class CameraGizmo : public RenderableObject , public SelectableObject
     */
     CameraGizmo( std::shared_ptr<ShaderProgram> shad ,
                  const openMVG::geometry::Pose3 & pose ,
+                 const bool is_spherical = true ,
                  const double size = 1.0 ) ;
 
     /**
@@ -79,6 +80,7 @@ class CameraGizmo : public RenderableObject , public SelectableObject
 
     openMVG::geometry::Pose3 m_pose ;
     double m_size ;
+    bool m_is_spherical ;
 
     // OpenGL
     GLsizei m_nb_vert ;
