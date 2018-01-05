@@ -31,8 +31,8 @@ class IntrinsicSelectorParamsDialog : public QDialog
   public:
 
     /**
-     * @brief Constructor 
-     * @param parent widget 
+     * @brief Constructor
+     * @param parent widget
      * @param proj project in which intrinsics are found (then edited)
      */
     IntrinsicSelectorParamsDialog( QWidget * parent , std::shared_ptr<Project> proj ) ;
@@ -120,6 +120,50 @@ class IntrinsicSelectorParamsDialog : public QDialog
      */
     void onAssignIntrinsicForView( const openMVG::IndexT view_id , const openMVG::IndexT intrinsic_id ) ;
 
+    /**
+     * @brief action to be executed when selection changed on the intrinsic table view
+     */
+    void onHasChangedIntrinsicSeletion( void ) ;
+
+    /**
+     * @brief action to be executed when selection changed on the views table view
+     */
+    void onHasChangedViewsSelection( void ) ;
+
+    /**
+     * @brief Action to be executed when user click the intrinsic/delete
+     */
+    void onHasClickedIntrinsicDelete( void ) ;
+
+    /**
+     * @brief Action to be executed when user click the intrinsic/edit
+     */
+    void onHasClickedIntrinsicEdit( void ) ;
+
+    /**
+     * @brief Action to be executed when user click the intrinsic/assign to compatible
+     */
+    void onHasClickedIntrinsicAssignToCompatible( void ) ;
+
+    /**
+     * @brief Action to be executed when user click the intrinsic/assign to undefined
+     */
+    void onHasClickedIntrinsicAssignToUndefined( void ) ;
+
+    /**
+     * @brief Action to be executed when user click the views/create
+     */
+    void onHasClickedViewsCreate( void ) ;
+
+    /**
+     * @brief Action to be executed when user click the view/delete
+     */
+    void onHasClickedViewsDelete( void ) ;
+
+    /**
+     * @brief Action to be executed when user click the view/assign
+     */
+    void onHasClickedViewsAssign( void ) ;
 
   private:
 
@@ -148,6 +192,17 @@ class IntrinsicSelectorParamsDialog : public QDialog
     // View about each view and their associated intrinsics
     QTableView * m_views_view ;
     QStandardItemModel * m_views_model ;
+
+    // Btns on intrinsics
+    QPushButton * m_delete_current_intrinsic_btn ;
+    QPushButton * m_edit_current_intrinsic_btn ;
+    QPushButton * m_assign_current_intrinsic_to_compatible_views_btn ;
+    QPushButton * m_assign_current_intrinsic_to_undefined_views_btn ;
+
+    // Btns on views
+    QPushButton * m_create_for_view_btn ;
+    QPushButton * m_delete_reference_for_view_btn ;
+    QPushButton * m_set_intrinsic_for_view_btn ;
 
     QPushButton * m_ok_btn ;
     QPushButton * m_cancel_btn ;

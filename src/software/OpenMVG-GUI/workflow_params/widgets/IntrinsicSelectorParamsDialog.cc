@@ -302,6 +302,197 @@ void IntrinsicSelectorParamsDialog::onAssignIntrinsicForView( const openMVG::Ind
 }
 
 /**
+ * @brief action to be executed when selection changed on the intrinsic table view
+ */
+void IntrinsicSelectorParamsDialog::onHasChangedIntrinsicSeletion( void )
+{
+  // Enable/Disable buttons depending on selection
+  QItemSelectionModel *selected_views = m_views_view->selectionModel() ;
+  QItemSelectionModel *selected_intrinsics = m_intrinsic_view->selectionModel() ;
+
+  const int nb_intrin_selected = selected_intrinsics->selectedRows().size() ;
+  const int nb_views_selected = selected_views->selectedRows().size() ;
+
+  const bool views_btn_enabled = selected_views->hasSelection() ;
+  const bool intrinsics_btn_enabled = selected_intrinsics->hasSelection() ;
+
+  m_delete_current_intrinsic_btn->setEnabled( intrinsics_btn_enabled ) ;
+  if( nb_intrin_selected == 1 )
+  {
+    m_edit_current_intrinsic_btn->setEnabled( intrinsics_btn_enabled ) ;
+    m_assign_current_intrinsic_to_compatible_views_btn->setEnabled( intrinsics_btn_enabled ) ;
+    m_assign_current_intrinsic_to_undefined_views_btn->setEnabled( intrinsics_btn_enabled ) ;
+  }
+  else
+  {
+    m_edit_current_intrinsic_btn->setEnabled( false ) ;
+    m_assign_current_intrinsic_to_compatible_views_btn->setEnabled( false ) ;
+    m_assign_current_intrinsic_to_undefined_views_btn->setEnabled( false ) ;
+  }
+
+  if( ! intrinsics_btn_enabled )
+  {
+    m_set_intrinsic_for_view_btn->setEnabled( false ) ;
+  }
+  else if( views_btn_enabled )
+  {
+    if( nb_intrin_selected == 1 )
+    {
+      m_set_intrinsic_for_view_btn->setEnabled( true ) ;
+    }
+    else
+    {
+      m_set_intrinsic_for_view_btn->setEnabled( false ) ;
+    }
+  }
+}
+
+/**
+ * @brief action to be executed when selection changed on the views table view
+ */
+void IntrinsicSelectorParamsDialog::onHasChangedViewsSelection( void )
+{
+  // Enable/Disable buttons depending on selection
+  QItemSelectionModel *selected_views = m_views_view->selectionModel() ;
+  QItemSelectionModel *selected_intrinsics = m_intrinsic_view->selectionModel() ;
+
+  const bool views_btn_enabled = selected_views->hasSelection() ;
+  const bool intrinsics_btn_enabled = selected_intrinsics->hasSelection() ;
+
+  m_create_for_view_btn->setEnabled( views_btn_enabled ) ;
+  m_delete_reference_for_view_btn->setEnabled( views_btn_enabled ) ;
+
+  if( intrinsics_btn_enabled )
+  {
+    m_set_intrinsic_for_view_btn->setEnabled( views_btn_enabled ) ;
+  }
+  else
+  {
+    m_set_intrinsic_for_view_btn->setEnabled( false ) ;
+  }
+
+}
+
+/**
+ * @brief Action to be executed when user click the intrinsic/delete
+ */
+void IntrinsicSelectorParamsDialog::onHasClickedIntrinsicDelete( void )
+{
+  QItemSelectionModel *selected_intrinsics = m_intrinsic_view->selectionModel() ;
+  QList<QModelIndex> selected_rows = selected_intrinsics->selectedRows() ;
+
+  for( int i = 0 ; i < selected_rows.size() ; ++i )
+  {
+    // Get ID of the intrinsic
+    QStandardItem * itemAtPosition = ( ( QStandardItemModel* ) m_intrinsic_view->model() ) ->item( selected_rows[ i ].row() , 0 ) ;
+    openMVG::IndexT intrinsic_id = itemAtPosition->text().toInt() ;
+
+    // Delete it !
+    onDeleteIntrinsic( intrinsic_id ) ;
+  }
+}
+
+/**
+ * @brief Action to be executed when user click the intrinsic/edit
+ */
+void IntrinsicSelectorParamsDialog::onHasClickedIntrinsicEdit( void )
+{
+  QItemSelectionModel *selected_intrinsics = m_intrinsic_view->selectionModel() ;
+  QList<QModelIndex> selected_rows = selected_intrinsics->selectedRows() ;
+
+  QStandardItem * itemAtPosition = ( ( QStandardItemModel* ) m_intrinsic_view->model() ) ->item( selected_rows[ 0 ].row() , 0 ) ;
+  openMVG::IndexT intrinsic_id = itemAtPosition->text().toInt() ;
+
+  onEditIntrinsic( intrinsic_id ) ;
+}
+
+/**
+ * @brief Action to be executed when user click the intrinsic/assign to compatible
+ */
+void IntrinsicSelectorParamsDialog::onHasClickedIntrinsicAssignToCompatible( void )
+{
+  QItemSelectionModel *selected_intrinsics = m_intrinsic_view->selectionModel() ;
+  QList<QModelIndex> selected_rows = selected_intrinsics->selectedRows() ;
+
+  QStandardItem * itemAtPosition = ( ( QStandardItemModel* ) m_intrinsic_view->model() ) ->item( selected_rows[ 0 ].row() , 0 ) ;
+  openMVG::IndexT intrinsic_id = itemAtPosition->text().toInt() ;
+
+  onAssignIntrinsicToCompatibleViews( intrinsic_id ) ;
+}
+
+/**
+ * @brief Action to be executed when user click the intrinsic/assign to undefined
+ */
+void IntrinsicSelectorParamsDialog::onHasClickedIntrinsicAssignToUndefined( void )
+{
+  QItemSelectionModel *selected_intrinsics = m_intrinsic_view->selectionModel() ;
+  QList<QModelIndex> selected_rows = selected_intrinsics->selectedRows() ;
+
+  QStandardItem * itemAtPosition = ( ( QStandardItemModel* ) m_intrinsic_view->model() ) ->item( selected_rows[ 0 ].row() , 0 ) ;
+  openMVG::IndexT intrinsic_id = itemAtPosition->text().toInt() ;
+
+  onAssignIntrinsicToCompatibleUndefinedViews( intrinsic_id ) ;
+}
+
+/**
+ * @brief Action to be executed when user click the views/create
+ */
+void IntrinsicSelectorParamsDialog::onHasClickedViewsCreate( void )
+{
+  QItemSelectionModel *selected_views = m_views_view->selectionModel() ;
+  QList<QModelIndex> selected_rows = selected_views->selectedRows() ;
+
+  for( int i = 0 ; i < selected_rows.size() ; ++i )
+  {
+    QStandardItem * itemAtPosition = ( ( QStandardItemModel* ) m_views_view->model() ) ->item( selected_rows[ i ].row() , 0 ) ;
+    openMVG::IndexT view_id = itemAtPosition->text().toInt() ;
+
+    onCreateIntrinsicForView( view_id ) ;
+  }
+}
+
+/**
+ * @brief Action to be executed when user click the view/delete
+ */
+void IntrinsicSelectorParamsDialog::onHasClickedViewsDelete( void )
+{
+  QItemSelectionModel *selected_views = m_views_view->selectionModel() ;
+  QList<QModelIndex> selected_rows = selected_views->selectedRows() ;
+
+  for( int i = 0 ; i < selected_rows.size() ; ++i )
+  {
+    QStandardItem * itemAtPosition = ( ( QStandardItemModel* ) m_views_view->model() ) ->item( selected_rows[ i ].row() , 0 ) ;
+    openMVG::IndexT view_id = itemAtPosition->text().toInt() ;
+
+    onDeleteIntrinsicForView( view_id ) ;
+  }
+}
+
+/**
+ * @brief Action to be executed when user click the view/assign
+ */
+void IntrinsicSelectorParamsDialog::onHasClickedViewsAssign( void )
+{
+  QItemSelectionModel *selected_views = m_views_view->selectionModel() ;
+  QList<QModelIndex> selected_views_rows = selected_views->selectedRows() ;
+
+  QItemSelectionModel *selected_intrinsics = m_intrinsic_view->selectionModel() ;
+  QList<QModelIndex> selected_intrinsics_rows = selected_intrinsics->selectedRows() ;
+
+  QStandardItem * itemAtPosition = ( ( QStandardItemModel* ) m_intrinsic_view->model() ) ->item( selected_intrinsics_rows[ 0 ].row() , 0 ) ;
+  openMVG::IndexT intrinsic_id = itemAtPosition->text().toInt() ;
+
+  for( int i = 0 ; i < selected_views_rows.size() ; ++i )
+  {
+    QStandardItem * itemAtPosition = ( ( QStandardItemModel* ) m_views_view->model() ) ->item( selected_views_rows[ i ].row() , 0 ) ;
+    openMVG::IndexT view_id = itemAtPosition->text().toInt() ;
+
+    onAssignIntrinsicForView( view_id , intrinsic_id ) ;
+  }
+}
+
+
+/**
  * @brief Given a project, fill all values inside internal data
  */
 void IntrinsicSelectorParamsDialog::populateLists( std::shared_ptr<Project> proj )
@@ -468,6 +659,22 @@ void IntrinsicSelectorParamsDialog::updateTableViews( void )
 
     m_views_model->appendRow( rowItems ) ;
   }
+
+  // Enable/Disable buttons depending on selection
+  QItemSelectionModel *selected_intrinsics = m_intrinsic_view->selectionModel() ;
+  QItemSelectionModel *selected_views = m_views_view->selectionModel() ;
+
+  const bool intrinsics_btn_enabled = selected_intrinsics->hasSelection() ;
+  const bool views_btn_enabled = selected_views->hasSelection() ;
+
+  m_delete_current_intrinsic_btn->setEnabled( intrinsics_btn_enabled ) ;
+  m_edit_current_intrinsic_btn->setEnabled( intrinsics_btn_enabled ) ;
+  m_assign_current_intrinsic_to_compatible_views_btn->setEnabled( intrinsics_btn_enabled ) ;
+  m_assign_current_intrinsic_to_undefined_views_btn->setEnabled( intrinsics_btn_enabled ) ;
+
+  m_create_for_view_btn->setEnabled( views_btn_enabled ) ;
+  m_delete_reference_for_view_btn->setEnabled( views_btn_enabled ) ;
+  m_set_intrinsic_for_view_btn->setEnabled( views_btn_enabled ) ;
 }
 
 /**
@@ -485,8 +692,22 @@ void IntrinsicSelectorParamsDialog::buildInterface( void )
   m_intrinsic_view->setContextMenuPolicy( Qt::CustomContextMenu );
   m_intrinsic_view->setSelectionBehavior( QAbstractItemView::SelectRows );
 
+
+  m_delete_current_intrinsic_btn = new QPushButton( "Delete" ) ;
+  m_edit_current_intrinsic_btn = new QPushButton( "Edit" ) ;
+  m_assign_current_intrinsic_to_compatible_views_btn = new QPushButton( "Assign to compatible views" ) ;
+  m_assign_current_intrinsic_to_undefined_views_btn = new QPushButton( "Assign to undefined views" ) ;
+
+  QHBoxLayout * btnIntrinsics = new QHBoxLayout ;
+  btnIntrinsics->addWidget( m_delete_current_intrinsic_btn ) ;
+  btnIntrinsics->addWidget( m_edit_current_intrinsic_btn ) ;
+  btnIntrinsics->addWidget( m_assign_current_intrinsic_to_compatible_views_btn ) ;
+  btnIntrinsics->addWidget( m_assign_current_intrinsic_to_undefined_views_btn ) ;
+
   intrinsicBoxLayout->addWidget( m_intrinsic_view ) ;
+  intrinsicBoxLayout->addLayout( btnIntrinsics ) ;
   intrinsicsBox->setLayout( intrinsicBoxLayout ) ;
+
 
   // Views
   QGroupBox * cameraBox = new QGroupBox( "Views" ) ;
@@ -498,7 +719,18 @@ void IntrinsicSelectorParamsDialog::buildInterface( void )
   m_views_view->setContextMenuPolicy( Qt::CustomContextMenu );
   m_views_view->setSelectionBehavior( QAbstractItemView::SelectRows );
 
+  QHBoxLayout * btnViews = new QHBoxLayout ;
+
+  m_create_for_view_btn = new QPushButton( "New" );
+  m_delete_reference_for_view_btn = new QPushButton( "Delete" ) ;
+  m_set_intrinsic_for_view_btn = new QPushButton( "Set intrinsic ID" ) ;
+
+  btnViews->addWidget( m_create_for_view_btn );
+  btnViews->addWidget( m_delete_reference_for_view_btn ) ;
+  btnViews->addWidget( m_set_intrinsic_for_view_btn ) ;
+
   cameraBoxLayout->addWidget( m_views_view ) ;
+  cameraBoxLayout->addLayout( btnViews ) ;
   cameraBox->setLayout( cameraBoxLayout ) ;
 
   // Btns
@@ -539,6 +771,17 @@ void IntrinsicSelectorParamsDialog::makeConnections( void )
 
   connect( m_intrinsic_view , SIGNAL( customContextMenuRequested( const QPoint & ) ) , this , SLOT( onRightClickIntrinsics( const QPoint & ) ) );
   connect( m_views_view , SIGNAL( customContextMenuRequested( const QPoint & ) ) , this , SLOT( onRightClickViews( const QPoint & ) ) ) ;
+
+  connect( m_intrinsic_view->selectionModel() , SIGNAL( selectionChanged( const QItemSelection &, const QItemSelection & ) ) , this , SLOT( onHasChangedIntrinsicSeletion() ) ) ;
+  connect( m_views_view->selectionModel() , SIGNAL( selectionChanged( const QItemSelection &, const QItemSelection & ) ) , this , SLOT( onHasChangedViewsSelection() ) ) ;
+
+  connect( m_delete_current_intrinsic_btn , SIGNAL( clicked() ) , this , SLOT( onHasClickedIntrinsicDelete() ) ) ;
+  connect( m_edit_current_intrinsic_btn , SIGNAL( clicked() ) , this , SLOT( onHasClickedIntrinsicEdit() ) ) ;
+  connect( m_assign_current_intrinsic_to_compatible_views_btn , SIGNAL( clicked() ) , this , SLOT( onHasClickedIntrinsicAssignToCompatible() ) );
+  connect( m_assign_current_intrinsic_to_undefined_views_btn , SIGNAL( clicked() ) , this , SLOT( onHasClickedIntrinsicAssignToUndefined() ) ) ;
+  connect( m_create_for_view_btn , SIGNAL( clicked() ) , this , SLOT( onHasClickedViewsCreate() ) ) ;
+  connect( m_delete_reference_for_view_btn , SIGNAL( clicked() ) , this , SLOT( onHasClickedViewsDelete() ) );
+  connect( m_set_intrinsic_for_view_btn , SIGNAL( clicked() ) , this , SLOT( onHasClickedViewsAssign() ) ) ;
 }
 
 
