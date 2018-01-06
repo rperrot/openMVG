@@ -255,7 +255,7 @@ std::string ProjectPaths::reconstructionSequentialPath( void ) const
 std::string ProjectPaths::htmlReportPath( const SfMMethod & method ) const
 {
   const std::string sfm_path = sfmReconstructionPath( method ) ;
-  return stlplus::create_filespec( sfm_path , "Reconstruction_Report.html" ) ;
+  return stlplus::create_filespec( sfm_path , "SfMReconstruction_Report.html" ) ;
 }
 
 /**

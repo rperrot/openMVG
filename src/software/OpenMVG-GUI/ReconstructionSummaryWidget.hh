@@ -36,6 +36,14 @@ class ReconstructionSummaryWidget : public QWidget
     void setPath( const std::string & path ) ;
 
 
+  signals:
+
+    void hasBeenClosed( void ) ;
+
+  protected:
+
+    void closeEvent( QCloseEvent * event ) override ;
+
 
   private slots:
 

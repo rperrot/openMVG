@@ -55,6 +55,12 @@ void ReconstructionSummaryWidget::buildInterface( void )
   setLayout( layout ) ;
 }
 
+void ReconstructionSummaryWidget::closeEvent( QCloseEvent * event )
+{
+  emit hasBeenClosed() ;
+}
+
+
 void ReconstructionSummaryWidget::hasLoadedURL( bool ok )
 {
   if( ! ok )

@@ -614,6 +614,11 @@ void IntrinsicSelectorParamsDialog::updateTableViews( void )
       rowItems.append( new QStandardItem( "-" ) ) ;
     }
 
+    // Disable manual edition
+    for( int id_item = 0 ; id_item < rowItems.size() ; ++id_item )
+    {
+      rowItems[id_item]->setEditable( false ) ;
+    }
 
     m_intrinsic_model->appendRow( rowItems ) ;
   }
@@ -656,6 +661,13 @@ void IntrinsicSelectorParamsDialog::updateTableViews( void )
     {
       rowItems.append( new QStandardItem( QString( "Undefined" ) ) ) ;
     }
+
+    // Disable manual edition
+    for( int id_item = 0 ; id_item < rowItems.size() ; ++id_item )
+    {
+      rowItems[id_item]->setEditable( false ) ;
+    }
+
 
     m_views_model->appendRow( rowItems ) ;
   }

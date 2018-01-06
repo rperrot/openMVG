@@ -31,6 +31,11 @@ ConsoleWidget::ConsoleWidget( QWidget * parent )
   m_handler_cerr = std::make_shared<StdStreamHandlers>( std::cerr , m_text_element ) ;
 }
 
+void ConsoleWidget::closeEvent( QCloseEvent * event )
+{
+  emit hasBeenClosed() ;
+}
+
 /**
  * @brief Build interface
  */

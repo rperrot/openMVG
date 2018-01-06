@@ -360,13 +360,13 @@ void CameraGizmo::prepare( void )
         const double theta_current = id_theta * 2.0 * pi / nb_theta_segment ; // [ 0 ; 2pi ]
         const double theta_next    = ( ( id_theta + 1 ) % nb_theta_segment ) * 2.0 * pi / nb_theta_segment ;
 
-        const double x1 = std::sin( phi ) * std::cos( theta_current ) ;
-        const double y1 = std::sin( phi ) * std::sin( theta_current ) ;
-        const double z1 = std::cos( phi ) ;
+        const double x1 = 0.5 * std::sin( phi ) * std::cos( theta_current ) ;
+        const double y1 = 0.5 * std::sin( phi ) * std::sin( theta_current ) ;
+        const double z1 = 0.5 * std::cos( phi ) ;
 
-        const double x2 = std::sin( phi ) * std::cos( theta_next ) ;
-        const double y2 = std::sin( phi ) * std::sin( theta_next ) ;
-        const double z2 = std::cos( phi ) ;
+        const double x2 = 0.5 * std::sin( phi ) * std::cos( theta_next ) ;
+        const double y2 = 0.5 * std::sin( phi ) * std::sin( theta_next ) ;
+        const double z2 = 0.5 * std::cos( phi ) ;
 
         data[ 6 * cur_vert     ] = x1 ;
         data[ 6 * cur_vert + 1 ] = z1 ;
@@ -395,13 +395,13 @@ void CameraGizmo::prepare( void )
         const double phi_current = id_phi * pi / nb_phi_segment ; // [ 0 ; pi ]
         const double phi_next = ( id_phi + 1 ) * pi / nb_phi_segment ; // [ 0 ; pi ]
 
-        const double x1 = std::sin( phi_current ) * std::cos( theta ) ;
-        const double y1 = std::sin( phi_current ) * std::sin( theta ) ;
-        const double z1 = std::cos( phi_current ) ;
+        const double x1 = 0.5 * std::sin( phi_current ) * std::cos( theta ) ;
+        const double y1 = 0.5 * std::sin( phi_current ) * std::sin( theta ) ;
+        const double z1 = 0.5 * std::cos( phi_current ) ;
 
-        const double x2 = std::sin( phi_next ) * std::cos( theta ) ;
-        const double y2 = std::sin( phi_next ) * std::sin( theta ) ;
-        const double z2 = std::cos( phi_next ) ;
+        const double x2 = 0.5 * std::sin( phi_next ) * std::cos( theta ) ;
+        const double y2 = 0.5 * std::sin( phi_next ) * std::sin( theta ) ;
+        const double z2 = 0.5 * std::cos( phi_next ) ;
 
         data[ 6 * cur_vert     ] = x1 ;
         data[ 6 * cur_vert + 1 ] = z1 ;
@@ -487,18 +487,18 @@ void CameraGizmo::prepare( void )
           A B C
           B D C
         */
-        const openMVG::Vec3 A( std::sin( phi_cur ) * std::cos( theta_cur ) ,
-                               std::sin( phi_cur ) * std::sin( theta_cur ) ,
-                               std::cos( phi_cur ) ) ;
-        const openMVG::Vec3 B( std::sin( phi_cur ) * std::cos( theta_next ) ,
-                               std::sin( phi_cur ) * std::sin( theta_next ) ,
-                               std::cos( phi_cur ) ) ;
-        const openMVG::Vec3 C( std::sin( phi_next ) * std::cos( theta_cur ) ,
-                               std::sin( phi_next ) * std::sin( theta_cur ) ,
-                               std::cos( phi_next ) ) ;
-        const openMVG::Vec3 D( std::sin( phi_next ) * std::cos( theta_next ) ,
-                               std::sin( phi_next ) * std::sin( theta_next ) ,
-                               std::cos( phi_next ) ) ;
+        const openMVG::Vec3 A( 0.5 * std::sin( phi_cur ) * std::cos( theta_cur ) ,
+                               0.5 * std::sin( phi_cur ) * std::sin( theta_cur ) ,
+                               0.5 * std::cos( phi_cur ) ) ;
+        const openMVG::Vec3 B( 0.5 * std::sin( phi_cur ) * std::cos( theta_next ) ,
+                               0.5 * std::sin( phi_cur ) * std::sin( theta_next ) ,
+                               0.5 * std::cos( phi_cur ) ) ;
+        const openMVG::Vec3 C( 0.5 * std::sin( phi_next ) * std::cos( theta_cur ) ,
+                               0.5 * std::sin( phi_next ) * std::sin( theta_cur ) ,
+                               0.5 * std::cos( phi_next ) ) ;
+        const openMVG::Vec3 D( 0.5 * std::sin( phi_next ) * std::cos( theta_next ) ,
+                               0.5 * std::sin( phi_next ) * std::sin( theta_next ) ,
+                               0.5 * std::cos( phi_next ) ) ;
 
         // A B C
         dataSelection[ 6 * cur_vert     ] = A.x() ;

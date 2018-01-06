@@ -137,7 +137,6 @@ void MainWindow::onOpenProject( void )
       return ;
     }
   }
-  resetInterface() ;
 
   // Now open project and set scene according to the specified project
   QString path = QFileDialog::getOpenFileName( this , "Open project file" ,  QDir::homePath() , "OpenMVG project file (*.omvg)" ) ;
@@ -145,6 +144,8 @@ void MainWindow::onOpenProject( void )
   {
     return ;
   }
+
+  resetInterface() ;
   const std::string projectPath = path.toStdString() ;
 
   std::shared_ptr<SceneHierarchy> s_hier = std::make_shared<LinearHierarchy>() ;
@@ -923,6 +924,15 @@ void MainWindow::onShowReconstructionReport( void )
 }
 
 /**
+ * @brief Action to be executed when user close the reconstruction report window
+ */
+void MainWindow::onCloseReconstructionReport( void )
+{
+  m_show_hide_reconstruction_summary_act->setChecked( false ) ;
+}
+
+
+/**
  * @brief Action to be executed when user wants to show/hide console
  */
 void MainWindow::onShowHideConsoleWindow( void )
@@ -939,6 +949,15 @@ void MainWindow::onShowHideConsoleWindow( void )
 }
 
 /**
+ * @brief Action to be executed when user close the console window
+ */
+void MainWindow::onCloseConsoleWindow( void )
+{
+  m_show_hide_console_act->setChecked( false ) ;
+}
+
+
+/**
  * @brief Show features on a given image
  */
 void MainWindow::onShowHideFeatureViewer( void )
@@ -952,6 +971,14 @@ void MainWindow::onShowHideFeatureViewer( void )
   {
     m_feature_viewer_widget->hide() ;
   }
+}
+
+/**
+ * @brief Action to be executed when user close the feature viewer
+ */
+void MainWindow::onCloseFeatureViewer( void )
+{
+  m_show_hide_features_viewer->setChecked( false ) ;
 }
 
 
@@ -2594,6 +2621,11 @@ void MainWindow::makeConnections( void )
   connect( m_show_hide_features_viewer , SIGNAL( triggered() ) , this , SLOT( onShowHideFeatureViewer() ) ) ;
   connect( m_show_hide_reconstruction_summary_act , SIGNAL( triggered() ) , this , SLOT( onShowReconstructionReport() ) ) ;
   connect( m_show_hide_console_act , SIGNAL( triggered() ) , this , SLOT( onShowHideConsoleWindow() ) ) ;
+
+  // The close events on the various floating windows
+  connect( m_result_summary_widget , SIGNAL( hasBeenClosed() ) , this , SLOT( onCloseReconstructionReport() ) );
+  connect( m_console_widget , SIGNAL( hasBeenClosed() ) , this , SLOT( onCloseConsoleWindow() ) ) ;
+  connect( m_feature_viewer_widget , SIGNAL( hasBeenClosed() ) , this , SLOT( onCloseFeatureViewer() ) ) ;
 
   // Interface
   connect( m_image_list , SIGNAL( hasSelectedAnImage( int ) ) , this , SLOT( onSelectImage( int ) ) );

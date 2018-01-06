@@ -46,6 +46,15 @@ class FeaturesViewerWidget : public QWidget
      */
     void setProject( std::shared_ptr<Project> proj ) ;
 
+  signals:
+
+    void hasBeenClosed( void ) ;
+
+  protected:
+
+    void closeEvent( QCloseEvent * event ) override ;
+
+
   public slots:
 
     /**

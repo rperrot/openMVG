@@ -14,6 +14,8 @@
 #include <QTextEdit>
 #include <QWidget>
 
+#include <memory>
+
 namespace openMVG_gui
 {
 
@@ -30,7 +32,16 @@ class ConsoleWidget : public QWidget
      */
     ConsoleWidget( QWidget * parent ) ;
 
+  signals:
+
+    void hasBeenClosed( void ) ; 
+
+  protected:
+
+    void closeEvent( QCloseEvent * event ) override ; 
+
   private:
+
 
     /**
      * @brief Build interface
@@ -41,6 +52,8 @@ class ConsoleWidget : public QWidget
 
     std::shared_ptr<StdStreamHandlers> m_handler_cout ;
     std::shared_ptr<StdStreamHandlers> m_handler_cerr ;
+
+    Q_OBJECT 
 } ;
 
 } // namespace openMVG_gui

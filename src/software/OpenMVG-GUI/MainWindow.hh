@@ -179,14 +179,29 @@ class MainWindow : public QMainWindow
     void onShowReconstructionReport( void ) ;
 
     /**
+     * @brief Action to be executed when user close the reconstruction report window
+     */
+    void onCloseReconstructionReport( void ) ;
+
+    /**
      * @brief Action to be executed when user wants to show/hide console
      */
     void onShowHideConsoleWindow( void ) ;
 
     /**
+     * @brief Action to be executed when user close the console window
+     */
+    void onCloseConsoleWindow( void ) ;
+
+    /**
      * @brief Show features on a given image
      */
     void onShowHideFeatureViewer( void ) ;
+
+    /**
+     * @brief Action to be executed when user close the feature viewer
+     */
+    void onCloseFeatureViewer( void ) ;
 
     /**
     * @brief Action to be executed when user has selected an image in the image list

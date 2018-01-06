@@ -10,7 +10,7 @@
 
 #include "Project.hh"
 
-#include <QHboxLayout>
+#include <QHBoxLayout>
 #include <QToolBar>
 #include <QVBoxLayout>
 
@@ -49,6 +49,12 @@ void FeaturesViewerWidget::setProject( std::shared_ptr<Project> proj )
     m_image_list->addItem( it.second.c_str() , QVariant( it.first ) ) ;
   }
 }
+
+void FeaturesViewerWidget::closeEvent( QCloseEvent * event ) 
+{
+  emit hasBeenClosed() ; 
+}
+
 
 
 /**
@@ -165,7 +171,7 @@ void FeaturesViewerWidget::onZoom11( void )
  */
 void FeaturesViewerWidget::onZoomIn( void )
 {
-  m_image_view->zoom( 1.1 ) ; 
+  m_image_view->zoom( 1.1 ) ;
 }
 
 /**
@@ -173,7 +179,7 @@ void FeaturesViewerWidget::onZoomIn( void )
  */
 void FeaturesViewerWidget::onZoomOut( void )
 {
-  m_image_view->zoom( 0.9 ) ; 
+  m_image_view->zoom( 0.9 ) ;
 }
 
 
