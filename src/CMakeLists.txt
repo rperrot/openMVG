@@ -26,6 +26,7 @@ option(OpenMVG_BUILD_SOFTWARES "Build OpenMVG softwares" ON)
 option(OpenMVG_BUILD_GUI_SOFTWARES "Build OpenMVG GUI softwares (QT5)" ON)
 option(OpenMVG_BUILD_COVERAGE "Enable code coverage generation (gcc only)" OFF)
 option(OpenMVG_USE_OPENMP "Enable OpenMP parallelization" ON)
+option(OpenMVG_BUILD_GPU_TOOLS "Enable GPU tools" ON)
 # ==============================================================================
 # Opencv is not used by openMVG but some samples show how to use openCV
 #  and openMVG simultaneously
@@ -386,6 +387,20 @@ if (OpenMVG_USE_OPENCV)
   endif (NOT OpenCV_FOUND)
 endif (OpenMVG_USE_OPENCV)
 
+# ==============================================================================
+# OpenCL 
+# ==============================================================================
+# - only external and enabled only if OpenMVG_BUILD_GPU_TOOLS is set to ON
+# ==============================================================================
+if( OpenMVG_BUILD_GPU_TOOLS )
+  find_package( OpenCL QUIET )
+  if( NOT OpenCL_FOUND )
+    message(STATUS "OpenCL was not found. Disabling OpenCL tools.")
+    UPDATE_CACHE_VARIABLE( OpenMVG_BUILD_GPU_TOOLS OFF )
+    set( OPENMVG_GPU_LIBS openMVG_system_gpu )
+  endif( NOT OpenCL_FOUND )
+endif( OpenMVG_BUILD_GPU_TOOLS )
+
 
 # ==============================================================================
 # Third-party libraries:
@@ -401,6 +416,7 @@ set(OpenMVG_INCLUDE_DIRS
   ${CEREAL_INCLUDE_DIRS}
   ${EIGEN_INCLUDE_DIRS}
   ${FLANN_INCLUDE_DIRS}
+  ${OpenCL_INCLUDE_DIRS}
   CACHE PATH "include directories for openMVG and its dependencies"
 )
 
@@ -425,6 +441,7 @@ set(OpenMVG_LIBRARIES
   openMVG_multiview
   openMVG_lInftyComputerVision
   openMVG_system
+  ${OPENMVG_GPU_LIBS}
   openMVG_sfm
   lemon)
 
@@ -517,6 +534,7 @@ message("** Enable code coverage generation: " ${OpenMVG_BUILD_COVERAGE})
 message("** Enable OpenMP parallelization: " ${OpenMVG_USE_OPENMP})
 message("** Build OpenCV+OpenMVG samples programs: " ${OpenMVG_USE_OPENCV})
 message("** Use OpenCV SIFT features: " ${OpenMVG_USE_OCVSIFT})
+message("** Use GPU features: " ${OpenMVG_BUILD_GPU_TOOLS} )
 
 message("\n")
 
@@ -584,6 +602,10 @@ if (DEFINED OpenMVG_USE_INTERNAL_LEMON)
   message(STATUS "LEMON: " ${LEMON_VERSION} " (internal)")
 else()
   message(STATUS "LEMON: " ${LEMON_VERSION} " (external)")
+endif()
+
+if( DEFINED OpenMVG_BUILD_GPU_TOOLS )
+  message(STATUS "OpenCL VERSION : " ${OpenCL_VERSION_STRING} )
 endif()
 
 message("\n")

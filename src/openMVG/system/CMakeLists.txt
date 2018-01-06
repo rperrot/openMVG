@@ -7,3 +7,7 @@ set_property(TARGET openMVG_system PROPERTY FOLDER OpenMVG/OpenMVG)
 install(TARGETS openMVG_system DESTINATION lib/ EXPORT openMVG-targets)
 
 UNIT_TEST(openMVG progress "")
+
+if( OpenMVG_BUILD_GPU_TOOLS )
+  add_subdirectory( gpu )
+endif()
