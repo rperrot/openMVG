@@ -19,6 +19,7 @@
 
 #include <map>
 #include <string>
+#include <tuple>
 #include <vector>
 
 namespace openMVG
@@ -84,12 +85,10 @@ class OpenCLContext
     OpenCLContext( const OpenCLDeviceType prefered_device_type = OPENCL_DEVICE_TYPE_GPU ,
                    const OpenCLDevicePreference device_preference = OPENCL_DEVICE_PREFER_MAX_GLOBAL_MEMORY ) ;
 
-    /// @note @rperrot : since it may be delicate, we delete the assignement ctr functions for now
-    /// @todo (@rperrot) : provide a safe implementation of these funtions
-    OpenCLContext( const OpenCLContext & ) = delete ;
-    OpenCLContext( OpenCLContext && ) = delete ;
-    OpenCLContext & operator=( const OpenCLContext & ) = delete ;
-    OpenCLContext & operator=( const OpenCLContext && ) = delete ;
+    OpenCLContext( const OpenCLContext & ) ;
+    OpenCLContext( OpenCLContext && ) = default ;
+    OpenCLContext & operator=( const OpenCLContext & ) ;
+    OpenCLContext & operator=( OpenCLContext && ) = default ;
 
     /**
      * @brief Dtr
@@ -435,6 +434,141 @@ class OpenCLContext
     std::string currentDeviceVendor( void ) const ;
     /// ---------------------------- END OF DEVICES ---------------------------------------
 
+    /// ----------------------------- CONTEXTS --------------------------------------------
+
+    /**
+     * @brief get context for a specific pair platform/device
+     * @param plat_id Id of the platform
+     * @param device_id Id of the device
+     * @return context with the specified pair platform/device
+     * @retval nullptr if pair plat_id/device_id is invalid
+     */
+    cl_context context( const uint32_t plat_id , const uint32_t device_id ) const ;
+
+    /**
+     * @brief get context for current platform/device
+     * @return context of the current platform/device
+     * @retval nullptr if pair plat_id/device_id is invalid
+     */
+    cl_context currentContext( void ) const ;
+
+    /// ---------------------------- END OF CONTEXTS --------------------------------------
+
+    /// ------------------------------- PROGRAMS ------------------------------------------
+
+    /**
+     * @brief Create a program and build it (ie: compile and link) then return the given program
+     * @param program_source Source code of the program
+     * @param plat_id Id of the platform
+     * @param device_id Id of the device
+     * @return The compiled program
+     * @retval nullptr If plat_id/device_id is invalid
+     * @retval nullptr If creation fails
+     * @retval nullptr If compilation/link fails
+     * @note Compile on the context associated with the pair plat_id/device_id
+     */
+    cl_program createAndBuildProgram( const std::string & program_source , const uint32_t plat_id , const uint32_t device_id ) const ;
+
+    /**
+     * @brief Create a program and build it (ie: compile and link) then return the given program
+     * @param program_source Source code of the program
+     * @return The compiled program
+     * @retval nullptr If something fails
+     * @retval nullptr If current context is invalid
+     * @retval nullptr If creation fails
+     * @note Compile on the current context
+     * @note if compilation fails the function returns the created program (so the user must use valid(pgm) to check if program build is ok)
+     */
+    cl_program createAndBuildProgram( const std::string & program_source ) const ;
+
+    /**
+     * @brief Check if the program build is ok
+     * @param pgm The program to check
+     * @retval true if program build is ok
+     * @retval false if program build fails
+     */
+    bool valid( cl_program pgm ) const ;
+
+    /**
+     * @brief Get build log for a specific program
+     * @param pgm Program
+     * @return build log
+     * @note The function looks for the device it was previously compiled on so no pair plat/device is needed
+     */
+    std::string programBuildLog( cl_program pgm ) const ;
+
+    /// ------------------------------- KERNELS ------------------------------------------
+
+    /**
+     * @brief Create a kernel given it's program and it's name
+     * @param pgm The program in which the kernel is looked
+     * @param kernel_name Name of the kernel to create
+     * @return the created kernel
+     * @retval nullptr if creation fails
+     */
+    cl_kernel createKernel( cl_program pgm , const std::string & kernel_name ) const ;
+
+    /**
+     * @brief Create all kernels situated inside the program
+     * @param pgm The program in which the kernels are looked
+     * @return List of kernels (and their associated function names) inside the program
+     */
+    std::map< std::string , cl_kernel > createKernels( cl_program pgm ) const ;
+
+    /**
+     * @brief Get function name of the given kernel
+     * @param krn The kernel to query
+     * @return Function name associated with the given kernel
+     */
+    std::string kernelName( cl_kernel krn ) const ;
+
+    /**
+     * @brief Get number of argument of the given kernel
+     * @param krn The kernel to query
+     * @return Number of arguments of the kernel
+     */
+    cl_uint kernelNumberOfArgument( cl_kernel krn ) const ;
+
+    /**
+     * @brief Get maximum work-group size of the given kernel
+     * @param krn The kernel to query
+     * @return Maximum workgroup size
+     */
+    size_t kernelMaxWorkgroupSize( cl_kernel krn ) const ;
+
+    /**
+     * @brief Get maximum global size used to execute the given kernel
+     * @param krn The kernel to query
+     * @return Maximum global size (in each dimension)
+     */
+    std::tuple<size_t, size_t, size_t> kernelGlobalWorkSize( cl_kernel krn ) const;
+
+    /**
+     * @brief Prefered work-group size multiple used to execute the kernel
+     * @param krn The kernel to query
+     * @return prefered workgroup size multiple
+     */
+    size_t kernelPreferedWorkGroupSizeMultiple( cl_kernel krn ) const ;
+
+    /// ------------------------------- END OF KERNELS ------------------------------------------
+
+    /// ------------------------------- COMMAND QUEUES ------------------------------------------
+    /**
+     * @brief Get default command queue associated with the specified pair platform/device
+     * @param plat_id Id of the platform
+     * @param device_id Id of the device
+     * @return the command queue associated with the specified pair
+     * @retval nullptr if the specified pair (platform/device) is invalid
+     */
+    cl_command_queue commandQueue( const uint32_t plat_id , const uint32_t device_id ) const ;
+
+    /**
+     * @brief Get command queue associated with the current pair platform/device
+     * @return the command queue associated with the current pair platform/device
+     */
+    cl_command_queue currentCommandQueue( void ) const ;
+
+    /// ---------------------------- END OF COMMAND QUEUES --------------------------------------
 
   private:
 
@@ -463,6 +597,26 @@ class OpenCLContext
      */
     void fillDevicesInfos( void ) ;
 
+    /**
+     * @brief Create contexts for all pairs platform/devices
+     */
+    void createContexts( void ) ;
+
+    /**
+     * @brief Releases contexts and destroy them if their reference count is 0
+     */
+    void releaseContexts( void ) ;
+
+    /**
+     * @brief Create command queues for all pairs platform/devices
+     */
+    void createCommandQueues( void ) ;
+
+    /**
+     * @brief Release command queues
+     */
+    void releaseCommandQueues( void ) ;
+
 
     // Platforms values
     /// Number of platforms
@@ -482,6 +636,14 @@ class OpenCLContext
     /// Type of the prefered device
     OpenCLDeviceType m_prefered_device_type ;
     OpenCLDevicePreference m_device_preference ;
+
+    // Context values
+    /// A context per plaform/device pair
+    std::map< std::pair<cl_platform_id, cl_device_id> , cl_context > m_contexts ;
+
+    // Command queues
+    /// A default command queue per platform/device pair
+    std::map< std::pair<cl_platform_id, cl_device_id> , cl_command_queue > m_command_queues ;
 } ;
 
 } // namespace gpu

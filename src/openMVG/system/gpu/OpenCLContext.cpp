@@ -41,14 +41,85 @@ OpenCLContext::OpenCLContext( const OpenCLDeviceType prefered_device_type ,
   {
     setCurrentPlatform( m_current_platform_id ) ;
   }
+
+  createContexts() ;
+  createCommandQueues() ; 
 }
+
+OpenCLContext::OpenCLContext( const OpenCLContext & src )
+  : m_nb_platform( src.m_nb_platform ) ,
+    m_platforms( src.m_platforms ) ,
+    m_current_platform_id( src.m_current_platform_id ) ,
+    m_devices_for_platform( src.m_devices_for_platform ) ,
+    m_devices_informations( src.m_devices_informations ) ,
+    m_current_device_id( src.m_current_device_id ) ,
+    m_prefered_device_type( src.m_prefered_device_type ) ,
+    m_device_preference( src.m_device_preference ) ,
+    m_contexts( src.m_contexts ) ,
+    m_command_queues( src.m_command_queues )
+{
+  // Add 1 to the Ref Count of the contexts
+  for( auto ctx : m_contexts )
+  {
+    if( ctx.second )
+    {
+      clRetainContext( ctx.second ) ;
+    }
+  }
+  // Add 1 to the Ref count of the command queues
+  for( auto cq : m_command_queues )
+  {
+    if( cq.second )
+    {
+      clRetainCommandQueue( cq.second ) ;
+    }
+  }
+}
+
+
+OpenCLContext & OpenCLContext::operator=( const OpenCLContext & src )
+{
+  if( this != &src )
+  {
+    m_nb_platform = src.m_nb_platform ;
+    m_platforms = src.m_platforms ;
+    m_current_platform_id = src.m_current_platform_id ;
+    m_devices_for_platform = src.m_devices_for_platform ;
+    m_devices_informations = src.m_devices_informations ;
+    m_current_device_id = src.m_current_device_id ;
+    m_prefered_device_type = src.m_prefered_device_type ;
+    m_device_preference = src.m_device_preference ;
+    m_contexts = src.m_contexts ;
+
+    // Add 1 to the Ref Count of the contexts
+    for( auto ctx : m_contexts )
+    {
+      if( ctx.second )
+      {
+        clRetainContext( ctx.second ) ;
+      }
+    }
+
+    // Add 1 to the Ref count of the command queues
+    for( auto cq : m_command_queues )
+    {
+      if( cq.second )
+      {
+        clRetainCommandQueue( cq.second ) ;
+      }
+    }
+  }
+  return ( *this ) ;
+}
+
 
 /**
  * @brief Dtr
  */
 OpenCLContext::~OpenCLContext( void )
 {
-  // TODO
+  releaseCommandQueues() ;
+  releaseContexts() ;
 }
 
 /**
@@ -976,6 +1047,376 @@ void OpenCLContext::fillDevicesInfos( void )
     m_devices_for_platform.insert( { plat_id , devices_for_current_platform } ) ;
   }
 }
+
+
+/**
+ * @brief get context for a specific pair platform/device
+ * @param plat_id Id of the platform
+ * @param device_id Id of the device
+ * @return context with the specified pair platform/device
+ * @retval nullptr if pair plat_id/device_id is invalid
+ */
+cl_context OpenCLContext::context( const uint32_t plat_id , const uint32_t device_id ) const
+{
+  if( plat_id < m_platforms.size() )
+  {
+    const auto plat = m_platforms[ plat_id ] ;
+    if( device_id < m_devices_for_platform.at( plat ).size() )
+    {
+      const auto dev = m_devices_for_platform.at( plat )[ device_id ] ;
+      return m_contexts.at( { plat , dev } ) ;
+    }
+    return nullptr ;
+  }
+  return nullptr ;
+}
+
+/**
+ * @brief Create a program and build it (ie: compile and link) then return the given program
+ * @param program_source Source code of the program
+ * @param plat_id Id of the platform
+ * @param device_id Id of the device
+ * @return The compiled program
+ * @retval nullptr If plat_id/device_id is invalid
+ * @retval nullptr If creation fails
+ * @retval nullptr If compilation/link fails
+ * @note Compile on the context associated with the pair plat_id/device_id
+ */
+cl_program OpenCLContext::createAndBuildProgram( const std::string & program_source , const uint32_t plat_id , const uint32_t device_id ) const
+{
+  if( plat_id < m_platforms.size() )
+  {
+    const auto plat = m_platforms[ plat_id ] ;
+    if( device_id < m_devices_for_platform.at( plat ).size() )
+    {
+      const auto dev = m_devices_for_platform.at( plat )[ device_id ] ;
+      auto ctx = m_contexts.at( { plat , dev } ) ;
+
+      // 1 - Create program
+      const char * c_str = program_source.c_str() ;
+      const size_t len = program_source.size() ;
+      cl_int error ;
+      cl_program pgm = clCreateProgramWithSource( ctx , 1 , &c_str , &len , &error ) ;
+      if( error != CL_SUCCESS )
+      {
+        return nullptr ;
+      }
+
+      // 2 - build it
+      error = clBuildProgram( pgm , 1 , &dev , nullptr , nullptr , nullptr ) ;
+      // Note : we do not destroy the program in order to allow looking at the build log
+      return pgm ;
+    }
+    return nullptr ;
+  }
+  return nullptr ;
+}
+
+/**
+ * @brief Create a program and build it (ie: compile and link) then return the given program
+ * @param program_source Source code of the program
+ * @return The compiled program
+ * @retval nullptr If something fails
+ * @retval nullptr If current context is invalid
+ * @retval nullptr If creation fails
+ * @retval nullptr If compilation/link fails
+ * @note Compile on the current context
+ */
+cl_program OpenCLContext::createAndBuildProgram( const std::string & program_source ) const
+{
+  return createAndBuildProgram( program_source , m_current_platform_id , m_current_device_id ) ;
+}
+
+/**
+ * @brief Check if the program build is ok
+ * @param pgm The program to check
+ * @retval true if program build is ok
+ * @retval false if program build fails
+ */
+bool OpenCLContext::valid( cl_program pgm ) const
+{
+  if( pgm )
+  {
+    cl_device_id dev[1] ;
+    cl_int error = clGetProgramInfo( pgm , CL_PROGRAM_DEVICES , sizeof( cl_device_id ) , dev , nullptr ) ;
+    if( error != CL_SUCCESS )
+    {
+      return false ;
+    }
+
+    cl_build_status status ;
+    clGetProgramBuildInfo( pgm , dev[0] , CL_PROGRAM_BUILD_STATUS , sizeof( cl_build_status ) , &status , nullptr ) ;
+
+    return status == CL_BUILD_SUCCESS ;
+  }
+
+  return false ;
+}
+
+/**
+ * @brief Get build log for a specific program
+ * @param pgm Program
+ * @return build log
+ * @note The function looks for the device it was previously compiled on so no pair plat/device is needed
+ */
+std::string OpenCLContext::programBuildLog( cl_program pgm ) const
+{
+  if( pgm )
+  {
+    cl_device_id dev[1] ;
+    cl_int error = clGetProgramInfo( pgm , CL_PROGRAM_DEVICES , sizeof( cl_device_id ) , dev , nullptr ) ;
+    if( error != CL_SUCCESS )
+    {
+      return "" ;
+    }
+
+    size_t log_size ;
+    clGetProgramBuildInfo( pgm , dev[0] , CL_PROGRAM_BUILD_LOG , 0 , nullptr , &log_size ) ;
+
+    char * log = new char[ log_size ] ;
+    clGetProgramBuildInfo( pgm , dev[0] , CL_PROGRAM_BUILD_LOG , log_size , log , nullptr ) ;
+
+    std::string res( log ) ;
+
+    delete[] log ;
+    return res ;
+  }
+  return "" ;
+}
+
+/// ------------------------------- KERNELS ------------------------------------------
+
+/**
+ * @brief Create a kernel given it's program and it's name
+ * @param pgm The program in which the kernel is looked
+ * @param kernel_name Name of the kernel to create
+ * @return the created kernel
+ * @retval nullptr if creation fails
+ */
+cl_kernel OpenCLContext::createKernel( cl_program pgm , const std::string & kernel_name ) const
+{
+  return clCreateKernel( pgm , kernel_name.c_str() , nullptr ) ;
+}
+
+/**
+ * @brief Create all kernels situated inside the program
+ * @param pgm The program in which the kernels are looked
+ * @return List of kernels (and their associated function names) inside the program
+ */
+std::map< std::string , cl_kernel > OpenCLContext::createKernels( cl_program pgm ) const
+{
+  cl_uint nb_kernel ;
+  clCreateKernelsInProgram( pgm , 0 , nullptr , &nb_kernel ) ;
+
+  cl_kernel * krns = new cl_kernel[ nb_kernel ] ;
+  clCreateKernelsInProgram( pgm , nb_kernel , krns , nullptr ) ;
+
+  std::map< std::string , cl_kernel > res ;
+  for( cl_uint id_krn = 0 ; id_krn < nb_kernel ; ++id_krn )
+  {
+    res.insert( { kernelName( krns[ id_krn ] ) , krns[ id_krn ] } ) ;
+  }
+
+  delete[] krns ;
+
+  return res ;
+}
+
+/**
+ * @brief Get function name of the given kernel
+ * @param krn The kernel to query
+ * @return Function name associated with the given kernel
+ */
+std::string OpenCLContext::kernelName( cl_kernel krn ) const
+{
+  size_t fctNameLog ;
+  clGetKernelInfo( krn , CL_KERNEL_FUNCTION_NAME , 0 , nullptr , &fctNameLog ) ;
+
+  char * name = new char[ fctNameLog ] ;
+  clGetKernelInfo( krn , CL_KERNEL_FUNCTION_NAME , fctNameLog , name , nullptr ) ;
+
+  std::string res( name ) ;
+  delete[] name ;
+
+  return res ;
+}
+
+/**
+ * @brief Get number of argument of the given kernel
+ * @param krn The kernel to query
+ * @return Number of arguments of the kernel
+ */
+cl_uint OpenCLContext::kernelNumberOfArgument( cl_kernel krn ) const
+{
+  cl_uint res ;
+
+  clGetKernelInfo( krn , CL_KERNEL_NUM_ARGS , sizeof( cl_uint ) , &res , nullptr ) ;
+
+  return res ;
+}
+
+/**
+ * @brief Get maximum work-group size of the given kernel
+ * @param krn The kernel to query
+ * @return Maximum workgroup size
+ */
+size_t OpenCLContext::kernelMaxWorkgroupSize( cl_kernel krn ) const
+{
+  size_t res ;
+
+  clGetKernelWorkGroupInfo( krn , nullptr , CL_KERNEL_WORK_GROUP_SIZE , sizeof( size_t ) , &res , nullptr ) ;
+
+  return res ;
+}
+
+/**
+ * @brief Get maximum global size used to execute the given kernel
+ * @param krn The kernel to query
+ * @return Maximum global size (in each dimension)
+ */
+std::tuple<size_t, size_t, size_t> OpenCLContext::kernelGlobalWorkSize( cl_kernel krn ) const
+{
+  size_t tmp[3] ;
+
+  clGetKernelWorkGroupInfo( krn , nullptr , CL_KERNEL_GLOBAL_WORK_SIZE , 3 * sizeof( size_t ) , tmp , nullptr ) ;
+
+  return std::make_tuple( tmp[0] , tmp[1] , tmp[2] ) ;
+}
+
+/**
+ * @brief Prefered work-group size multiple used to execute the kernel
+ * @param krn The kernel to query
+ * @return prefered workgroup size multiple
+ */
+size_t OpenCLContext::kernelPreferedWorkGroupSizeMultiple( cl_kernel krn ) const
+{
+  size_t res ;
+
+  clGetKernelWorkGroupInfo( krn , nullptr , CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE , sizeof( size_t ) , &res , nullptr ) ;
+
+  return res ;
+}
+
+/// ------------------------------- COMMAND QUEUES ------------------------------------------
+/**
+ * @brief Get default command queue associated with the specified pair platform/device
+ * @param plat_id Id of the platform
+ * @param device_id Id of the device
+ * @return the command queue associated with the specified pair
+ * @retval nullptr if the specified pair (platform/device) is invalid
+ */
+cl_command_queue OpenCLContext::commandQueue( const uint32_t plat_id , const uint32_t device_id ) const
+{
+  if( plat_id < m_platforms.size() )
+  {
+    auto plat = m_platforms[ plat_id ] ;
+    if( device_id < m_devices_for_platform.at( plat ).size() )
+    {
+      auto dev = m_devices_for_platform.at( plat )[ device_id ] ;
+
+      return m_command_queues.at( { plat , dev } ) ;
+    }
+    return nullptr ;
+  }
+  return nullptr ;
+}
+
+/**
+ * @brief Get command queue associated with the current pair platform/device
+ * @return the command queue associated with the current pair platform/device
+ */
+cl_command_queue OpenCLContext::currentCommandQueue( void ) const
+{
+  return commandQueue( m_current_platform_id , m_current_device_id ) ;
+}
+
+/// ---------------------------- END OF COMMAND QUEUES --------------------------------------
+
+/**
+ * @brief get context for current platform/device
+ * @return context of the current platform/device
+ * @retval nullptr if pair plat_id/device_id is invalid
+ */
+cl_context OpenCLContext::currentContext( void ) const
+{
+  return context( m_current_platform_id , m_current_device_id ) ;
+}
+
+/**
+ * @brief Create contexts for all pairs platform/devices
+ */
+void OpenCLContext::createContexts( void )
+{
+  for( auto plat : m_platforms )
+  {
+    for( auto dev : m_devices_for_platform.at( plat ) )
+    {
+      cl_context_properties properties [] =
+      {
+        CL_CONTEXT_PLATFORM ,
+        reinterpret_cast<cl_context_properties>( plat ) ,
+        0
+      } ;
+
+      cl_context ctx = clCreateContext( properties , 1 , &dev , nullptr , nullptr , nullptr ) ;
+
+      m_contexts.insert( { { plat , dev } , ctx } ) ;
+    }
+  }
+}
+
+/**
+ * @brief Releases contexts and destroy them if their reference count is 0
+ */
+void OpenCLContext::releaseContexts( void )
+{
+  for( auto plat : m_platforms )
+  {
+    for( auto dev : m_devices_for_platform.at( plat ) )
+    {
+      cl_context ctx = m_contexts.at( { plat , dev } );
+      if( ctx )
+      {
+        clReleaseContext( ctx );
+      }
+    }
+  }
+}
+
+
+/**
+ * @brief Create command queues for all pairs platform/devices
+ */
+void OpenCLContext::createCommandQueues( void )
+{
+  for( auto plat : m_platforms )
+  {
+    for( auto device : m_devices_for_platform.at( plat ) )
+    {
+      auto ctx = m_contexts.at( { plat , device } ) ;
+
+      auto cq = clCreateCommandQueue( ctx , device , 0 , nullptr ) ;
+
+      m_command_queues.insert( { { plat , device } , cq } ) ;
+    }
+  }
+}
+
+/**
+ * @brief Release command queues
+ */
+void OpenCLContext::releaseCommandQueues( void )
+{
+  for( auto & cq : m_command_queues )
+  {
+    if( cq.second )
+    {
+      clReleaseCommandQueue( cq.second ) ;
+    }
+  }
+}
+
+/// ------------------------------- END OF KERNELS ------------------------------------------
 
 } // namespace gpu
 } // namespace system

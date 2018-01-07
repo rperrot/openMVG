@@ -26,7 +26,7 @@ option(OpenMVG_BUILD_SOFTWARES "Build OpenMVG softwares" ON)
 option(OpenMVG_BUILD_GUI_SOFTWARES "Build OpenMVG GUI softwares (QT5)" ON)
 option(OpenMVG_BUILD_COVERAGE "Enable code coverage generation (gcc only)" OFF)
 option(OpenMVG_USE_OPENMP "Enable OpenMP parallelization" ON)
-option(OpenMVG_BUILD_GPU_TOOLS "Enable GPU tools" ON)
+option(OpenMVG_BUILD_GPU_TOOLS "Enable GPU tools" OFF)
 # ==============================================================================
 # Opencv is not used by openMVG but some samples show how to use openCV
 #  and openMVG simultaneously
@@ -80,6 +80,10 @@ if (WIN32)
     register_definitions(/bigobj)
   endif (MSVC)
 endif (WIN32)
+
+if (APPLE)
+  register_definitions(-DAPPLE)
+endif(APPLE)
 
 # Set shared or static mode
 if (OpenMVG_BUILD_SHARED)
@@ -397,7 +401,7 @@ if( OpenMVG_BUILD_GPU_TOOLS )
   if( NOT OpenCL_FOUND )
     message(STATUS "OpenCL was not found. Disabling OpenCL tools.")
     UPDATE_CACHE_VARIABLE( OpenMVG_BUILD_GPU_TOOLS OFF )
-    set( OPENMVG_GPU_LIBS openMVG_system_gpu )
+    set( OPENMVG_GPU_LIBS openMVG_system_gpu openMVG_image_gpu )
   endif( NOT OpenCL_FOUND )
 endif( OpenMVG_BUILD_GPU_TOOLS )
 

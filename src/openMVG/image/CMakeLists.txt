@@ -1,15 +1,15 @@
 
 file(
-  GLOB_RECURSE
+  GLOB
   image_files_header
   *.hpp
 )
 file(
-  GLOB_RECURSE
+  GLOB
   image_files_cpp
   *.cpp
 )
-file(GLOB_RECURSE REMOVEFILESUNITTEST *_test.cpp)
+file(GLOB REMOVEFILESUNITTEST *_test.cpp)
 
 #Remove the future main files
 list(REMOVE_ITEM image_files_cpp ${REMOVEFILESUNITTEST})
@@ -36,3 +36,7 @@ UNIT_TEST(openMVG image_integral "openMVG_image")
 UNIT_TEST(openMVG image_io "openMVG_image")
 UNIT_TEST(openMVG image_filtering "openMVG_image")
 UNIT_TEST(openMVG image_resampling "openMVG_image")
+
+if( OpenMVG_BUILD_GPU_TOOLS )
+  add_subdirectory( gpu )
+endif()
