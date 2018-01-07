@@ -10,6 +10,8 @@
 
 #include "openMVG/stl/split.hpp"
 
+#include <iostream>
+
 #include <limits>
 
 namespace openMVG
@@ -23,14 +25,22 @@ namespace gpu
  * @brief Ctr
  * @param prefered_device_type Type of the prefered_device to use as default
  */
-OpenCLContext::OpenCLContext( const OpenCLDeviceType prefered_device_type )
+OpenCLContext::OpenCLContext( const OpenCLDeviceType prefered_device_type ,
+                              const OpenCLDevicePreference device_preference )
   : m_nb_platform( 0 ) ,
     m_current_platform_id( std::numeric_limits<uint32_t>::max() ) ,
     m_current_device_id( std::numeric_limits<uint32_t>::max() ) ,
-    m_prefered_device_type( prefered_device_type )
+    m_prefered_device_type( prefered_device_type ) ,
+    m_device_preference( device_preference )
 {
   fillPlatformsInfos() ;
   fillDevicesInfos() ;
+
+  // Set device
+  if( currentPlatformValid() )
+  {
+    setCurrentPlatform( m_current_platform_id ) ;
+  }
 }
 
 /**
@@ -102,21 +112,77 @@ bool OpenCLContext::setCurrentPlatform( const uint32_t id )
   if( id < m_nb_platform )
   {
     m_current_platform_id = id ;
-    // TODO : set the device id on the specific platform
     if( m_devices_for_platform.at( m_platforms[ m_current_platform_id ] ).size() > 0 )
     {
       m_current_device_id = std::numeric_limits<uint32_t>::max() ;
 
       const uint32_t nb_dev = m_devices_for_platform.at( m_platforms[ m_current_platform_id ] ).size() ;
+      std::vector< uint32_t > availablePreferedDevice;
       for( uint32_t id_dev = 0 ; id_dev < nb_dev ; ++id_dev )
       {
         if( deviceType( m_current_platform_id , id_dev ) == m_prefered_device_type )
         {
-          m_current_device_id = id_dev ;
-          break ;
+          availablePreferedDevice.emplace_back( id_dev ) ;
         }
       }
-      if( m_current_device_id == std::numeric_limits<uint32_t>::max() )
+      // Select the device according to the prefered settings
+      if( availablePreferedDevice.size() == 1 )
+      {
+        m_current_device_id = availablePreferedDevice[0] ;
+      }
+      else if( availablePreferedDevice.size() > 1 )
+      {
+        uint32_t best = 0 ;
+        const auto plat = m_platforms[ m_current_platform_id ] ;
+        // More than one device with the prefered type available
+        // Make a selection based on device preference
+        if( m_device_preference == OPENCL_DEVICE_PREFER_MAX_COMPUTE_UNIT )
+        {
+          cl_uint max_cu = 0 ;
+          for( const auto & cur_dev_id : availablePreferedDevice )
+          {
+            const auto dev = m_devices_for_platform.at( plat )[ cur_dev_id ] ;
+            const cl_uint cur_max_cu = m_devices_informations.at( { plat , dev } ).m_max_compute_units ;
+            if( cur_max_cu > max_cu )
+            {
+              max_cu = cur_max_cu ;
+              best = cur_dev_id ;
+            }
+          }
+        }
+        else if( m_device_preference == OPENCL_DEVICE_PREFER_MAX_FREQUENCY )
+        {
+          cl_uint max_freq = 0 ;
+          for( const auto & cur_dev_id : availablePreferedDevice )
+          {
+            const auto dev = m_devices_for_platform.at( plat )[ cur_dev_id ] ;
+            const cl_uint cur_max_freq = m_devices_informations.at( { plat , dev } ).m_max_clock_frequency ;
+            if( cur_max_freq > max_freq )
+            {
+              max_freq = cur_max_freq ;
+              best = cur_dev_id ;
+            }
+          }
+        }
+        else if( m_device_preference == OPENCL_DEVICE_PREFER_MAX_GLOBAL_MEMORY )
+        {
+          cl_ulong max_mem = 0 ;
+          for( const auto & cur_dev_id : availablePreferedDevice )
+          {
+            const auto dev = m_devices_for_platform.at( plat )[ cur_dev_id ] ;
+            const cl_ulong cur_mem = m_devices_informations.at( { plat , dev } ).m_max_global_memory_size ;
+            if( cur_mem > max_mem )
+            {
+              max_mem = cur_mem ;
+              best = cur_dev_id ;
+            }
+          }
+        }
+        m_current_device_id = best ;
+      }
+
+
+      if( m_current_device_id == std::numeric_limits<uint32_t>::max() && nb_dev > 0 )
       {
         // No preferable one available -> switch to the first device
         m_current_device_id = 0 ;
@@ -257,10 +323,10 @@ std::vector<std::string> OpenCLContext::platformExtensions( const uint32_t id ) 
   if( id < m_nb_platform )
   {
     size_t outSize ;
-    clGetPlatformInfo( m_platforms[ id ] , CL_PLATFORM_VENDOR , 0 , nullptr , &outSize ) ;
+    clGetPlatformInfo( m_platforms[ id ] , CL_PLATFORM_EXTENSIONS , 0 , nullptr , &outSize ) ;
 
     char * paramData = new char[ outSize ] ;
-    clGetPlatformInfo( m_platforms[id] , CL_PLATFORM_VENDOR , outSize , paramData , nullptr ) ;
+    clGetPlatformInfo( m_platforms[id] , CL_PLATFORM_EXTENSIONS , outSize , paramData , nullptr ) ;
 
     std::string tmp( paramData ) ;
 
@@ -407,7 +473,7 @@ cl_ulong OpenCLContext::deviceGlobalMemorySize( const uint32_t plat_id , const u
     auto plat = m_platforms[ plat_id ] ;
     if( device_id < m_devices_for_platform.at( plat ).size() )
     {
-      auto dev = m_devices_for_platform.at( plat )[ m_current_device_id ] ;
+      auto dev = m_devices_for_platform.at( plat )[ device_id ] ;
       return m_devices_informations.at( { plat , dev } ).m_max_global_memory_size ;
     }
     return 0 ;
@@ -439,7 +505,7 @@ size_t OpenCLContext::deviceMaxImage2DWidth( const uint32_t plat_id , const uint
     auto plat = m_platforms[ plat_id ] ;
     if( device_id < m_devices_for_platform.at( plat ).size() )
     {
-      auto dev = m_devices_for_platform.at( plat )[ m_current_device_id ] ;
+      auto dev = m_devices_for_platform.at( plat )[ device_id ] ;
       return m_devices_informations.at( { plat , dev } ).m_image_2D_max_width ;
     }
     return 0 ;
@@ -471,7 +537,7 @@ size_t OpenCLContext::deviceMaxImage2DHeight( const uint32_t plat_id , const uin
     auto plat = m_platforms[ plat_id ] ;
     if( device_id < m_devices_for_platform.at( plat ).size() )
     {
-      auto dev = m_devices_for_platform.at( plat )[ m_current_device_id ] ;
+      auto dev = m_devices_for_platform.at( plat )[ device_id ] ;
       return m_devices_informations.at( { plat , dev } ).m_image_2D_max_height ;
     }
     return 0 ;
@@ -503,7 +569,7 @@ bool OpenCLContext::deviceSupportImage2D( const uint32_t plat_id , const uint32_
     auto plat = m_platforms[ plat_id ] ;
     if( device_id < m_devices_for_platform.at( plat ).size() )
     {
-      auto dev = m_devices_for_platform.at( plat )[ m_current_device_id ] ;
+      auto dev = m_devices_for_platform.at( plat )[ device_id ] ;
       return m_devices_informations.at( { plat , dev } ).m_support_image_2D ;
     }
     return false ;
@@ -535,7 +601,7 @@ size_t OpenCLContext::deviceMaxImage3DWidth( const uint32_t plat_id , const uint
     auto plat = m_platforms[ plat_id ] ;
     if( device_id < m_devices_for_platform.at( plat ).size() )
     {
-      auto dev = m_devices_for_platform.at( plat )[ m_current_device_id ] ;
+      auto dev = m_devices_for_platform.at( plat )[ device_id ] ;
       return m_devices_informations.at( { plat , dev } ).m_image_3D_max_width ;
     }
     return 0 ;
@@ -567,7 +633,7 @@ size_t OpenCLContext::deviceMaxImage3DHeight( const uint32_t plat_id , const uin
     auto plat = m_platforms[ plat_id ] ;
     if( device_id < m_devices_for_platform.at( plat ).size() )
     {
-      auto dev = m_devices_for_platform.at( plat )[ m_current_device_id ] ;
+      auto dev = m_devices_for_platform.at( plat )[ device_id ] ;
       return m_devices_informations.at( { plat , dev } ).m_image_3D_max_height ;
     }
     return 0 ;
@@ -599,7 +665,7 @@ size_t OpenCLContext::deviceMaxImage3DDepth( const uint32_t plat_id , const uint
     auto plat = m_platforms[ plat_id ] ;
     if( device_id < m_devices_for_platform.at( plat ).size() )
     {
-      auto dev = m_devices_for_platform.at( plat )[ m_current_device_id ] ;
+      auto dev = m_devices_for_platform.at( plat )[ device_id ] ;
       return m_devices_informations.at( { plat , dev } ).m_image_3D_max_depth ;
     }
     return 0 ;
@@ -631,7 +697,7 @@ bool OpenCLContext::deviceSupportImage3D( const uint32_t plat_id , const uint32_
     auto plat = m_platforms[ plat_id ] ;
     if( device_id < m_devices_for_platform.at( plat ).size() )
     {
-      auto dev = m_devices_for_platform.at( plat )[ m_current_device_id ] ;
+      auto dev = m_devices_for_platform.at( plat )[ device_id ] ;
       return m_devices_informations.at( { plat , dev } ).m_support_image_3D ;
     }
     return false ;
@@ -663,7 +729,7 @@ cl_uint OpenCLContext::deviceMaxClockFrequency( const uint32_t plat_id , const u
     auto plat = m_platforms[ plat_id ] ;
     if( device_id < m_devices_for_platform.at( plat ).size() )
     {
-      auto dev = m_devices_for_platform.at( plat )[ m_current_device_id ] ;
+      auto dev = m_devices_for_platform.at( plat )[ device_id ] ;
       return m_devices_informations.at( { plat , dev } ).m_max_clock_frequency ;
     }
     return 0 ;
@@ -695,7 +761,7 @@ cl_uint OpenCLContext::deviceMaxComputeUnits( const uint32_t plat_id , const uin
     auto plat = m_platforms[ plat_id ] ;
     if( device_id < m_devices_for_platform.at( plat ).size() )
     {
-      auto dev = m_devices_for_platform.at( plat )[ m_current_device_id ] ;
+      auto dev = m_devices_for_platform.at( plat )[ device_id ] ;
       return m_devices_informations.at( { plat , dev } ).m_max_compute_units ;
     }
     return 0 ;
@@ -725,9 +791,10 @@ std::string OpenCLContext::deviceName( const uint32_t plat_id , const uint32_t d
   if( plat_id < m_platforms.size() )
   {
     auto plat = m_platforms[ plat_id ] ;
+
     if( device_id < m_devices_for_platform.at( plat ).size() )
     {
-      auto dev = m_devices_for_platform.at( plat )[ m_current_device_id ] ;
+      auto dev = m_devices_for_platform.at( plat )[ device_id ] ;
       return m_devices_informations.at( { plat , dev } ).m_name ;
     }
     return "" ;
@@ -759,7 +826,7 @@ std::string OpenCLContext::deviceVendor( const uint32_t plat_id , const uint32_t
     auto plat = m_platforms[ plat_id ] ;
     if( device_id < m_devices_for_platform.at( plat ).size() )
     {
-      auto dev = m_devices_for_platform.at( plat )[ m_current_device_id ] ;
+      auto dev = m_devices_for_platform.at( plat )[ device_id ] ;
       return m_devices_informations.at( { plat , dev } ).m_vendor_name ;
     }
     return "" ;
@@ -861,7 +928,7 @@ void OpenCLContext::fillDevicesInfos( void )
         char * vendorName = new char[ paramSize ] ;
         clGetDeviceInfo( device_id , CL_DEVICE_VENDOR , paramSize , vendorName , nullptr ) ;
 
-        infos.m_name = std::string( vendorName ) ;
+        infos.m_vendor_name = std::string( vendorName ) ;
         delete[] vendorName ;
       }
       // cl_ulong m_max_global_memory_size ;

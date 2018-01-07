@@ -22,3 +22,7 @@ add_subdirectory(geodesy_show_exif_gps_position)
 add_subdirectory(image_spherical_to_pinholes)
 
 add_subdirectory(image_undistort_gui)
+
+if( OpenMVG_BUILD_GPU_TOOLS )
+  add_subdirectory( opencl_tools )
+endif()

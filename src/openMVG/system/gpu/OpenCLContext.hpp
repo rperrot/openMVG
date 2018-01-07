@@ -58,6 +58,16 @@ enum OpenCLDeviceType
   OPENCL_DEVICE_TYPE_INVALID
 } ;
 
+/**
+ * @brief Prefered setting if multiple device are present
+ */
+enum OpenCLDevicePreference
+{
+  OPENCL_DEVICE_PREFER_MAX_GLOBAL_MEMORY ,
+  OPENCL_DEVICE_PREFER_MAX_COMPUTE_UNIT ,
+  OPENCL_DEVICE_PREFER_MAX_FREQUENCY
+} ;
+
 
 /**
  * @brief Main class holding an OpenCL context
@@ -69,8 +79,10 @@ class OpenCLContext
     /**
      * @brief Ctr
      * @param prefered_device_type Type of the prefered_device to use as default
+     * @param device_preference If multiple device are available with the prefered device type, select the one with the prefered setting
      */
-    OpenCLContext( const OpenCLDeviceType prefered_device_type = OPENCL_DEVICE_TYPE_GPU ) ;
+    OpenCLContext( const OpenCLDeviceType prefered_device_type = OPENCL_DEVICE_TYPE_GPU ,
+                   const OpenCLDevicePreference device_preference = OPENCL_DEVICE_PREFER_MAX_GLOBAL_MEMORY ) ;
 
     /// @note @rperrot : since it may be delicate, we delete the assignement ctr functions for now
     /// @todo (@rperrot) : provide a safe implementation of these funtions
@@ -469,6 +481,7 @@ class OpenCLContext
     uint32_t m_current_device_id ;
     /// Type of the prefered device
     OpenCLDeviceType m_prefered_device_type ;
+    OpenCLDevicePreference m_device_preference ;
 } ;
 
 } // namespace gpu
