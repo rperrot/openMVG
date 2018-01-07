@@ -549,13 +549,13 @@ int OpenCLWrapper::imageWidth( cl_mem img_obj )
 
 int OpenCLWrapper::imageHeight( cl_mem img_obj )
 {
-  size_t width ;
-  cl_int res = clGetImageInfo( img_obj , CL_IMAGE_WIDTH , sizeof( size_t ) , &width , NULL ) ;
+  size_t height ;
+  cl_int res = clGetImageInfo( img_obj , CL_IMAGE_HEIGHT , sizeof( size_t ) , &height , NULL ) ;
   if( res != CL_SUCCESS )
   {
-    std::cerr << "Could not read width of the image " << std::endl ;
+    std::cerr << "Could not read height of the image " << std::endl ;
   }
-  return static_cast<int>( width ) ;
+  return static_cast<int>( height ) ;
 }
 
 // Next multiple
