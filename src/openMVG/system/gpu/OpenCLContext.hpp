@@ -590,7 +590,10 @@ class OpenCLContext
      */
     cl_kernel standardKernel( const std::string & kernel_name ) const ;
 
-
+    /**
+     * @brief Create standard kernels
+     */
+    void loadStandardKernels( void ) ;
 
   private:
 
@@ -639,10 +642,6 @@ class OpenCLContext
      */
     void releaseCommandQueues( void ) ;
 
-    /**
-     * @brief Create standard kernels
-     */
-    void createStandardKernels( void ) ;
 
     /**
      * @brief Release stdandard kernels

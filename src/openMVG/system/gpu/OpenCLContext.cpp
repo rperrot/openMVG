@@ -53,7 +53,7 @@ OpenCLContext::OpenCLContext( const OpenCLDeviceType prefered_device_type ,
 
   if( load_standard_kernels )
   {
-    createStandardKernels() ;
+    loadStandardKernels() ;
   }
 }
 
@@ -67,7 +67,9 @@ OpenCLContext::OpenCLContext( const OpenCLContext & src )
     m_prefered_device_type( src.m_prefered_device_type ) ,
     m_device_preference( src.m_device_preference ) ,
     m_contexts( src.m_contexts ) ,
-    m_command_queues( src.m_command_queues )
+    m_command_queues( src.m_command_queues ) ,
+    m_standard_programs( src.m_standard_programs ) ,
+    m_standard_kernels( src.m_standard_kernels ) 
 {
   // Add 1 to the Ref Count of the contexts
   for( auto ctx : m_contexts )
@@ -117,6 +119,9 @@ OpenCLContext & OpenCLContext::operator=( const OpenCLContext & src )
     m_prefered_device_type = src.m_prefered_device_type ;
     m_device_preference = src.m_device_preference ;
     m_contexts = src.m_contexts ;
+    m_command_queues = src.m_command_queues ; 
+    m_standard_programs = src.m_standard_programs ;
+    m_standard_kernels = src.m_standard_kernels ; 
 
     // Add 1 to the Ref Count of the contexts
     for( auto ctx : m_contexts )
@@ -135,6 +140,24 @@ OpenCLContext & OpenCLContext::operator=( const OpenCLContext & src )
         clRetainCommandQueue( cq.second ) ;
       }
     }
+
+    // Add 1 to the ref count of the standard programs
+    for( auto std_pgm : m_standard_programs )
+    {
+      if( std_pgm )
+      {
+        clRetainProgram( std_pgm ) ;
+      }
+    }
+    // Add 1 to the ref count of the standard kernels
+    for( auto std_krn : m_standard_kernels )
+    {
+      if( std_krn.second )
+      {
+        clRetainKernel( std_krn.second ) ;
+      }
+    }
+
   }
   return ( *this ) ;
 }
@@ -147,6 +170,7 @@ OpenCLContext::~OpenCLContext( void )
 {
   releaseCommandQueues() ;
   releaseContexts() ;
+  releaseStandardKernels() ;
 }
 
 /**
@@ -1582,7 +1606,7 @@ void OpenCLContext::releaseCommandQueues( void )
 /**
  * @brief Create standard kernels
  */
-void OpenCLContext::createStandardKernels( void )
+void OpenCLContext::loadStandardKernels( void )
 {
   // Image kernels
   {
@@ -1590,9 +1614,14 @@ void OpenCLContext::createStandardKernels( void )
     cl_program pgm = createAndBuildProgram( image::gpu::kernels::krnsImageAdd ) ;
     std::cerr << programBuildLog( pgm ) << std::endl ;
     m_standard_programs.emplace_back( pgm ) ;
-    m_standard_kernels.insert( { "image_add_ui" , createKernel( pgm , "image_add_ui" ) } ) ;
-    m_standard_kernels.insert( { "image_add_i" , createKernel( pgm , "image_add_i" ) } ) ;
-    m_standard_kernels.insert( { "image_add_f" , createKernel( pgm , "image_add_f" ) } ) ;
+    const std::vector<std::string> kernelsAddList = { "image_add_ui" , "image_add_i" , "image_add_f" } ;
+    for( const auto & cur_krn : kernelsAddList )
+    {
+      if( ! m_standard_kernels.count( cur_krn ) )
+      {
+        m_standard_kernels.insert( { cur_krn , createKernel( pgm , cur_krn ) } ) ;
+      }
+    }
   }
 }
 
