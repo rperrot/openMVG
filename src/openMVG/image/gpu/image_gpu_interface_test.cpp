@@ -40,6 +40,8 @@ TEST( ImageGPUInterface , uchar_to_opencl_to_uchar )
       EXPECT_EQ( res( id_row , id_col ) , cpu_img( id_row , id_col ) ) ;
     }
   }
+
+  clReleaseMemObject( gpu_img ) ;
 }
 
 TEST( ImageGPUInterface , uchar_to_opencl_to_invalid_type )
@@ -66,6 +68,8 @@ TEST( ImageGPUInterface , uchar_to_opencl_to_invalid_type )
   bool valid = FromOpenCLImage( gpu_img , res , ctx ) ;
 
   EXPECT_EQ( valid , false ) ;
+
+  clReleaseMemObject( gpu_img ) ;
 }
 
 
@@ -103,6 +107,7 @@ TEST( ImageGPUInterface , float_to_opencl_to_float )
       EXPECT_EQ( res( id_row , id_col ) , cpu_img( id_row , id_col ) ) ;
     }
   }
+  clReleaseMemObject( gpu_img ) ;
 }
 
 TEST( ImageGPUInterface , float_to_opencl_to_invalid_type )
@@ -129,6 +134,7 @@ TEST( ImageGPUInterface , float_to_opencl_to_invalid_type )
   bool valid = FromOpenCLImage( gpu_img , res , ctx ) ;
 
   EXPECT_EQ( valid , false ) ;
+  clReleaseMemObject( gpu_img ) ;
 }
 
 
@@ -168,6 +174,7 @@ TEST( ImageGPUInterface , rgb_uchar_to_opencl_to_rgb_uchar )
       EXPECT_EQ( res( id_row , id_col ).b() , cpu_img( id_row , id_col ).b() ) ;
     }
   }
+  clReleaseMemObject( gpu_img ) ;
 }
 
 TEST( ImageGPUInterface , rgba_uchar_to_opencl_to_rgba_uchar )
@@ -206,6 +213,7 @@ TEST( ImageGPUInterface , rgba_uchar_to_opencl_to_rgba_uchar )
       EXPECT_EQ( res( id_row , id_col ).b() , cpu_img( id_row , id_col ).b() ) ;
     }
   }
+  clReleaseMemObject( gpu_img ) ;
 }
 
 /* ************************************************************************* */

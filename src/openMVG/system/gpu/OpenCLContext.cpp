@@ -10,6 +10,9 @@
 
 #include "openMVG/stl/split.hpp"
 
+// The kernels
+#include "openMVG/image/gpu/kernels/image_gpu_arithmetic_ope_kernels.hpp"
+
 #include <iostream>
 
 #include <limits>
@@ -24,9 +27,12 @@ namespace gpu
 /**
  * @brief Ctr
  * @param prefered_device_type Type of the prefered_device to use as default
+ * @param device_preference If multiple device are available with the prefered device type, select the one with the prefered setting
+ * @param load_standard_kernels Indicate if openMVG kernels are loaded
  */
 OpenCLContext::OpenCLContext( const OpenCLDeviceType prefered_device_type ,
-                              const OpenCLDevicePreference device_preference )
+                              const OpenCLDevicePreference device_preference ,
+                              const bool load_standard_kernels )
   : m_nb_platform( 0 ) ,
     m_current_platform_id( std::numeric_limits<uint32_t>::max() ) ,
     m_current_device_id( std::numeric_limits<uint32_t>::max() ) ,
@@ -43,7 +49,12 @@ OpenCLContext::OpenCLContext( const OpenCLDeviceType prefered_device_type ,
   }
 
   createContexts() ;
-  createCommandQueues() ; 
+  createCommandQueues() ;
+
+  if( load_standard_kernels )
+  {
+    createStandardKernels() ;
+  }
 }
 
 OpenCLContext::OpenCLContext( const OpenCLContext & src )
@@ -72,6 +83,22 @@ OpenCLContext::OpenCLContext( const OpenCLContext & src )
     if( cq.second )
     {
       clRetainCommandQueue( cq.second ) ;
+    }
+  }
+  // Add 1 to the ref count of the standard programs
+  for( auto std_pgm : m_standard_programs )
+  {
+    if( std_pgm )
+    {
+      clRetainProgram( std_pgm ) ;
+    }
+  }
+  // Add 1 to the ref count of the standard kernels
+  for( auto std_krn : m_standard_kernels )
+  {
+    if( std_krn.second )
+    {
+      clRetainKernel( std_krn.second ) ;
     }
   }
 }
@@ -937,6 +964,25 @@ void OpenCLContext::fillPlatformsInfos( void )
 }
 
 /**
+ * @brief Get standard kernels (ie: defined by openMVG)
+ * @param kernel_name Name of the kernel to get
+ * @return Corresponding kernel
+ * @retval nullptr if kernel_name is not a valid openMVG kernel name
+ */
+cl_kernel OpenCLContext::standardKernel( const std::string & kernel_name ) const
+{
+  if( m_standard_kernels.count( kernel_name ) == 0 )
+  {
+    return nullptr ;
+  }
+  else
+  {
+    return m_standard_kernels.at( kernel_name ) ;
+  }
+}
+
+
+/**
  * @brief Indicate if current platform is valid
  * @retval true if valid
  * @retval false if invalid
@@ -1104,6 +1150,25 @@ cl_program OpenCLContext::createAndBuildProgram( const std::string & program_sou
 
       // 2 - build it
       error = clBuildProgram( pgm , 1 , &dev , nullptr , nullptr , nullptr ) ;
+      if( error != CL_SUCCESS )
+      {
+        std::cerr << "Could not build program" << std::endl ;
+
+        size_t log_size ;
+        clGetProgramBuildInfo( pgm , dev , CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size );
+
+        char * log = new char[ log_size ] ;
+
+        // Get the log
+        clGetProgramBuildInfo( pgm , dev , CL_PROGRAM_BUILD_LOG, log_size, log, NULL );
+
+        std::cerr << "Log is " << log << std::endl ;
+
+        delete[] log ;
+
+        return pgm ;
+      }
+
       // Note : we do not destroy the program in order to allow looking at the build log
       return pgm ;
     }
@@ -1283,6 +1348,7 @@ std::tuple<size_t, size_t, size_t> OpenCLContext::kernelGlobalWorkSize( cl_kerne
   return std::make_tuple( tmp[0] , tmp[1] , tmp[2] ) ;
 }
 
+
 /**
  * @brief Prefered work-group size multiple used to execute the kernel
  * @param krn The kernel to query
@@ -1296,6 +1362,103 @@ size_t OpenCLContext::kernelPreferedWorkGroupSizeMultiple( cl_kernel krn ) const
 
   return res ;
 }
+
+static inline size_t NextMultipleOf( const size_t N , const size_t K )
+{
+  return N + ( K - N % K ) % K ;
+}
+
+/**
+ * @brief Run 2d kernel on the current platform/device
+ * @param krn Kernel
+ * @param work_dim Work dimension (width,height)
+ * @retval true If run is ok
+ * @retval false If run fails
+ */
+bool OpenCLContext::runKernel2d( cl_kernel krn , const size_t * work_dim ) const
+{
+  size_t preferedWorkGroupSize ;
+  cl_int err = clGetKernelWorkGroupInfo( krn , nullptr , CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE , sizeof( size_t ) , &preferedWorkGroupSize , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+
+  const size_t realSize[2] =
+  {
+    NextMultipleOf( work_dim[0] , preferedWorkGroupSize ) ,
+    NextMultipleOf( work_dim[1] , preferedWorkGroupSize )
+  } ;
+
+  cl_command_queue queue = currentCommandQueue() ;
+  err = clEnqueueNDRangeKernel( queue , krn , 2 , nullptr , realSize , nullptr , 0 , nullptr , nullptr ) ;
+
+  if( err != CL_SUCCESS )
+  {
+    std::cerr << "Cannot enqueue kernel" << std::endl ;
+
+    if( err == CL_INVALID_PROGRAM_EXECUTABLE )
+    {
+      std::cerr << "CL_INVALID_PROGRAM_EXECUTABLE" << std::endl ;
+    }
+    else if( err == CL_INVALID_COMMAND_QUEUE )
+    {
+      std::cerr << "CL_INVALID_COMMAND_QUEUE" << std::endl ;
+    }
+    else if( err == CL_INVALID_KERNEL )
+    {
+      std::cerr << "CL_INVALID_KERNEL" << std::endl ;
+    }
+    else if( err == CL_INVALID_CONTEXT )
+    {
+      std::cerr << "CL_INVALID_CONTEXT" << std::endl ;
+    }
+    else if( err == CL_INVALID_KERNEL_ARGS )
+    {
+      std::cerr << "CL_INVALID_KERNEL_ARGS" << std::endl ;
+    }
+    else if( err == CL_INVALID_WORK_DIMENSION )
+    {
+      std::cerr << "CL_INVALID_WORK_DIMENSION" << std::endl ;
+    }
+    else if( err == CL_INVALID_WORK_GROUP_SIZE )
+    {
+      std::cerr << "CL_INVALID_WORK_GROUP_SIZE" << std::endl ;
+    }
+    else if( err == CL_INVALID_WORK_ITEM_SIZE )
+    {
+      std::cerr << "CL_INVALID_WORK_ITEM_SIZE" << std::endl ;
+    }
+    else if( err == CL_INVALID_GLOBAL_OFFSET )
+    {
+      std::cerr << "CL_INVALID_GLOBAL_OFFSET" << std::endl ;
+    }
+    else if( err == CL_OUT_OF_RESOURCES )
+    {
+      std::cerr << "CL_OUT_OF_RESOURCES" << std::endl ;
+    }
+    else if( err == CL_MEM_OBJECT_ALLOCATION_FAILURE )
+    {
+      std::cerr << "CL_MEM_OBJECT_ALLOCATION_FAILURE" << std::endl ;
+    }
+    else if( err == CL_INVALID_EVENT_WAIT_LIST )
+    {
+      std::cerr << "CL_INVALID_EVENT_WAIT_LIST" << std::endl ;
+    }
+    else if( err == CL_OUT_OF_HOST_MEMORY )
+    {
+      std::cerr << "CL_OUT_OF_HOST_MEMORY" << std::endl ;
+    }
+    return false ;
+  }
+
+  clFinish( queue ) ;
+
+  return true ;
+}
+
+/// ------------------------------- END OF KERNELS ------------------------------------------
+
 
 /// ------------------------------- COMMAND QUEUES ------------------------------------------
 /**
@@ -1416,7 +1579,43 @@ void OpenCLContext::releaseCommandQueues( void )
   }
 }
 
-/// ------------------------------- END OF KERNELS ------------------------------------------
+/**
+ * @brief Create standard kernels
+ */
+void OpenCLContext::createStandardKernels( void )
+{
+  // Image kernels
+  {
+    // Image add
+    cl_program pgm = createAndBuildProgram( image::gpu::kernels::krnsImageAdd ) ;
+    std::cerr << programBuildLog( pgm ) << std::endl ;
+    m_standard_programs.emplace_back( pgm ) ;
+    m_standard_kernels.insert( { "image_add_ui" , createKernel( pgm , "image_add_ui" ) } ) ;
+    m_standard_kernels.insert( { "image_add_i" , createKernel( pgm , "image_add_i" ) } ) ;
+    m_standard_kernels.insert( { "image_add_f" , createKernel( pgm , "image_add_f" ) } ) ;
+  }
+}
+
+/**
+ * @brief Release stdandard kernels
+ */
+void OpenCLContext::releaseStandardKernels( void )
+{
+  for( auto it : m_standard_kernels )
+  {
+    if( it.second )
+    {
+      clReleaseKernel( it.second ) ;
+    }
+  }
+  for( auto it : m_standard_programs )
+  {
+    if( it )
+    {
+      clReleaseProgram( it ) ;
+    }
+  }
+}
 
 } // namespace gpu
 } // namespace system

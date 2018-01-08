@@ -11,7 +11,7 @@ namespace gpu
 static inline size_t ImageWidth( cl_mem img_obj )
 {
   size_t width ;
-  cl_int res = clGetImageInfo( img_obj , CL_IMAGE_WIDTH , sizeof( size_t ) , &width , NULL ) ;
+  cl_int res = clGetImageInfo( img_obj , CL_IMAGE_WIDTH , sizeof( size_t ) , &width , nullptr ) ;
   if( res != CL_SUCCESS )
   {
     return 0 ;
@@ -23,7 +23,7 @@ static inline size_t ImageWidth( cl_mem img_obj )
 static inline size_t ImageHeight( cl_mem img_obj )
 {
   size_t height ;
-  cl_int res = clGetImageInfo( img_obj , CL_IMAGE_HEIGHT , sizeof( size_t ) , &height , NULL ) ;
+  cl_int res = clGetImageInfo( img_obj , CL_IMAGE_HEIGHT , sizeof( size_t ) , &height , nullptr ) ;
   if( res != CL_SUCCESS )
   {
     return 0 ;
@@ -43,7 +43,7 @@ cl_mem ToOpenCLImage( const Image<unsigned char> & img , openMVG::system::gpu::O
   cl_image_desc desc ;
 
   format.image_channel_order     = CL_R ;
-  format.image_channel_data_type = CL_UNORM_INT8 ;
+  format.image_channel_data_type = CL_UNSIGNED_INT8 ;
 
   desc.image_type = CL_MEM_OBJECT_IMAGE2D ;
   desc.image_width = img.Width() ;
@@ -115,8 +115,8 @@ cl_mem ToOpenCLImage( const Image<Rgb<unsigned char>> & img , openMVG::system::g
   cl_image_format format ;
   cl_image_desc desc ;
 
-  format.image_channel_order     = CL_RGB ;
-  format.image_channel_data_type = CL_UNORM_INT8 ;
+  format.image_channel_order     = CL_RGBA ;
+  format.image_channel_data_type = CL_UNSIGNED_INT8 ;
 
   desc.image_type = CL_MEM_OBJECT_IMAGE2D ;
   desc.image_width = img.Width() ;
@@ -128,8 +128,24 @@ cl_mem ToOpenCLImage( const Image<Rgb<unsigned char>> & img , openMVG::system::g
   desc.num_samples = 0 ;
   desc.buffer = nullptr ;
 
+  unsigned char * tmp = new unsigned char[ 4 * img.Width() * img.Height() ] ;
+  const Rgb<unsigned char> * data = img.data() ;
+  for( int y = 0 ; y < img.Height() ; ++y )
+  {
+    for( int x = 0 ; x < img.Width() ; ++x )
+    {
+      const int index = y * img.Width() + x ;
+
+      tmp[ 4 * index ] = data[ index ].r() ;
+      tmp[ 4 * index + 1 ] = data[ index ].g() ;
+      tmp[ 4 * index + 2 ] = data[ index ].b() ;
+    }
+  }
+
   cl_int error;
-  cl_mem res = clCreateImage( ctx.currentContext() , CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR , &format , &desc , ( void* ) img.data() , &error ) ;
+  cl_mem res = clCreateImage( ctx.currentContext() , CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR , &format , &desc , ( void* ) tmp , &error ) ;
+
+  delete[] tmp ;
 
   return res ;
 }
@@ -146,7 +162,7 @@ cl_mem ToOpenCLImage( const Image<Rgba<unsigned char>> & img , openMVG::system::
   cl_image_desc desc ;
 
   format.image_channel_order     = CL_RGBA ;
-  format.image_channel_data_type = CL_UNORM_INT8 ;
+  format.image_channel_data_type = CL_UNSIGNED_INT8 ;
 
   desc.image_type = CL_MEM_OBJECT_IMAGE2D ;
   desc.image_width = img.Width() ;
@@ -181,7 +197,7 @@ bool FromOpenCLImage( cl_mem & img , Image<unsigned char> & outImg , openMVG::sy
   outImg = openMVG::image::Image<unsigned char>( w , h ) ;
 
   cl_image_format format ;
-  cl_int err = clGetImageInfo( img , CL_IMAGE_FORMAT , sizeof( format ) , &format , NULL ) ;
+  cl_int err = clGetImageInfo( img , CL_IMAGE_FORMAT , sizeof( format ) , &format , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return false ;
@@ -190,14 +206,14 @@ bool FromOpenCLImage( cl_mem & img , Image<unsigned char> & outImg , openMVG::sy
   {
     return false ;
   }
-  if( format.image_channel_data_type != CL_UNORM_INT8 )
+  if( format.image_channel_data_type != CL_UNSIGNED_INT8 )
   {
     return false ;
   }
 
   size_t origin[] = { 0 , 0 , 0 } ;
   size_t region[] = { w , h , 1 } ;
-  cl_int res = clEnqueueReadImage( ctx.currentCommandQueue() , img , CL_TRUE , origin , region , 0 , 0  , outImg.data() , 0 , NULL , NULL ) ;
+  cl_int res = clEnqueueReadImage( ctx.currentCommandQueue() , img , CL_TRUE , origin , region , 0 , 0  , outImg.data() , 0 , nullptr , nullptr ) ;
   if( res != CL_SUCCESS )
   {
     return false ;
@@ -223,7 +239,7 @@ bool FromOpenCLImage( cl_mem & img , Image<float> & outImg , openMVG::system::gp
   outImg = openMVG::image::Image<float>( w , h ) ;
 
   cl_image_format format ;
-  cl_int err = clGetImageInfo( img , CL_IMAGE_FORMAT , sizeof( format ) , &format , NULL ) ;
+  cl_int err = clGetImageInfo( img , CL_IMAGE_FORMAT , sizeof( format ) , &format , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return false ;
@@ -239,7 +255,7 @@ bool FromOpenCLImage( cl_mem & img , Image<float> & outImg , openMVG::system::gp
 
   size_t origin[] = { 0 , 0 , 0 } ;
   size_t region[] = { w , h , 1 } ;
-  cl_int res = clEnqueueReadImage( ctx.currentCommandQueue() , img , CL_TRUE , origin , region , 0 , 0  , outImg.data() , 0 , NULL , NULL ) ;
+  cl_int res = clEnqueueReadImage( ctx.currentCommandQueue() , img , CL_TRUE , origin , region , 0 , 0  , outImg.data() , 0 , nullptr , nullptr ) ;
   if( res != CL_SUCCESS )
   {
     return false ;
@@ -265,7 +281,7 @@ bool FromOpenCLImage( cl_mem & img , Image<double> & outImg , openMVG::system::g
   openMVG::image::Image<float> tmp = openMVG::image::Image<float>( w , h ) ;
 
   cl_image_format format ;
-  cl_int err = clGetImageInfo( img , CL_IMAGE_FORMAT , sizeof( format ) , &format , NULL ) ;
+  cl_int err = clGetImageInfo( img , CL_IMAGE_FORMAT , sizeof( format ) , &format , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return false ;
@@ -281,7 +297,7 @@ bool FromOpenCLImage( cl_mem & img , Image<double> & outImg , openMVG::system::g
 
   size_t origin[] = { 0 , 0 , 0 } ;
   size_t region[] = { w , h , 1 } ;
-  cl_int res = clEnqueueReadImage( ctx.currentCommandQueue() , img , CL_TRUE , origin , region , 0 , 0  , tmp.data() , 0 , NULL , NULL ) ;
+  cl_int res = clEnqueueReadImage( ctx.currentCommandQueue() , img , CL_TRUE , origin , region , 0 , 0  , tmp.data() , 0 , nullptr , nullptr ) ;
   if( res != CL_SUCCESS )
   {
     return false ;
@@ -309,27 +325,40 @@ bool FromOpenCLImage( cl_mem & img , Image<Rgb<unsigned char>> & outImg , openMV
   outImg = openMVG::image::Image<Rgb<unsigned char>>( w , h ) ;
 
   cl_image_format format ;
-  cl_int err = clGetImageInfo( img , CL_IMAGE_FORMAT , sizeof( format ) , &format , NULL ) ;
+  cl_int err = clGetImageInfo( img , CL_IMAGE_FORMAT , sizeof( format ) , &format , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return false ;
   }
-  if( format.image_channel_order != CL_RGB )
+  if( format.image_channel_order != CL_RGBA )
   {
     return false ;
   }
-  if( format.image_channel_data_type != CL_UNORM_INT8 )
+  if( format.image_channel_data_type != CL_UNSIGNED_INT8 )
   {
     return false ;
   }
 
   size_t origin[] = { 0 , 0 , 0 } ;
   size_t region[] = { w , h , 1 } ;
-  cl_int res = clEnqueueReadImage( ctx.currentCommandQueue() , img , CL_TRUE , origin , region , 0 , 0  , outImg.data() , 0 , NULL , NULL ) ;
+
+  unsigned char * tmp = new unsigned char[ 4 * w * h ] ;
+  cl_int res = clEnqueueReadImage( ctx.currentCommandQueue() , img , CL_TRUE , origin , region , 0 , 0  , tmp , 0 , nullptr , nullptr ) ;
   if( res != CL_SUCCESS )
   {
     return false ;
   }
+
+  for( int y = 0 ; y < outImg.Height() ; ++y )
+  {
+    for( int x = 0 ; x < outImg.Width() ; ++x )
+    {
+      const int index = y * outImg.Width() + x ;
+      outImg( y , x ) = Rgb<unsigned char>( tmp[ 4 * index ] , tmp[ 4 * index + 1 ] , tmp[ 4 * index + 2 ] ) ;
+    }
+  }
+
+  delete[] tmp ;
 
   return true ;
 }
@@ -351,7 +380,7 @@ bool FromOpenCLImage( cl_mem & img , Image<Rgba<unsigned char>> & outImg , openM
   outImg = openMVG::image::Image<Rgba<unsigned char>>( w , h ) ;
 
   cl_image_format format ;
-  cl_int err = clGetImageInfo( img , CL_IMAGE_FORMAT , sizeof( format ) , &format , NULL ) ;
+  cl_int err = clGetImageInfo( img , CL_IMAGE_FORMAT , sizeof( format ) , &format , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return false ;
@@ -360,14 +389,14 @@ bool FromOpenCLImage( cl_mem & img , Image<Rgba<unsigned char>> & outImg , openM
   {
     return false ;
   }
-  if( format.image_channel_data_type != CL_UNORM_INT8 )
+  if( format.image_channel_data_type != CL_UNSIGNED_INT8 )
   {
     return false ;
   }
 
   size_t origin[] = { 0 , 0 , 0 } ;
   size_t region[] = { w , h , 1 } ;
-  cl_int res = clEnqueueReadImage( ctx.currentCommandQueue() , img , CL_TRUE , origin , region , 0 , 0  , outImg.data() , 0 , NULL , NULL ) ;
+  cl_int res = clEnqueueReadImage( ctx.currentCommandQueue() , img , CL_TRUE , origin , region , 0 , 0  , outImg.data() , 0 , nullptr , nullptr ) ;
   if( res != CL_SUCCESS )
   {
     return false ;

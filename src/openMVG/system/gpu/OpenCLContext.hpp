@@ -81,9 +81,11 @@ class OpenCLContext
      * @brief Ctr
      * @param prefered_device_type Type of the prefered_device to use as default
      * @param device_preference If multiple device are available with the prefered device type, select the one with the prefered setting
+     * @param load_standard_kernels Indicate if openMVG kernels are loaded
      */
     OpenCLContext( const OpenCLDeviceType prefered_device_type = OPENCL_DEVICE_TYPE_GPU ,
-                   const OpenCLDevicePreference device_preference = OPENCL_DEVICE_PREFER_MAX_GLOBAL_MEMORY ) ;
+                   const OpenCLDevicePreference device_preference = OPENCL_DEVICE_PREFER_MAX_GLOBAL_MEMORY ,
+                   const bool load_standard_kernels = true ) ;
 
     OpenCLContext( const OpenCLContext & ) ;
     OpenCLContext( OpenCLContext && ) = default ;
@@ -550,6 +552,15 @@ class OpenCLContext
      */
     size_t kernelPreferedWorkGroupSizeMultiple( cl_kernel krn ) const ;
 
+    /**
+     * @brief Run 2d kernel on the current platform/device
+     * @param krn Kernel
+     * @param work_dim Work dimension (width,height)
+     * @retval true If run is ok
+     * @retval false If run fails
+     */
+    bool runKernel2d( cl_kernel krn , const size_t * work_dim ) const ;
+
     /// ------------------------------- END OF KERNELS ------------------------------------------
 
     /// ------------------------------- COMMAND QUEUES ------------------------------------------
@@ -569,6 +580,17 @@ class OpenCLContext
     cl_command_queue currentCommandQueue( void ) const ;
 
     /// ---------------------------- END OF COMMAND QUEUES --------------------------------------
+
+    /// Standard KERNELS
+    /**
+     * @brief Get standard kernels (ie: defined by openMVG)
+     * @param kernel_name Name of the kernel to get
+     * @return Corresponding kernel
+     * @retval nullptr if kernel_name is not a valid openMVG kernel name
+     */
+    cl_kernel standardKernel( const std::string & kernel_name ) const ;
+
+
 
   private:
 
@@ -617,6 +639,15 @@ class OpenCLContext
      */
     void releaseCommandQueues( void ) ;
 
+    /**
+     * @brief Create standard kernels
+     */
+    void createStandardKernels( void ) ;
+
+    /**
+     * @brief Release stdandard kernels
+     */
+    void releaseStandardKernels( void ) ;
 
     // Platforms values
     /// Number of platforms
@@ -644,6 +675,13 @@ class OpenCLContext
     // Command queues
     /// A default command queue per platform/device pair
     std::map< std::pair<cl_platform_id, cl_device_id> , cl_command_queue > m_command_queues ;
+
+
+    // Standard kernels
+    /// List of programs defined by openMVG
+    std::vector< cl_program > m_standard_programs ;
+    /// List of kernels defined by openMVG
+    std::map< std::string , cl_kernel > m_standard_kernels ;
 } ;
 
 } // namespace gpu

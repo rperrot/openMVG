@@ -1,5 +1,7 @@
-set( OPENMVG_IMAGE_GPU_HDRS image_gpu_interface.hpp )
-set( OPENMVG_IMAGE_GPU_SRCS image_gpu_interface.cpp )
+set( OPENMVG_IMAGE_GPU_HDRS image_gpu_arithmetics.hpp 
+                            image_gpu_interface.hpp )
+set( OPENMVG_IMAGE_GPU_SRCS image_gpu_arithmetics.cpp 
+                            image_gpu_interface.cpp )
 
 #file(GLOB_RECURSE REMOVEFILESUNITTEST *_test.cpp)
 #list(REMOVE_ITEM OPENMVG_IMAGE_GPU_SRCS ${REMOVEFILESUNITTEST})
@@ -17,3 +19,5 @@ target_link_libraries( openMVG_image_gpu
   openMVG_system_gpu )
 
 UNIT_TEST(openMVG image_gpu_interface "openMVG_image_gpu;openMVG_system_gpu")
+
+add_subdirectory( kernels ) 
