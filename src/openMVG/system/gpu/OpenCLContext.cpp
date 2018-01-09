@@ -1654,6 +1654,124 @@ void OpenCLContext::loadStandardKernels( void )
 }
 
 /**
+ * @brief Create an image
+ * @param width Width
+ * @param height Height
+ * @param order Order of the channels
+ * @param dtype Data type of the channels
+ * @param access Access type of the image
+ * @return image created
+ * @retval nullptr if there's an error during creation
+ */
+cl_mem OpenCLContext::createImage( const size_t width , const size_t height ,
+                                   const OpenCLImageChannelOrder order ,
+                                   const OpenCLImageDataType dtype ,
+                                   const OpenCLImageAccessType access ,
+                                   void * data ) const
+{
+  cl_image_format format ;
+  cl_image_desc desc ;
+
+  switch( order )
+  {
+    case OPENCL_IMAGE_CHANNEL_ORDER_R:
+    {
+      format.image_channel_order     = CL_R ;
+      break ;
+    }
+    case OPENCL_IMAGE_CHANNEL_ORDER_RGBA:
+    {
+      format.image_channel_order     = CL_RGBA ;
+      break ;
+    }
+    case OPENCL_IMAGE_CHANNEL_ORDER_BGRA:
+    {
+      format.image_channel_order     = CL_ARGB ;
+      break;
+    }
+  }
+  switch( dtype )
+  {
+    case OPENCL_IMAGE_DATA_TYPE_U_INT_8 :   // Unsigned int 8
+    {
+      format.image_channel_data_type = CL_UNSIGNED_INT8 ;
+      break ;
+    }
+    case OPENCL_IMAGE_DATA_TYPE_U_INT_32 :   // Unsigned int 32
+    {
+      format.image_channel_data_type = CL_UNSIGNED_INT32 ;
+      break ;
+    }
+    case OPENCL_IMAGE_DATA_TYPE_SU_INT_8 :   // Signed int 8
+    {
+      format.image_channel_data_type = CL_SIGNED_INT8 ;
+      break ;
+    }
+    case OPENCL_IMAGE_DATA_TYPE_SU_INT_32 :   // Signed int 32
+    {
+      format.image_channel_data_type = CL_SIGNED_INT32 ;
+      break ;
+    }
+    case OPENCL_IMAGE_DATA_TYPE_UN_INT_8 :   // Unsigned int 8 - Normalized (ie: 0-1 and read_imagef/write_imagef )
+    {
+      format.image_channel_data_type = CL_UNORM_INT8 ;
+      break ;
+    }
+    case OPENCL_IMAGE_DATA_TYPE_FLOAT :   // Float
+    {
+      format.image_channel_data_type = CL_FLOAT ;
+      break ;
+    }
+  }
+
+
+  desc.image_type = CL_MEM_OBJECT_IMAGE2D ;
+  desc.image_width = width ;
+  desc.image_height = height ;
+  desc.image_depth = 1 ;
+  desc.image_row_pitch = 0 ;
+  desc.image_slice_pitch = 0 ;
+  desc.num_mip_levels = 0 ;
+  desc.num_samples = 0 ;
+  desc.buffer = nullptr ;
+
+  cl_int error;
+
+  cl_mem_flags flags = 0 ;
+  switch( access )
+  {
+    case OPENCL_IMAGE_ACCESS_READ_ONLY:
+    {
+      flags = CL_MEM_READ_ONLY ;
+      break ;
+    }
+    case OPENCL_IMAGE_ACCESS_WRITE_ONLY:
+    {
+      flags = CL_MEM_WRITE_ONLY ;
+      break ;
+    }
+    case OPENCL_IMAGE_ACCESS_READ_WRITE:
+    {
+      flags = CL_MEM_READ_WRITE ;
+      break ;
+    }
+  }
+
+  if( data != nullptr )
+  {
+    flags |= CL_MEM_COPY_HOST_PTR ;
+  }
+
+  cl_mem res = clCreateImage( currentContext() , flags , &format , &desc , data , &error ) ;
+
+  if( error != CL_SUCCESS )
+  {
+    return nullptr ;
+  }
+  return res ;
+}
+
+/**
  * @brief Release stdandard kernels
  */
 void OpenCLContext::releaseStandardKernels( void )

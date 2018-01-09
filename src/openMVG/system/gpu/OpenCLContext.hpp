@@ -71,6 +71,42 @@ enum OpenCLDevicePreference
 
 
 /**
+ * @brief Type for Image creation
+ */
+enum OpenCLImageDataType
+{
+  OPENCL_IMAGE_DATA_TYPE_U_INT_8   ,   // Unsigned int 8
+  OPENCL_IMAGE_DATA_TYPE_U_INT_32  ,   // Unsigned int 32
+
+  OPENCL_IMAGE_DATA_TYPE_SU_INT_8  ,   // Signed int 8
+  OPENCL_IMAGE_DATA_TYPE_SU_INT_32 ,   // Signed int 32
+
+  OPENCL_IMAGE_DATA_TYPE_UN_INT_8  ,   // Unsigned int 8 - Normalized (ie: 0-1 and read_imagef/write_imagef )
+
+  OPENCL_IMAGE_DATA_TYPE_FLOAT     ,   // Float
+} ;
+
+/**
+ * @brief Channel order for image creation
+ */
+enum OpenCLImageChannelOrder
+{
+  OPENCL_IMAGE_CHANNEL_ORDER_R ,
+  OPENCL_IMAGE_CHANNEL_ORDER_RGBA ,
+  OPENCL_IMAGE_CHANNEL_ORDER_BGRA
+} ;
+
+/**
+ * @brief Access type for image creation
+ */
+enum OpenCLImageAccessType
+{
+  OPENCL_IMAGE_ACCESS_READ_ONLY ,
+  OPENCL_IMAGE_ACCESS_WRITE_ONLY ,
+  OPENCL_IMAGE_ACCESS_READ_WRITE ,
+} ;
+
+/**
  * @brief Main class holding an OpenCL context
  */
 class OpenCLContext
@@ -594,6 +630,25 @@ class OpenCLContext
      * @brief Create standard kernels
      */
     void loadStandardKernels( void ) ;
+
+
+    //// Image and buffer creations
+
+    /**
+     * @brief Create an image 
+     * @param width Width
+     * @param height Height
+     * @param order Order of the channels
+     * @param dtype Data type of the channels 
+     * @param access Access type of the image 
+     * @return image created
+     * @retval nullptr if there's an error during creation 
+     */
+    cl_mem createImage( const size_t width , const size_t height ,
+                        const OpenCLImageChannelOrder order ,
+                        const OpenCLImageDataType dtype ,
+                        const OpenCLImageAccessType access = OPENCL_IMAGE_ACCESS_READ_WRITE , 
+                        void * data = nullptr ) const ;
 
   private:
 

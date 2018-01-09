@@ -54,13 +54,13 @@ cl_mem ImageAdd( cl_mem imgA , cl_mem imgB , openMVG::system::gpu::OpenCLContext
     return nullptr ;
   }
   size_t widthB ;
-  err = clGetImageInfo( imgA , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthB , nullptr ) ;
+  err = clGetImageInfo( imgB , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthB , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return nullptr ;
   }
   size_t heightA ;
-  err = clGetImageInfo( imgB , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightA , nullptr ) ;
+  err = clGetImageInfo( imgA , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightA , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return nullptr ;
@@ -112,7 +112,7 @@ cl_mem ImageAdd( cl_mem imgA , cl_mem imgB , openMVG::system::gpu::OpenCLContext
   clSetKernelArg( krn , 1 , sizeof( cl_mem ) , &imgA ) ;
   clSetKernelArg( krn , 2 , sizeof( cl_mem ) , &imgB ) ;
 
-  size_t size[2] =
+  const size_t size[2] =
   {
     widthA , heightA
   } ;
@@ -126,11 +126,130 @@ cl_mem ImageAdd( cl_mem imgA , cl_mem imgB , openMVG::system::gpu::OpenCLContext
 }
 
 /**
+ * @brief Add (component-wise) two images (using already allocated result image)
+ * @param res Output of the operation
+ * @param imgA first image
+ * @param imgB second image
+ * @param ctx Context
+ * @retval true if operation is OK
+ * @retval false if operation fails
+ * @note this function assume standard add(s) is already loaded inside the context (which is the default behavior)
+ * @note this function assume res is already allocated at correct size
+ */
+bool ImageAdd( cl_mem res , cl_mem imgA , cl_mem imgB , openMVG::system::gpu::OpenCLContext & ctx )
+{
+  cl_image_format formatA ;
+  cl_int err = clGetImageInfo( imgA , CL_IMAGE_FORMAT , sizeof( formatA ) , &formatA , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  cl_image_format formatB ;
+  err = clGetImageInfo( imgB , CL_IMAGE_FORMAT , sizeof( formatB ) , &formatB , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  cl_image_format formatRes ;
+  err = clGetImageInfo( res , CL_IMAGE_FORMAT , sizeof( formatRes ) , &formatRes , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+
+  if( formatA.image_channel_data_type != formatB.image_channel_data_type ||
+      formatA.image_channel_order != formatB.image_channel_order ||
+      formatA.image_channel_data_type != formatRes.image_channel_data_type ||
+      formatA.image_channel_order != formatRes.image_channel_order )
+  {
+    return false ;
+  }
+
+  size_t widthA ;
+  err = clGetImageInfo( imgA , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthA , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t widthB ;
+  err = clGetImageInfo( imgB , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthB , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t widthRes ;
+  err = clGetImageInfo( res , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthRes , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t heightA ;
+  err = clGetImageInfo( imgA , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightA , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t heightB ;
+  err = clGetImageInfo( imgB , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightB , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t heightRes ;
+  err = clGetImageInfo( res , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightRes , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+
+  if( widthA != widthB ||
+      heightA != heightB ||
+      widthA != widthRes ||
+      heightA != heightRes )
+  {
+    return false ;
+  }
+
+
+
+  cl_kernel krn;
+  if( formatA.image_channel_data_type == CL_UNSIGNED_INT8 )
+  {
+    krn = ctx.standardKernel( "image_add_ui" ) ;
+  }
+  else if( formatA.image_channel_data_type == CL_FLOAT )
+  {
+    krn = ctx.standardKernel( "image_add_f" ) ;
+  }
+  else
+  {
+    return false ;
+  }
+
+
+  clSetKernelArg( krn , 0 , sizeof( cl_mem ) , &res ) ;
+  clSetKernelArg( krn , 1 , sizeof( cl_mem ) , &imgA ) ;
+  clSetKernelArg( krn , 2 , sizeof( cl_mem ) , &imgB ) ;
+
+  const size_t size[2] =
+  {
+    widthA , heightA
+  } ;
+
+  if( ! ctx.runKernel2d( krn , size ) )
+  {
+    return false ;
+  }
+
+  return true ;
+}
+
+/**
  * @brief Subtract two images
  * @param imgA first image
  * @param imgB second image
  * @param ctx Context
- * @return image object which is the addition of the two parameters
+ * @return image object which is the difference of the two parameters
  * @note this function assume standard sub(s) is already loaded inside the context (which is the default behavior)
  */
 cl_mem ImageSub( cl_mem imgA , cl_mem imgB , openMVG::system::gpu::OpenCLContext & ctx )
@@ -161,13 +280,13 @@ cl_mem ImageSub( cl_mem imgA , cl_mem imgB , openMVG::system::gpu::OpenCLContext
     return nullptr ;
   }
   size_t widthB ;
-  err = clGetImageInfo( imgA , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthB , nullptr ) ;
+  err = clGetImageInfo( imgB , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthB , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return nullptr ;
   }
   size_t heightA ;
-  err = clGetImageInfo( imgB , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightA , nullptr ) ;
+  err = clGetImageInfo( imgA , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightA , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return nullptr ;
@@ -178,7 +297,8 @@ cl_mem ImageSub( cl_mem imgA , cl_mem imgB , openMVG::system::gpu::OpenCLContext
   {
     return nullptr ;
   }
-  if( widthA != widthB || heightA != heightB )
+  if( widthA != widthB ||
+      heightA != heightB )
   {
     return nullptr ;
   }
@@ -219,7 +339,7 @@ cl_mem ImageSub( cl_mem imgA , cl_mem imgB , openMVG::system::gpu::OpenCLContext
   clSetKernelArg( krn , 1 , sizeof( cl_mem ) , &imgA ) ;
   clSetKernelArg( krn , 2 , sizeof( cl_mem ) , &imgB ) ;
 
-  size_t size[2] =
+  const size_t size[2] =
   {
     widthA , heightA
   } ;
@@ -230,6 +350,123 @@ cl_mem ImageSub( cl_mem imgA , cl_mem imgB , openMVG::system::gpu::OpenCLContext
   }
 
   return res ;
+}
+
+/**
+ * @brief Subtract (component-wise) two images (using already allocated result image)
+ * @param res Output of the operation
+ * @param imgA first image
+ * @param imgB second image
+ * @param ctx Context
+ * @return image object which is the difference (component-wise) of the two parameters
+ * @note this function assume standard sub(s) is already loaded inside the context (which is the default behavior)
+ * @note this function assume res is already allocated at correct size
+ */
+bool ImageSub( cl_mem res , cl_mem imgA , cl_mem imgB , openMVG::system::gpu::OpenCLContext & ctx )
+{
+  cl_image_format formatA ;
+  cl_int err = clGetImageInfo( imgA , CL_IMAGE_FORMAT , sizeof( formatA ) , &formatA , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  cl_image_format formatB ;
+  err = clGetImageInfo( imgB , CL_IMAGE_FORMAT , sizeof( formatB ) , &formatB , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  cl_image_format formatRes ;
+  err = clGetImageInfo( res , CL_IMAGE_FORMAT , sizeof( formatRes ) , &formatRes , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+
+  if( formatA.image_channel_data_type != formatB.image_channel_data_type ||
+      formatA.image_channel_order != formatB.image_channel_order ||
+      formatA.image_channel_data_type != formatRes.image_channel_data_type ||
+      formatA.image_channel_order != formatRes.image_channel_order )
+  {
+    return false ;
+  }
+
+  size_t widthA ;
+  err = clGetImageInfo( imgA , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthA , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t widthB ;
+  err = clGetImageInfo( imgB , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthB , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t widthRes ;
+  err = clGetImageInfo( res , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthRes , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t heightA ;
+  err = clGetImageInfo( imgA , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightA , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t heightB ;
+  err = clGetImageInfo( imgB , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightB , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t heightRes ;
+  err = clGetImageInfo( res , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightRes , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+
+  if( widthA != widthB ||
+      heightA != heightB ||
+      widthA != widthRes ||
+      heightA != heightRes )
+  {
+    return false ;
+  }
+
+
+  cl_kernel krn;
+  if( formatA.image_channel_data_type == CL_UNSIGNED_INT8 )
+  {
+    krn = ctx.standardKernel( "image_sub_ui" ) ;
+  }
+  else if( formatA.image_channel_data_type == CL_FLOAT )
+  {
+    krn = ctx.standardKernel( "image_sub_f" ) ;
+  }
+  else
+  {
+    return false ;
+  }
+
+
+  clSetKernelArg( krn , 0 , sizeof( cl_mem ) , &res ) ;
+  clSetKernelArg( krn , 1 , sizeof( cl_mem ) , &imgA ) ;
+  clSetKernelArg( krn , 2 , sizeof( cl_mem ) , &imgB ) ;
+
+  const size_t size[2] =
+  {
+    widthA , heightA
+  } ;
+
+  if( ! ctx.runKernel2d( krn , size ) )
+  {
+    return false ;
+  }
+
+  return true ;
 }
 
 /**
@@ -268,13 +505,13 @@ cl_mem ImageMul( cl_mem imgA , cl_mem imgB , openMVG::system::gpu::OpenCLContext
     return nullptr ;
   }
   size_t widthB ;
-  err = clGetImageInfo( imgA , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthB , nullptr ) ;
+  err = clGetImageInfo( imgB , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthB , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return nullptr ;
   }
   size_t heightA ;
-  err = clGetImageInfo( imgB , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightA , nullptr ) ;
+  err = clGetImageInfo( imgA , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightA , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return nullptr ;
@@ -285,7 +522,8 @@ cl_mem ImageMul( cl_mem imgA , cl_mem imgB , openMVG::system::gpu::OpenCLContext
   {
     return nullptr ;
   }
-  if( widthA != widthB || heightA != heightB )
+  if( widthA != widthB ||
+      heightA != heightB )
   {
     return nullptr ;
   }
@@ -326,7 +564,7 @@ cl_mem ImageMul( cl_mem imgA , cl_mem imgB , openMVG::system::gpu::OpenCLContext
   clSetKernelArg( krn , 1 , sizeof( cl_mem ) , &imgA ) ;
   clSetKernelArg( krn , 2 , sizeof( cl_mem ) , &imgB ) ;
 
-  size_t size[2] =
+  const size_t size[2] =
   {
     widthA , heightA
   } ;
@@ -339,6 +577,123 @@ cl_mem ImageMul( cl_mem imgA , cl_mem imgB , openMVG::system::gpu::OpenCLContext
   return res ;
 }
 
+/**
+ * @brief Multiply (component-wise) two images
+ * @param res Output of the operation
+ * @param imgA first image
+ * @param imgB second image
+ * @param ctx Context
+ * @retval true if operation is OK
+ * @retval false if operation fails
+ * @note this function assume standard mul(s) is already loaded inside the context (which is the default behavior)
+ * @note this function assume res is already allocated at correct size
+ */
+bool ImageMul( cl_mem res , cl_mem imgA , cl_mem imgB , openMVG::system::gpu::OpenCLContext & ctx )
+{
+  cl_image_format formatA ;
+  cl_int err = clGetImageInfo( imgA , CL_IMAGE_FORMAT , sizeof( formatA ) , &formatA , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  cl_image_format formatB ;
+  err = clGetImageInfo( imgB , CL_IMAGE_FORMAT , sizeof( formatB ) , &formatB , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  cl_image_format formatRes ;
+  err = clGetImageInfo( res , CL_IMAGE_FORMAT , sizeof( formatRes ) , &formatRes , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+
+  if( formatA.image_channel_data_type != formatB.image_channel_data_type ||
+      formatA.image_channel_order != formatB.image_channel_order ||
+      formatA.image_channel_data_type != formatRes.image_channel_data_type ||
+      formatA.image_channel_order != formatRes.image_channel_order )
+  {
+    return false ;
+  }
+
+  size_t widthA ;
+  err = clGetImageInfo( imgA , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthA , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t widthB ;
+  err = clGetImageInfo( imgB , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthB , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t widthRes ;
+  err = clGetImageInfo( res , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthRes , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t heightA ;
+  err = clGetImageInfo( imgA , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightA , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t heightB ;
+  err = clGetImageInfo( imgB , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightB , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t heightRes ;
+  err = clGetImageInfo( res , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightRes , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+
+  if( widthA != widthB ||
+      heightA != heightB ||
+      widthA != widthRes ||
+      heightA != heightRes )
+  {
+    return false ;
+  }
+
+
+  cl_kernel krn;
+  if( formatA.image_channel_data_type == CL_UNSIGNED_INT8 )
+  {
+    krn = ctx.standardKernel( "image_mul_ui" ) ;
+  }
+  else if( formatA.image_channel_data_type == CL_FLOAT )
+  {
+    krn = ctx.standardKernel( "image_mul_f" ) ;
+  }
+  else
+  {
+    return false ;
+  }
+
+
+  clSetKernelArg( krn , 0 , sizeof( cl_mem ) , &res ) ;
+  clSetKernelArg( krn , 1 , sizeof( cl_mem ) , &imgA ) ;
+  clSetKernelArg( krn , 2 , sizeof( cl_mem ) , &imgB ) ;
+
+  const size_t size[2] =
+  {
+    widthA , heightA
+  } ;
+
+  if( ! ctx.runKernel2d( krn , size ) )
+  {
+    return false ;
+  }
+
+  return true ;
+}
 
 } // namespace gpu
 } // namespace image
