@@ -69,7 +69,7 @@ OpenCLContext::OpenCLContext( const OpenCLContext & src )
     m_contexts( src.m_contexts ) ,
     m_command_queues( src.m_command_queues ) ,
     m_standard_programs( src.m_standard_programs ) ,
-    m_standard_kernels( src.m_standard_kernels ) 
+    m_standard_kernels( src.m_standard_kernels )
 {
   // Add 1 to the Ref Count of the contexts
   for( auto ctx : m_contexts )
@@ -119,9 +119,9 @@ OpenCLContext & OpenCLContext::operator=( const OpenCLContext & src )
     m_prefered_device_type = src.m_prefered_device_type ;
     m_device_preference = src.m_device_preference ;
     m_contexts = src.m_contexts ;
-    m_command_queues = src.m_command_queues ; 
+    m_command_queues = src.m_command_queues ;
     m_standard_programs = src.m_standard_programs ;
-    m_standard_kernels = src.m_standard_kernels ; 
+    m_standard_kernels = src.m_standard_kernels ;
 
     // Add 1 to the Ref Count of the contexts
     for( auto ctx : m_contexts )
@@ -1611,17 +1611,45 @@ void OpenCLContext::loadStandardKernels( void )
   // Image kernels
   {
     // Image add
-    cl_program pgm = createAndBuildProgram( image::gpu::kernels::krnsImageAdd ) ;
-    std::cerr << programBuildLog( pgm ) << std::endl ;
-    m_standard_programs.emplace_back( pgm ) ;
-    const std::vector<std::string> kernelsAddList = { "image_add_ui" , "image_add_i" , "image_add_f" } ;
-    for( const auto & cur_krn : kernelsAddList )
     {
-      if( ! m_standard_kernels.count( cur_krn ) )
+      cl_program pgm = createAndBuildProgram( image::gpu::kernels::krnsImageAdd ) ;
+      m_standard_programs.emplace_back( pgm ) ;
+      const std::vector<std::string> kernelsAddList = { "image_add_ui" , "image_add_i" , "image_add_f" } ;
+      for( const auto & cur_krn : kernelsAddList )
       {
-        m_standard_kernels.insert( { cur_krn , createKernel( pgm , cur_krn ) } ) ;
+        if( ! m_standard_kernels.count( cur_krn ) )
+        {
+          m_standard_kernels.insert( { cur_krn , createKernel( pgm , cur_krn ) } ) ;
+        }
       }
     }
+    // Image sub
+    {
+      cl_program pgm = createAndBuildProgram( image::gpu::kernels::krnsImageSub ) ;
+      m_standard_programs.emplace_back( pgm ) ;
+      const std::vector<std::string> kernelsAddList = { "image_sub_ui" , "image_sub_i" , "image_sub_f" } ;
+      for( const auto & cur_krn : kernelsAddList )
+      {
+        if( ! m_standard_kernels.count( cur_krn ) )
+        {
+          m_standard_kernels.insert( { cur_krn , createKernel( pgm , cur_krn ) } ) ;
+        }
+      }
+    }
+    // Image product
+    {
+      cl_program pgm = createAndBuildProgram( image::gpu::kernels::krnsImageMul ) ;
+      m_standard_programs.emplace_back( pgm ) ;
+      const std::vector<std::string> kernelsAddList = { "image_mul_ui" , "image_mul_i" , "image_mul_f" } ;
+      for( const auto & cur_krn : kernelsAddList )
+      {
+        if( ! m_standard_kernels.count( cur_krn ) )
+        {
+          m_standard_kernels.insert( { cur_krn , createKernel( pgm , cur_krn ) } ) ;
+        }
+      }
+    }
+
   }
 }
 
