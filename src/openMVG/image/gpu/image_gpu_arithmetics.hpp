@@ -89,6 +89,26 @@ cl_mem ImageMul( cl_mem imgA , cl_mem imgB , openMVG::system::gpu::OpenCLContext
  */
 bool ImageMul( cl_mem res , cl_mem imgA , cl_mem imgB , openMVG::system::gpu::OpenCLContext & ctx ) ;
 
+
+/**
+ * @brief Perform copy of an image
+ * @param img Image
+ * @param ctx OpenCL Context
+ * @return OpenCL image object equal to the image
+ */
+cl_mem ImageCopy( cl_mem img , openMVG::system::gpu::OpenCLContext & ctx ) ;
+
+/**
+ * @brief Perform copy of an image (using already allocated result image)
+ * @param res Result of the operation
+ * @param img Image
+ * @param ctx OpenCL Context
+ * @retval true if operation is OK
+ * @retval false if operation fails
+ */
+bool ImageCopy( cl_mem res , cl_mem img , openMVG::system::gpu::OpenCLContext & ctx ) ;
+
+
 } // namespace gpu
 } // namespace image
 } // namespace openMVG

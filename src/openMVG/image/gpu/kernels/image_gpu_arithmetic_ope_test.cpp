@@ -1236,6 +1236,96 @@ TEST( ImageGPUArithmetic , mul_rgba_ui_2 )
   clReleaseMemObject( gpuSum ) ;
 }
 
+// Copy
+TEST( ImageGPUArithmetic , copy_ui )
+{
+  OpenCLContext ctx ;
+
+  int nb_col = 32 ;
+  int nb_row = 24 ;
+
+  Image<Rgba<unsigned char>> cpuImg( nb_col , nb_row ) ;
+
+  std::uniform_int_distribution<unsigned char> distrib( 0 , 15 ) ;
+  std::mt19937 rng( 0 ) ;
+
+  for( int id_row = 0 ; id_row < nb_row ; ++id_row )
+  {
+    for( int id_col = 0 ; id_col < nb_col ; ++id_col )
+    {
+      cpuImg( id_row , id_col ) = Rgba<unsigned char>( distrib( rng ) , distrib( rng ) , distrib( rng ) , distrib( rng ) ) ;
+    }
+  }
+
+  cl_mem gpuImg = ToOpenCLImage( cpuImg , ctx ) ;
+  cl_mem gpuCpy = ImageCopy( gpuImg , ctx ) ;
+
+  Image<Rgba<unsigned char>> cpuCpy ;
+  bool res = FromOpenCLImage( gpuCpy , cpuCpy , ctx ) ;
+
+  EXPECT_EQ( true , res ) ;
+
+  for( int id_row = 0 ; id_row < nb_row ; ++id_row )
+  {
+    for( int id_col = 0 ; id_col < nb_col ; ++id_col )
+    {
+      EXPECT_EQ( ( int ) cpuCpy( id_row , id_col ).r() , ( int ) ( cpuImg( id_row , id_col ).r() ) ) ;
+      EXPECT_EQ( ( int ) cpuCpy( id_row , id_col ).g() , ( int ) ( cpuImg( id_row , id_col ).g() ) ) ;
+      EXPECT_EQ( ( int ) cpuCpy( id_row , id_col ).b() , ( int ) ( cpuImg( id_row , id_col ).b() ) ) ;
+      EXPECT_EQ( ( int ) cpuCpy( id_row , id_col ).a() , ( int ) ( cpuImg( id_row , id_col ).a() ) ) ;
+    }
+  }
+  clReleaseMemObject( gpuImg ) ;
+  clReleaseMemObject( gpuCpy ) ;
+}
+
+// Copy 2
+TEST( ImageGPUArithmetic , copy_ui_2 )
+{
+  OpenCLContext ctx ;
+
+  int nb_col = 32 ;
+  int nb_row = 24 ;
+
+  Image<Rgba<unsigned char>> cpuImg( nb_col , nb_row ) ;
+
+  std::uniform_int_distribution<unsigned char> distrib( 0 , 15 ) ;
+  std::mt19937 rng( 0 ) ;
+
+  for( int id_row = 0 ; id_row < nb_row ; ++id_row )
+  {
+    for( int id_col = 0 ; id_col < nb_col ; ++id_col )
+    {
+      cpuImg( id_row , id_col ) = Rgba<unsigned char>( distrib( rng ) , distrib( rng ) , distrib( rng ) , distrib( rng ) ) ;
+    }
+  }
+
+  cl_mem gpuImg = ToOpenCLImage( cpuImg , ctx ) ;
+  cl_mem gpuCpy = ctx.createImage( nb_col , nb_row , OPENCL_IMAGE_CHANNEL_ORDER_RGBA , OPENCL_IMAGE_DATA_TYPE_U_INT_8 ) ;
+  EXPECT_EQ( false , gpuCpy == nullptr ) ;
+
+  bool ok = ImageCopy( gpuCpy , gpuImg , ctx ) ;
+
+  EXPECT_EQ( true , ok ) ;
+
+  Image<Rgba<unsigned char>> cpuCpy ;
+  bool res = FromOpenCLImage( gpuCpy , cpuCpy , ctx ) ;
+
+  EXPECT_EQ( true , res ) ;
+
+  for( int id_row = 0 ; id_row < nb_row ; ++id_row )
+  {
+    for( int id_col = 0 ; id_col < nb_col ; ++id_col )
+    {
+      EXPECT_EQ( ( int ) cpuCpy( id_row , id_col ).r() , ( int ) ( cpuImg( id_row , id_col ).r() ) ) ;
+      EXPECT_EQ( ( int ) cpuCpy( id_row , id_col ).g() , ( int ) ( cpuImg( id_row , id_col ).g() ) ) ;
+      EXPECT_EQ( ( int ) cpuCpy( id_row , id_col ).b() , ( int ) ( cpuImg( id_row , id_col ).b() ) ) ;
+      EXPECT_EQ( ( int ) cpuCpy( id_row , id_col ).a() , ( int ) ( cpuImg( id_row , id_col ).a() ) ) ;
+    }
+  }
+  clReleaseMemObject( gpuImg ) ;
+  clReleaseMemObject( gpuCpy ) ;
+}
 
 /* ************************************************************************* */
 int main()

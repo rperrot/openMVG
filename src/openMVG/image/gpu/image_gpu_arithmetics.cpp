@@ -695,6 +695,134 @@ bool ImageMul( cl_mem res , cl_mem imgA , cl_mem imgB , openMVG::system::gpu::Op
   return true ;
 }
 
+/**
+ * @brief Perform copy of an image
+ * @param img Image
+ * @param ctx OpenCL Context
+ * @return OpenCL image object equal to the image
+ */
+cl_mem ImageCopy( cl_mem img , openMVG::system::gpu::OpenCLContext & ctx )
+{
+  cl_image_format format ;
+  cl_int err = clGetImageInfo( img , CL_IMAGE_FORMAT , sizeof( format ) , &format , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return nullptr ;
+  }
+  size_t width ;
+  err = clGetImageInfo( img , CL_IMAGE_WIDTH , sizeof( size_t ) , &width , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return nullptr ;
+  }
+  size_t height ;
+  err = clGetImageInfo( img , CL_IMAGE_HEIGHT , sizeof( size_t ) , &height , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return nullptr ;
+  }
+
+  cl_image_desc desc ;
+  desc.image_type = CL_MEM_OBJECT_IMAGE2D ;
+  desc.image_width = width ;
+  desc.image_height = height ;
+  desc.image_depth = 1 ;
+  desc.image_row_pitch = 0 ;
+  desc.image_slice_pitch = 0 ;
+  desc.num_mip_levels = 0 ;
+  desc.num_samples = 0 ;
+  desc.buffer = nullptr ;
+
+  cl_mem res = clCreateImage( ctx.currentContext() , CL_MEM_READ_WRITE , &format , &desc , nullptr , &err ) ;
+  if( err != CL_SUCCESS )
+  {
+    return nullptr ;
+  }
+
+  const size_t src_origin[] = { 0 , 0 , 0 } ;
+  const size_t dst_origin[] = { 0 , 0 , 0 } ;
+  const size_t region[] = { width , height , 1 } ;
+
+  err = clEnqueueCopyImage( ctx.currentCommandQueue() , img , res , src_origin , dst_origin , region , 0 , nullptr , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return nullptr ;
+  }
+
+  return res ;
+}
+
+/**
+ * @brief Perform copy of an image (using already allocated result image)
+ * @param res Result of the operation
+ * @param img Image
+ * @param ctx OpenCL Context
+ * @retval true if operation is OK
+ * @retval false if operation fails
+ */
+bool ImageCopy( cl_mem res , cl_mem img , openMVG::system::gpu::OpenCLContext & ctx )
+{
+  // FMT/w/h src
+  cl_image_format formatSrc ;
+  cl_int err = clGetImageInfo( img , CL_IMAGE_FORMAT , sizeof( formatSrc ) , &formatSrc , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t widthSrc ;
+  err = clGetImageInfo( img , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthSrc , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t heightSrc ;
+  err = clGetImageInfo( img , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightSrc , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  // FMT/w/h dst
+  cl_image_format formatDst ;
+  err = clGetImageInfo( res , CL_IMAGE_FORMAT , sizeof( formatDst ) , &formatDst , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t widthDst ;
+  err = clGetImageInfo( res , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthDst , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t heightDst ;
+  err = clGetImageInfo( res , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightDst , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+
+  if( formatSrc.image_channel_data_type != formatDst.image_channel_data_type ||
+      formatSrc.image_channel_order != formatDst.image_channel_order ||
+      widthSrc != widthDst || 
+      heightSrc != heightDst )
+  {
+    return false ;
+  }
+
+
+  const size_t src_origin[] = { 0 , 0 , 0 } ;
+  const size_t dst_origin[] = { 0 , 0 , 0 } ;
+  const size_t region[] = { widthSrc , heightSrc , 1 } ;
+
+  err = clEnqueueCopyImage( ctx.currentCommandQueue() , img , res , src_origin , dst_origin , region , 0 , nullptr , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+
+  return true ;
+}
+
 } // namespace gpu
 } // namespace image
 } // namespace openMVG
