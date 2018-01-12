@@ -12,6 +12,7 @@
 
 // The kernels
 #include "openMVG/image/gpu/kernels/image_gpu_arithmetic_ope_kernels.hpp"
+#include "openMVG/image/gpu/kernels/image_gpu_convolution_ope_kernels.hpp"
 
 #include <iostream>
 
@@ -1649,6 +1650,15 @@ void OpenCLContext::loadStandardKernels( void )
         }
       }
     }
+    // Image convolution
+    {
+      cl_program pgm = createAndBuildProgram( image::gpu::kernels::krnsImageConvolve2dNaive ) ;
+      m_standard_programs.emplace_back( pgm ) ;
+      if( ! m_standard_kernels.count( "convolve_2d_naive_f" ) )
+      {
+        m_standard_kernels.insert( { "convolve_2d_naive_f" , createKernel( pgm , "convolve_2d_naive_f" ) } );
+      }
+    }
 
   }
 }
@@ -1770,6 +1780,50 @@ cl_mem OpenCLContext::createImage( const size_t width , const size_t height ,
   }
   return res ;
 }
+
+/**
+ * @brief Create a buffer
+ * @param size Size (in byte) of the buffer to create
+ * @param access Access type for the newly created buffer
+ * @param data Data to provide to the buffer
+ * @return Buffer created
+ * @retval nullptr if there is an error during creation
+ */
+cl_mem OpenCLContext::createBuffer( const size_t size , const OpenCLBufferAccessType access , void * data ) const
+{
+  cl_mem_flags flags = 0 ;
+
+  switch( access )
+  {
+    case OPENCL_BUFFER_ACCESS_READ_ONLY:
+    {
+      flags = CL_MEM_READ_ONLY ;
+      break ;
+    }
+    case OPENCL_BUFFER_ACCESS_WRITE_ONLY:
+    {
+      flags = CL_MEM_WRITE_ONLY ;
+      break ;
+    }
+    case OPENCL_BUFFER_ACCESS_READ_WRITE:
+    {
+      flags = CL_MEM_READ_WRITE ;
+      break ;
+    }
+  }
+
+  if( data != nullptr )
+  {
+    flags |= CL_MEM_COPY_HOST_PTR ;
+  }
+
+  cl_int error ;
+  cl_mem res = clCreateBuffer( currentContext() , flags , size , data , &error ) ;
+
+  return ( error == CL_SUCCESS ) ? res : nullptr ;
+
+}
+
 
 /**
  * @brief Release stdandard kernels

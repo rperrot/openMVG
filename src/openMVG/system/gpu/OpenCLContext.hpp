@@ -107,6 +107,16 @@ enum OpenCLImageAccessType
 } ;
 
 /**
+ * @brief Access type for buffer creation
+ */
+enum OpenCLBufferAccessType
+{
+  OPENCL_BUFFER_ACCESS_READ_ONLY ,
+  OPENCL_BUFFER_ACCESS_WRITE_ONLY ,
+  OPENCL_BUFFER_ACCESS_READ_WRITE
+} ;
+
+/**
  * @brief Main class holding an OpenCL context
  */
 class OpenCLContext
@@ -635,20 +645,30 @@ class OpenCLContext
     //// Image and buffer creations
 
     /**
-     * @brief Create an image 
+     * @brief Create an image
      * @param width Width
      * @param height Height
      * @param order Order of the channels
-     * @param dtype Data type of the channels 
-     * @param access Access type of the image 
+     * @param dtype Data type of the channels
+     * @param access Access type of the image
      * @return image created
-     * @retval nullptr if there's an error during creation 
+     * @retval nullptr if there's an error during creation
      */
     cl_mem createImage( const size_t width , const size_t height ,
                         const OpenCLImageChannelOrder order ,
                         const OpenCLImageDataType dtype ,
-                        const OpenCLImageAccessType access = OPENCL_IMAGE_ACCESS_READ_WRITE , 
+                        const OpenCLImageAccessType access = OPENCL_IMAGE_ACCESS_READ_WRITE ,
                         void * data = nullptr ) const ;
+
+    /**
+     * @brief Create a buffer
+     * @param size Size (in byte) of the buffer to create
+     * @param access Access type for the newly created buffer
+     * @param data Data to provide to the buffer
+     * @return Buffer created
+     * @retval nullptr if there is an error during creation
+     */
+    cl_mem createBuffer( const size_t size , const OpenCLBufferAccessType access = OPENCL_BUFFER_ACCESS_READ_WRITE , void * data = nullptr ) const ;
 
   private:
 

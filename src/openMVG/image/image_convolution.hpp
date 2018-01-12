@@ -100,13 +100,13 @@ void ImageHorizontalConvolution( const ImageTypeIn & img , const Kernel & kernel
   {
     // Copy line
     const pix_t start_pix = img.coeffRef( row , 0 );
-    for (int k = 0; k < half_kernel_width; ++k ) // pad before
+    for (int k = 0; k < half_kernel_width; ++k ) 
     {
       line[ k ] = start_pix;
     }
     std::memcpy( &line[0] + half_kernel_width, img.data() + row * cols, sizeof( pix_t ) * cols );
     const pix_t end_pix = img.coeffRef( row , cols - 1 );
-    for (int k = 0; k < half_kernel_width; ++k ) // pad after
+    for (int k = 0; k < half_kernel_width; ++k ) 
     {
       line[ k + half_kernel_width + cols ] = end_pix;
     }
