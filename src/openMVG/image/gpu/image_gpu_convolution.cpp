@@ -452,7 +452,14 @@ cl_mem ImageHorizontalConvolution( cl_mem img , const openMVG::Vec & kernel , op
   cl_int half_kernel_size = nbKernelCoef / 2 ;
 
   cl_kernel cl_krn ;
-  cl_krn = ctx.standardKernel( "horizontal_convolve_naive_f" ) ;
+  if( nbKernelCoef <= 33 )
+  {
+    cl_krn = ctx.standardKernel( "horizontal_convolve_local_32_f" ) ;
+  }
+  else
+  {
+    cl_krn = ctx.standardKernel( "horizontal_convolve_naive_f" ) ;
+  }
 
   clSetKernelArg( cl_krn , 0 , sizeof( cl_mem ) , &res ) ;
   clSetKernelArg( cl_krn , 1 , sizeof( cl_mem ) , &buffer ) ;
@@ -524,7 +531,14 @@ cl_mem ImageHorizontalConvolution( cl_mem img , cl_mem kernel , const size_t ker
   cl_int half_kernel_size = kernel_w / 2 ;
 
   cl_kernel cl_krn ;
-  cl_krn = ctx.standardKernel( "horizontal_convolve_naive_f" ) ;
+  if( kernel_w <= 33 )
+  {
+    cl_krn = ctx.standardKernel( "horizontal_convolve_local_32_f" ) ;
+  }
+  else
+  {
+    cl_krn = ctx.standardKernel( "horizontal_convolve_naive_f" ) ;
+  }
 
   clSetKernelArg( cl_krn , 0 , sizeof( cl_mem ) , &res ) ;
   clSetKernelArg( cl_krn , 1 , sizeof( cl_mem ) , &kernel ) ;
@@ -614,7 +628,14 @@ bool ImageHorizontalConvolution( cl_mem res , cl_mem img , const openMVG::Vec & 
   cl_int half_kernel_size = nbKernelCoef / 2 ;
 
   cl_kernel cl_krn ;
-  cl_krn = ctx.standardKernel( "horizontal_convolve_naive_f" ) ;
+  if( nbKernelCoef <= 33 )
+  {
+    cl_krn = ctx.standardKernel( "horizontal_convolve_local_32_f" ) ;
+  }
+  else
+  {
+    cl_krn = ctx.standardKernel( "horizontal_convolve_naive_f" ) ;
+  }
 
   clSetKernelArg( cl_krn , 0 , sizeof( cl_mem ) , &res ) ;
   clSetKernelArg( cl_krn , 1 , sizeof( cl_mem ) , &buffer ) ;
@@ -695,7 +716,14 @@ bool ImageHorizontalConvolution( cl_mem res , cl_mem img , cl_mem kernel , const
   cl_int half_kernel_size = kernel_w / 2 ;
 
   cl_kernel cl_krn ;
-  cl_krn = ctx.standardKernel( "horizontal_convolve_naive_f" ) ;
+  if( kernel_w <= 33 )
+  {
+    cl_krn = ctx.standardKernel( "horizontal_convolve_local_32_f" ) ;
+  }
+  else
+  {
+    cl_krn = ctx.standardKernel( "horizontal_convolve_naive_f" ) ;
+  }
 
   clSetKernelArg( cl_krn , 0 , sizeof( cl_mem ) , &res ) ;
   clSetKernelArg( cl_krn , 1 , sizeof( cl_mem ) , &kernel ) ;
@@ -718,9 +746,9 @@ bool ImageHorizontalConvolution( cl_mem res , cl_mem img , cl_mem kernel , const
 }
 
 /**
- * 
- *        VERTICAL CONVOLUTIONS 
- * 
+ *
+ *        VERTICAL CONVOLUTIONS
+ *
  */
 
 /**
@@ -782,7 +810,14 @@ cl_mem ImageVerticalConvolution( cl_mem img , const openMVG::Vec & kernel , open
   cl_int half_kernel_size = nbKernelCoef / 2 ;
 
   cl_kernel cl_krn ;
-  cl_krn = ctx.standardKernel( "vertical_convolve_naive_f" ) ;
+  if( nbKernelCoef <= 33 )
+  {
+    cl_krn = ctx.standardKernel( "vertical_convolve_local_32_f" ) ;
+  }
+  else
+  {
+    cl_krn = ctx.standardKernel( "vertical_convolve_naive_f" ) ;
+  }
 
   clSetKernelArg( cl_krn , 0 , sizeof( cl_mem ) , &res ) ;
   clSetKernelArg( cl_krn , 1 , sizeof( cl_mem ) , &buffer ) ;
@@ -854,7 +889,14 @@ cl_mem ImageVerticalConvolution( cl_mem img , cl_mem kernel , const size_t kerne
   cl_int half_kernel_size = kernel_w / 2 ;
 
   cl_kernel cl_krn ;
-  cl_krn = ctx.standardKernel( "vertical_convolve_naive_f" ) ;
+  if( kernel_w <= 33 )
+  {
+    cl_krn = ctx.standardKernel( "vertical_convolve_local_32_f" ) ;
+  }
+  else
+  {
+    cl_krn = ctx.standardKernel( "vertical_convolve_naive_f" ) ;
+  }
 
   clSetKernelArg( cl_krn , 0 , sizeof( cl_mem ) , &res ) ;
   clSetKernelArg( cl_krn , 1 , sizeof( cl_mem ) , &kernel ) ;
@@ -944,7 +986,14 @@ bool ImageVerticalConvolution( cl_mem res , cl_mem img , const openMVG::Vec & ke
   cl_int half_kernel_size = nbKernelCoef / 2 ;
 
   cl_kernel cl_krn ;
-  cl_krn = ctx.standardKernel( "vertical_convolve_naive_f" ) ;
+  if( nbKernelCoef <= 33 )
+  {
+    cl_krn = ctx.standardKernel( "vertical_convolve_local_32_f" ) ;
+  }
+  else
+  {
+    cl_krn = ctx.standardKernel( "vertical_convolve_naive_f" ) ;
+  }
 
   clSetKernelArg( cl_krn , 0 , sizeof( cl_mem ) , &res ) ;
   clSetKernelArg( cl_krn , 1 , sizeof( cl_mem ) , &buffer ) ;
@@ -1025,7 +1074,14 @@ bool ImageVerticalConvolution( cl_mem res , cl_mem img , cl_mem kernel , const s
   cl_int half_kernel_size = kernel_w / 2 ;
 
   cl_kernel cl_krn ;
-  cl_krn = ctx.standardKernel( "vertical_convolve_naive_f" ) ;
+  if( kernel_w <= 33 )
+  {
+    cl_krn = ctx.standardKernel( "vertical_convolve_local_32_f" ) ;
+  }
+  else
+  {
+    cl_krn = ctx.standardKernel( "vertical_convolve_naive_f" ) ;
+  }
 
   clSetKernelArg( cl_krn , 0 , sizeof( cl_mem ) , &res ) ;
   clSetKernelArg( cl_krn , 1 , sizeof( cl_mem ) , &kernel ) ;

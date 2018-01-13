@@ -188,10 +188,63 @@ __kernel void horizontal_convolve_naive_f( __write_only image2d_t outImg , const
   }
 }
   )" ;
+// Horizontal convolution with local memory prefetching
+// Up to kernel size equal to 33
+const std::string krnsImageHorizontalConvolveLocalMem32 =
+  R"(
+#define WORK_GROUP_SIZE 16
+__kernel void horizontal_convolve_local_32_f( __write_only image2d_t outImg , constant float * filter , __read_only image2d_t img , const int krnHalfSize )
+{
+  sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
+  
+  int local_x = get_local_id( 0 ) ;
+  int local_y = get_local_id( 1 ) ;
+  int group_id_x = get_group_id( 0 ) ;
+  int group_id_y = get_group_id( 1 ) ; 
 
-// Naive vertical convolution 
-const std::string krnsImageVerticalConvolveNaive = 
-R"(
+  // WORK_GROUP_SIZE before + WORK_GROUP_SIZE + WORK_GROUP_SIZE after 
+  __local float4 cachedData[ WORK_GROUP_SIZE * 3 ][ WORK_GROUP_SIZE ] ; 
+
+  // Center position of the kernel 
+  int pix_x = group_id_x * WORK_GROUP_SIZE + local_x ;
+  int pix_y = group_id_y * WORK_GROUP_SIZE + local_y ;
+
+  // fetch data using at most 3 read per work item 
+  int cache_base_x = krnHalfSize ;
+
+  int cache_prev_x = cache_base_x - WORK_GROUP_SIZE + local_x ; 
+  int cache_cur_x  = cache_base_x + local_x ;
+  int cache_next_x = cache_base_x + WORK_GROUP_SIZE + local_x ; 
+
+  if( cache_prev_x >= 0 )
+  {
+    cachedData[ cache_prev_x ][ local_y ] = read_imagef( img , sampler , (int2) ( pix_x - WORK_GROUP_SIZE , pix_y ) ) ;
+  } 
+  cachedData[ cache_cur_x ][ local_y ] = read_imagef( img , sampler , (int2)( pix_x , pix_y ) ) ;
+  if( local_x < krnHalfSize )
+  {
+    cachedData[ cache_next_x ][ local_y ] = read_imagef( img , sampler , (int2)( pix_x + WORK_GROUP_SIZE , pix_y ) ) ;
+  }
+
+  barrier( CLK_LOCAL_MEM_FENCE ) ; 
+
+  if( pix_x < get_image_width( outImg ) && pix_y < get_image_height( outImg ) ) 
+  { 
+    float4 sum = 0.f ; 
+    for( int x = -krnHalfSize ; x <= krnHalfSize ; ++x )
+    {
+      const float filterValue = filter[ krnHalfSize + x ] ; 
+      const float4 pixValue = cachedData[ cache_cur_x + x ][ local_y ] ;
+      sum += filterValue * pixValue ; 
+    }
+    write_imagef( outImg , (int2)( pix_x , pix_y ) , sum ) ;
+  }
+}
+  )" ;
+
+// Naive vertical convolution
+const std::string krnsImageVerticalConvolveNaive =
+  R"(
 __kernel void vertical_convolve_naive_f( __write_only image2d_t outImg , constant float * filter , __read_only image2d_t img , const int krnHalfSize )
 {
   sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
@@ -211,7 +264,59 @@ __kernel void vertical_convolve_naive_f( __write_only image2d_t outImg , constan
   }
 }
   )" ;
+// Vertical convolution with local memory prefetching
+// Up to kernel size equal to 33
+const std::string krnsImageVerticalConvolveLocalMem32 =
+  R"(
+#define WORK_GROUP_SIZE 16
+__kernel void vertical_convolve_local_32_f( __write_only image2d_t outImg , constant float * filter , __read_only image2d_t img , const int krnHalfSize )
+{
+  sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
+  
+  int local_x = get_local_id( 0 ) ;
+  int local_y = get_local_id( 1 ) ;
+  int group_id_x = get_group_id( 0 ) ;
+  int group_id_y = get_group_id( 1 ) ; 
 
+  // WORK_GROUP_SIZE before + WORK_GROUP_SIZE + WORK_GROUP_SIZE after 
+  __local float4 cachedData[ WORK_GROUP_SIZE ][ WORK_GROUP_SIZE * 3 ] ; 
+
+  // Center position of the kernel 
+  int pix_x = group_id_x * WORK_GROUP_SIZE + local_x ;
+  int pix_y = group_id_y * WORK_GROUP_SIZE + local_y ;
+
+  // fetch data using at most 3 read per work item 
+  int cache_base_y = krnHalfSize ;
+
+  int cache_prev_y = cache_base_y - WORK_GROUP_SIZE + local_y ; 
+  int cache_cur_y  = cache_base_y + local_y ;
+  int cache_next_y = cache_base_y + WORK_GROUP_SIZE + local_y ; 
+
+  if( cache_prev_y >= 0 )
+  {
+    cachedData[ local_x ][ cache_prev_y ] = read_imagef( img , sampler , (int2) ( pix_x , pix_y - WORK_GROUP_SIZE ) ) ;
+  } 
+  cachedData[ local_x ][ cache_cur_y ] = read_imagef( img , sampler , (int2)( pix_x , pix_y ) ) ;
+  if( local_y < krnHalfSize )
+  {
+    cachedData[ local_x ][ cache_next_y ] = read_imagef( img , sampler , (int2)( pix_x , pix_y + WORK_GROUP_SIZE ) ) ;
+  }
+
+  barrier( CLK_LOCAL_MEM_FENCE ) ; 
+
+  if( pix_x < get_image_width( outImg ) && pix_y < get_image_height( outImg ) ) 
+  { 
+    float4 sum = 0.f ; 
+    for( int x = -krnHalfSize ; x <= krnHalfSize ; ++x )
+    {
+      const float filterValue = filter[ krnHalfSize + x ] ; 
+      const float4 pixValue = cachedData[ local_x ][ cache_cur_y + x ] ;
+      sum += filterValue * pixValue ; 
+    }
+    write_imagef( outImg , (int2)( pix_x , pix_y ) , sum ) ;
+  }
+}
+  )" ;
 
 } // namespace kernels
 } // namespace gpu

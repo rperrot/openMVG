@@ -1687,12 +1687,26 @@ void OpenCLContext::loadStandardKernels( void )
       {
         m_standard_kernels.insert( { "horizontal_convolve_naive_f" , createKernel( pgm , "horizontal_convolve_naive_f" ) } ) ;
       }
+      // Horizontal convolution + local fetch
+      pgm = createAndBuildProgram( image::gpu::kernels::krnsImageHorizontalConvolveLocalMem32 ) ;
+      m_standard_programs.emplace_back( pgm ) ;
+      if( ! m_standard_kernels.count( "horizontal_convolve_local_32_f" ) )
+      {
+        m_standard_kernels.insert( { "horizontal_convolve_local_32_f" , createKernel( pgm , "horizontal_convolve_local_32_f" ) } );
+      }
       // Naive vertical convolution
       pgm = createAndBuildProgram( image::gpu::kernels::krnsImageVerticalConvolveNaive ) ;
       m_standard_programs.emplace_back( pgm ) ;
       if( ! m_standard_kernels.count( "vertical_convolve_naive_f" ) )
       {
         m_standard_kernels.insert( { "vertical_convolve_naive_f" , createKernel( pgm , "vertical_convolve_naive_f" ) } ) ;
+      }
+      // Vertical convolution + local fetch 
+      pgm = createAndBuildProgram( image::gpu::kernels::krnsImageVerticalConvolveLocalMem32 ) ;
+      m_standard_programs.emplace_back( pgm ) ;
+      if( ! m_standard_kernels.count( "vertical_convolve_local_32_f" ) )
+      {
+        m_standard_kernels.insert( { "vertical_convolve_local_32_f" , createKernel( pgm , "vertical_convolve_local_32_f" ) } ) ;
       }
     } // Image convolution
   } // Image kernels
