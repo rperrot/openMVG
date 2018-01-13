@@ -602,10 +602,11 @@ class OpenCLContext
      * @brief Run 2d kernel on the current platform/device
      * @param krn Kernel
      * @param work_dim Work dimension (width,height)
+     * @param group_size Work group size (if nullptr -> Compute best value)
      * @retval true If run is ok
      * @retval false If run fails
      */
-    bool runKernel2d( cl_kernel krn , const size_t * work_dim ) const ;
+    bool runKernel2d( cl_kernel krn , const size_t * work_dim , const size_t * group_size = nullptr ) const ;
 
     /// ------------------------------- END OF KERNELS ------------------------------------------
 

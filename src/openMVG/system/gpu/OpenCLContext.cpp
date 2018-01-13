@@ -1400,23 +1400,37 @@ static inline size_t NextMultipleOf( const size_t N , const size_t K )
  * @retval true If run is ok
  * @retval false If run fails
  */
-bool OpenCLContext::runKernel2d( cl_kernel krn , const size_t * work_dim ) const
+bool OpenCLContext::runKernel2d( cl_kernel krn , const size_t * work_dim , const size_t * group_size ) const
 {
-  size_t preferedWorkGroupSize ;
-  cl_int err = clGetKernelWorkGroupInfo( krn , nullptr , CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE , sizeof( size_t ) , &preferedWorkGroupSize , nullptr ) ;
-  if( err != CL_SUCCESS )
+  size_t workGroupSize[2] ;
+
+  if( ! group_size )
   {
-    return false ;
+    size_t preferedWorkGroupSize ;
+    cl_int err = clGetKernelWorkGroupInfo( krn , nullptr , CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE , sizeof( size_t ) , &preferedWorkGroupSize , nullptr ) ;
+    if( err != CL_SUCCESS )
+    {
+      return false ;
+    }
+    // TODO : provide something more automatic wrt to the maximum number of work item 
+    // ie : CL_DEVICE_MAX_WORK_GROUP_SIZE
+    workGroupSize[0] = std::min( preferedWorkGroupSize , static_cast<size_t>( 16 ) ) ;
+    workGroupSize[1] = std::min( preferedWorkGroupSize , static_cast<size_t>( 16 ) ) ;
+  }
+  else
+  {
+    workGroupSize[0] = group_size[0] ;
+    workGroupSize[1] = group_size[1] ;
   }
 
   const size_t realSize[2] =
   {
-    NextMultipleOf( work_dim[0] , preferedWorkGroupSize ) ,
-    NextMultipleOf( work_dim[1] , preferedWorkGroupSize )
+    NextMultipleOf( work_dim[0] , workGroupSize[0] ) ,
+    NextMultipleOf( work_dim[1] , workGroupSize[1] )
   } ;
 
   cl_command_queue queue = currentCommandQueue() ;
-  err = clEnqueueNDRangeKernel( queue , krn , 2 , nullptr , realSize , nullptr , 0 , nullptr , nullptr ) ;
+  cl_int err = clEnqueueNDRangeKernel( queue , krn , 2 , nullptr , realSize , workGroupSize , 0 , nullptr , nullptr ) ;
 
   if( err != CL_SUCCESS )
   {
@@ -1652,11 +1666,19 @@ void OpenCLContext::loadStandardKernels( void )
     }
     // Image convolution
     {
+      // Naive 2d kernel
       cl_program pgm = createAndBuildProgram( image::gpu::kernels::krnsImageConvolve2dNaive ) ;
       m_standard_programs.emplace_back( pgm ) ;
       if( ! m_standard_kernels.count( "convolve_2d_naive_f" ) )
       {
         m_standard_kernels.insert( { "convolve_2d_naive_f" , createKernel( pgm , "convolve_2d_naive_f" ) } );
+      }
+      // 2D + local fetch
+      pgm = createAndBuildProgram( image::gpu::kernels::krnsImageConvolve2dLocalMem ) ;
+      m_standard_programs.emplace_back( pgm ) ;
+      if( ! m_standard_kernels.count( "convolve_2d_local_f" ) )
+      {
+        m_standard_kernels.insert( { "convolve_2d_local_f" , createKernel( pgm , "convolve_2d_local_f" ) } ) ;
       }
     }
 

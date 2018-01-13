@@ -69,7 +69,15 @@ cl_mem ImageConvolution2d( cl_mem img , const openMVG::Mat & kernel , openMVG::s
   }
 
 
-  cl_kernel cl_krn = ctx.standardKernel( "convolve_2d_naive_f" ) ;
+  cl_kernel cl_krn;
+  if( w <= 29 && h <= 29 )
+  {
+    cl_krn = ctx.standardKernel( "convolve_2d_local_f" ) ;
+  }
+  else
+  {
+    cl_krn = ctx.standardKernel( "convolve_2d_naive_f" ) ;
+  }
 
   cl_int half_w = w / 2 ;
   cl_int half_h = h / 2 ;
@@ -140,7 +148,15 @@ cl_mem ImageConvolution2d( cl_mem img , cl_mem kernel , const size_t kernel_w , 
   }
 
 
-  cl_kernel cl_krn = ctx.standardKernel( "convolve_2d_naive_f" ) ;
+  cl_kernel cl_krn;
+  if( kernel_w <= 29 && kernel_h <= 29 )
+  {
+    cl_krn = ctx.standardKernel( "convolve_2d_local_f" ) ;
+  }
+  else
+  {
+    cl_krn = ctx.standardKernel( "convolve_2d_naive_f" ) ;
+  }
 
   cl_int half_w = kernel_w / 2 ;
   cl_int half_h = kernel_h / 2 ;
@@ -234,7 +250,15 @@ bool ImageConvolution2d( cl_mem res , cl_mem img , const openMVG::Mat & kernel ,
   }
 
 
-  cl_kernel cl_krn = ctx.standardKernel( "convolve_2d_naive_f" ) ;
+  cl_kernel cl_krn;
+  if( w <= 29 && h <= 29 )
+  {
+    cl_krn = ctx.standardKernel( "convolve_2d_local_f" ) ;
+  }
+  else
+  {
+    cl_krn = ctx.standardKernel( "convolve_2d_naive_f" ) ;
+  }
 
   cl_int half_w = w / 2 ;
   cl_int half_h = h / 2 ;
@@ -251,7 +275,11 @@ bool ImageConvolution2d( cl_mem res , cl_mem img , const openMVG::Mat & kernel ,
     static_cast<size_t>( height )
   } ;
 
-  ctx.runKernel2d( cl_krn , dim ) ;
+  const size_t workDim[] = { 16  , 16 } ;
+  if( ! ctx.runKernel2d( cl_krn , dim , workDim ) )
+  {
+    return false ;
+  }
 
   clReleaseMemObject( buffer ) ;
 
@@ -314,7 +342,15 @@ bool ImageConvolution2d( cl_mem res , cl_mem img , cl_mem kernel , const size_t 
   }
 
 
-  cl_kernel cl_krn = ctx.standardKernel( "convolve_2d_naive_f" ) ;
+  cl_kernel cl_krn;
+  if( kernel_w <= 29 && kernel_h <= 29 )
+  {
+    cl_krn = ctx.standardKernel( "convolve_2d_local_f" ) ;
+  }
+  else
+  {
+    cl_krn = ctx.standardKernel( "convolve_2d_naive_f" ) ;
+  }
 
   cl_int half_w = kernel_w / 2 ;
   cl_int half_h = kernel_h / 2 ;
