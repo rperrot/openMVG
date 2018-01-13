@@ -191,6 +191,7 @@ void ImageSeparableConvolution( const ImageType & img ,
   ImageVerticalConvolution( tmp , vert_k_cast , out );
 }
 
+/*
 using RowMatrixXf = Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
 /// Specialization for Float based image (for arbitrary sized kernel)
@@ -266,7 +267,7 @@ inline void SeparableConvolution2d( const RowMatrixXf& image,
     }
   }
 }
-
+*/
 
 /**
 * @brief Specialization for Image<float> in order to use SeparableConvolution2d
@@ -275,6 +276,7 @@ inline void SeparableConvolution2d( const RowMatrixXf& image,
 * @param vert_k Kernl used for vertical convolution
 * @param[out] out Convolved image
 */
+/*
 template<typename Kernel>
 void ImageSeparableConvolution( const Image<float> & img ,
                                 const Kernel & horiz_k ,
@@ -290,6 +292,7 @@ void ImageSeparableConvolution( const Image<float> & img ,
   out.resize( img.Width(), img.Height() );
   SeparableConvolution2d( img.GetMat(), horiz_k_cast, vert_k_cast, &( ( Image<float>::Base& )out ) );
 }
+*/
 
 } // namespace image
 } // namespace openMVG

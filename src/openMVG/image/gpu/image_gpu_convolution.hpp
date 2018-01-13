@@ -64,81 +64,152 @@ bool ImageConvolution2d( cl_mem res , cl_mem img , cl_mem kernel , const size_t 
 
 // Horizontal convolution
 /**
- * @brief Perform Horizontal convolution by a given kernel 
- * @param img Image to convolve 
- * @param kernel Kernel 
- * @param ctx OpenCL context 
- * @return Convolved image 
+ * @brief Perform Horizontal convolution by a given kernel
+ * @param img Image to convolve
+ * @param kernel Kernel
+ * @param ctx OpenCL context
+ * @return Convolved image
  */
 cl_mem ImageHorizontalConvolution( cl_mem img , const openMVG::Vec & kernel , openMVG::system::gpu::OpenCLContext & ctx ) ;
 
 /**
- * @brief Perform Horizontal convolution by a given kernel 
- * @param img Image to convolve 
- * @param kernel Kernel 
+ * @brief Perform Horizontal convolution by a given kernel
+ * @param img Image to convolve
+ * @param kernel Kernel
  * @param kernel_w Kernel size
- * @param ctx OpenCL context 
- * @return Convolved image 
+ * @param ctx OpenCL context
+ * @return Convolved image
  */
 cl_mem ImageHorizontalConvolution( cl_mem img , cl_mem kernel , const size_t kernel_w , openMVG::system::gpu::OpenCLContext & ctx ) ;
 
 /**
- * @brief Perform Horizontal convolution by a given kernel 
+ * @brief Perform Horizontal convolution by a given kernel
  * @param[out] res Convolved image (need to be already allocated)
- * @param img Image to convolve 
- * @param kernel Kernel 
- * @param ctx OpenCL context 
+ * @param img Image to convolve
+ * @param kernel Kernel
+ * @param ctx OpenCL context
  */
 bool ImageHorizontalConvolution( cl_mem res , cl_mem img , const openMVG::Vec & kernel , openMVG::system::gpu::OpenCLContext & ctx ) ;
 
 /**
- * @brief Perform Horizontal convolution by a given kernel 
+ * @brief Perform Horizontal convolution by a given kernel
  * @param[out] res Convolved image (need to be already allocated)
- * @param img Image to convolve 
- * @param kernel Kernel 
+ * @param img Image to convolve
+ * @param kernel Kernel
  * @param kernel_w Kernel size
- * @param ctx OpenCL context 
+ * @param ctx OpenCL context
  */
 bool ImageHorizontalConvolution( cl_mem res , cl_mem img , cl_mem kernel , const size_t kernel_w , openMVG::system::gpu::OpenCLContext & ctx ) ;
 
 // Vertical convolution
 /**
- * @brief Perform Vertical convolution by a given kernel 
- * @param img Image to convolve 
- * @param kernel Kernel 
- * @param ctx OpenCL context 
- * @return Convolved image 
+ * @brief Perform Vertical convolution by a given kernel
+ * @param img Image to convolve
+ * @param kernel Kernel
+ * @param ctx OpenCL context
+ * @return Convolved image
  */
 cl_mem ImageVerticalConvolution( cl_mem img , const openMVG::Vec & kernel , openMVG::system::gpu::OpenCLContext & ctx ) ;
 
 /**
- * @brief Perform Vertical convolution by a given kernel 
- * @param img Image to convolve 
- * @param kernel Kernel 
+ * @brief Perform Vertical convolution by a given kernel
+ * @param img Image to convolve
+ * @param kernel Kernel
  * @param kernel_w Kernel size
- * @param ctx OpenCL context 
- * @return Convolved image 
+ * @param ctx OpenCL context
+ * @return Convolved image
  */
 cl_mem ImageVerticalConvolution( cl_mem img , cl_mem kernel , const size_t kernel_w , openMVG::system::gpu::OpenCLContext & ctx ) ;
 
 /**
- * @brief Perform Vertical convolution by a given kernel 
+ * @brief Perform Vertical convolution by a given kernel
  * @param[out] res Convolved image (need to be already allocated)
- * @param img Image to convolve 
- * @param kernel Kernel 
- * @param ctx OpenCL context 
+ * @param img Image to convolve
+ * @param kernel Kernel
+ * @param ctx OpenCL context
  */
 bool ImageVerticalConvolution( cl_mem res , cl_mem img , const openMVG::Vec & kernel , openMVG::system::gpu::OpenCLContext & ctx ) ;
 
 /**
- * @brief Perform Vertical convolution by a given kernel 
+ * @brief Perform Vertical convolution by a given kernel
  * @param[out] res Convolved image (need to be already allocated)
- * @param img Image to convolve 
- * @param kernel Kernel 
+ * @param img Image to convolve
+ * @param kernel Kernel
  * @param kernel_w Kernel size
- * @param ctx OpenCL context 
+ * @param ctx OpenCL context
  */
-bool ImageVerticalConvolution( cl_mem res , cl_mem img , cl_mem kernel , const size_t kernel_w , openMVG::system::gpu::OpenCLContext & ctx ) ;
+bool ImageVerticalConvolution( cl_mem res ,
+                               cl_mem img ,
+                               cl_mem kernel ,
+                               const size_t kernel_w ,
+                               openMVG::system::gpu::OpenCLContext & ctx ) ;
+
+// Separable convolution
+/**
+ * @brief Perform Separable convolution
+ * @param img Image to convolve
+ * @param hKernel Horizontal kernel
+ * @param vKernel Vertical kernel
+ * @param ctx OpenCL context
+ * @return convolved image
+ */
+cl_mem ImageSeparableConvolution( cl_mem img ,
+                                  const openMVG::Vec & hKernel ,
+                                  const openMVG::Vec & vKernel ,
+                                  openMVG::system::gpu::OpenCLContext & ctx ) ;
+
+/**
+ * @brief Perform Separable convolution
+ * @param img Image to convolve
+ * @param hKernel Horizontal kernel
+ * @param vKernel Vertical kernel
+ * @param h_kernel_size Horizontal kernel size
+ * @param v_kernel_size Vertical kernel size
+ * @param ctx OpenCL context
+ * @return convolved image
+ */
+cl_mem ImageSeparableConvolution( cl_mem img ,
+                                  cl_mem hKernel ,
+                                  cl_mem vKernel ,
+                                  const size_t h_kernel_size ,
+                                  const size_t v_kernel_size ,
+                                  openMVG::system::gpu::OpenCLContext & ctx ) ;
+
+/**
+ * @brief Perform Separable convolution
+ * @param[out] res Convolved image (need to be at correct size before calling the function)
+ * @param img Image to convolve
+ * @param hKernel Horizontal kernel
+ * @param vKernel Vertical kernel
+ * @param ctx OpenCL context
+ * @retval true if convolution is ok
+ * @retval false if something fails
+ */
+bool ImageSeparableConvolution( cl_mem res ,
+                                cl_mem img ,
+                                const openMVG::Vec & hKernel ,
+                                const openMVG::Vec & vKernel ,
+                                openMVG::system::gpu::OpenCLContext & ctx ) ;
+
+/**
+ * @brief Perform Separable convolution
+ * @param[out] res Convolved image (need to be at correct size before calling the function)
+ * @param img Image to convolve
+ * @param hKernel Horizontal kernel
+ * @param vKernel Vertical kernel
+ * @param h_kernel_size Horizontal kernel size
+ * @param v_kernel_size Vertical kernel size
+ * @param ctx OpenCL context
+ * @retval true if convolution is ok
+ * @retval false if something fails
+ */
+bool ImageSeparableConvolution( cl_mem res ,
+                                cl_mem img ,
+                                cl_mem hKernel ,
+                                cl_mem vKernel ,
+                                const size_t h_kernel_size ,
+                                const size_t v_kernel_size ,
+                                openMVG::system::gpu::OpenCLContext &ctx ) ;
 
 } // namespace gpu
 } // namespace image
