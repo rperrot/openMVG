@@ -11,8 +11,9 @@
 #include "openMVG/stl/split.hpp"
 
 // The kernels
-#include "openMVG/image/gpu/kernels/image_gpu_arithmetic_ope_kernels.hpp"
-#include "openMVG/image/gpu/kernels/image_gpu_convolution_ope_kernels.hpp"
+#include "openMVG/image/gpu/kernels/image_gpu_arithmetic_kernels.hpp"
+#include "openMVG/image/gpu/kernels/image_gpu_convolution_kernels.hpp"
+#include "openMVG/image/gpu/kernels/image_gpu_filtering_kernels.hpp"
 
 #include <iostream>
 
@@ -1701,7 +1702,7 @@ void OpenCLContext::loadStandardKernels( void )
       {
         m_standard_kernels.insert( { "vertical_convolve_naive_f" , createKernel( pgm , "vertical_convolve_naive_f" ) } ) ;
       }
-      // Vertical convolution + local fetch 
+      // Vertical convolution + local fetch
       pgm = createAndBuildProgram( image::gpu::kernels::krnsImageVerticalConvolveLocalMem32 ) ;
       m_standard_programs.emplace_back( pgm ) ;
       if( ! m_standard_kernels.count( "vertical_convolve_local_32_f" ) )
@@ -1709,6 +1710,29 @@ void OpenCLContext::loadStandardKernels( void )
         m_standard_kernels.insert( { "vertical_convolve_local_32_f" , createKernel( pgm , "vertical_convolve_local_32_f" ) } ) ;
       }
     } // Image convolution
+    // Image filtering
+    {
+      {
+        // Derivatives
+        cl_program pgm = createAndBuildProgram( image::gpu::kernels::krnsImageFilteringDerivative );
+        m_standard_programs.emplace_back( pgm ) ;
+        const std::vector<std::string> kernelsDerivList =
+        {
+          "image_x_derivative_unnormalized" ,
+          "image_x_derivative_normalized" ,
+          "image_y_derivative_unnormalized" ,
+          "image_y_derivative_normalized"
+        } ;
+        for( const auto & cur_krn : kernelsDerivList )
+        {
+          if( ! m_standard_kernels.count( cur_krn ) )
+          {
+            m_standard_kernels.insert( { cur_krn , createKernel( pgm , cur_krn ) } ) ;
+          }
+        }
+      }
+
+    }
   } // Image kernels
 
 }
