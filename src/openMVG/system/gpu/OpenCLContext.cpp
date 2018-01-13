@@ -1412,7 +1412,7 @@ bool OpenCLContext::runKernel2d( cl_kernel krn , const size_t * work_dim , const
     {
       return false ;
     }
-    // TODO : provide something more automatic wrt to the maximum number of work item 
+    // TODO : provide something more automatic wrt to the maximum number of work item
     // ie : CL_DEVICE_MAX_WORK_GROUP_SIZE
     workGroupSize[0] = std::min( preferedWorkGroupSize , static_cast<size_t>( 16 ) ) ;
     workGroupSize[1] = std::min( preferedWorkGroupSize , static_cast<size_t>( 16 ) ) ;
@@ -1680,9 +1680,23 @@ void OpenCLContext::loadStandardKernels( void )
       {
         m_standard_kernels.insert( { "convolve_2d_local_f" , createKernel( pgm , "convolve_2d_local_f" ) } ) ;
       }
-    }
+      // Naive horizontal convolution
+      pgm = createAndBuildProgram( image::gpu::kernels::krnsImageHorizontalConvolveNaive ) ;
+      m_standard_programs.emplace_back( pgm ) ;
+      if( ! m_standard_kernels.count( "horizontal_convolve_naive_f" ) )
+      {
+        m_standard_kernels.insert( { "horizontal_convolve_naive_f" , createKernel( pgm , "horizontal_convolve_naive_f" ) } ) ;
+      }
+      // Naive vertical convolution
+      pgm = createAndBuildProgram( image::gpu::kernels::krnsImageVerticalConvolveNaive ) ;
+      m_standard_programs.emplace_back( pgm ) ;
+      if( ! m_standard_kernels.count( "vertical_convolve_naive_f" ) )
+      {
+        m_standard_kernels.insert( { "vertical_convolve_naive_f" , createKernel( pgm , "vertical_convolve_naive_f" ) } ) ;
+      }
+    } // Image convolution
+  } // Image kernels
 
-  }
 }
 
 /**

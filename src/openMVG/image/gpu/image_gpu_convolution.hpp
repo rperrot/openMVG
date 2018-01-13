@@ -20,6 +20,8 @@ namespace image
 namespace gpu
 {
 
+// Convolution 2d
+
 /**
  * @brief Perform OpenCL 2d convolution
  * @param img Input image
@@ -60,6 +62,83 @@ bool ImageConvolution2d( cl_mem res , cl_mem img , const openMVG::Mat & kernel ,
  */
 bool ImageConvolution2d( cl_mem res , cl_mem img , cl_mem kernel , const size_t kernel_w , const size_t kernel_h , openMVG::system::gpu::OpenCLContext & ctx ) ;
 
+// Horizontal convolution
+/**
+ * @brief Perform Horizontal convolution by a given kernel 
+ * @param img Image to convolve 
+ * @param kernel Kernel 
+ * @param ctx OpenCL context 
+ * @return Convolved image 
+ */
+cl_mem ImageHorizontalConvolution( cl_mem img , const openMVG::Vec & kernel , openMVG::system::gpu::OpenCLContext & ctx ) ;
+
+/**
+ * @brief Perform Horizontal convolution by a given kernel 
+ * @param img Image to convolve 
+ * @param kernel Kernel 
+ * @param kernel_w Kernel size
+ * @param ctx OpenCL context 
+ * @return Convolved image 
+ */
+cl_mem ImageHorizontalConvolution( cl_mem img , cl_mem kernel , const size_t kernel_w , openMVG::system::gpu::OpenCLContext & ctx ) ;
+
+/**
+ * @brief Perform Horizontal convolution by a given kernel 
+ * @param[out] res Convolved image (need to be already allocated)
+ * @param img Image to convolve 
+ * @param kernel Kernel 
+ * @param ctx OpenCL context 
+ */
+bool ImageHorizontalConvolution( cl_mem res , cl_mem img , const openMVG::Vec & kernel , openMVG::system::gpu::OpenCLContext & ctx ) ;
+
+/**
+ * @brief Perform Horizontal convolution by a given kernel 
+ * @param[out] res Convolved image (need to be already allocated)
+ * @param img Image to convolve 
+ * @param kernel Kernel 
+ * @param kernel_w Kernel size
+ * @param ctx OpenCL context 
+ */
+bool ImageHorizontalConvolution( cl_mem res , cl_mem img , cl_mem kernel , const size_t kernel_w , openMVG::system::gpu::OpenCLContext & ctx ) ;
+
+// Vertical convolution
+/**
+ * @brief Perform Vertical convolution by a given kernel 
+ * @param img Image to convolve 
+ * @param kernel Kernel 
+ * @param ctx OpenCL context 
+ * @return Convolved image 
+ */
+cl_mem ImageVerticalConvolution( cl_mem img , const openMVG::Vec & kernel , openMVG::system::gpu::OpenCLContext & ctx ) ;
+
+/**
+ * @brief Perform Vertical convolution by a given kernel 
+ * @param img Image to convolve 
+ * @param kernel Kernel 
+ * @param kernel_w Kernel size
+ * @param ctx OpenCL context 
+ * @return Convolved image 
+ */
+cl_mem ImageVerticalConvolution( cl_mem img , cl_mem kernel , const size_t kernel_w , openMVG::system::gpu::OpenCLContext & ctx ) ;
+
+/**
+ * @brief Perform Vertical convolution by a given kernel 
+ * @param[out] res Convolved image (need to be already allocated)
+ * @param img Image to convolve 
+ * @param kernel Kernel 
+ * @param ctx OpenCL context 
+ */
+bool ImageVerticalConvolution( cl_mem res , cl_mem img , const openMVG::Vec & kernel , openMVG::system::gpu::OpenCLContext & ctx ) ;
+
+/**
+ * @brief Perform Vertical convolution by a given kernel 
+ * @param[out] res Convolved image (need to be already allocated)
+ * @param img Image to convolve 
+ * @param kernel Kernel 
+ * @param kernel_w Kernel size
+ * @param ctx OpenCL context 
+ */
+bool ImageVerticalConvolution( cl_mem res , cl_mem img , cl_mem kernel , const size_t kernel_w , openMVG::system::gpu::OpenCLContext & ctx ) ;
 
 } // namespace gpu
 } // namespace image

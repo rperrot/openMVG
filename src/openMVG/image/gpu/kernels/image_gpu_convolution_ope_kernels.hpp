@@ -1,6 +1,11 @@
-// TODO : https://github.com/isazi/Convolution/blob/master/include/Convolution.hpp
-// http://www.cmsoft.com.br/opencl-tutorial/case-study-high-performance-convolution-using-opencl-__local-memory/
-// https://www.milania.de/blog/Performance_evaluation_of_image_convolution_with_gradient_filters_in_OpenCL
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
+
+// Copyright (c) 2018 Romuald PERROT.
+
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 #ifndef OPENMVG_IMAGE_GPU_KERNELS_IMAGE_GPU_CONVOLUTIONS_KERNELS_HPP
 #define OPENMVG_IMAGE_GPU_KERNELS_IMAGE_GPU_CONVOLUTIONS_KERNELS_HPP
 
@@ -161,10 +166,56 @@ const std::string krnsImageConvolve2dLocalMem =
     }
 )";
 
+// Naive horizontal convolution 
+const std::string krnsImageHorizontalConvolveNaive = 
+R"(
+__kernel void horizontal_convolve_naive_f( __write_only image2d_t outImg , constant float * filter , __read_only image2d_t img , const int krnHalfSize )
+{
+  sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
+      
+  const int2 pos = { get_global_id(0) , get_global_id(1) } ;
+
+  if( pos.x < get_image_width( outImg ) && pos.y < get_image_height( outImg ) ) 
+  { 
+    float4 sum = 0.f ; 
+    for( int x = -krnHalfSize ; x <= krnHalfSize ; ++x )
+    {
+      const float filterValue = filter[ krnHalfSize + x ] ; 
+      const float4 pixValue = read_imagef( img , sampler , pos + (int2) ( x , 0 ) ) ; 
+      sum += filterValue * pixValue ; 
+    }
+    write_imagef( outImg , pos , sum ) ;
+  }
+}
+  )" ;
+
+// Naive vertical convolution 
+const std::string krnsImageVerticalConvolveNaive = 
+R"(
+__kernel void vertical_convolve_naive_f( __write_only image2d_t outImg , constant float * filter , __read_only image2d_t img , const int krnHalfSize )
+{
+  sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
+      
+  const int2 pos = { get_global_id(0) , get_global_id(1) } ;
+
+  if( pos.x < get_image_width( outImg ) && pos.y < get_image_height( outImg ) ) 
+  { 
+    float4 sum = 0.f ; 
+    for( int x = -krnHalfSize ; x <= krnHalfSize ; ++x )
+    {
+      const float filterValue = filter[ krnHalfSize + x ] ; 
+      const float4 pixValue = read_imagef( img , sampler , pos + (int2) ( 0 , x ) ) ; 
+      sum += filterValue * pixValue ; 
+    }
+    write_imagef( outImg , pos , sum ) ;
+  }
+}
+  )" ;
+
 
 } // namespace kernels
 } // namespace gpu
 } // namespace image
 } // namespace openMVG
 
-#endif 
+#endif
