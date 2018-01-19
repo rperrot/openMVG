@@ -1,5 +1,6 @@
 #include "image_gpu_filtering.hpp"
 
+#include "openMVG/image/image_filtering.hpp"
 #include "openMVG/image/gpu/image_gpu_convolution.hpp"
 #include "openMVG/numeric/numeric.h"
 
@@ -1147,6 +1148,130 @@ bool ImageScaledScharrYDerivative( cl_mem res , cl_mem img , const int scale , o
   return ImageSeparableConvolution( res , img , kernel_horiz , kernel_vert , ctx ) ;
 }
 
+/**
+ * @brief Compute (isotropic) gaussian filtering of an image using filter width of k * sigma
+ * @param img Input image
+ * @param sigma standard deviation of kernel
+ * @param ctx OpenCL Context
+ * @param k confidence interval param - kernel is width k * sigma * 2 + 1 -- using k = 3 gives 99% of gaussian curve
+ * @return Gaussian filtered image
+ */
+cl_mem ImageGaussianFilter( cl_mem img , const double sigma , openMVG::system::gpu::OpenCLContext & ctx , const int k )
+{
+  // Compute Gaussian filter
+  const int k_size    = ( int ) 2 * k * sigma + 1;
+  const int half_k_size = k_size / 2;
+
+  const double exp_scale = 1.0 / ( 2.0 * sigma * sigma );
+
+  // Compute 1D Gaussian filter
+  openMVG::Vec kernel_horiz( k_size );
+
+  double sum = 0;
+  for ( int i = 0; i < k_size; ++i )
+  {
+    const double dx = ( i - half_k_size );
+    kernel_horiz( i ) = exp( - dx * dx * exp_scale );
+    sum += kernel_horiz( i );
+  }
+
+  // Normalize kernel (to have \sum_i kernel_horiz( i ) = 1 and avoid energy loss)
+  const double inv = 1.0 / sum;
+  for ( int i = 0; i < k_size; ++i )
+  {
+    kernel_horiz( i ) *= inv;
+  }
+
+  // Vertical kernel is the same as the horizontal one
+  const openMVG::Vec & kernel_vert = kernel_horiz;
+
+  return ImageSeparableConvolution( img , kernel_horiz , kernel_vert , ctx ) ;
+}
+
+/**
+ * @brief Compute (isotropic) gaussian filtering of an image using filter width of k * sigma
+ * @param img Input image
+ * @param[out] res Gaussian filtered image
+ * @param sigma standard deviation of kernel
+ * @param ctx OpenCL Context
+ * @param k confidence interval param - kernel is width k * sigma * 2 + 1 -- using k = 3 gives 99% of gaussian curve
+ * @retval true if computation is ok
+ * @retval false if computation fails
+ */
+bool ImageGaussianFilter( cl_mem res , cl_mem img , const double sigma , openMVG::system::gpu::OpenCLContext & ctx , const int k )
+{
+  // Compute Gaussian filter
+  const int k_size    = ( int ) 2 * k * sigma + 1;
+  const int half_k_size = k_size / 2;
+
+  const double exp_scale = 1.0 / ( 2.0 * sigma * sigma );
+
+  // Compute 1D Gaussian filter
+  openMVG::Vec kernel_horiz( k_size );
+
+  double sum = 0;
+  for ( int i = 0; i < k_size; ++i )
+  {
+    const double dx = ( i - half_k_size );
+    kernel_horiz( i ) = exp( - dx * dx * exp_scale );
+    sum += kernel_horiz( i );
+  }
+
+  // Normalize kernel (to have \sum_i kernel_horiz( i ) = 1 and avoid energy loss)
+  const double inv = 1.0 / sum;
+  for ( int i = 0; i < k_size; ++i )
+  {
+    kernel_horiz( i ) *= inv;
+  }
+
+  // Vertical kernel is the same as the horizontal one
+  const openMVG::Vec & kernel_vert = kernel_horiz;
+
+  return ImageSeparableConvolution( res , img , kernel_horiz , kernel_vert , ctx ) ;
+}
+
+/**
+ * @brief Compute gaussian filtering of an image using user defined filter widths
+ * @param img Input image
+ * @param sigma standard deviation of kernel
+ * @param kernel_size_x Size of horizontal kernel (must be an odd number or 0 for automatic computation)
+ * @param kernel_size_y Size of vertical kernel (must be an add number or 0 for automatic computation)
+ * @param ctx OpenCL Context
+ * @return Gaussian filtered image
+ */
+cl_mem ImageGaussianFilter( cl_mem img , const double sigma , const size_t kernel_size_x , const size_t kernel_size_y , openMVG::system::gpu::OpenCLContext & ctx )
+{
+  assert( kernel_size_x % 2 == 1 || kernel_size_x == 0 );
+  assert( kernel_size_y % 2 == 1 || kernel_size_y == 0 );
+
+  const Vec kernel_horiz = ComputeGaussianKernel( kernel_size_x , sigma );
+  const Vec kernel_vert  = ComputeGaussianKernel( kernel_size_y , sigma );
+
+  return ImageSeparableConvolution( img , kernel_horiz , kernel_vert , ctx ) ;
+}
+
+
+/**
+ * @brief Compute gaussian filtering of an image using user defined filter widths
+ * @param[out] Gaussian filtered image
+ * @param img Input image
+ * @param sigma standard deviation of kernel
+ * @param kernel_size_x Size of horizontal kernel (must be an odd number or 0 for automatic computation)
+ * @param kernel_size_y Size of vertical kernel (must be an add number or 0 for automatic computation)
+ * @param ctx OpenCL Context
+ * @retval true if computation is ok
+ * @retval false if computation fails
+ */
+bool ImageGaussianFilter( cl_mem res , cl_mem img , const double sigma , const size_t kernel_size_x , const size_t kernel_size_y , openMVG::system::gpu::OpenCLContext & ctx )
+{
+  assert( kernel_size_x % 2 == 1 || kernel_size_x == 0 );
+  assert( kernel_size_y % 2 == 1 || kernel_size_y == 0 );
+
+  const Vec kernel_horiz = ComputeGaussianKernel( kernel_size_x , sigma );
+  const Vec kernel_vert  = ComputeGaussianKernel( kernel_size_y , sigma );
+
+  return ImageSeparableConvolution( res , img , kernel_horiz , kernel_vert , ctx ) ;
+}
 
 
 } // namespace gpu

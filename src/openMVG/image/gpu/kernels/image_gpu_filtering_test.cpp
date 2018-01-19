@@ -1525,6 +1525,184 @@ TEST( ImageGPUFiltering , y_derivative_scaled_scharr_normalized_cl_res )
   clReleaseMemObject( res ) ;
 }
 
+TEST( ImageGPUFiltering , IsotropicGaussianFilter )
+{
+  OpenCLContext ctx ;
+
+  int w = 32 ;
+  int h = 24 ;
+
+  Image<float> cpuImg( w , h ) ;
+
+  std::uniform_real_distribution<float> distrib( 0.f , 1.f ) ;
+  std::mt19937 rng( 0 ) ;
+
+
+  for( int y = 0 ; y < h ; ++y )
+  {
+    for( int x = 0 ; x < w ; ++x )
+    {
+      cpuImg( y , x ) = distrib( rng ) ;
+    }
+  }
+  cl_mem gpuImg = ToOpenCLImage( cpuImg , ctx ) ;
+
+  cl_mem res = ImageGaussianFilter( gpuImg , 2.2 , ctx , 3 ) ;
+  EXPECT_EQ( false , res == nullptr ) ;
+
+  Image<float> resCPU ;
+  bool cvtRes = FromOpenCLImage( res , resCPU , ctx ) ;
+
+  Image<float> cpuGaussian ;
+  ImageGaussianFilter( cpuImg , 2.2 , cpuGaussian , 3 );
+
+  for( int y = 0 ; y < h ; ++y )
+  {
+    for( int x = 0 ; x < w ; ++x )
+    {
+      EXPECT_NEAR( cpuGaussian( y , x ) , resCPU( y , x ) , 0.001 ) ;
+    }
+  }
+
+  clReleaseMemObject( gpuImg ) ;
+  clReleaseMemObject( res ) ;
+}
+
+TEST( ImageGPUFiltering , IsotropicGaussianFilter_cl_res )
+{
+  OpenCLContext ctx ;
+
+  int w = 32 ;
+  int h = 24 ;
+
+  Image<float> cpuImg( w , h ) ;
+
+  std::uniform_real_distribution<float> distrib( 0.f , 1.f ) ;
+  std::mt19937 rng( 0 ) ;
+
+
+  for( int y = 0 ; y < h ; ++y )
+  {
+    for( int x = 0 ; x < w ; ++x )
+    {
+      cpuImg( y , x ) = distrib( rng ) ;
+    }
+  }
+  cl_mem gpuImg = ToOpenCLImage( cpuImg , ctx ) ;
+
+  cl_mem res = ctx.createImage( w , h , OPENCL_IMAGE_CHANNEL_ORDER_R , OPENCL_IMAGE_DATA_TYPE_FLOAT ) ;
+  EXPECT_EQ( false , res == nullptr ) ;
+
+  const bool ok = ImageGaussianFilter( res , gpuImg , 2.2 , ctx , 3 ) ;
+  EXPECT_EQ( true, ok ) ;
+
+  Image<float> resCPU ;
+  bool cvtRes = FromOpenCLImage( res , resCPU , ctx ) ;
+
+  Image<float> cpuGaussian ;
+  ImageGaussianFilter( cpuImg , 2.2 , cpuGaussian , 3 );
+
+  for( int y = 0 ; y < h ; ++y )
+  {
+    for( int x = 0 ; x < w ; ++x )
+    {
+      EXPECT_NEAR( cpuGaussian( y , x ) , resCPU( y , x ) , 0.001 ) ;
+    }
+  }
+
+  clReleaseMemObject( gpuImg ) ;
+  clReleaseMemObject( res ) ;
+}
+
+TEST( ImageGPUFiltering , GaussianFilter )
+{
+  OpenCLContext ctx ;
+
+  int w = 32 ;
+  int h = 24 ;
+
+  Image<float> cpuImg( w , h ) ;
+
+  std::uniform_real_distribution<float> distrib( 0.f , 1.f ) ;
+  std::mt19937 rng( 0 ) ;
+
+
+  for( int y = 0 ; y < h ; ++y )
+  {
+    for( int x = 0 ; x < w ; ++x )
+    {
+      cpuImg( y , x ) = distrib( rng ) ;
+    }
+  }
+  cl_mem gpuImg = ToOpenCLImage( cpuImg , ctx ) ;
+
+  cl_mem res = ImageGaussianFilter( gpuImg , 2.2 , 5 , 5 , ctx ) ;
+  EXPECT_EQ( false , res == nullptr ) ;
+
+  Image<float> resCPU ;
+  bool cvtRes = FromOpenCLImage( res , resCPU , ctx ) ;
+
+  Image<float> cpuGaussian ;
+  ImageGaussianFilter( cpuImg , 2.2 , cpuGaussian , 5 , 5 ) ;
+
+  for( int y = 0 ; y < h ; ++y )
+  {
+    for( int x = 0 ; x < w ; ++x )
+    {
+      EXPECT_NEAR( cpuGaussian( y , x ) , resCPU( y , x ) , 0.001 ) ;
+    }
+  }
+
+  clReleaseMemObject( gpuImg ) ;
+  clReleaseMemObject( res ) ;
+}
+
+TEST( ImageGPUFiltering , GaussianFilter_cl_res )
+{
+  OpenCLContext ctx ;
+
+  int w = 32 ;
+  int h = 24 ;
+
+  Image<float> cpuImg( w , h ) ;
+
+  std::uniform_real_distribution<float> distrib( 0.f , 1.f ) ;
+  std::mt19937 rng( 0 ) ;
+
+
+  for( int y = 0 ; y < h ; ++y )
+  {
+    for( int x = 0 ; x < w ; ++x )
+    {
+      cpuImg( y , x ) = distrib( rng ) ;
+    }
+  }
+  cl_mem gpuImg = ToOpenCLImage( cpuImg , ctx ) ;
+
+  cl_mem res = ctx.createImage( w , h , OPENCL_IMAGE_CHANNEL_ORDER_R , OPENCL_IMAGE_DATA_TYPE_FLOAT ) ;
+  EXPECT_EQ( false , res == nullptr ) ;
+
+  const bool ok = ImageGaussianFilter( res , gpuImg , 2.2 , 5 , 5 , ctx ) ;
+  EXPECT_EQ( true , ok ) ;
+
+  Image<float> resCPU ;
+  bool cvtRes = FromOpenCLImage( res , resCPU , ctx ) ;
+
+  Image<float> cpuGaussian ;
+  ImageGaussianFilter( cpuImg , 2.2 , cpuGaussian , 5 , 5 ) ;
+
+  for( int y = 0 ; y < h ; ++y )
+  {
+    for( int x = 0 ; x < w ; ++x )
+    {
+      EXPECT_NEAR( cpuGaussian( y , x ) , resCPU( y , x ) , 0.001 ) ;
+    }
+  }
+
+  clReleaseMemObject( gpuImg ) ;
+  clReleaseMemObject( res ) ;
+}
+
 /* ************************************************************************* */
 int main()
 {
