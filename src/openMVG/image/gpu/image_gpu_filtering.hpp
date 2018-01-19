@@ -57,86 +57,131 @@ bool ImageYDerivative( cl_mem res , cl_mem img , openMVG::system::gpu::OpenCLCon
 /* SOBEL */
 
 /**
- * @brief Compute Sobel X derivative 
- * @param img Input image 
- * @param ctx OpenCL Context 
- * @param normalized Indicate if derivative is normalized 
- * @return derivative image 
+ * @brief Compute Sobel X derivative
+ * @param img Input image
+ * @param ctx OpenCL Context
+ * @param normalized Indicate if derivative is normalized
+ * @return derivative image
  */
 cl_mem ImageSobelXDerivative( cl_mem img , openMVG::system::gpu::OpenCLContext & ctx , const bool normalize = true ) ;
 
 /**
- * @brief Compute Sobel X derivative 
- * @param[out] res Derivative image  
- * @param img Input image 
- * @param ctx OpenCL Context 
- * @param normalized Indicate if derivative is normalized 
+ * @brief Compute Sobel X derivative
+ * @param[out] res Derivative image
+ * @param img Input image
+ * @param ctx OpenCL Context
+ * @param normalized Indicate if derivative is normalized
  * @retval true if computation is ok
- * @retval false if computation fails  
+ * @retval false if computation fails
  */
 bool ImageSobelXDerivative( cl_mem res , cl_mem img , openMVG::system::gpu::OpenCLContext & ctx , const bool normalize = true ) ;
 
 /**
- * @brief Compute Sobel Y derivative 
- * @param img Input image 
- * @param ctx OpenCL Context 
- * @param normalized Indicate if derivative is normalized 
- * @return derivative image 
+ * @brief Compute Sobel Y derivative
+ * @param img Input image
+ * @param ctx OpenCL Context
+ * @param normalized Indicate if derivative is normalized
+ * @return derivative image
  */
 cl_mem ImageSobelYDerivative( cl_mem img , openMVG::system::gpu::OpenCLContext & ctx , const bool normalize = true ) ;
 
 /**
- * @brief Compute Sobel Y derivative 
- * @param[out] res Derivative image  
- * @param img Input image 
- * @param ctx OpenCL Context 
- * @param normalized Indicate if derivative is normalized 
+ * @brief Compute Sobel Y derivative
+ * @param[out] res Derivative image
+ * @param img Input image
+ * @param ctx OpenCL Context
+ * @param normalized Indicate if derivative is normalized
  * @retval true if computation is ok
- * @retval false if computation fails  
+ * @retval false if computation fails
  */
 bool ImageSobelYDerivative( cl_mem res , cl_mem img , openMVG::system::gpu::OpenCLContext & ctx , const bool normalize = true ) ;
 
 /* SCHARR */
 
 /**
- * @brief Compute Scharr X derivative 
- * @param img Input image 
- * @param ctx OpenCL Context 
- * @param normalized Indicate if derivative is normalized 
- * @return derivative image 
+ * @brief Compute Scharr X derivative
+ * @param img Input image
+ * @param ctx OpenCL Context
+ * @param normalized Indicate if derivative is normalized
+ * @return derivative image
  */
 cl_mem ImageScharrXDerivative( cl_mem img , openMVG::system::gpu::OpenCLContext & ctx , const bool normalize = true ) ;
 
 /**
- * @brief Compute Scharr X derivative 
- * @param[out] res Derivative image  
- * @param img Input image 
- * @param ctx OpenCL Context 
- * @param normalized Indicate if derivative is normalized 
+ * @brief Compute Scharr X derivative
+ * @param[out] res Derivative image
+ * @param img Input image
+ * @param ctx OpenCL Context
+ * @param normalized Indicate if derivative is normalized
  * @retval true if computation is ok
- * @retval false if computation fails  
+ * @retval false if computation fails
  */
 bool ImageScharrXDerivative( cl_mem res , cl_mem img , openMVG::system::gpu::OpenCLContext & ctx , const bool normalize = true ) ;
 
 /**
- * @brief Compute Scharr Y derivative 
- * @param img Input image 
- * @param ctx OpenCL Context 
- * @param normalized Indicate if derivative is normalized 
- * @return derivative image 
+ * @brief Compute Scharr Y derivative
+ * @param img Input image
+ * @param ctx OpenCL Context
+ * @param normalized Indicate if derivative is normalized
+ * @return derivative image
  */
 cl_mem ImageScharrYDerivative( cl_mem img , openMVG::system::gpu::OpenCLContext & ctx , const bool normalize = true ) ;
 
 /**
- * @brief Compute Scharr Y derivative 
- * @param[out] res Derivative image  
- * @param img Input image 
- * @param ctx OpenCL Context 
- * @param normalized Indicate if derivative is normalized 
+ * @brief Compute Scharr Y derivative
+ * @param[out] res Derivative image
+ * @param img Input image
+ * @param ctx OpenCL Context
+ * @param normalized Indicate if derivative is normalized
  * @retval true if computation is ok
- * @retval false if computation fails  
+ * @retval false if computation fails
  */
 bool ImageScharrYDerivative( cl_mem res , cl_mem img , openMVG::system::gpu::OpenCLContext & ctx , const bool normalize = true ) ;
+
+
+/**
+ * @brief Compute X-derivative using scaled Scharr filter
+ * @param img Input image
+ * @param scale scale of filter (1 -> 3x3 filter; 2 -> 5x5, ...)
+ * @param ctx OpenCL Context
+ * @param bNormalize true if kernel must be normalized
+ * @return derivative image
+ */
+cl_mem ImageScaledScharrXDerivative( cl_mem img , const int scale , openMVG::system::gpu::OpenCLContext & ctx , const bool bNormalize = true ) ;
+
+/**
+ * @brief Compute X-derivative using scaled Scharr filter
+ * @param[out] res Derivative image
+ * @param img Input image
+ * @param scale scale of filter (1 -> 3x3 filter; 2 -> 5x5, ...)
+ * @param ctx OpenCL Context
+ * @param bNormalize true if kernel must be normalized
+ * @retval true if computation is ok
+ * @retval false if computation fails
+ */
+bool ImageScaledScharrXDerivative( cl_mem res , cl_mem img , const int scale , openMVG::system::gpu::OpenCLContext & ctx , const bool bNormalize = true ) ;
+
+/**
+ * @brief Compute X-derivative using scaled Scharr filter
+ * @param img Input image
+ * @param scale scale of filter (1 -> 3x3 filter; 2 -> 5x5, ...)
+ * @param ctx OpenCL Context
+ * @param bNormalize true if kernel must be normalized
+ * @return derivative image
+ */
+cl_mem ImageScaledScharrYDerivative( cl_mem img , const int scale , openMVG::system::gpu::OpenCLContext & ctx , const bool bNormalize = true ) ;
+
+/**
+ * @brief Compute X-derivative using scaled Scharr filter
+ * @param[out] res Derivative image
+ * @param img Input image
+ * @param scale scale of filter (1 -> 3x3 filter; 2 -> 5x5, ...)
+ * @param ctx OpenCL Context
+ * @param bNormalize true if kernel must be normalized
+ * @retval true if computation is ok
+ * @retval false if computation fails
+ */
+bool ImageScaledScharrYDerivative( cl_mem res , cl_mem img , const int scale , openMVG::system::gpu::OpenCLContext & ctx , const bool bNormalize = true ) ;
 
 
 

@@ -1158,6 +1158,373 @@ TEST( ImageGPUFiltering , y_derivative_scharr_normalized_cl_res )
   clReleaseMemObject( gpuScharrY ) ;
 }
 
+// Scaled Scharr
+TEST( ImageGPUFiltering , x_derivative_scaled_scharr_unnormalized )
+{
+  OpenCLContext ctx ;
+
+  int w = 32 ;
+  int h = 24 ;
+
+  Image<float> cpuImg( w , h ) ;
+
+  std::uniform_real_distribution<float> distrib( 0.f , 1.f ) ;
+  std::mt19937 rng( 0 ) ;
+
+
+  for( int y = 0 ; y < h ; ++y )
+  {
+    for( int x = 0 ; x < w ; ++x )
+    {
+      cpuImg( y , x ) = distrib( rng ) ;
+    }
+  }
+  cl_mem gpuImg = ToOpenCLImage( cpuImg , ctx ) ;
+
+  cl_mem res = ImageScaledScharrXDerivative( gpuImg , 3 , ctx , false ) ;
+
+  Image<float> resDerivX ;
+  bool cvtRes = FromOpenCLImage( res , resDerivX , ctx ) ;
+
+  EXPECT_EQ( cvtRes , true ) ;
+
+  Image<float> cpuScharrX ;
+  ImageScaledScharrXDerivative( cpuImg , cpuScharrX , 3 , false ) ;
+
+  for( int y = 0 ; y < h ; ++y )
+  {
+    for( int x = 0 ; x < w ; ++x )
+    {
+      EXPECT_NEAR( cpuScharrX( y , x ) , resDerivX( y , x ) , 0.001 ) ;
+    }
+  }
+
+  clReleaseMemObject( gpuImg ) ;
+  clReleaseMemObject( res ) ;
+}
+
+TEST( ImageGPUFiltering , x_derivative_scaled_scharr_normalized )
+{
+  OpenCLContext ctx ;
+
+  int w = 32 ;
+  int h = 24 ;
+
+  Image<float> cpuImg( w , h ) ;
+
+  std::uniform_real_distribution<float> distrib( 0.f , 1.f ) ;
+  std::mt19937 rng( 0 ) ;
+
+
+  for( int y = 0 ; y < h ; ++y )
+  {
+    for( int x = 0 ; x < w ; ++x )
+    {
+      cpuImg( y , x ) = distrib( rng ) ;
+    }
+  }
+  cl_mem gpuImg = ToOpenCLImage( cpuImg , ctx ) ;
+
+  cl_mem res = ImageScaledScharrXDerivative( gpuImg , 3 , ctx , true ) ;
+
+  Image<float> resDerivX ;
+  bool cvtRes = FromOpenCLImage( res , resDerivX , ctx ) ;
+
+  EXPECT_EQ( cvtRes , true ) ;
+
+  Image<float> cpuScharrX ;
+  ImageScaledScharrXDerivative( cpuImg , cpuScharrX , 3 , true ) ;
+
+  for( int y = 0 ; y < h ; ++y )
+  {
+    for( int x = 0 ; x < w ; ++x )
+    {
+      EXPECT_NEAR( cpuScharrX( y , x ) , resDerivX( y , x ) , 0.001 ) ;
+    }
+  }
+
+  clReleaseMemObject( gpuImg ) ;
+  clReleaseMemObject( res ) ;
+}
+
+TEST( ImageGPUFiltering , x_derivative_scaled_scharr_unnormalized_cl_res )
+{
+  OpenCLContext ctx ;
+
+  int w = 32 ;
+  int h = 24 ;
+
+  Image<float> cpuImg( w , h ) ;
+
+  std::uniform_real_distribution<float> distrib( 0.f , 1.f ) ;
+  std::mt19937 rng( 0 ) ;
+
+
+  for( int y = 0 ; y < h ; ++y )
+  {
+    for( int x = 0 ; x < w ; ++x )
+    {
+      cpuImg( y , x ) = distrib( rng ) ;
+    }
+  }
+  cl_mem gpuImg = ToOpenCLImage( cpuImg , ctx ) ;
+
+  cl_mem res = ctx.createImage( w , h , OPENCL_IMAGE_CHANNEL_ORDER_R , OPENCL_IMAGE_DATA_TYPE_FLOAT ) ;
+  EXPECT_EQ( false , res == nullptr ) ;
+
+  const bool ok = ImageScaledScharrXDerivative( res , gpuImg , 3 , ctx , false ) ;
+
+  Image<float> resDerivX ;
+  bool cvtRes = FromOpenCLImage( res , resDerivX , ctx ) ;
+
+  EXPECT_EQ( cvtRes , true ) ;
+
+  Image<float> cpuScharrX ;
+  ImageScaledScharrXDerivative( cpuImg , cpuScharrX , 3 , false ) ;
+
+  for( int y = 0 ; y < h ; ++y )
+  {
+    for( int x = 0 ; x < w ; ++x )
+    {
+      EXPECT_NEAR( cpuScharrX( y , x ) , resDerivX( y , x ) , 0.001 ) ;
+    }
+  }
+
+  clReleaseMemObject( gpuImg ) ;
+  clReleaseMemObject( res ) ;
+}
+
+TEST( ImageGPUFiltering , x_derivative_scaled_scharr_normalized_cl_res )
+{
+  OpenCLContext ctx ;
+
+  int w = 32 ;
+  int h = 24 ;
+
+  Image<float> cpuImg( w , h ) ;
+
+  std::uniform_real_distribution<float> distrib( 0.f , 1.f ) ;
+  std::mt19937 rng( 0 ) ;
+
+
+  for( int y = 0 ; y < h ; ++y )
+  {
+    for( int x = 0 ; x < w ; ++x )
+    {
+      cpuImg( y , x ) = distrib( rng ) ;
+    }
+  }
+  cl_mem gpuImg = ToOpenCLImage( cpuImg , ctx ) ;
+
+  cl_mem res = ctx.createImage( w , h , OPENCL_IMAGE_CHANNEL_ORDER_R , OPENCL_IMAGE_DATA_TYPE_FLOAT ) ;
+  EXPECT_EQ( false , res == nullptr ) ;
+
+  const bool ok = ImageScaledScharrXDerivative( res , gpuImg , 3 , ctx , true ) ;
+  EXPECT_EQ( ok , true ) ;
+
+  Image<float> resDerivX ;
+  bool cvtRes = FromOpenCLImage( res , resDerivX , ctx ) ;
+
+  EXPECT_EQ( cvtRes , true ) ;
+
+  Image<float> cpuScharrX ;
+  ImageScaledScharrXDerivative( cpuImg , cpuScharrX , 3 , true ) ;
+
+  for( int y = 0 ; y < h ; ++y )
+  {
+    for( int x = 0 ; x < w ; ++x )
+    {
+      EXPECT_NEAR( cpuScharrX( y , x ) , resDerivX( y , x ) , 0.001 ) ;
+    }
+  }
+
+  clReleaseMemObject( gpuImg ) ;
+  clReleaseMemObject( res ) ;
+}
+// Scaled-Y
+TEST( ImageGPUFiltering , y_derivative_scaled_scharr_unnormalized )
+{
+  OpenCLContext ctx ;
+
+  int w = 32 ;
+  int h = 24 ;
+
+  Image<float> cpuImg( w , h ) ;
+
+  std::uniform_real_distribution<float> distrib( 0.f , 1.f ) ;
+  std::mt19937 rng( 0 ) ;
+
+
+  for( int y = 0 ; y < h ; ++y )
+  {
+    for( int x = 0 ; x < w ; ++x )
+    {
+      cpuImg( y , x ) = distrib( rng ) ;
+    }
+  }
+  cl_mem gpuImg = ToOpenCLImage( cpuImg , ctx ) ;
+
+  cl_mem res = ImageScaledScharrYDerivative( gpuImg , 3 , ctx , false ) ;
+
+  Image<float> resDerivY ;
+  bool cvtRes = FromOpenCLImage( res , resDerivY , ctx ) ;
+
+  EXPECT_EQ( cvtRes , true ) ;
+
+  Image<float> cpuScharrY ;
+  ImageScaledScharrYDerivative( cpuImg , cpuScharrY , 3 , false ) ;
+
+  for( int y = 0 ; y < h ; ++y )
+  {
+    for( int x = 0 ; x < w ; ++x )
+    {
+      EXPECT_NEAR( cpuScharrY( y , x ) , resDerivY( y , x ) , 0.001 ) ;
+    }
+  }
+
+  clReleaseMemObject( gpuImg ) ;
+  clReleaseMemObject( res ) ;
+}
+
+TEST( ImageGPUFiltering , y_derivative_scaled_scharr_normalized )
+{
+  OpenCLContext ctx ;
+
+  int w = 32 ;
+  int h = 24 ;
+
+  Image<float> cpuImg( w , h ) ;
+
+  std::uniform_real_distribution<float> distrib( 0.f , 1.f ) ;
+  std::mt19937 rng( 0 ) ;
+
+
+  for( int y = 0 ; y < h ; ++y )
+  {
+    for( int x = 0 ; x < w ; ++x )
+    {
+      cpuImg( y , x ) = distrib( rng ) ;
+    }
+  }
+  cl_mem gpuImg = ToOpenCLImage( cpuImg , ctx ) ;
+
+  cl_mem res = ImageScaledScharrYDerivative( gpuImg , 3 , ctx , true ) ;
+
+  Image<float> resDerivY ;
+  bool cvtRes = FromOpenCLImage( res , resDerivY , ctx ) ;
+
+  EXPECT_EQ( cvtRes , true ) ;
+
+  Image<float> cpuScharrY ;
+  ImageScaledScharrYDerivative( cpuImg , cpuScharrY , 3 , true ) ;
+
+  for( int y = 0 ; y < h ; ++y )
+  {
+    for( int x = 0 ; x < w ; ++x )
+    {
+      EXPECT_NEAR( cpuScharrY( y , x ) , resDerivY( y , x ) , 0.001 ) ;
+    }
+  }
+
+  clReleaseMemObject( gpuImg ) ;
+  clReleaseMemObject( res ) ;
+}
+
+TEST( ImageGPUFiltering , y_derivative_scaled_scharr_unnormalized_cl_res )
+{
+  OpenCLContext ctx ;
+
+  int w = 32 ;
+  int h = 24 ;
+
+  Image<float> cpuImg( w , h ) ;
+
+  std::uniform_real_distribution<float> distrib( 0.f , 1.f ) ;
+  std::mt19937 rng( 0 ) ;
+
+
+  for( int y = 0 ; y < h ; ++y )
+  {
+    for( int x = 0 ; x < w ; ++x )
+    {
+      cpuImg( y , x ) = distrib( rng ) ;
+    }
+  }
+  cl_mem gpuImg = ToOpenCLImage( cpuImg , ctx ) ;
+
+  cl_mem res = ctx.createImage( w , h , OPENCL_IMAGE_CHANNEL_ORDER_R , OPENCL_IMAGE_DATA_TYPE_FLOAT ) ;
+  EXPECT_EQ( false , res == nullptr ) ;
+
+  const bool ok = ImageScaledScharrYDerivative( res , gpuImg , 3 , ctx , false ) ;
+
+  Image<float> resDerivY ;
+  bool cvtRes = FromOpenCLImage( res , resDerivY , ctx ) ;
+
+  EXPECT_EQ( cvtRes , true ) ;
+
+  Image<float> cpuScharrY ;
+  ImageScaledScharrYDerivative( cpuImg , cpuScharrY , 3 , false ) ;
+
+  for( int y = 0 ; y < h ; ++y )
+  {
+    for( int x = 0 ; x < w ; ++x )
+    {
+      EXPECT_NEAR( cpuScharrY( y , x ) , resDerivY( y , x ) , 0.001 ) ;
+    }
+  }
+
+  clReleaseMemObject( gpuImg ) ;
+  clReleaseMemObject( res ) ;
+}
+
+TEST( ImageGPUFiltering , y_derivative_scaled_scharr_normalized_cl_res )
+{
+  OpenCLContext ctx ;
+
+  int w = 32 ;
+  int h = 24 ;
+
+  Image<float> cpuImg( w , h ) ;
+
+  std::uniform_real_distribution<float> distrib( 0.f , 1.f ) ;
+  std::mt19937 rng( 0 ) ;
+
+
+  for( int y = 0 ; y < h ; ++y )
+  {
+    for( int x = 0 ; x < w ; ++x )
+    {
+      cpuImg( y , x ) = distrib( rng ) ;
+    }
+  }
+  cl_mem gpuImg = ToOpenCLImage( cpuImg , ctx ) ;
+
+  cl_mem res = ctx.createImage( w , h , OPENCL_IMAGE_CHANNEL_ORDER_R , OPENCL_IMAGE_DATA_TYPE_FLOAT ) ;
+  EXPECT_EQ( false , res == nullptr ) ;
+
+  const bool ok = ImageScaledScharrYDerivative( res , gpuImg , 3 , ctx , true ) ;
+  EXPECT_EQ( ok , true ) ;
+
+  Image<float> resDerivY ;
+  bool cvtRes = FromOpenCLImage( res , resDerivY , ctx ) ;
+
+  EXPECT_EQ( cvtRes , true ) ;
+
+  Image<float> cpuScharrY ;
+  ImageScaledScharrYDerivative( cpuImg , cpuScharrY , 3 , true ) ;
+
+  for( int y = 0 ; y < h ; ++y )
+  {
+    for( int x = 0 ; x < w ; ++x )
+    {
+      EXPECT_NEAR( cpuScharrY( y , x ) , resDerivY( y , x ) , 0.001 ) ;
+    }
+  }
+
+  clReleaseMemObject( gpuImg ) ;
+  clReleaseMemObject( res ) ;
+}
+
 /* ************************************************************************* */
 int main()
 {

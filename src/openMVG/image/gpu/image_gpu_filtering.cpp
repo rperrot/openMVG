@@ -1,5 +1,7 @@
 #include "image_gpu_filtering.hpp"
 
+#include "openMVG/image/gpu/image_gpu_convolution.hpp"
+#include "openMVG/numeric/numeric.h"
 
 namespace openMVG
 {
@@ -966,6 +968,185 @@ bool ImageScharrYDerivative( cl_mem res , cl_mem img , openMVG::system::gpu::Ope
 
   return true ;
 }
+
+/**
+ * @brief Compute X-derivative using scaled Scharr filter
+ * @param img Input image
+ * @param scale scale of filter (1 -> 3x3 filter; 2 -> 5x5, ...)
+ * @param ctx OpenCL Context
+ * @param bNormalize true if kernel must be normalized
+ * @return derivative image
+ */
+cl_mem ImageScaledScharrXDerivative( cl_mem img , const int scale , openMVG::system::gpu::OpenCLContext & ctx , const bool bNormalize )
+{
+  const int kernel_size = 3 + 2 * ( scale - 1 );
+
+  openMVG::Vec kernel_vert( kernel_size );
+  openMVG::Vec kernel_horiz( kernel_size );
+
+  /*
+  General X-derivative function
+                              | -1   0   1 |
+  D = 1 / ( 2 h * ( w + 2 ) ) | -w   0   w |
+                              | -1   0   1 |
+  */
+
+  kernel_horiz.fill( 0.0 );
+  kernel_horiz( 0 )               = -1.0;
+  // kernel_horiz( kernel_size / 2 ) = 0.0;
+  kernel_horiz( kernel_size - 1 ) = 1.0;
+
+  // Scharr parameter for derivative
+  const double w = 10.0 / 3.0;
+
+  kernel_vert.fill( 0.0 );
+  kernel_vert( 0 )               = 1.0;
+  kernel_vert( kernel_size / 2 ) = w;
+  kernel_vert( kernel_size - 1 ) = 1.0;
+
+  if ( bNormalize )
+  {
+    kernel_vert *= 1.0 / ( 2.0 * scale * ( w + 2.0 ) );
+  }
+
+  return ImageSeparableConvolution( img , kernel_horiz , kernel_vert , ctx ) ;
+}
+
+/**
+ * @brief Compute X-derivative using scaled Scharr filter
+ * @param[out] res Derivative image
+ * @param img Input image
+ * @param scale scale of filter (1 -> 3x3 filter; 2 -> 5x5, ...)
+ * @param ctx OpenCL Context
+ * @param bNormalize true if kernel must be normalized
+ * @retval true if computation is ok
+ * @retval false if computation fails
+ */
+bool ImageScaledScharrXDerivative( cl_mem res , cl_mem img , const int scale , openMVG::system::gpu::OpenCLContext & ctx , const bool bNormalize )
+{
+  const int kernel_size = 3 + 2 * ( scale - 1 );
+
+  openMVG::Vec kernel_vert( kernel_size );
+  openMVG::Vec kernel_horiz( kernel_size );
+
+  /*
+  General X-derivative function
+                              | -1   0   1 |
+  D = 1 / ( 2 h * ( w + 2 ) ) | -w   0   w |
+                              | -1   0   1 |
+  */
+
+  kernel_horiz.fill( 0.0 );
+  kernel_horiz( 0 )               = -1.0;
+  // kernel_horiz( kernel_size / 2 ) = 0.0;
+  kernel_horiz( kernel_size - 1 ) = 1.0;
+
+  // Scharr parameter for derivative
+  const double w = 10.0 / 3.0;
+
+  kernel_vert.fill( 0.0 );
+  kernel_vert( 0 )               = 1.0;
+  kernel_vert( kernel_size / 2 ) = w;
+  kernel_vert( kernel_size - 1 ) = 1.0;
+
+  if ( bNormalize )
+  {
+    kernel_vert *= 1.0 / ( 2.0 * scale * ( w + 2.0 ) );
+  }
+
+  return ImageSeparableConvolution( res , img , kernel_horiz , kernel_vert , ctx ) ;
+}
+
+/**
+ * @brief Compute X-derivative using scaled Scharr filter
+ * @param img Input image
+ * @param scale scale of filter (1 -> 3x3 filter; 2 -> 5x5, ...)
+ * @param ctx OpenCL Context
+ * @param bNormalize true if kernel must be normalized
+ * @return derivative image
+ */
+cl_mem ImageScaledScharrYDerivative( cl_mem img , const int scale , openMVG::system::gpu::OpenCLContext & ctx , const bool bNormalize )
+{
+  /*
+  General Y-derivative function
+                              | -1  -w  -1 |
+  D = 1 / ( 2 h * ( w + 2 ) ) |  0   0   0 |
+                              |  1   w   1 |
+
+  */
+  const int kernel_size = 3 + 2 * ( scale - 1 );
+
+  openMVG::Vec kernel_vert( kernel_size );
+  openMVG::Vec kernel_horiz( kernel_size );
+
+  // Scharr parameter for derivative
+  const double w = 10.0 / 3.0;
+
+
+  kernel_horiz.fill( 0.0 );
+  kernel_horiz( 0 )               = 1.0;
+  kernel_horiz( kernel_size / 2 ) = w;
+  kernel_horiz( kernel_size - 1 ) = 1.0;
+
+  if ( bNormalize )
+  {
+    kernel_horiz *= 1.0 / ( 2.0 * scale * ( w + 2.0 ) );
+  }
+
+  kernel_vert.fill( 0.0 );
+  kernel_vert( 0 ) = - 1.0;
+  // kernel_vert( kernel_size / 2 ) = 0.0;
+  kernel_vert( kernel_size - 1 ) = 1.0;
+
+  return ImageSeparableConvolution( img , kernel_horiz , kernel_vert , ctx ) ;
+}
+
+/**
+ * @brief Compute X-derivative using scaled Scharr filter
+ * @param[out] res Derivative image
+ * @param img Input image
+ * @param scale scale of filter (1 -> 3x3 filter; 2 -> 5x5, ...)
+ * @param ctx OpenCL Context
+ * @param bNormalize true if kernel must be normalized
+ * @retval true if computation is ok
+ * @retval false if computation fails
+ */
+bool ImageScaledScharrYDerivative( cl_mem res , cl_mem img , const int scale , openMVG::system::gpu::OpenCLContext & ctx , const bool bNormalize )
+{
+  /*
+  General Y-derivative function
+                              | -1  -w  -1 |
+  D = 1 / ( 2 h * ( w + 2 ) ) |  0   0   0 |
+                              |  1   w   1 |
+
+  */
+  const int kernel_size = 3 + 2 * ( scale - 1 );
+
+  openMVG::Vec kernel_vert( kernel_size );
+  openMVG::Vec kernel_horiz( kernel_size );
+
+  // Scharr parameter for derivative
+  const double w = 10.0 / 3.0;
+
+
+  kernel_horiz.fill( 0.0 );
+  kernel_horiz( 0 )               = 1.0;
+  kernel_horiz( kernel_size / 2 ) = w;
+  kernel_horiz( kernel_size - 1 ) = 1.0;
+
+  if ( bNormalize )
+  {
+    kernel_horiz *= 1.0 / ( 2.0 * scale * ( w + 2.0 ) );
+  }
+
+  kernel_vert.fill( 0.0 );
+  kernel_vert( 0 ) = - 1.0;
+  // kernel_vert( kernel_size / 2 ) = 0.0;
+  kernel_vert( kernel_size - 1 ) = 1.0;
+
+  return ImageSeparableConvolution( res , img , kernel_horiz , kernel_vert , ctx ) ;
+}
+
 
 
 } // namespace gpu
