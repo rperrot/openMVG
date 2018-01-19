@@ -128,6 +128,7 @@ class OpenCLContext
      * @param prefered_device_type Type of the prefered_device to use as default
      * @param device_preference If multiple device are available with the prefered device type, select the one with the prefered setting
      * @param load_standard_kernels Indicate if openMVG kernels are loaded
+     * @TODO : provide list of kernels to load (to avoid compiling all kernels) 
      */
     OpenCLContext( const OpenCLDeviceType prefered_device_type = OPENCL_DEVICE_TYPE_GPU ,
                    const OpenCLDevicePreference device_preference = OPENCL_DEVICE_PREFER_MAX_GLOBAL_MEMORY ,

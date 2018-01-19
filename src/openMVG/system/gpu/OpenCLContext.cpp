@@ -1721,7 +1721,23 @@ void OpenCLContext::loadStandardKernels( void )
           "image_x_derivative_unnormalized" ,
           "image_x_derivative_normalized" ,
           "image_y_derivative_unnormalized" ,
-          "image_y_derivative_normalized"
+          "image_y_derivative_normalized" ,
+          "image_x_derivative_sobel_unnormalized_naive" ,
+          "image_x_derivative_sobel_unnormalized_local" ,
+          "image_x_derivative_sobel_normalized_naive" ,
+          "image_x_derivative_sobel_normalized_local" ,
+          "image_y_derivative_sobel_unnormalized_naive" ,
+          "image_y_derivative_sobel_unnormalized_local" ,
+          "image_y_derivative_sobel_normalized_naive" ,
+          "image_y_derivative_sobel_normalized_local" ,
+          "image_x_derivative_scharr_unnormalized_naive" ,
+          "image_x_derivative_scharr_unnormalized_local" ,
+          "image_x_derivative_scharr_normalized_naive" ,
+          "image_x_derivative_scharr_normalized_local" ,
+          "image_y_derivative_scharr_unnormalized_naive" ,
+          "image_y_derivative_scharr_unnormalized_local" ,
+          "image_y_derivative_scharr_normalized_naive" ,
+          "image_y_derivative_scharr_normalized_local"
         } ;
         for( const auto & cur_krn : kernelsDerivList )
         {
