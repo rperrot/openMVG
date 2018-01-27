@@ -9,8 +9,6 @@ set( OPENMVG_IMAGE_GPU_SRCS image_gpu_arithmetics.cpp
                             image_gpu_interface.cpp 
                             image_gpu_resampling.cpp )
 
-#file(GLOB_RECURSE REMOVEFILESUNITTEST *_test.cpp)
-#list(REMOVE_ITEM OPENMVG_IMAGE_GPU_SRCS ${REMOVEFILESUNITTEST})
 
 add_library( openMVG_image_gpu ${OPENMVG_IMAGE_GPU_SRCS} ${OPENMVG_IMAGE_GPU_HDRS} )
 
