@@ -115,19 +115,19 @@ bool ImageXDerivative( cl_mem res , cl_mem img , openMVG::system::gpu::OpenCLCon
     return false ;
   }
   cl_image_format formatRes ;
-  err = clGetImageInfo( img , CL_IMAGE_FORMAT , sizeof( formatRes ) , &formatRes , nullptr ) ;
+  err = clGetImageInfo( res , CL_IMAGE_FORMAT , sizeof( formatRes ) , &formatRes , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return false ;
   }
   size_t widthRes ;
-  err = clGetImageInfo( img , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthRes , nullptr ) ;
+  err = clGetImageInfo( res , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthRes , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return false ;
   }
   size_t heightRes ;
-  err = clGetImageInfo( img , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightRes , nullptr ) ;
+  err = clGetImageInfo( res , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightRes , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return false ;
@@ -275,19 +275,19 @@ bool ImageYDerivative( cl_mem res , cl_mem img , openMVG::system::gpu::OpenCLCon
     return false ;
   }
   cl_image_format formatRes ;
-  err = clGetImageInfo( img , CL_IMAGE_FORMAT , sizeof( formatRes ) , &formatRes , nullptr ) ;
+  err = clGetImageInfo( res , CL_IMAGE_FORMAT , sizeof( formatRes ) , &formatRes , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return false ;
   }
   size_t widthRes ;
-  err = clGetImageInfo( img , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthRes , nullptr ) ;
+  err = clGetImageInfo( res , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthRes , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return false ;
   }
   size_t heightRes ;
-  err = clGetImageInfo( img , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightRes , nullptr ) ;
+  err = clGetImageInfo( res , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightRes , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return false ;
@@ -434,19 +434,19 @@ bool ImageSobelXDerivative( cl_mem res , cl_mem img , openMVG::system::gpu::Open
     return false ;
   }
   cl_image_format formatRes ;
-  err = clGetImageInfo( img , CL_IMAGE_FORMAT , sizeof( formatRes ) , &formatRes , nullptr ) ;
+  err = clGetImageInfo( res , CL_IMAGE_FORMAT , sizeof( formatRes ) , &formatRes , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return false ;
   }
   size_t widthRes ;
-  err = clGetImageInfo( img , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthRes , nullptr ) ;
+  err = clGetImageInfo( res , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthRes , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return false ;
   }
   size_t heightRes ;
-  err = clGetImageInfo( img , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightRes , nullptr ) ;
+  err = clGetImageInfo( res , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightRes , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return false ;
@@ -594,19 +594,19 @@ bool ImageSobelYDerivative( cl_mem res , cl_mem img , openMVG::system::gpu::Open
     return false ;
   }
   cl_image_format formatRes ;
-  err = clGetImageInfo( img , CL_IMAGE_FORMAT , sizeof( formatRes ) , &formatRes , nullptr ) ;
+  err = clGetImageInfo( res , CL_IMAGE_FORMAT , sizeof( formatRes ) , &formatRes , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return false ;
   }
   size_t widthRes ;
-  err = clGetImageInfo( img , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthRes , nullptr ) ;
+  err = clGetImageInfo( res , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthRes , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return false ;
   }
   size_t heightRes ;
-  err = clGetImageInfo( img , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightRes , nullptr ) ;
+  err = clGetImageInfo( res , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightRes , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return false ;
@@ -754,19 +754,19 @@ bool ImageScharrXDerivative( cl_mem res , cl_mem img , openMVG::system::gpu::Ope
     return false ;
   }
   cl_image_format formatRes ;
-  err = clGetImageInfo( img , CL_IMAGE_FORMAT , sizeof( formatRes ) , &formatRes , nullptr ) ;
+  err = clGetImageInfo( res , CL_IMAGE_FORMAT , sizeof( formatRes ) , &formatRes , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return false ;
   }
   size_t widthRes ;
-  err = clGetImageInfo( img , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthRes , nullptr ) ;
+  err = clGetImageInfo( res , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthRes , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return false ;
   }
   size_t heightRes ;
-  err = clGetImageInfo( img , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightRes , nullptr ) ;
+  err = clGetImageInfo( res , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightRes , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return false ;
@@ -914,19 +914,19 @@ bool ImageScharrYDerivative( cl_mem res , cl_mem img , openMVG::system::gpu::Ope
     return false ;
   }
   cl_image_format formatRes ;
-  err = clGetImageInfo( img , CL_IMAGE_FORMAT , sizeof( formatRes ) , &formatRes , nullptr ) ;
+  err = clGetImageInfo( res , CL_IMAGE_FORMAT , sizeof( formatRes ) , &formatRes , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return false ;
   }
   size_t widthRes ;
-  err = clGetImageInfo( img , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthRes , nullptr ) ;
+  err = clGetImageInfo( res , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthRes , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return false ;
   }
   size_t heightRes ;
-  err = clGetImageInfo( img , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightRes , nullptr ) ;
+  err = clGetImageInfo( res , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightRes , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return false ;

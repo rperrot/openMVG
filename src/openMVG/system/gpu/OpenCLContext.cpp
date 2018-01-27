@@ -14,6 +14,7 @@
 #include "openMVG/image/gpu/kernels/image_gpu_arithmetic_kernels.hpp"
 #include "openMVG/image/gpu/kernels/image_gpu_convolution_kernels.hpp"
 #include "openMVG/image/gpu/kernels/image_gpu_filtering_kernels.hpp"
+#include "openMVG/image/gpu/kernels/image_gpu_resampling_kernels.hpp"
 
 #include <iostream>
 
@@ -30,11 +31,11 @@ namespace gpu
  * @brief Ctr
  * @param prefered_device_type Type of the prefered_device to use as default
  * @param device_preference If multiple device are available with the prefered device type, select the one with the prefered setting
- * @param load_standard_kernels Indicate if openMVG kernels are loaded
+ * @param kernels_to_load Indicate if openMVG kernels are loaded
  */
 OpenCLContext::OpenCLContext( const OpenCLDeviceType prefered_device_type ,
                               const OpenCLDevicePreference device_preference ,
-                              const bool load_standard_kernels )
+                              const std::vector< OpenCLStandardKernels > & kernels_to_load )
   : m_nb_platform( 0 ) ,
     m_current_platform_id( std::numeric_limits<uint32_t>::max() ) ,
     m_current_device_id( std::numeric_limits<uint32_t>::max() ) ,
@@ -53,9 +54,9 @@ OpenCLContext::OpenCLContext( const OpenCLDeviceType prefered_device_type ,
   createContexts() ;
   createCommandQueues() ;
 
-  if( load_standard_kernels )
+  if( kernels_to_load.size() > 0 )
   {
-    loadStandardKernels() ;
+    loadStandardKernels( kernels_to_load ) ;
   }
 }
 
@@ -1622,135 +1623,26 @@ void OpenCLContext::releaseCommandQueues( void )
 /**
  * @brief Create standard kernels
  */
-void OpenCLContext::loadStandardKernels( void )
+void OpenCLContext::loadStandardKernels( const std::vector< OpenCLStandardKernels > & kernels_ids )
 {
-  // Image kernels
+  const std::string pgmSource = ComputeOpenCLProgramSource( kernels_ids ) ;
+  cl_program pgm = createAndBuildProgram( pgmSource ) ;
+
+  std::map< std::string , cl_kernel > kernels = createKernels( pgm ) ;
+
+  // Append to the standard kernels loaded
+  // Destroy the kernel if it exists to ensure memory
+  for( auto it : kernels )
   {
-    // Image add
+    if( ! m_standard_kernels.count( it.first ) )
     {
-      cl_program pgm = createAndBuildProgram( image::gpu::kernels::krnsImageAdd ) ;
-      m_standard_programs.emplace_back( pgm ) ;
-      const std::vector<std::string> kernelsAddList = { "image_add_ui" , "image_add_i" , "image_add_f" } ;
-      for( const auto & cur_krn : kernelsAddList )
-      {
-        if( ! m_standard_kernels.count( cur_krn ) )
-        {
-          m_standard_kernels.insert( { cur_krn , createKernel( pgm , cur_krn ) } ) ;
-        }
-      }
+      m_standard_kernels.insert( it ) ;
     }
-    // Image sub
+    else
     {
-      cl_program pgm = createAndBuildProgram( image::gpu::kernels::krnsImageSub ) ;
-      m_standard_programs.emplace_back( pgm ) ;
-      const std::vector<std::string> kernelsAddList = { "image_sub_ui" , "image_sub_i" , "image_sub_f" } ;
-      for( const auto & cur_krn : kernelsAddList )
-      {
-        if( ! m_standard_kernels.count( cur_krn ) )
-        {
-          m_standard_kernels.insert( { cur_krn , createKernel( pgm , cur_krn ) } ) ;
-        }
-      }
+      clReleaseKernel( it.second ) ;
     }
-    // Image product
-    {
-      cl_program pgm = createAndBuildProgram( image::gpu::kernels::krnsImageMul ) ;
-      m_standard_programs.emplace_back( pgm ) ;
-      const std::vector<std::string> kernelsAddList = { "image_mul_ui" , "image_mul_i" , "image_mul_f" } ;
-      for( const auto & cur_krn : kernelsAddList )
-      {
-        if( ! m_standard_kernels.count( cur_krn ) )
-        {
-          m_standard_kernels.insert( { cur_krn , createKernel( pgm , cur_krn ) } ) ;
-        }
-      }
-    }
-    // Image convolution
-    {
-      // Naive 2d kernel
-      cl_program pgm = createAndBuildProgram( image::gpu::kernels::krnsImageConvolve2dNaive ) ;
-      m_standard_programs.emplace_back( pgm ) ;
-      if( ! m_standard_kernels.count( "convolve_2d_naive_f" ) )
-      {
-        m_standard_kernels.insert( { "convolve_2d_naive_f" , createKernel( pgm , "convolve_2d_naive_f" ) } );
-      }
-      // 2D + local fetch
-      pgm = createAndBuildProgram( image::gpu::kernels::krnsImageConvolve2dLocalMem ) ;
-      m_standard_programs.emplace_back( pgm ) ;
-      if( ! m_standard_kernels.count( "convolve_2d_local_f" ) )
-      {
-        m_standard_kernels.insert( { "convolve_2d_local_f" , createKernel( pgm , "convolve_2d_local_f" ) } ) ;
-      }
-      // Naive horizontal convolution
-      pgm = createAndBuildProgram( image::gpu::kernels::krnsImageHorizontalConvolveNaive ) ;
-      m_standard_programs.emplace_back( pgm ) ;
-      if( ! m_standard_kernels.count( "horizontal_convolve_naive_f" ) )
-      {
-        m_standard_kernels.insert( { "horizontal_convolve_naive_f" , createKernel( pgm , "horizontal_convolve_naive_f" ) } ) ;
-      }
-      // Horizontal convolution + local fetch
-      pgm = createAndBuildProgram( image::gpu::kernels::krnsImageHorizontalConvolveLocalMem32 ) ;
-      m_standard_programs.emplace_back( pgm ) ;
-      if( ! m_standard_kernels.count( "horizontal_convolve_local_32_f" ) )
-      {
-        m_standard_kernels.insert( { "horizontal_convolve_local_32_f" , createKernel( pgm , "horizontal_convolve_local_32_f" ) } );
-      }
-      // Naive vertical convolution
-      pgm = createAndBuildProgram( image::gpu::kernels::krnsImageVerticalConvolveNaive ) ;
-      m_standard_programs.emplace_back( pgm ) ;
-      if( ! m_standard_kernels.count( "vertical_convolve_naive_f" ) )
-      {
-        m_standard_kernels.insert( { "vertical_convolve_naive_f" , createKernel( pgm , "vertical_convolve_naive_f" ) } ) ;
-      }
-      // Vertical convolution + local fetch
-      pgm = createAndBuildProgram( image::gpu::kernels::krnsImageVerticalConvolveLocalMem32 ) ;
-      m_standard_programs.emplace_back( pgm ) ;
-      if( ! m_standard_kernels.count( "vertical_convolve_local_32_f" ) )
-      {
-        m_standard_kernels.insert( { "vertical_convolve_local_32_f" , createKernel( pgm , "vertical_convolve_local_32_f" ) } ) ;
-      }
-    } // Image convolution
-    // Image filtering
-    {
-      {
-        // Derivatives
-        cl_program pgm = createAndBuildProgram( image::gpu::kernels::krnsImageFilteringDerivative );
-        m_standard_programs.emplace_back( pgm ) ;
-        const std::vector<std::string> kernelsDerivList =
-        {
-          "image_x_derivative_unnormalized" ,
-          "image_x_derivative_normalized" ,
-          "image_y_derivative_unnormalized" ,
-          "image_y_derivative_normalized" ,
-          "image_x_derivative_sobel_unnormalized_naive" ,
-          "image_x_derivative_sobel_unnormalized_local" ,
-          "image_x_derivative_sobel_normalized_naive" ,
-          "image_x_derivative_sobel_normalized_local" ,
-          "image_y_derivative_sobel_unnormalized_naive" ,
-          "image_y_derivative_sobel_unnormalized_local" ,
-          "image_y_derivative_sobel_normalized_naive" ,
-          "image_y_derivative_sobel_normalized_local" ,
-          "image_x_derivative_scharr_unnormalized_naive" ,
-          "image_x_derivative_scharr_unnormalized_local" ,
-          "image_x_derivative_scharr_normalized_naive" ,
-          "image_x_derivative_scharr_normalized_local" ,
-          "image_y_derivative_scharr_unnormalized_naive" ,
-          "image_y_derivative_scharr_unnormalized_local" ,
-          "image_y_derivative_scharr_normalized_naive" ,
-          "image_y_derivative_scharr_normalized_local"
-        } ;
-        for( const auto & cur_krn : kernelsDerivList )
-        {
-          if( ! m_standard_kernels.count( cur_krn ) )
-          {
-            m_standard_kernels.insert( { cur_krn , createKernel( pgm , cur_krn ) } ) ;
-          }
-        }
-      }
-
-    }
-  } // Image kernels
-
+  }
 }
 
 /**

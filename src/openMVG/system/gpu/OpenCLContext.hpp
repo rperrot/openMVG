@@ -10,6 +10,7 @@
 #define OPENMVG_SYSTEM_GPU_OPENCL_CONTEXT_HPP
 
 #include "openMVG/system/gpu/OpenCLDeviceInfos.hpp"
+#include "openMVG/system/gpu/OpenCLStandardKernels.hpp"
 
 #ifdef APPLE
   #include <OpenCL/cl.h>
@@ -127,12 +128,11 @@ class OpenCLContext
      * @brief Ctr
      * @param prefered_device_type Type of the prefered_device to use as default
      * @param device_preference If multiple device are available with the prefered device type, select the one with the prefered setting
-     * @param load_standard_kernels Indicate if openMVG kernels are loaded
-     * @TODO : provide list of kernels to load (to avoid compiling all kernels) 
+     * @param kernels_to_load Indicate if openMVG kernels are loaded
      */
     OpenCLContext( const OpenCLDeviceType prefered_device_type = OPENCL_DEVICE_TYPE_GPU ,
                    const OpenCLDevicePreference device_preference = OPENCL_DEVICE_PREFER_MAX_GLOBAL_MEMORY ,
-                   const bool load_standard_kernels = true ) ;
+                   const std::vector< OpenCLStandardKernels > & kernels_to_load = { OPENCL_STANDARD_KERNELS_ALL } ) ;
 
     OpenCLContext( const OpenCLContext & ) ;
     OpenCLContext( OpenCLContext && ) = default ;
@@ -640,8 +640,9 @@ class OpenCLContext
 
     /**
      * @brief Create standard kernels
+     * @param kernels Kernels to load
      */
-    void loadStandardKernels( void ) ;
+    void loadStandardKernels( const std::vector< OpenCLStandardKernels > & kernels ) ;
 
 
     //// Image and buffer creations

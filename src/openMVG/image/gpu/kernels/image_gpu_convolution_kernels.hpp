@@ -59,7 +59,6 @@ const std::string krnsImageConvolve2dNaive =
 // TODO : provide WORK_GROUP_SIZE as de define ? 
 const std::string krnsImageConvolve2dLocalMem =
   R"(
-    #define WORK_GROUP_SIZE 16
     __kernel void convolve_2d_local_f( __write_only image2d_t outImg , constant float * filter , __read_only image2d_t img , const int krnHalfWidth , const int krnHalfHeight )
     {
       sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
@@ -192,7 +191,6 @@ __kernel void horizontal_convolve_naive_f( __write_only image2d_t outImg , const
 // Up to kernel size equal to 33
 const std::string krnsImageHorizontalConvolveLocalMem32 =
   R"(
-#define WORK_GROUP_SIZE 16
 __kernel void horizontal_convolve_local_32_f( __write_only image2d_t outImg , constant float * filter , __read_only image2d_t img , const int krnHalfSize )
 {
   sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
@@ -268,7 +266,6 @@ __kernel void vertical_convolve_naive_f( __write_only image2d_t outImg , constan
 // Up to kernel size equal to 33
 const std::string krnsImageVerticalConvolveLocalMem32 =
   R"(
-#define WORK_GROUP_SIZE 16
 __kernel void vertical_convolve_local_32_f( __write_only image2d_t outImg , constant float * filter , __read_only image2d_t img , const int krnHalfSize )
 {
   sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;

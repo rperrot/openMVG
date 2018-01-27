@@ -12,10 +12,8 @@ namespace gpu
 namespace kernels
 {
 
-const std::string krnsImageFilteringDerivative =
+const std::string krnsImageFilteringDerivativeXUnnormalizedCentralDiff =
   R"(
-    #define WORK_GROUP_SIZE 16 
-
     /* Standard Derivatives */
     __kernel void image_x_derivative_unnormalized( __write_only image2d_t outImg , read_only image2d_t img )
     {
@@ -29,7 +27,11 @@ const std::string krnsImageFilteringDerivative =
                                      read_imagef( img , sampler , pos + (int2)( - 1 , 0 ) ) );
       }
     }
-    
+
+    )";
+
+const std::string krnsImageFilteringDerivativeXNormalizedCentralDiff =
+  R"(
     __kernel void image_x_derivative_normalized( __write_only image2d_t outImg , __read_only image2d_t img )
     {
       sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
@@ -42,7 +44,11 @@ const std::string krnsImageFilteringDerivative =
                                               read_imagef( img , sampler , pos + (int2)( - 1 , 0 ) ) ) );
       }      
     }
+    
+    )";
 
+const std::string krnsImageFilteringDerivativeYUnnormalizedCentralDiff =
+  R"(
     __kernel void image_y_derivative_unnormalized( __write_only image2d_t outImg , read_only image2d_t img )
     {
       sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
@@ -56,6 +62,10 @@ const std::string krnsImageFilteringDerivative =
       }
     }
     
+    )";
+
+const std::string krnsImageFilteringDerivativeYNormalizedCentralDiff =
+  R"(
     __kernel void image_y_derivative_normalized( __write_only image2d_t outImg , __read_only image2d_t img )
     {
       sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
@@ -68,7 +78,10 @@ const std::string krnsImageFilteringDerivative =
                                               read_imagef( img , sampler , pos + (int2)( 0 , -1 ) ) ) );
       }      
     }
+  )" ;
 
+const std::string krnsImageFilteringDerivativeXUnnormalizedSobel =
+  R"(
     /* SOBEL */
     __kernel void image_x_derivative_sobel_unnormalized_naive( __write_only image2d_t outImg , __read_only image2d_t img )
     {
@@ -154,8 +167,10 @@ const std::string krnsImageFilteringDerivative =
         write_imagef( outImg , (int2)( pix_x , pix_y ) , sobel_next - sobel_prev ) ; 
       }
     }
+)";
 
-
+const std::string krnsImageFilteringDerivativeXNormalizedSobel =
+R"(
     __kernel void image_x_derivative_sobel_normalized_naive( __write_only image2d_t outImg , __read_only image2d_t img )
     {
       sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
@@ -241,6 +256,10 @@ const std::string krnsImageFilteringDerivative =
       }
     }
 
+    )";
+
+const std::string krnsImageFilteringDerivativeYUnnormalizedSobel =
+  R"(
     __kernel void image_y_derivative_sobel_unnormalized_naive( __write_only image2d_t outImg , __read_only image2d_t img )
     {
       sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
@@ -325,8 +344,10 @@ const std::string krnsImageFilteringDerivative =
         write_imagef( outImg , (int2)( pix_x , pix_y ) , sobel_next - sobel_prev ) ; 
       }
     }
+)";
 
-
+const std::string krnsImageFilteringDerivativeYNormalizedSobel =
+R"(
     __kernel void image_y_derivative_sobel_normalized_naive( __write_only image2d_t outImg , __read_only image2d_t img )
     {
       sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
@@ -411,8 +432,11 @@ const std::string krnsImageFilteringDerivative =
         write_imagef( outImg , (int2)( pix_x , pix_y ) , 0.125f * ( sobel_next - sobel_prev ) ) ; 
       }
     }
+)";
 
     /* Sharr */
+const std::string krnsImageFilteringDerivativeXUnnormalizedScharr =
+R"(
     __kernel void image_x_derivative_scharr_unnormalized_naive( __write_only image2d_t outImg , __read_only image2d_t img )
     {
       sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
@@ -497,8 +521,10 @@ const std::string krnsImageFilteringDerivative =
         write_imagef( outImg , (int2)( pix_x , pix_y ) , sobel_next - sobel_prev ) ; 
       }
     }
+)";
 
-
+const std::string krnsImageFilteringDerivativeXNormalizedScharr =
+R"(
     __kernel void image_x_derivative_scharr_normalized_naive( __write_only image2d_t outImg , __read_only image2d_t img )
     {
       sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
@@ -583,7 +609,10 @@ const std::string krnsImageFilteringDerivative =
         write_imagef( outImg , (int2)( pix_x , pix_y ) , 0.03125f * ( sobel_next - sobel_prev ) ) ; 
       }
     }
+)";
 
+const std::string krnsImageFilteringDerivativeYUnnormalizedScharr =
+R"(
     __kernel void image_y_derivative_scharr_unnormalized_naive( __write_only image2d_t outImg , __read_only image2d_t img )
     {
       sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
@@ -668,8 +697,10 @@ const std::string krnsImageFilteringDerivative =
         write_imagef( outImg , (int2)( pix_x , pix_y ) , sobel_next - sobel_prev ) ; 
       }
     }
+)";
 
-
+const std::string krnsImageFilteringDerivativeYNormalizedScharr =
+R"(
     __kernel void image_y_derivative_scharr_normalized_naive( __write_only image2d_t outImg , __read_only image2d_t img )
     {
       sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
@@ -754,7 +785,6 @@ const std::string krnsImageFilteringDerivative =
         write_imagef( outImg , (int2)( pix_x , pix_y ) , 0.03125f * ( sobel_next - sobel_prev ) ) ; 
       }
     }
-
   )" ;
 
 

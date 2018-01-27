@@ -367,7 +367,7 @@ struct RealPixel<unsigned char>
     // handle out of range values.
     return ( val < 0.0 ) ?
            0 :
-           ( val > static_cast<real_type>( std::numeric_limits<base_type>::max() ) ?
+           ( (val + 0.5) > static_cast<real_type>( std::numeric_limits<base_type>::max() ) ?
              std::numeric_limits<base_type>::max() :
              static_cast<base_type>( val + 0.5 ) );
   }
