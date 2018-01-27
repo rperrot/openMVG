@@ -10,7 +10,7 @@
 #ifndef OPENMVG_FEATURES_SIFT_SIFT_ANATOMY_IMAGE_DESCRIBER_GPU_IO_HPP
 #define OPENMVG_FEATURES_SIFT_SIFT_ANATOMY_IMAGE_DESCRIBER_GPU_IO_HPP
 
-#include "openMVG/features/sift/SIFT_Anatomy_Image_Describer_gpu.hpp"
+#include "openMVG/features/sift/gpu/SIFT_Anatomy_Image_Describer_gpu.hpp"
 
 #include <cereal/cereal.hpp>
 #include <cereal/types/polymorphic.hpp>

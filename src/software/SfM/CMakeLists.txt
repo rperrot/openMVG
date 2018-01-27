@@ -41,6 +41,13 @@ TARGET_LINK_LIBRARIES(openMVG_main_ComputeFeatures
   stlplus
   vlsift
   )
+if( OpenMVG_BUILD_GPU_TOOLS )
+target_link_libraries( openMVG_main_ComputeFeatures 
+  openMVG_system_gpu 
+  openMVG_image_gpu 
+  openMVG_sift_gpu)
+target_compile_definitions( openMVG_main_ComputeFeatures PRIVATE OPENMVG_USE_OPENCL=1 )
+endif()
 
 ADD_EXECUTABLE(openMVG_main_ListMatchingPairs main_ListMatchingPairs.cpp)
 TARGET_LINK_LIBRARIES(openMVG_main_ListMatchingPairs
