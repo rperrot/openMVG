@@ -1,4 +1,6 @@
 
 UNIT_TEST(openMVG sift "openMVG_image;openMVG_features;openMVG_system")
 
-add_subdirectory( gpu )
+if( OpenMVG_BUILD_GPU_TOOLS )
+  add_subdirectory( gpu )
+endif()

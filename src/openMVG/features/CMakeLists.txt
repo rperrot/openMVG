@@ -15,7 +15,13 @@ file(
 
 file(GLOB_RECURSE REMOVEFILESUNITTEST *_test.cpp)
 #Remove the future main files
-list(REMOVE_ITEM features_files_sources ${REMOVEFILESUNITTEST})
+list(REMOVE_ITEM features_files_sources ${REMOVEFILESUNITTEST} )
+
+file(GLOB_RECURSE REMOVEFILESGPUSRCS *_gpu.cpp )
+list(REMOVE_ITEM features_files_sources ${REMOVEFILESGPUSRCS} )
+
+file(GLOB_RECURSE REMOVEFILESGPUHDRS *_gpu.hpp *_gpu_*.hpp )
+list(REMOVE_ITEM features_files_headers ${REMOVEFILESGPUHDRS} )
 
 set_source_files_properties(${features_files_sources} PROPERTIES LANGUAGE CXX)
 add_library(openMVG_features ${features_files_sources} ${features_files_headers})

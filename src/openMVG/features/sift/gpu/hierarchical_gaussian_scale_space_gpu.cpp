@@ -28,6 +28,30 @@ GPUOctave::~GPUOctave( void )
   }
 }
 
+/**
+ * @brief Convert GPU octave to a CPU one
+ * @param[out] cpu_octate The octave
+ * @param ctx OpenCL Context
+ */
+void GPUOctave::convertToCPUOctave( Octave & cpu_octave , system::gpu::OpenCLContext & ctx )
+{
+  /*
+  int octave_level;                   // the octave level
+  float delta;                        // sampling rate in this octave
+  std::vector< float > sigmas;        // sigma values
+  std::vector< cl_mem > slices;       // octave slice (from fine to coarse)
+   */
+  cpu_octave.octave_level = octave_level ;
+  cpu_octave.delta = delta ;
+  cpu_octave.sigmas = sigmas ;
+  cpu_octave.slices.resize( slices.size() ) ;
+  for( size_t id_slice = 0 ; id_slice < slices.size() ; ++id_slice )
+  {
+    image::gpu::FromOpenCLImage( slices[ id_slice ] , cpu_octave.slices[ id_slice ] , ctx ) ;
+  }
+}
+
+
 
 /**
 * @brief HierarchicalGaussianScaleSpace constructor

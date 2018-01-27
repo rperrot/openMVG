@@ -14,6 +14,13 @@ file(GLOB REMOVEFILESUNITTEST *_test.cpp)
 #Remove the future main files
 list(REMOVE_ITEM image_files_cpp ${REMOVEFILESUNITTEST})
 
+file(GLOB_RECURSE REMOVEFILESGPUSRCS *_gpu_*.cpp )
+list(REMOVE_ITEM image_files_cpp ${REMOVEFILESGPUSRCS} )
+
+file(GLOB_RECURSE REMOVEFILESGPUHDRS *_gpu_*.hpp )
+list(REMOVE_ITEM image_files_header ${REMOVEFILESGPUHDRS} )
+
+
 add_library(openMVG_image ${image_files_header} ${image_files_cpp})
 target_link_libraries(
   openMVG_image

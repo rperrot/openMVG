@@ -29,6 +29,13 @@ struct GPUOctave
   std::vector< float > sigmas;        // sigma values
   std::vector< cl_mem > slices;       // octave slice (from fine to coarse)
 
+  /**
+   * @brief Convert GPU octave to a CPU one
+   * @param[out] cpu_octate The octave
+   * @param ctx OpenCL Context
+   */
+  void convertToCPUOctave( Octave & cpu_octave , system::gpu::OpenCLContext & ctx ) ;
+
   ~GPUOctave( void ) ;
 };
 

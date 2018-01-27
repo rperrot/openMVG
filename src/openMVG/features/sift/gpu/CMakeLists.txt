@@ -1,5 +1,7 @@
-set( OPENMVG_SIFT_GPU_SRCS hierarchical_gaussian_scale_space_gpu.cpp )
-set( OPENMVG_SIFT_GPU_HDRS hierarchical_gaussian_scale_space_gpu.hpp )
+set( OPENMVG_SIFT_GPU_SRCS hierarchical_gaussian_scale_space_gpu.cpp 
+                           SIFT_Anatomy_Image_Describer_gpu.cpp )
+set( OPENMVG_SIFT_GPU_HDRS hierarchical_gaussian_scale_space_gpu.hpp
+                           SIFT_Anatomy_Image_Describer_gpu.hpp )
 
 add_library( openMVG_sift_gpu ${OPENMVG_SIFT_GPU_SRCS} ${OPENMVG_SIFT_GPU_HDRS} )
 
@@ -15,4 +17,5 @@ target_link_libraries( openMVG_sift_gpu
   openMVG_system_gpu )
 
 
-  UNIT_TEST(openMVG hierarchical_gaussian_scale_space_gpu "openMVG_image;openMVG_features;openMVG_system;openMVG_image_gpu;openMVG_system_gpu;openMVG_sift_gpu")
+UNIT_TEST(openMVG hierarchical_gaussian_scale_space_gpu "openMVG_image;openMVG_features;openMVG_system;openMVG_image_gpu;openMVG_system_gpu;openMVG_sift_gpu")
+UNIT_TEST(openMVG sift_gpu "openMVG_image;openMVG_features;openMVG_system;openMVG_image_gpu;openMVG_system_gpu;openMVG_sift_gpu")
