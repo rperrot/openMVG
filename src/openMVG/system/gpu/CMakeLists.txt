@@ -1,6 +1,8 @@
-set( OPENMVG_SYSTEM_GPU_SRCS OpenCLContext.cpp )
+set( OPENMVG_SYSTEM_GPU_SRCS OpenCLContext.cpp 
+                             OpenCLStandardKernels.cpp )
 set( OPENMVG_SYSTEM_GPU_HDRS OpenCLContext.hpp 
-                             OpenCLDeviceInfos.hpp )
+                             OpenCLDeviceInfos.hpp 
+                             OpenCLStandardKernels.hpp )
 
 add_library( openMVG_system_gpu ${OPENMVG_SYSTEM_GPU_SRCS} ${OPENMVG_SYSTEM_GPU_HDRS} )
 
