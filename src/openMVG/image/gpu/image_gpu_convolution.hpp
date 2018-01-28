@@ -104,6 +104,20 @@ cl_mem ImageHorizontalConvolution( cl_mem img , cl_mem kernel , const size_t ker
  */
 bool ImageHorizontalConvolution( cl_mem res , cl_mem img , const openMVG::Vec & kernel , openMVG::system::gpu::OpenCLContext & ctx ) ;
 
+
+/**
+ * @brief Perform Horizontal convolution by a given kernel
+ * @param[out] res Convolved image (need to be already allocated)
+ * @param img Image to convolve
+ * @param kernel Kernel
+ * @param offset_region Offset of the input image to work with
+ * @param region_size Region size of the input image to work with
+ * @param ctx OpenCL context
+ * @note offset_region must be {0,0} for now 
+ */
+bool ImageHorizontalConvolution( cl_mem res , cl_mem img , const openMVG::Vec & kernel , const size_t offset_region[2] , const size_t region_size[2] , openMVG::system::gpu::OpenCLContext & ctx ) ;
+
+
 /**
  * @brief Perform Horizontal convolution by a given kernel
  * @param[out] res Convolved image (need to be already allocated)

@@ -679,6 +679,88 @@ class OpenCLContext
      */
     cl_mem createBuffer( const size_t size , const OpenCLBufferAccessType access = OPENCL_BUFFER_ACCESS_READ_WRITE , void * data = nullptr ) const ;
 
+    // Temporary objets (used to avoid multiple creation of temps objets - they must not be cleared by the user)
+    // Multiple calls to a temps may return the same memory object
+    // Conclusion : if you want 3 temps, call temp1 then temp2 and temp3 not 3 times temp1
+
+    /**
+     * @brief Get temporary image 1
+     * @param w Width of the image
+     * @param h Height of the image
+     * @param order Order of the channel components
+     * @param dtype Type of the channel components
+     * @param access Access mode of the image
+     * @return Temporary object
+     * @note Image may have bigger size than the requested one
+     * @note Given that it's a temp, image has R/W access
+     * @note if temp1 does not exists, create it at the correct size
+     * @note if temp1 exists but is not large enough or does not have requested format, destroy then recreate
+     */
+    cl_mem getTemporaryImage1( const size_t w , const size_t h , const OpenCLImageChannelOrder order , const OpenCLImageDataType dtype ) ;
+
+    /**
+     * @brief Get temporary image 1
+     * @param w Width of the image
+     * @param h Height of the image
+     * @param order Order of the channel components
+     * @param dtype Type of the channel components
+     * @param access Access mode of the image
+     * @return Temporary object
+     * @note Image may have bigger size than the requested one
+     * @note Given that it's a temp, image has R/W access
+     * @note if temp1 does not exists, create it at the correct size
+     * @note if temp1 exists but is not large enough or does not have requested format, destroy then recreate
+     */
+    cl_mem getTemporaryImage2( const size_t w , const size_t h , const OpenCLImageChannelOrder order , const OpenCLImageDataType dtype ) ;
+
+    /**
+     * @brief Get temporary image 1
+     * @param w Width of the image
+     * @param h Height of the image
+     * @param order Order of the channel components
+     * @param dtype Type of the channel components
+     * @param access Access mode of the image
+     * @return Temporary object
+     * @note Image may have bigger size than the requested one
+     * @note Given that it's a temp, image has R/W access
+     * @note if temp1 does not exists, create it at the correct size
+     * @note if temp1 exists but is not large enough or does not have requested format, destroy then recreate
+     */
+    cl_mem getTemporaryImage3( const size_t w , const size_t h , const OpenCLImageChannelOrder order , const OpenCLImageDataType dtype ) ;
+
+    /**
+     * @brief Get temporary buffer
+     * @param size Size of the buffer
+     * @return temporary buffer
+     * @note If buffer does not exists -> create it
+     * @note if buffer exists but at a size < of the requested one -> destroy then recreate
+     * @note given it's a temp, it has
+     */
+    cl_mem getTemporaryBuffer1( const size_t size ) ;
+
+
+    /**
+     * @brief Get temporary buffer
+     * @param size Size of the buffer
+     * @return temporary buffer
+     * @note If buffer does not exists -> create it
+     * @note if buffer exists but at a size < of the requested one -> destroy then recreate
+     * @note given it's a temp, it has
+     */
+    cl_mem getTemporaryBuffer2( const size_t size ) ;
+
+    /**
+     * @brief Get temporary buffer
+     * @param size Size of the buffer
+     * @return temporary buffer
+     * @note If buffer does not exists -> create it
+     * @note if buffer exists but at a size < of the requested one -> destroy then recreate
+     * @note given it's a temp, it has
+     */
+    cl_mem getTemporaryBuffer3( const size_t size ) ;
+
+
+
   private:
 
     /**
@@ -732,6 +814,14 @@ class OpenCLContext
      */
     void releaseStandardKernels( void ) ;
 
+    void createTemporaryImage( cl_mem & img , const size_t w , const size_t h , const OpenCLImageChannelOrder order , const OpenCLImageDataType dtype ) ;
+
+    void createTemporaryBuffer( cl_mem & buff , const size_t size ) ;
+
+    void releaseTemporaryImages( void ) ;
+
+    void releaseTemporaryBuffers( void ) ;
+
     // Platforms values
     /// Number of platforms
     uint32_t m_nb_platform ;
@@ -759,6 +849,9 @@ class OpenCLContext
     /// A default command queue per platform/device pair
     std::map< std::pair<cl_platform_id, cl_device_id> , cl_command_queue > m_command_queues ;
 
+
+    cl_mem m_temp_image[3] ;
+    cl_mem m_temp_buffer[3] ;
 
     // Standard kernels
     /// List of programs defined by openMVG

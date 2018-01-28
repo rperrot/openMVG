@@ -42,6 +42,15 @@ OpenCLContext::OpenCLContext( const OpenCLDeviceType prefered_device_type ,
     m_prefered_device_type( prefered_device_type ) ,
     m_device_preference( device_preference )
 {
+
+  m_temp_image[0] = nullptr ;
+  m_temp_image[1] = nullptr ;
+  m_temp_image[2] = nullptr ;
+
+  m_temp_buffer[0] = nullptr ;
+  m_temp_buffer[1] = nullptr ;
+  m_temp_buffer[2] = nullptr ;
+
   fillPlatformsInfos() ;
   fillDevicesInfos() ;
 
@@ -106,6 +115,24 @@ OpenCLContext::OpenCLContext( const OpenCLContext & src )
       clRetainKernel( std_krn.second ) ;
     }
   }
+
+  // Add 1 to the temporary objets
+  for( int i = 0 ; i < 3 ; ++i )
+  {
+    m_temp_image[i] = src.m_temp_image[i] ;
+    if( m_temp_image[i] )
+    {
+      clRetainMemObject( m_temp_image[i] ) ;
+    }
+  }
+  for( int i = 0 ; i < 3 ; ++i )
+  {
+    m_temp_buffer[i] = src.m_temp_buffer[i] ;
+    if( m_temp_buffer[i] )
+    {
+      clRetainMemObject( m_temp_buffer[i] ) ;
+    }
+  }
 }
 
 
@@ -161,6 +188,23 @@ OpenCLContext & OpenCLContext::operator=( const OpenCLContext & src )
       }
     }
 
+    // Add 1 to the temporary objets
+    for( int i = 0 ; i < 3 ; ++i )
+    {
+      m_temp_image[i] = src.m_temp_image[i] ;
+      if( m_temp_image[i] )
+      {
+        clRetainMemObject( m_temp_image[i] ) ;
+      }
+    }
+    for( int i = 0 ; i < 3 ; ++i )
+    {
+      m_temp_buffer[i] = src.m_temp_buffer[i] ;
+      if( m_temp_buffer[i] )
+      {
+        clRetainMemObject( m_temp_buffer[i] ) ;
+      }
+    }
   }
   return ( *this ) ;
 }
@@ -174,6 +218,8 @@ OpenCLContext::~OpenCLContext( void )
   releaseCommandQueues() ;
   releaseContexts() ;
   releaseStandardKernels() ;
+  releaseTemporaryImages() ;
+  releaseTemporaryBuffers() ;
 }
 
 /**
@@ -1846,8 +1892,107 @@ cl_mem OpenCLContext::createBuffer( const size_t size , const OpenCLBufferAccess
   cl_mem res = clCreateBuffer( currentContext() , flags , size , data , &error ) ;
 
   return ( error == CL_SUCCESS ) ? res : nullptr ;
-
 }
+
+/**
+ * @brief Get temporary image 1
+ * @param w Width of the image
+ * @param h Height of the image
+ * @param order Order of the channel components
+ * @param dtype Type of the channel components
+ * @param access Access mode of the image
+ * @return Temporary object
+ * @note Image may have bigger size than the requested one
+ * @note Given that it's a temp, image has R/W access
+ * @note if temp1 does not exists, create it at the correct size
+ * @note if temp1 exists but is not large enough or does not have requested format, destroy then recreate
+ */
+cl_mem OpenCLContext::getTemporaryImage1( const size_t w , const size_t h , const OpenCLImageChannelOrder order , const OpenCLImageDataType dtype )
+{
+  createTemporaryImage( m_temp_image[0] , w , h , order , dtype ) ;
+  return m_temp_image[0] ;
+}
+
+/**
+ * @brief Get temporary image 1
+ * @param w Width of the image
+ * @param h Height of the image
+ * @param order Order of the channel components
+ * @param dtype Type of the channel components
+ * @param access Access mode of the image
+ * @return Temporary object
+ * @note Image may have bigger size than the requested one
+ * @note Given that it's a temp, image has R/W access
+ * @note if temp1 does not exists, create it at the correct size
+ * @note if temp1 exists but is not large enough or does not have requested format, destroy then recreate
+ */
+cl_mem OpenCLContext::getTemporaryImage2( const size_t w , const size_t h , const OpenCLImageChannelOrder order , const OpenCLImageDataType dtype )
+{
+  createTemporaryImage( m_temp_image[1] , w , h , order , dtype ) ;
+  return m_temp_image[1] ;
+}
+
+/**
+ * @brief Get temporary image 1
+ * @param w Width of the image
+ * @param h Height of the image
+ * @param order Order of the channel components
+ * @param dtype Type of the channel components
+ * @param access Access mode of the image
+ * @return Temporary object
+ * @note Image may have bigger size than the requested one
+ * @note Given that it's a temp, image has R/W access
+ * @note if temp1 does not exists, create it at the correct size
+ * @note if temp1 exists but is not large enough or does not have requested format, destroy then recreate
+ */
+cl_mem OpenCLContext::getTemporaryImage3( const size_t w , const size_t h , const OpenCLImageChannelOrder order , const OpenCLImageDataType dtype )
+{
+  createTemporaryImage( m_temp_image[2] , w , h , order , dtype ) ;
+  return m_temp_image[2] ;
+}
+
+/**
+ * @brief Get temporary buffer
+ * @param size Size of the buffer
+ * @return temporary buffer
+ * @note If buffer does not exists -> create it
+ * @note if buffer exists but at a size < of the requested one -> destroy then recreate
+ * @note given it's a temp, it has
+ */
+cl_mem OpenCLContext::getTemporaryBuffer1( const size_t size )
+{
+  createTemporaryBuffer( m_temp_buffer[0] , size ) ;
+  return m_temp_buffer[0] ;
+}
+
+/**
+ * @brief Get temporary buffer
+ * @param size Size of the buffer
+ * @return temporary buffer
+ * @note If buffer does not exists -> create it
+ * @note if buffer exists but at a size < of the requested one -> destroy then recreate
+ * @note given it's a temp, it has
+ */
+cl_mem OpenCLContext::getTemporaryBuffer2( const size_t size )
+{
+  createTemporaryBuffer( m_temp_buffer[1] , size ) ;
+  return m_temp_buffer[1] ;
+}
+
+/**
+ * @brief Get temporary buffer
+ * @param size Size of the buffer
+ * @return temporary buffer
+ * @note If buffer does not exists -> create it
+ * @note if buffer exists but at a size < of the requested one -> destroy then recreate
+ * @note given it's a temp, it has
+ */
+cl_mem OpenCLContext::getTemporaryBuffer3( const size_t size )
+{
+  createTemporaryBuffer( m_temp_buffer[2] , size ) ;
+  return m_temp_buffer[2] ;
+}
+
 
 
 /**
@@ -1868,6 +2013,146 @@ void OpenCLContext::releaseStandardKernels( void )
     {
       clReleaseProgram( it ) ;
     }
+  }
+}
+
+static inline bool SameOrder( const cl_channel_order clorder , const OpenCLImageChannelOrder cpu_order )
+{
+  switch( cpu_order )
+  {
+    case OPENCL_IMAGE_CHANNEL_ORDER_R:
+    {
+      return clorder == CL_R ;
+    }
+    case OPENCL_IMAGE_CHANNEL_ORDER_RGBA:
+    {
+      return clorder == CL_RGBA ;
+    }
+    case OPENCL_IMAGE_CHANNEL_ORDER_BGRA:
+    {
+      return clorder == CL_BGRA;
+    }
+  }
+}
+
+static inline bool SameDataType( const cl_channel_type cltype , const OpenCLImageDataType cpu_type )
+{
+  switch( cpu_type )
+  {
+    case OPENCL_IMAGE_DATA_TYPE_FLOAT:
+    {
+      return cltype == CL_FLOAT ;
+    }
+    case OPENCL_IMAGE_DATA_TYPE_U_INT_8:
+    {
+      return cltype == CL_UNSIGNED_INT8 ;
+    }
+    case OPENCL_IMAGE_DATA_TYPE_U_INT_32:
+    {
+      return cltype == CL_UNSIGNED_INT32 ;
+    }
+    case OPENCL_IMAGE_DATA_TYPE_SU_INT_8:
+    {
+      return cltype == CL_SIGNED_INT8 ;
+    }
+    case OPENCL_IMAGE_DATA_TYPE_SU_INT_32:
+    {
+      return cltype == CL_SIGNED_INT32 ;
+    }
+    case OPENCL_IMAGE_DATA_TYPE_UN_INT_8:
+    {
+      return cltype == CL_UNORM_INT8 ;
+    }
+  }
+}
+
+void OpenCLContext::createTemporaryImage( cl_mem & img , const size_t w , const size_t h , const OpenCLImageChannelOrder order , const OpenCLImageDataType dtype )
+{
+  if( ! img )
+  {
+    // Not already created -> create one
+    img = createImage( w , h , order , dtype ) ;
+  }
+  else
+  {
+    // Exists -> test if it is large enough and with same memory data
+    cl_image_format format ;
+    cl_int err = clGetImageInfo( img , CL_IMAGE_FORMAT , sizeof( format ) , &format , nullptr ) ;
+    if( err != CL_SUCCESS )
+    {
+      return ;
+    }
+    size_t width ;
+    err = clGetImageInfo( img , CL_IMAGE_WIDTH , sizeof( size_t ) , &width , nullptr ) ;
+    if( err != CL_SUCCESS )
+    {
+      return ;
+    }
+    size_t height ;
+    err = clGetImageInfo( img , CL_IMAGE_HEIGHT , sizeof( size_t ) , &height , nullptr ) ;
+    if( err != CL_SUCCESS )
+    {
+      return ;
+    }
+
+    if( width >= w && height >= h && SameOrder( format.image_channel_order , order ) && SameDataType( format.image_channel_data_type , dtype ) )
+    {
+      // No need to create one it's compatible with the request
+      return ;
+    }
+    else
+    {
+      // Something is incompatible -> destroy then recreate
+      clReleaseMemObject( img ) ;
+      img = createImage( w , h , order , dtype ) ;
+    }
+  }
+}
+
+void OpenCLContext::createTemporaryBuffer( cl_mem & buff , const size_t size )
+{
+  if( ! buff )
+  {
+    // Not already created -> create one
+    buff = createBuffer( size ) ;
+  }
+  else
+  {
+    // exists test if it's large enough
+    size_t actual_size ;
+    cl_int res = clGetMemObjectInfo( buff , CL_MEM_SIZE , sizeof( size_t ) , &actual_size , nullptr ) ;
+    if( res != CL_SUCCESS )
+    {
+      return ;
+    }
+
+    if( actual_size >= size )
+    {
+      //Nothing to do
+      return ;
+    }
+    else
+    {
+      // Not large enough, destroy then recreate
+      clReleaseMemObject( buff ) ;
+      buff = createBuffer( size ) ;
+    }
+  }
+}
+
+void OpenCLContext::releaseTemporaryImages( void )
+{
+  for( int i = 0 ; i < 3 ; ++i )
+  {
+    clReleaseMemObject( m_temp_image[i] ) ;
+  }
+}
+
+void OpenCLContext::releaseTemporaryBuffers( void )
+{
+  for( int i = 0 ; i < 3 ; ++i )
+  {
+    clReleaseMemObject( m_temp_buffer[i] ) ;
   }
 }
 
