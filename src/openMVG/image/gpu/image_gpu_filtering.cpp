@@ -1231,6 +1231,56 @@ bool ImageGaussianFilter( cl_mem res , cl_mem img , const double sigma , openMVG
 }
 
 /**
+ * @brief Compute (isotropic) gaussian filtering of an image using filter width of k * sigma
+ * @param img Input image
+ * @param[out] res Gaussian filtered image
+ * @param sigma standard deviation of kernel
+ * @param ctx OpenCL Context
+ * @param offset_region Region of the input image to work with
+ * @param region_size Region size of the input image to work with
+ * @param k confidence interval param - kernel is width k * sigma * 2 + 1 -- using k = 3 gives 99% of gaussian curve
+ * @retval true if computation is ok
+ * @retval false if computation fails
+ */
+bool ImageGaussianFilter( cl_mem res ,
+                          cl_mem img ,
+                          const double sigma ,
+                          const size_t offset_region[2] ,
+                          const size_t region_size[2] ,
+                          openMVG::system::gpu::OpenCLContext & ctx ,
+                          const int k )
+{
+  // Compute Gaussian filter
+  const int k_size    = ( int ) 2 * k * sigma + 1;
+  const int half_k_size = k_size / 2;
+
+  const double exp_scale = 1.0 / ( 2.0 * sigma * sigma );
+
+  // Compute 1D Gaussian filter
+  openMVG::Vec kernel_horiz( k_size );
+
+  double sum = 0;
+  for ( int i = 0; i < k_size; ++i )
+  {
+    const double dx = ( i - half_k_size );
+    kernel_horiz( i ) = exp( - dx * dx * exp_scale );
+    sum += kernel_horiz( i );
+  }
+
+  // Normalize kernel (to have \sum_i kernel_horiz( i ) = 1 and avoid energy loss)
+  const double inv = 1.0 / sum;
+  for ( int i = 0; i < k_size; ++i )
+  {
+    kernel_horiz( i ) *= inv;
+  }
+
+  // Vertical kernel is the same as the horizontal one
+  const openMVG::Vec & kernel_vert = kernel_horiz;
+
+  return ImageSeparableConvolution( res , img , kernel_horiz , kernel_vert , offset_region , region_size , ctx ) ;
+}
+
+/**
  * @brief Compute gaussian filtering of an image using user defined filter widths
  * @param img Input image
  * @param sigma standard deviation of kernel

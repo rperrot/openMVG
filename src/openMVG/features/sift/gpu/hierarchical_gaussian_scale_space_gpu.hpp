@@ -29,6 +29,9 @@ struct GPUOctave
   std::vector< float > sigmas;        // sigma values
   std::vector< cl_mem > slices;       // octave slice (from fine to coarse)
 
+  size_t img_width ;
+  size_t img_height ;
+
   /**
    * @brief Convert GPU octave to a CPU one
    * @param[out] cpu_octate The octave
@@ -58,6 +61,8 @@ struct HierarchicalGaussianScaleSpaceGPU : public Octaver<GPUOctave>
       const openMVG::system::gpu::OpenCLContext & ctx = std::move( openMVG::system::gpu::OpenCLContext() )
     ) ;
 
+    ~HierarchicalGaussianScaleSpaceGPU() ;
+
     /**
     * @brief Set Initial image and update nb_octave if necessary
     * @param img Input image
@@ -79,6 +84,10 @@ struct HierarchicalGaussianScaleSpaceGPU : public Octaver<GPUOctave>
 
     GaussianScaleSpaceParams m_params;  // The Gaussian scale space parameters
     cl_mem m_cur_base_octave_image; // The image that will be used to generate the next octave
+    // Base image dimensions
+    size_t m_cur_base_octave_image_width ;
+    size_t m_cur_base_octave_image_height ;
+
     int m_cur_octave_id; // The current Octave id [0 -> Octaver::m_nb_octave]
 };
 

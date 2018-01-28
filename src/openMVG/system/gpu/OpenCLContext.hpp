@@ -663,6 +663,12 @@ class OpenCLContext
                         const OpenCLImageAccessType access = OPENCL_IMAGE_ACCESS_READ_WRITE ,
                         void * data = nullptr ) const ;
 
+
+    /**
+     * @brief fill with black values inside the specified region
+     */
+    void fillBlackImage( cl_mem img , const size_t offset_region[2] , const size_t region_size[2] ) ;
+
     /**
      * @brief Create a buffer
      * @param size Size (in byte) of the buffer to create

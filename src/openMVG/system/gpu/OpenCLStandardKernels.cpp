@@ -79,12 +79,16 @@ std::string ComputeOpenCLProgramSource( const std::vector< OpenCLStandardKernels
       {
         res << krnsImageHorizontalConvolveNaive << std::endl ;
         res << krnsImageHorizontalConvolveLocalMem32 << std::endl ;
+        res << krnsImageHorizontalConvolveNaiveRegion << std::endl ;
+        res << krnsImageHorizontalConvolveLocalMem32Region << std::endl ;
         break ;
       }
       case OPENCL_STANDARD_KERNELS_VERTICAL_CONVOLUTION:
       {
         res << krnsImageVerticalConvolveNaive << std::endl ;
         res << krnsImageVerticalConvolveLocalMem32 << std::endl ;
+        res << krnsImageVerticalConvolveNaiveRegion << std::endl ;
+        res << krnsImageVerticalConvolveLocalMem32Region << std::endl ;
         break ;
       }
       case OPENCL_STANDARD_KERNELS_X_NORMALIZED_DERIVATIVE_CENTRAL_DIFFERENCE:
@@ -153,9 +157,9 @@ std::string ComputeOpenCLProgramSource( const std::vector< OpenCLStandardKernels
         res << krnsImageResamplingUpsample << std::endl ;
         break ;
       }
-      default: 
+      default:
       {
-        break ; 
+        break ;
       }
     }
   }

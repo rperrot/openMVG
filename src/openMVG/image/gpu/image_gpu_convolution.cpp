@@ -485,6 +485,104 @@ cl_mem ImageHorizontalConvolution( cl_mem img , const openMVG::Vec & kernel , op
  * @brief Perform Horizontal convolution by a given kernel
  * @param img Image to convolve
  * @param kernel Kernel
+ * @param offset_region Offset of the input image to work with
+ * @param region_size Region size of the input image to work with
+ * @param ctx OpenCL context
+ * @return Convolved image
+ */
+cl_mem ImageHorizontalConvolution( cl_mem img , const openMVG::Vec & kernel , const size_t offset_region[2] , const size_t region_size[2] , openMVG::system::gpu::OpenCLContext & ctx )
+{
+  const int nbKernelCoef = kernel.size() ;
+  float * krnData = new float[ nbKernelCoef ] ;
+  for( int i = 0 ; i < nbKernelCoef ; ++i )
+  {
+    krnData[ i ] = static_cast<float>( kernel[ i ] ) ;
+  }
+
+  cl_mem buffer = ctx.createBuffer( nbKernelCoef * sizeof( float ) , openMVG::system::gpu::OPENCL_BUFFER_ACCESS_READ_ONLY , krnData ) ;
+  delete[] krnData ;
+
+  cl_image_format format ;
+  cl_int err = clGetImageInfo( img , CL_IMAGE_FORMAT , sizeof( format ) , &format , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return nullptr ;
+  }
+  size_t width ;
+  err = clGetImageInfo( img , CL_IMAGE_WIDTH , sizeof( size_t ) , &width , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return nullptr ;
+  }
+  size_t height ;
+  err = clGetImageInfo( img , CL_IMAGE_HEIGHT , sizeof( size_t ) , &height , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return nullptr ;
+  }
+
+  cl_image_desc desc ;
+  desc.image_type = CL_MEM_OBJECT_IMAGE2D ;
+  desc.image_width = width ;
+  desc.image_height = height ;
+  desc.image_depth = 1 ;
+  desc.image_row_pitch = 0 ;
+  desc.image_slice_pitch = 0 ;
+  desc.num_mip_levels = 0 ;
+  desc.num_samples = 0 ;
+  desc.buffer = nullptr ;
+
+  cl_mem res = clCreateImage( ctx.currentContext() , CL_MEM_READ_WRITE , &format , &desc , nullptr , &err ) ;
+  if( err != CL_SUCCESS )
+  {
+    return nullptr ;
+  }
+
+  // Now perform convolution
+  cl_int half_kernel_size = nbKernelCoef / 2 ;
+
+  // TODO change convolution kernels
+  cl_kernel cl_krn ;
+  if( nbKernelCoef <= 33 )
+  {
+    cl_krn = ctx.standardKernel( "horizontal_convolve_local_32_region_f" ) ;
+  }
+  else
+  {
+    cl_krn = ctx.standardKernel( "horizontal_convolve_naive_region_f" ) ;
+  }
+
+  cl_int2 offset_r = { ( int ) offset_region[0] , ( int ) offset_region[1] } ;
+  cl_int2 region_s = { ( int ) region_size[0] , ( int ) region_size[1] } ;
+
+  clSetKernelArg( cl_krn , 0 , sizeof( cl_mem ) , &res ) ;
+  clSetKernelArg( cl_krn , 1 , sizeof( cl_mem ) , &buffer ) ;
+  clSetKernelArg( cl_krn , 2 , sizeof( cl_mem ) , &img ) ;
+  clSetKernelArg( cl_krn , 3 , sizeof( cl_int ) , &half_kernel_size ) ;
+  clSetKernelArg( cl_krn , 4 , sizeof( cl_int2 ) , &offset_r ) ;
+  clSetKernelArg( cl_krn , 5 , sizeof( cl_int2 ) , &region_s ) ;
+
+
+  const size_t dim[] =
+  {
+    static_cast<size_t>( region_size[0] ) ,
+    static_cast<size_t>( region_size[1] )
+  } ;
+
+  const size_t workDim[] = { 16  , 16 } ;
+  if( ! ctx.runKernel2d( cl_krn , dim , workDim ) )
+  {
+    return nullptr ;
+  }
+
+  return res ;
+}
+
+
+/**
+ * @brief Perform Horizontal convolution by a given kernel
+ * @param img Image to convolve
+ * @param kernel Kernel
  * @param kernel_w Kernel size
  * @param ctx OpenCL context
  * @return Convolved image
@@ -1020,6 +1118,111 @@ bool ImageVerticalConvolution( cl_mem res , cl_mem img , const openMVG::Vec & ke
  * @param[out] res Convolved image (need to be already allocated)
  * @param img Image to convolve
  * @param kernel Kernel
+ * @param offset_region Offset of the input image to work with
+ * @param region_size Region size of the input image to work with
+ * @param ctx OpenCL context
+ */
+bool ImageVerticalConvolution( cl_mem res , cl_mem img , const openMVG::Vec & kernel , const size_t offset_region[2] , const size_t region_size[2] , openMVG::system::gpu::OpenCLContext & ctx )
+{
+  const int nbKernelCoef = kernel.size() ;
+  float * krnData = new float[ nbKernelCoef ] ;
+  for( int i = 0 ; i < nbKernelCoef ; ++i )
+  {
+    krnData[ i ] = static_cast<float>( kernel[ i ] ) ;
+  }
+
+  cl_mem buffer = ctx.createBuffer( nbKernelCoef * sizeof( float ) , openMVG::system::gpu::OPENCL_BUFFER_ACCESS_READ_ONLY , krnData ) ;
+  delete[] krnData ;
+
+  cl_image_format format ;
+  cl_int err = clGetImageInfo( img , CL_IMAGE_FORMAT , sizeof( format ) , &format , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t width ;
+  err = clGetImageInfo( img , CL_IMAGE_WIDTH , sizeof( size_t ) , &width , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t height ;
+  err = clGetImageInfo( img , CL_IMAGE_HEIGHT , sizeof( size_t ) , &height , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  cl_image_format formatRes ;
+  err = clGetImageInfo( img , CL_IMAGE_FORMAT , sizeof( formatRes ) , &formatRes , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t widthRes ;
+  err = clGetImageInfo( img , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthRes , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t heightRes ;
+  err = clGetImageInfo( img , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightRes , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+
+  if( width != widthRes ||
+      height != heightRes ||
+      format.image_channel_order != formatRes.image_channel_order ||
+      format.image_channel_data_type != formatRes.image_channel_data_type )
+  {
+    return false ;
+  }
+
+  // Now perform convolution
+  cl_int half_kernel_size = nbKernelCoef / 2 ;
+
+  cl_kernel cl_krn ;
+  if( nbKernelCoef <= 33 )
+  {
+    cl_krn = ctx.standardKernel( "vertical_convolve_local_32_region_f" ) ;
+  }
+  else
+  {
+    cl_krn = ctx.standardKernel( "vertical_convolve_naive_region_f" ) ;
+  }
+
+  cl_int2 offset_r = { ( int ) offset_region[0] , ( int ) offset_region[1] } ;
+  cl_int2 region_s = { ( int ) region_size[0] , ( int ) region_size[1] } ;
+
+  clSetKernelArg( cl_krn , 0 , sizeof( cl_mem ) , &res ) ;
+  clSetKernelArg( cl_krn , 1 , sizeof( cl_mem ) , &buffer ) ;
+  clSetKernelArg( cl_krn , 2 , sizeof( cl_mem ) , &img ) ;
+  clSetKernelArg( cl_krn , 3 , sizeof( cl_int ) , &half_kernel_size ) ;
+  clSetKernelArg( cl_krn , 4 , sizeof( cl_int2 ) , &offset_r ) ;
+  clSetKernelArg( cl_krn , 5 , sizeof( cl_int2 ) , &region_s ) ;
+
+  const size_t dim[] =
+  {
+    region_size[0] ,
+    region_size[1]
+  } ;
+
+  const size_t workDim[] = { 16  , 16 } ;
+  if( ! ctx.runKernel2d( cl_krn , dim , workDim ) )
+  {
+    return false ;
+  }
+
+  return true ;
+}
+
+
+/**
+ * @brief Perform Vertical convolution by a given kernel
+ * @param[out] res Convolved image (need to be already allocated)
+ * @param img Image to convolve
+ * @param kernel Kernel
  * @param kernel_w Kernel size
  * @param ctx OpenCL context
  */
@@ -1183,6 +1386,37 @@ bool ImageSeparableConvolution( cl_mem res ,
     return false ;
   }
   const bool ok = ImageVerticalConvolution( res , tmp , vKernel , ctx ) ;
+  clReleaseMemObject( tmp );
+  return ok ;
+}
+
+/**
+ * @brief Perform Separable convolution
+ * @param[out] res Convolved image (need to be at correct size before calling the function)
+ * @param img Image to convolve
+ * @param hKernel Horizontal kernel
+ * @param vKernel Vertical kernel
+ * @param offset_region Offset of the input image to work with
+ * @param region_size Region size of the input image to work with
+ * @param ctx OpenCL context
+ * @retval true if convolution is ok
+ * @retval false if something fails
+ */
+bool ImageSeparableConvolution( cl_mem res ,
+                                cl_mem img ,
+                                const openMVG::Vec & hKernel ,
+                                const openMVG::Vec & vKernel ,
+                                const size_t offset_region[2] ,
+                                const size_t region_size[2] ,
+                                openMVG::system::gpu::OpenCLContext & ctx )
+{
+  cl_mem tmp = ImageHorizontalConvolution( img , hKernel , offset_region , region_size , ctx ) ;
+  if( ! tmp )
+  {
+    return false ;
+  }
+  // TODO
+  const bool ok = ImageVerticalConvolution( res , tmp , vKernel , offset_region , region_size , ctx ) ;
   clReleaseMemObject( tmp );
   return ok ;
 }

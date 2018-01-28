@@ -99,8 +99,8 @@ TEST( HierarchicalGaussianScaleSpaceGPU , compare_with_cpu_no_upscaling )
       err = clGetImageInfo( gpu_image , CL_IMAGE_HEIGHT , sizeof( size_t ) , &gpu_height , nullptr ) ;
       EXPECT_EQ( err , CL_SUCCESS ) ;
 
-      EXPECT_EQ( cpu_width , gpu_width ) ;
-      EXPECT_EQ( cpu_height , gpu_height ) ;
+      EXPECT_EQ( w , gpu_width ) ;
+      EXPECT_EQ( h , gpu_height ) ;
 
       Image<float> converted_gpu ;
       FromOpenCLImage( gpu_image , converted_gpu , ctx ) ;
@@ -192,8 +192,8 @@ TEST( HierarchicalGaussianScaleSpaceGPU , compare_with_cpu_with_upscaling )
       err = clGetImageInfo( gpu_image , CL_IMAGE_HEIGHT , sizeof( size_t ) , &gpu_height , nullptr ) ;
       EXPECT_EQ( err , CL_SUCCESS ) ;
 
-      EXPECT_EQ( cpu_width , gpu_width ) ;
-      EXPECT_EQ( cpu_height , gpu_height ) ;
+      EXPECT_EQ( 2 * w , gpu_width ) ;
+      EXPECT_EQ( 2 * h , gpu_height ) ;
 
       Image<float> converted_gpu ;
       FromOpenCLImage( gpu_image , converted_gpu , ctx ) ;

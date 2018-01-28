@@ -207,6 +207,27 @@ cl_mem ImageGaussianFilter( cl_mem img , const double sigma , openMVG::system::g
 bool ImageGaussianFilter( cl_mem res , cl_mem img , const double sigma , openMVG::system::gpu::OpenCLContext & ctx , const int k = 3 ) ;
 
 /**
+ * @brief Compute (isotropic) gaussian filtering of an image using filter width of k * sigma
+ * @param img Input image
+ * @param[out] res Gaussian filtered image
+ * @param sigma standard deviation of kernel
+ * @param ctx OpenCL Context
+ * @param offset_region Region of the input image to work with
+ * @param region_size Region size of the input image to work with
+ * @param k confidence interval param - kernel is width k * sigma * 2 + 1 -- using k = 3 gives 99% of gaussian curve
+ * @retval true if computation is ok
+ * @retval false if computation fails
+ */
+bool ImageGaussianFilter( cl_mem res ,
+                          cl_mem img ,
+                          const double sigma ,
+                          const size_t offset_region[2] ,
+                          const size_t region_size[2] ,
+                          openMVG::system::gpu::OpenCLContext & ctx ,
+                          const int k = 3 ) ;
+
+
+/**
  * @brief Compute gaussian filtering of an image using user defined filter widths
  * @param img Input image
  * @param sigma standard deviation of kernel
@@ -230,6 +251,22 @@ cl_mem ImageGaussianFilter( cl_mem img , const double sigma , const size_t kerne
  * @retval false if computation fails
  */
 bool ImageGaussianFilter( cl_mem res , cl_mem img , const double sigma , const size_t kernel_size_x , const size_t kernel_size_y , openMVG::system::gpu::OpenCLContext & ctx ) ;
+
+
+/**
+ * @brief Compute gaussian filtering of an image using user defined filter widths
+ * @param[out] Gaussian filtered image
+ * @param img Input image
+ * @param sigma standard deviation of kernel
+ * @param kernel_size_x Size of horizontal kernel (must be an odd number or 0 for automatic computation)
+ * @param kernel_size_y Size of vertical kernel (must be an add number or 0 for automatic computation)
+ * @param ctx OpenCL Context
+ * @param offset_region Region of the input image to work with
+ * @param region_size Region size of the input image to work with
+ * @retval true if computation is ok
+ * @retval false if computation fails
+ */
+bool ImageGaussianFilter( cl_mem res , cl_mem img , const double sigma , const size_t kernel_size_x , const size_t kernel_size_y , openMVG::system::gpu::OpenCLContext & ctx , const size_t offset_region[2] , const size_t region_size[2] ) ;
 
 
 } // namespace gpu

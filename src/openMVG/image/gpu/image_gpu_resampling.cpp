@@ -117,13 +117,13 @@ bool ImageDecimate( cl_mem res , cl_mem img , openMVG::system::gpu::OpenCLContex
     return false ;
   }
   size_t widthRes ;
-  err = clGetImageInfo( res , CL_IMAGE_WIDTH , sizeof( size_t ) , &width , nullptr ) ;
+  err = clGetImageInfo( res , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthRes , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return false ;
   }
   size_t heightRes ;
-  err = clGetImageInfo( res , CL_IMAGE_HEIGHT , sizeof( size_t ) , &height , nullptr ) ;
+  err = clGetImageInfo( res , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightRes , nullptr ) ;
   if( err != CL_SUCCESS )
   {
     return false ;
@@ -137,6 +137,76 @@ bool ImageDecimate( cl_mem res , cl_mem img , openMVG::system::gpu::OpenCLContex
 
   const size_t new_width  = width / 2 ;
   const size_t new_height = height / 2 ;
+  if( widthRes < new_width || heightRes < new_height ||
+      format.image_channel_data_type != formatRes.image_channel_data_type ||
+      format.image_channel_order != formatRes.image_channel_order )
+  {
+    return false ;
+  }
+
+  cl_kernel krn ;
+  if( format.image_channel_data_type == CL_UNSIGNED_INT8 )
+  {
+    krn = ctx.standardKernel( "image_decimate_ui" ) ;
+  }
+  else if( format.image_channel_data_type == CL_FLOAT )
+  {
+    krn = ctx.standardKernel( "image_decimate_f" ) ;
+  }
+
+  clSetKernelArg( krn , 0 , sizeof( cl_mem ) , &res ) ;
+  clSetKernelArg( krn , 1 , sizeof( cl_mem ) , &img ) ;
+
+  const size_t size[2] =
+  {
+    new_width , new_height
+  } ;
+
+  if( ! ctx.runKernel2d( krn , size ) )
+  {
+    return false ;
+  }
+
+  return true ;
+}
+
+/**
+ * @brief Decimate image (get only one pixel over two - no interpolation)
+ * @param[out] Decimated image
+ * @param img Image
+ * @param ctx OpenCL Context
+ * @retval true If success
+ * @retval false If something fails
+ */
+bool ImageDecimate( cl_mem res , cl_mem img , const size_t offset_region[2] , const size_t region_size[2] , openMVG::system::gpu::OpenCLContext & ctx )
+{
+  cl_image_format format ;
+  cl_int err = clGetImageInfo( img , CL_IMAGE_FORMAT , sizeof( format ) , &format , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t widthRes ;
+  err = clGetImageInfo( res , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthRes , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t heightRes ;
+  err = clGetImageInfo( res , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightRes , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  cl_image_format formatRes ;
+  err = clGetImageInfo( res , CL_IMAGE_FORMAT , sizeof( formatRes ) , &formatRes , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+
+  const size_t new_width  = region_size[0] / 2 ;
+  const size_t new_height = region_size[1] / 2 ;
   if( widthRes < new_width || heightRes < new_height ||
       format.image_channel_data_type != formatRes.image_channel_data_type ||
       format.image_channel_order != formatRes.image_channel_order )

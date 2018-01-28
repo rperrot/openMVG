@@ -363,6 +363,76 @@ TEST( ImageGPUConvolution , horizontal )
   clReleaseMemObject( gpuImg ) ;
 }
 
+// Horizontal on region
+TEST( ImageGPUConvolution , horizontal_region )
+{
+  OpenCLContext ctx ;
+
+  int w = 64 ;
+  int h = 48 ;
+
+  int sub_w = 32 ;
+  int sub_h = 24 ;
+
+  Image<float> cpuImg( w , h ) ;
+  Image<float> subImg( sub_w , sub_h );
+
+  std::uniform_real_distribution<float> distrib( 0.f , 1.f ) ;
+  std::mt19937 rng( 0 ) ;
+
+  for( int y = 0 ; y < h ; ++y )
+  {
+    for( int x = 0 ; x < w ; ++x )
+    {
+      cpuImg( y , x ) = distrib( rng ) ;
+      if( x < sub_w && y < sub_h )
+      {
+        subImg( y , x ) = cpuImg( y , x ) ;
+      }
+    }
+  }
+
+  openMVG::Vec kernel ;
+  kernel.resize( 5 );
+  kernel[0] = -2.0 ;
+  kernel[1] = -1.0 ;
+  kernel[2] =  0.0 ;
+  kernel[3] =  1.0 ;
+  kernel[4] =  2.0 ;
+
+  cl_mem gpuImg = ToOpenCLImage( cpuImg , ctx ) ;
+
+  size_t region_offset[] = { 0 , 0 } ;
+  size_t region_size[] = { size_t( sub_w ) , size_t( sub_h ) } ;
+
+  cl_mem gpuConvolved = ImageHorizontalConvolution( gpuImg , kernel , region_offset , region_size , ctx ) ;
+
+  EXPECT_EQ( gpuConvolved != nullptr , true ) ;
+
+  Image<float> resConvolved;
+  bool cvtRes = FromOpenCLImage( gpuConvolved , resConvolved , ctx ) ;
+
+  EXPECT_EQ( cvtRes , true ) ;
+
+  Image<float> SubCpuConvolved ;
+  ImageHorizontalConvolution( subImg , kernel , SubCpuConvolved ) ;
+
+  EXPECT_EQ( SubCpuConvolved.Width() , sub_w ) ;
+  EXPECT_EQ( SubCpuConvolved.Height() , sub_h ) ;
+
+  for( int y = 0 ; y < sub_h ; ++y )
+  {
+    for( int x = 0 ; x < sub_w ; ++x )
+    {
+      EXPECT_NEAR( SubCpuConvolved( y , x ) , resConvolved( y , x ) , 0.001 ) ;
+    }
+  }
+
+  clReleaseMemObject( gpuConvolved ) ;
+  clReleaseMemObject( gpuImg ) ;
+}
+
+
 // Horizontal image convolution
 // - provide result as parameter (as an OpenCL image)
 TEST( ImageGPUConvolution , horizontal_cl_res )
@@ -684,6 +754,77 @@ TEST( ImageGPUConvolution , vertical_cl_res )
   clReleaseMemObject( gpuConvolved ) ;
   clReleaseMemObject( gpuImg ) ;
 }
+
+TEST( ImageGPUConvolution , vertical_cl_res_region )
+{
+  OpenCLContext ctx ;
+
+  int w = 64 ;
+  int h = 48 ;
+
+  int sub_w = 32 ;
+  int sub_h = 24 ;
+
+  Image<float> cpuImg( w , h ) ;
+  Image<float> subImg( sub_w , sub_h ) ;
+
+  std::uniform_real_distribution<float> distrib( 0.f , 1.f ) ;
+  std::mt19937 rng( 0 ) ;
+
+  for( int y = 0 ; y < h ; ++y )
+  {
+    for( int x = 0 ; x < w ; ++x )
+    {
+      cpuImg( y , x ) = distrib( rng ) ;
+      if( x < sub_w && y < sub_h )
+      {
+        subImg( y , x ) = cpuImg( y , x ) ;
+      }
+    }
+  }
+
+  openMVG::Vec kernel( 5 );
+  kernel[0] = -2.0 ;
+  kernel[1] = -1.0 ;
+  kernel[2] =  0.0 ;
+  kernel[3] =  1.0 ;
+  kernel[4] =  2.0 ;
+
+  cl_mem gpuImg = ToOpenCLImage( cpuImg , ctx ) ;
+
+  cl_mem gpuConvolved = ctx.createImage( w , h , OPENCL_IMAGE_CHANNEL_ORDER_R , OPENCL_IMAGE_DATA_TYPE_FLOAT ) ;
+  EXPECT_EQ( false , gpuConvolved == nullptr ) ;
+
+  size_t offset_region[] = { 0 , 0 } ;
+  size_t region_size[] = { size_t( sub_w ) , size_t( sub_h ) } ;
+
+  bool ok = ImageVerticalConvolution( gpuConvolved , gpuImg , kernel , offset_region , region_size , ctx ) ;
+
+  EXPECT_EQ( ok , true ) ;
+
+  Image<float> resConvolved;
+  bool cvtRes = FromOpenCLImage( gpuConvolved , resConvolved , ctx ) ;
+
+  EXPECT_EQ( cvtRes , true ) ;
+
+  Image<float> SubCpuConvolved ;
+  ImageVerticalConvolution( subImg , kernel , SubCpuConvolved ) ;
+
+  EXPECT_EQ( SubCpuConvolved.Width() , sub_w ) ;
+  EXPECT_EQ( SubCpuConvolved.Height() , sub_h ) ;
+
+  for( int y = 0 ; y < sub_h ; ++y )
+  {
+    for( int x = 0 ; x < sub_w ; ++x )
+    {
+      EXPECT_NEAR( SubCpuConvolved( y , x ) , resConvolved( y , x ) , 0.001 ) ;
+    }
+  }
+
+  clReleaseMemObject( gpuConvolved ) ;
+  clReleaseMemObject( gpuImg ) ;
+}
+
 
 // Vertical image convolution
 // - provide kernel as OpenCL buffer

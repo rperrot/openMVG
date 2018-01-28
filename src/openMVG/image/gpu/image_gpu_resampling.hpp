@@ -37,6 +37,16 @@ cl_mem ImageDecimate( cl_mem img , openMVG::system::gpu::OpenCLContext & ctx ) ;
 bool ImageDecimate( cl_mem res , cl_mem img , openMVG::system::gpu::OpenCLContext & ctx ) ;
 
 /**
+ * @brief Decimate image (get only one pixel over two - no interpolation)
+ * @param[out] Decimated image
+ * @param img Image
+ * @param ctx OpenCL Context
+ * @retval true If success
+ * @retval false If something fails
+ */
+bool ImageDecimate( cl_mem res , cl_mem img , const size_t offset_region[2] , const size_t region_size[2] , openMVG::system::gpu::OpenCLContext & ctx ) ;
+
+/**
  * @brief Image upsampling (size -> size * 2 ) using linear interpolation
  * @param img Input image
  * @param ctx OpenCL Context

@@ -76,6 +76,19 @@ cl_mem ImageHorizontalConvolution( cl_mem img , const openMVG::Vec & kernel , op
  * @brief Perform Horizontal convolution by a given kernel
  * @param img Image to convolve
  * @param kernel Kernel
+ * @param offset_region Offset of the input image to work with
+ * @param region_size Region size of the input image to work with
+ * @param ctx OpenCL context
+ * @return Convolved image
+ * @note offset_region must be {0,0} for now 
+ */
+cl_mem ImageHorizontalConvolution( cl_mem img , const openMVG::Vec & kernel , const size_t offset_region[2] , const size_t region_size[2] , openMVG::system::gpu::OpenCLContext & ctx ) ;
+
+
+/**
+ * @brief Perform Horizontal convolution by a given kernel
+ * @param img Image to convolve
+ * @param kernel Kernel
  * @param kernel_w Kernel size
  * @param ctx OpenCL context
  * @return Convolved image
@@ -129,6 +142,18 @@ cl_mem ImageVerticalConvolution( cl_mem img , cl_mem kernel , const size_t kerne
  * @param ctx OpenCL context
  */
 bool ImageVerticalConvolution( cl_mem res , cl_mem img , const openMVG::Vec & kernel , openMVG::system::gpu::OpenCLContext & ctx ) ;
+
+/**
+ * @brief Perform Vertical convolution by a given kernel
+ * @param[out] res Convolved image (need to be already allocated)
+ * @param img Image to convolve
+ * @param kernel Kernel
+ * @param offset_region Offset of the input image to work with
+ * @param region_size Region size of the input image to work with
+ * @param ctx OpenCL context
+ */
+bool ImageVerticalConvolution( cl_mem res , cl_mem img , const openMVG::Vec & kernel , const size_t offset_region[2] , const size_t region_size[2] , openMVG::system::gpu::OpenCLContext & ctx ) ;
+
 
 /**
  * @brief Perform Vertical convolution by a given kernel
@@ -189,6 +214,26 @@ bool ImageSeparableConvolution( cl_mem res ,
                                 cl_mem img ,
                                 const openMVG::Vec & hKernel ,
                                 const openMVG::Vec & vKernel ,
+                                openMVG::system::gpu::OpenCLContext & ctx ) ;
+
+/**
+ * @brief Perform Separable convolution
+ * @param[out] res Convolved image (need to be at correct size before calling the function)
+ * @param img Image to convolve
+ * @param hKernel Horizontal kernel
+ * @param vKernel Vertical kernel
+ * @param offset_region Offset of the input image to work with
+ * @param region_size Region size of the input image to work with
+ * @param ctx OpenCL context
+ * @retval true if convolution is ok
+ * @retval false if something fails
+ */
+bool ImageSeparableConvolution( cl_mem res ,
+                                cl_mem img ,
+                                const openMVG::Vec & hKernel ,
+                                const openMVG::Vec & vKernel ,
+                                const size_t offset_region[2] ,
+                                const size_t region_size[2] ,
                                 openMVG::system::gpu::OpenCLContext & ctx ) ;
 
 /**

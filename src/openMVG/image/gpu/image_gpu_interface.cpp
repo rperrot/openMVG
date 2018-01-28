@@ -275,6 +275,52 @@ bool FromOpenCLImage( cl_mem & img , Image<float> & outImg , openMVG::system::gp
 /**
  * @brief Convert an OpenCL image to a openMVG image
  * @param img Input Image to convert
+ * @param region_offset (x,y) Offset to get the image elements
+ * @param region_size (w,h) Size of the region to get
+ * @param[out] outImg Output image
+ * @param ctx OpenCL context
+ * @retval true if conversion is OK
+ * @retval false if conversion fails
+ * @note outImg will have size equal to (w-x,h-y)
+ */
+bool FromOpenCLImage( cl_mem & img , const size_t region_offset[2] , const size_t region_size[2] , Image<float> & outImg , openMVG::system::gpu::OpenCLContext & ctx )
+{
+  // Get image width/height
+  const size_t out_w = region_size[0] - region_offset[0] ;
+  const size_t out_h = region_size[1] - region_offset[1] ;
+
+  outImg = openMVG::image::Image<float>( out_w , out_h ) ;
+
+  cl_image_format format ;
+  cl_int err = clGetImageInfo( img , CL_IMAGE_FORMAT , sizeof( format ) , &format , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  if( format.image_channel_order != CL_R )
+  {
+    return false ;
+  }
+  if( format.image_channel_data_type != CL_FLOAT )
+  {
+    return false ;
+  }
+
+  size_t origin[] = { region_offset[0] , region_offset[1] , 0 } ;
+  size_t region[] = { region_size[0] , region_size[1] , 1 } ;
+  cl_int res = clEnqueueReadImage( ctx.currentCommandQueue() , img , CL_TRUE , origin , region , 0 , 0  , outImg.data() , 0 , nullptr , nullptr ) ;
+  if( res != CL_SUCCESS )
+  {
+    return false ;
+  }
+
+  return true ;
+}
+
+
+/**
+ * @brief Convert an OpenCL image to a openMVG image
+ * @param img Input Image to convert
  * @param[out] outImg Output image
  * @param ctx OpenCL context
  * @retval true if conversion is OK

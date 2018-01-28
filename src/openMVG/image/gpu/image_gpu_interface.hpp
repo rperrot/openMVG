@@ -97,6 +97,20 @@ bool FromOpenCLImage( cl_mem & img , Image<float> & outImg , openMVG::system::gp
 /**
  * @brief Convert an OpenCL image to a openMVG image
  * @param img Input Image to convert
+ * @param region_offset (x,y) Offset to get the image elements 
+ * @param region_size (w,h) Size of the region to get 
+ * @param[out] outImg Output image
+ * @param ctx OpenCL context
+ * @retval true if conversion is OK
+ * @retval false if conversion fails
+ * @note outImg will have size equal to (w-x,h-y)
+ */
+bool FromOpenCLImage( cl_mem & img , const size_t region_offset[2] , const size_t region_size[2] , Image<float> & outImg , openMVG::system::gpu::OpenCLContext & ctx ) ;
+
+
+/**
+ * @brief Convert an OpenCL image to a openMVG image
+ * @param img Input Image to convert
  * @param[out] outImg Output image
  * @param ctx OpenCL context
  * @retval true if conversion is OK

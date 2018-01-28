@@ -1764,6 +1764,49 @@ cl_mem OpenCLContext::createImage( const size_t width , const size_t height ,
 }
 
 /**
+ * @brief fill with black values inside the specified region
+ */
+void OpenCLContext::fillBlackImage( cl_mem img , const size_t offset_region[2] , const size_t region_size[2] )
+{
+  cl_image_format format ;
+  cl_int err = clGetImageInfo( img , CL_IMAGE_FORMAT , sizeof( format ) , &format , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return ;
+  }
+
+  float blackFloat[] = { 0.f , 0.f , 0.f , 0.f } ;
+  signed int blackSignedInt[] = { 0 , 0 , 0 , 0 } ;
+  unsigned int blackUnsignedInt[] = { 0 , 0 , 0 , 0 } ;
+
+  void * fillColor ;
+  if( format.image_channel_data_type == CL_UNSIGNED_INT8 ||
+      format.image_channel_data_type == CL_UNSIGNED_INT16 ||
+      format.image_channel_data_type == CL_UNSIGNED_INT32 )
+  {
+    fillColor = reinterpret_cast<void*>( blackUnsignedInt ) ;
+  }
+  else if( format.image_channel_data_type == CL_SIGNED_INT8 ||
+           format.image_channel_data_type == CL_SIGNED_INT16 ||
+           format.image_channel_data_type == CL_SIGNED_INT32 )
+  {
+    fillColor = reinterpret_cast<void*>( blackSignedInt ) ;
+  }
+  else
+  {
+    fillColor = reinterpret_cast<void*>( blackFloat ) ;
+  }
+
+
+  const size_t origin[] = { offset_region[0] , offset_region[1] , 0 } ;
+  const size_t region[] = { region_size[0] , region_size[1] , 1 } ;
+
+  clEnqueueFillImage( currentCommandQueue() , img , fillColor , origin , region , 0 , nullptr , nullptr ) ;
+}
+
+
+
+/**
  * @brief Create a buffer
  * @param size Size (in byte) of the buffer to create
  * @param access Access type for the newly created buffer
