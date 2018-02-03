@@ -12,6 +12,7 @@
 #include "openMVG/image/gpu/kernels/image_gpu_convolution_kernels.hpp"
 #include "openMVG/image/gpu/kernels/image_gpu_filtering_kernels.hpp"
 #include "openMVG/image/gpu/kernels/image_gpu_resampling_kernels.hpp"
+#include "openMVG/image/gpu/kernels/image_gpu_min_max_kernels.hpp"
 
 #include <sstream>
 
@@ -155,6 +156,11 @@ std::string ComputeOpenCLProgramSource( const std::vector< OpenCLStandardKernels
       {
         res << krnsImageResamplingDecimate << std::endl ;
         res << krnsImageResamplingUpsample << std::endl ;
+        break ;
+      }
+      case OPENCL_STANDARD_KERNELS_LOCAL_MAXIMA: 
+      {
+        res << krnsImageLocalMaxima << std::endl ; 
         break ;
       }
       default:

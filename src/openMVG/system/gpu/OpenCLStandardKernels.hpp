@@ -55,6 +55,9 @@ enum OpenCLStandardKernels
   // Resampling
   OPENCL_STANDARD_KERNELS_RESAMPLING ,
 
+  // Local maxima
+  OPENCL_STANDARD_KERNELS_LOCAL_MAXIMA , 
+
   // /!\ Do not change the order of the following two lines (and do not place something after or between)
   OPENCL_STANDARD_KERNELS_END ,
   OPENCL_STANDARD_KERNELS_NONE , 

@@ -2,11 +2,13 @@ set( OPENMVG_IMAGE_GPU_HDRS image_gpu_arithmetics.hpp
                             image_gpu_convolution.hpp
                             image_gpu_filtering.hpp
                             image_gpu_interface.hpp 
+                            image_gpu_local_maxima.hpp 
                             image_gpu_resampling.hpp )
 set( OPENMVG_IMAGE_GPU_SRCS image_gpu_arithmetics.cpp
                             image_gpu_convolution.cpp 
                             image_gpu_filtering.cpp
                             image_gpu_interface.cpp 
+                            image_gpu_local_maxima.cpp
                             image_gpu_resampling.cpp )
 
 
