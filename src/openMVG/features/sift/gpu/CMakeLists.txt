@@ -1,7 +1,9 @@
 set( OPENMVG_SIFT_GPU_SRCS hierarchical_gaussian_scale_space_gpu.cpp 
-                           SIFT_Anatomy_Image_Describer_gpu.cpp )
+                           SIFT_Anatomy_Image_Describer_gpu.cpp
+                           sift_KeypointExtractor_gpu.cpp )
 set( OPENMVG_SIFT_GPU_HDRS hierarchical_gaussian_scale_space_gpu.hpp
-                           SIFT_Anatomy_Image_Describer_gpu.hpp )
+                           SIFT_Anatomy_Image_Describer_gpu.hpp
+                           sift_KeypointExtractor_gpu.hpp )
 
 add_library( openMVG_sift_gpu ${OPENMVG_SIFT_GPU_SRCS} ${OPENMVG_SIFT_GPU_HDRS} )
 

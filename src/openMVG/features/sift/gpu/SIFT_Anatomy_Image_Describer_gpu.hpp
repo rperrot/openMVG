@@ -56,10 +56,6 @@ Changes are:
 #include "openMVG/features/feature.hpp"
 #include "openMVG/features/image_describer.hpp"
 #include "openMVG/features/regions_factory.hpp"
-#include "openMVG/features/sift/hierarchical_gaussian_scale_space.hpp"
-#include "openMVG/features/sift/sift_DescriptorExtractor.hpp"
-#include "openMVG/features/sift/sift_keypoint.hpp"
-#include "openMVG/features/sift/sift_KeypointExtractor.hpp"
 
 
 namespace openMVG

@@ -9,6 +9,10 @@
 #include "openMVG/features/feature.hpp"
 #include "openMVG/features/sift/gpu/SIFT_Anatomy_Image_Describer_gpu.hpp"
 #include "openMVG/features/sift/gpu/hierarchical_gaussian_scale_space_gpu.hpp"
+#include "openMVG/features/sift/gpu/sift_KeypointExtractor_gpu.hpp"
+
+#include "openMVG/features/sift/sift_DescriptorExtractor.hpp"
+
 #include "openMVG/image/image_io.hpp"
 
 #include "openMVG/system/gpu/OpenCLContext.hpp"
@@ -23,7 +27,8 @@
 using namespace openMVG;
 using namespace openMVG::image;
 using namespace openMVG::features;
-using namespace openMVG::features::sift ;
+using namespace openMVG::features::sift;
+using namespace openMVG::features::sift::gpu ;
 using namespace openMVG::features::gpu ;
 using namespace openMVG::system;
 using namespace openMVG::system::gpu ;
@@ -73,7 +78,7 @@ TEST( Sift_KeypointGPU , DetectionAndDescription )
 
   openMVG::system::Timer timer;
 
-  OpenCLContext ctx ; 
+  OpenCLContext ctx ;
 
   const int supplementary_images = 3;
   // => in order to ensure each gaussian slice is used in the process 3 extra images are required:
@@ -97,8 +102,8 @@ TEST( Sift_KeypointGPU , DetectionAndDescription )
 
     std::cerr << "Computed octave : " << std::to_string( octave_id ) << std::endl;
     std::vector<Keypoint> keys;
-    SIFT_KeypointExtractor keypointDetector( 0.04f / octave_gen.NbSlice(), 10.f, 5 );
-    keypointDetector( cpu_octave, keys );
+    SIFT_KeypointExtractorGPU keypointDetector( 0.04f / octave_gen.NbSlice(), 10.f, 5 , ctx );
+    keypointDetector( gpu_octave, keys );
     Sift_DescriptorExtractor descriptorExtractor;
     descriptorExtractor( cpu_octave, keys );
 

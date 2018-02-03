@@ -78,6 +78,25 @@ __kernel void image_sub_ui( __write_only image2d_t output , __read_only image2d_
   } 
 } 
 
+
+__kernel void image_sub_region_ui( __write_only image2d_t output , __read_only image2d_t imgA , __read_only image2d_t imgB , const int2 offset_region , const int2 region_size ) 
+{ 
+  const sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_NONE | CLK_FILTER_NEAREST ; 
+  const int2 pos = { get_global_id( 0 ) , get_global_id( 1 ) } ; 
+
+  const int min_x = offset_region.x ;
+  const int min_y = offset_region.y ;
+  const int max_x = offset_region.x + region_size.x ;
+  const int max_y = offset_region.y + region_size.y ; 
+
+
+  if( pos.x < max_x && pos.y < max_y && pos.x >= min_x && pos.y >= min_y ) 
+  { 
+    write_imageui( output , pos , read_imageui( imgA , sampler , pos ) - read_imageui( imgB , sampler , pos ) ) ; 
+  } 
+} 
+
+
 /* Image Sub for i images */
 __kernel void image_sub_i( __write_only image2d_t output , __read_only image2d_t imgA , __read_only image2d_t imgB ) 
 { 
@@ -95,6 +114,23 @@ __kernel void image_sub_f( __write_only image2d_t output , __read_only image2d_t
   const sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_NONE | CLK_FILTER_NEAREST ; 
   const int2 pos = { get_global_id( 0 ) , get_global_id( 1 ) } ; 
   if( pos.x < get_image_width( output ) && pos.y < get_image_height( output ) ) 
+  { 
+    write_imagef( output , pos , read_imagef( imgA , sampler , pos ) - read_imagef( imgB , sampler , pos ) ) ; 
+  } 
+}
+
+/* Image Sub for f images */
+__kernel void image_sub_region_f( __write_only image2d_t output , __read_only image2d_t imgA , __read_only image2d_t imgB , const int2 offset_region , const int2 region_size ) 
+{ 
+  const sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_NONE | CLK_FILTER_NEAREST ; 
+  const int2 pos = { get_global_id( 0 ) , get_global_id( 1 ) } ; 
+
+  const int min_x = offset_region.x ;
+  const int min_y = offset_region.y ;
+  const int max_x = offset_region.x + region_size.x ;
+  const int max_y = offset_region.y + region_size.y ; 
+
+  if( pos.x < max_x && pos.y < max_y && pos.x >= min_x && pos.y >= min_y ) 
   { 
     write_imagef( output , pos , read_imagef( imgA , sampler , pos ) - read_imagef( imgB , sampler , pos ) ) ; 
   } 

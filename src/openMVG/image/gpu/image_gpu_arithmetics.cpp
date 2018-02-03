@@ -470,6 +470,134 @@ bool ImageSub( cl_mem res , cl_mem imgA , cl_mem imgB , openMVG::system::gpu::Op
 }
 
 /**
+ * @brief Subtract (component-wise) two images (using already allocated result image)
+ * @param res Output of the operation
+ * @param imgA first image
+ * @param imgB second image
+ * @param offset_region Offset of the input image to work with
+ * @param region_size Region size of the input image to work with
+ * @param ctx Context
+ * @retval true if operation is OK
+ * @retval false if operation fails
+ * @note this function assume standard sub(s) is already loaded inside the context (which is the default behavior)
+ * @note this function assume res is already allocated at correct size
+ */
+bool ImageSub( cl_mem res , cl_mem imgA , cl_mem imgB ,  const size_t offset_region[2] , const size_t region_size[2] , openMVG::system::gpu::OpenCLContext & ctx )
+{
+  cl_image_format formatA ;
+  cl_int err = clGetImageInfo( imgA , CL_IMAGE_FORMAT , sizeof( formatA ) , &formatA , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  cl_image_format formatB ;
+  err = clGetImageInfo( imgB , CL_IMAGE_FORMAT , sizeof( formatB ) , &formatB , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  cl_image_format formatRes ;
+  err = clGetImageInfo( res , CL_IMAGE_FORMAT , sizeof( formatRes ) , &formatRes , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+
+  if( formatA.image_channel_data_type != formatB.image_channel_data_type ||
+      formatA.image_channel_order != formatB.image_channel_order ||
+      formatA.image_channel_data_type != formatRes.image_channel_data_type ||
+      formatA.image_channel_order != formatRes.image_channel_order )
+  {
+    return false ;
+  }
+
+  size_t widthA ;
+  err = clGetImageInfo( imgA , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthA , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t widthB ;
+  err = clGetImageInfo( imgB , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthB , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t widthRes ;
+  err = clGetImageInfo( res , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthRes , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t heightA ;
+  err = clGetImageInfo( imgA , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightA , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t heightB ;
+  err = clGetImageInfo( imgB , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightB , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t heightRes ;
+  err = clGetImageInfo( res , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightRes , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+
+  if( widthA < region_size[0] ||
+      heightA < region_size[1] ||
+      widthB < region_size[0] ||
+      heightB < region_size[1] ||
+      widthRes < region_size[0] ||
+      heightRes < region_size[1] )
+  {
+    return false ;
+  }
+
+
+  cl_kernel krn;
+  if( formatA.image_channel_data_type == CL_UNSIGNED_INT8 )
+  {
+    krn = ctx.standardKernel( "image_sub_region_ui" ) ;
+  }
+  else if( formatA.image_channel_data_type == CL_FLOAT )
+  {
+    krn = ctx.standardKernel( "image_sub_region_f" ) ;
+  }
+  else
+  {
+    return false ;
+  }
+
+  cl_int2 offset_r = { ( int ) offset_region[0] , ( int ) offset_region[1] } ;
+  cl_int2 region_s = { ( int ) region_size[0] , ( int ) region_size[1] } ;
+
+  clSetKernelArg( krn , 0 , sizeof( cl_mem ) , &res ) ;
+  clSetKernelArg( krn , 1 , sizeof( cl_mem ) , &imgA ) ;
+  clSetKernelArg( krn , 2 , sizeof( cl_mem ) , &imgB ) ;
+  clSetKernelArg( krn , 3 , sizeof( cl_int2 ) , &offset_r ) ;
+  clSetKernelArg( krn , 4 , sizeof( cl_int2 ) , &region_s ) ;
+
+  const size_t dim[] =
+  {
+    static_cast<size_t>( region_size[0] ) ,
+    static_cast<size_t>( region_size[1] )
+  } ;
+
+  if( ! ctx.runKernel2d( krn , dim ) )
+  {
+    return false ;
+  }
+
+  return true ;
+}
+
+
+/**
  * @brief Multiply (component-wise) two images
  * @param imgA first image
  * @param imgB second image
@@ -803,7 +931,7 @@ bool ImageCopy( cl_mem res , cl_mem img , openMVG::system::gpu::OpenCLContext & 
 
   if( formatSrc.image_channel_data_type != formatDst.image_channel_data_type ||
       formatSrc.image_channel_order != formatDst.image_channel_order ||
-      widthSrc != widthDst || 
+      widthSrc != widthDst ||
       heightSrc != heightDst )
   {
     return false ;

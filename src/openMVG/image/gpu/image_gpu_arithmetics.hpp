@@ -66,6 +66,23 @@ cl_mem ImageSub( cl_mem imgA , cl_mem imgB , openMVG::system::gpu::OpenCLContext
 bool ImageSub( cl_mem res , cl_mem imgA , cl_mem imgB , openMVG::system::gpu::OpenCLContext & ctx ) ;
 
 
+
+/**
+ * @brief Subtract (component-wise) two images (using already allocated result image)
+ * @param res Output of the operation
+ * @param imgA first image
+ * @param imgB second image
+ * @param offset_region Offset of the input image to work with
+ * @param region_size Region size of the input image to work with
+ * @param ctx Context
+ * @retval true if operation is OK
+ * @retval false if operation fails
+ * @note this function assume standard sub(s) is already loaded inside the context (which is the default behavior)
+ * @note this function assume res is already allocated at correct size
+ */
+bool ImageSub( cl_mem res , cl_mem imgA , cl_mem imgB ,  const size_t offset_region[2] , const size_t region_size[2] , openMVG::system::gpu::OpenCLContext & ctx ) ;
+
+
 /**
  * @brief Multiply (component-wise) two images
  * @param imgA first image

@@ -10,9 +10,11 @@
 #include "SIFT_Anatomy_Image_Describer_gpu.hpp"
 
 #include "openMVG/features/sift/gpu/hierarchical_gaussian_scale_space_gpu.hpp"
-#include "openMVG/features/sift/sift_DescriptorExtractor.hpp"
+#include "openMVG/features/sift/gpu/sift_keypointExtractor_gpu.hpp"
+
 #include "openMVG/features/sift/sift_keypoint.hpp"
 #include "openMVG/features/sift/sift_KeypointExtractor.hpp"
+#include "openMVG/features/sift/sift_DescriptorExtractor.hpp"
 
 
 namespace openMVG
@@ -113,15 +115,20 @@ std::unique_ptr<SIFT_Anatomy_Image_describerGPU::Regions_type> SIFT_Anatomy_Imag
 
     while ( octave_gen.NextOctave( gpu_octave ) )
     {
+      std::vector<sift::Keypoint> keys;
+
       // Convert to cpu octave to perform latter computations
       gpu_octave.convertToCPUOctave( cpu_octave , ctx ) ;
 
-      std::vector<sift::Keypoint> keys;
       // Find Keypoints
-      sift::SIFT_KeypointExtractor keypointDetector(
+      sift::gpu::SIFT_KeypointExtractorGPU keypointDetector(
         params_.peak_threshold_ / octave_gen.NbSlice(),
-        params_.edge_threshold_ );
-      keypointDetector( cpu_octave, keys );
+        params_.edge_threshold_ ,
+        5 ,
+        ctx );
+      keypointDetector( gpu_octave, keys );
+
+
       // Find Keypoints orientation and compute their description
       sift::Sift_DescriptorExtractor descriptorExtractor;
       descriptorExtractor( cpu_octave, keys );
