@@ -113,6 +113,13 @@ std::unique_ptr<SIFT_Anatomy_Image_describerGPU::Regions_type> SIFT_Anatomy_Imag
     GPUOctave gpu_octave ;
     Octave cpu_octave;
 
+    // Find Keypoints
+    sift::gpu::SIFT_KeypointExtractorGPU keypointDetector(
+      params_.peak_threshold_ / octave_gen.NbSlice(),
+      params_.edge_threshold_ ,
+      5 ,
+      ctx );
+
     while ( octave_gen.NextOctave( gpu_octave ) )
     {
       std::vector<sift::Keypoint> keys;
@@ -120,12 +127,6 @@ std::unique_ptr<SIFT_Anatomy_Image_describerGPU::Regions_type> SIFT_Anatomy_Imag
       // Convert to cpu octave to perform latter computations
       gpu_octave.convertToCPUOctave( cpu_octave , ctx ) ;
 
-      // Find Keypoints
-      sift::gpu::SIFT_KeypointExtractorGPU keypointDetector(
-        params_.peak_threshold_ / octave_gen.NbSlice(),
-        params_.edge_threshold_ ,
-        5 ,
-        ctx );
       keypointDetector( gpu_octave, keys );
 
 

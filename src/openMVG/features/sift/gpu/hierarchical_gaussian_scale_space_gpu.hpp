@@ -29,6 +29,8 @@ struct GPUOctave
   std::vector< float > sigmas;        // sigma values
   std::vector< cl_mem > slices;       // octave slice (from fine to coarse)
 
+  std::vector< cl_mem > dogs;         // DoGs 
+
   size_t img_width ;
   size_t img_height ;
 

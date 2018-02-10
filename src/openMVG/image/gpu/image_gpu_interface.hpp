@@ -59,6 +59,16 @@ cl_mem ToOpenCLImage( const Image<double> & img , openMVG::system::gpu::OpenCLCo
  */
 cl_mem ToOpenCLImage( const Image<Rgb<unsigned char>> & img , openMVG::system::gpu::OpenCLContext & ctx ) ;
 
+
+/**
+ * @brief Create an openCL image object given a CPU image object
+ * @param img Input CPU image object
+ * @param ctx OpenCL context
+ * @return Memory object corresponding to the OpenCL image object
+ */
+cl_mem ToOpenCLImage( const Image<Rgb<float>> & img , openMVG::system::gpu::OpenCLContext & ctx ) ;
+
+
 /**
  * @brief Create an openCL image object given a CPU image object
  * @param img Input CPU image object
@@ -97,8 +107,8 @@ bool FromOpenCLImage( cl_mem & img , Image<float> & outImg , openMVG::system::gp
 /**
  * @brief Convert an OpenCL image to a openMVG image
  * @param img Input Image to convert
- * @param region_offset (x,y) Offset to get the image elements 
- * @param region_size (w,h) Size of the region to get 
+ * @param region_offset (x,y) Offset to get the image elements
+ * @param region_size (w,h) Size of the region to get
  * @param[out] outImg Output image
  * @param ctx OpenCL context
  * @retval true if conversion is OK
@@ -127,6 +137,27 @@ bool FromOpenCLImage( cl_mem & img , Image<double> & outImg , openMVG::system::g
  * @retval false if conversion fails
  */
 bool FromOpenCLImage( cl_mem & img , Image<Rgb<unsigned char>> & outImg , openMVG::system::gpu::OpenCLContext & ctx ) ;
+
+/**
+ * @brief Convert an OpenCL image to a openMVG image
+ * @param img Input Image to convert
+ * @param[out] outImg Output image
+ * @param ctx OpenCL context
+ * @retval true if conversion is OK
+ * @retval false if conversion fails
+ */
+bool FromOpenCLImage( cl_mem & img , Image<Rgb<float>> & outImg , openMVG::system::gpu::OpenCLContext & ctx ) ;
+
+/**
+ * @brief Convert an OpenCL image to a openMVG image
+ * @param img Input Image to convert
+ * @param[out] outImg Output image
+ * @param ctx OpenCL context
+ * @retval true if conversion is OK
+ * @retval false if conversion fails
+ */
+bool FromOpenCLImage( cl_mem & img , const size_t region_offset[2] , const size_t region_size[2] , Image<Rgb<float>> & outImg , openMVG::system::gpu::OpenCLContext & ctx ) ;
+
 
 /**
  * @brief Convert an OpenCL image to a openMVG image

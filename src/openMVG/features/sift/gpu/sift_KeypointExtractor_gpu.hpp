@@ -51,6 +51,7 @@ The implementation is based on
 #include "openMVG/features/sift/sift_keypoint.hpp"
 
 #include "openMVG/image/image_container.hpp"
+#include "openMVG/image/pixel_types.hpp"
 
 #include "openMVG/system/gpu/OpenCLContext.hpp"
 
@@ -131,11 +132,28 @@ struct SIFT_KeypointExtractorGPU
       std::vector<Keypoint> & keypoints
     ) const ;
 
+    // Find keypoints then refine it
+    void Find_and_refine_keypoints
+    (
+      std::vector<Keypoint> & keypoints
+      const float percent = 1.0f
+    ) const ;
+
   protected:
 
     system::gpu::OpenCLContext m_ctx ;
 
     Octave m_Dogs;
+    openMVG::features::gpu::GPUOctave m_Dogs_gpu;
+    // Store the local min max
+    openMVG::features::gpu::GPUOctave m_local_min_max;
+    Octave m_local_min_max_cpu ;
+    // 3d hessian
+    std::vector< cl_mem > m_hessian_xx_yy_zz ;
+    std::vector< cl_mem > m_hessian_xy_xz_yz ;
+    std::vector< image::Image<image::Rgb<float>> > m_hessian_xx_yy_zz_cpu ;
+    std::vector< image::Image<image::Rgb<float>> > m_hessian_xy_xz_yz_cpu ;
+
 
     // Keypoint detection parameters
     float m_peak_threshold;     // threshold on DoG operator

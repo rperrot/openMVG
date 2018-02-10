@@ -2,6 +2,7 @@
 
 #include "openMVG/image/gpu/image_gpu_arithmetics.hpp"
 #include "openMVG/image/gpu/image_gpu_interface.hpp"
+#include "openMVG/image/gpu/image_gpu_local_maxima.hpp"
 
 namespace openMVG
 {
@@ -43,8 +44,11 @@ void SIFT_KeypointExtractorGPU::operator()( const openMVG::features::gpu::GPUOct
   {
     return;
   }
+  Find_and_refine_keypoints( keypoints , 0.8f ) ;
+  /*
   Find_3d_discrete_extrema( keypoints, 0.8f );
   Keypoints_refine_position( keypoints );
+  */
 }
 
 /**
@@ -62,23 +66,40 @@ bool SIFT_KeypointExtractorGPU::ComputeDogs( const openMVG::features::gpu::GPUOc
   }
 
   m_Dogs.slices.resize( n - 1 );
+
   m_Dogs.octave_level = octave.octave_level;
   m_Dogs.delta = octave.delta;
   m_Dogs.sigmas = octave.sigmas;
 
+
+  if( octave.octave_level == 0 )
+  {
+    m_Dogs_gpu.slices.resize( n - 1 ) ;
+    for( int id_slice = 0 ; id_slice < n - 1 ; ++id_slice )
+    {
+      m_Dogs_gpu.slices[ id_slice ] = m_ctx.createImage( octave.img_width , octave.img_height , system::gpu::OPENCL_IMAGE_CHANNEL_ORDER_R , system::gpu::OPENCL_IMAGE_DATA_TYPE_FLOAT ) ;
+    }
+  }
+
+
+  m_Dogs_gpu.octave_level = octave.octave_level ;
+  m_Dogs_gpu.delta = octave.delta ;
+  m_Dogs_gpu.sigmas = octave.sigmas ;
+  m_Dogs_gpu.img_width = octave.img_width ;
+  m_Dogs_gpu.img_height = octave.img_height ;
+
   const size_t offset_region[] = { 0 , 0 } ;
   const size_t region_size[] = { octave.img_width , octave.img_height } ;
 
-  cl_mem diff = m_ctx.getTemporaryImage1( region_size[0] , region_size[1] , system::gpu::OPENCL_IMAGE_CHANNEL_ORDER_R , system::gpu::OPENCL_IMAGE_DATA_TYPE_FLOAT ) ;
-
+  // Compute Dogs
   for ( int s = 0; s < m_Dogs.slices.size(); ++s )
   {
-    bool ok = image::gpu::ImageSub( diff , octave.slices[s + 1] , octave.slices[s] , offset_region , region_size , m_ctx ) ;
+    bool ok = image::gpu::ImageSub( m_Dogs_gpu.slices[ s ] , octave.slices[s + 1] , octave.slices[s] , offset_region , region_size , m_ctx ) ;
     if( ! ok )
     {
       return false ;
     }
-    ok = image::gpu::FromOpenCLImage( diff , offset_region , region_size , m_Dogs.slices[s] , m_ctx ) ;
+    ok = image::gpu::FromOpenCLImage( m_Dogs_gpu.slices[ s ] , offset_region , region_size , m_Dogs.slices[s] , m_ctx ) ;
     if( ! ok )
     {
       return false ;
@@ -86,59 +107,6 @@ bool SIFT_KeypointExtractorGPU::ComputeDogs( const openMVG::features::gpu::GPUOc
   }
 
   return true;
-}
-
-/**
-* @brief Tell if a point is local maximum/minimum
-* @param slices A Dog octave
-* @param id_slice The "middle" index, the slice id
-* @param id_row The discrete y point position
-* @param id_col The discrete x point position
-* @retval true If the point is local maximum/minimum
-* @retval false If the point is not a local maximum/minimum
-*/
-static inline bool is_local_min_max
-(
-  const std::vector<image::Image<float>> & slices,
-  const size_t id_slice,
-  const size_t id_row,
-  const size_t id_col
-)
-{
-  const float pix_val = std::abs( slices[id_slice]( id_row, id_col ) );
-
-  const bool is_min_or_max =
-    // Current slice
-    ( pix_val > std::abs( slices[id_slice]( id_row - 1, id_col - 1 ) ) ) &&
-    ( pix_val > std::abs( slices[id_slice]( id_row - 1, id_col ) ) ) &&
-    ( pix_val > std::abs( slices[id_slice]( id_row - 1, id_col + 1 ) ) ) &&
-    ( pix_val > std::abs( slices[id_slice]( id_row, id_col - 1 ) ) ) &&
-    ( pix_val > std::abs( slices[id_slice]( id_row, id_col + 1 ) ) ) &&
-    ( pix_val > std::abs( slices[id_slice]( id_row + 1, id_col - 1 ) ) ) &&
-    ( pix_val > std::abs( slices[id_slice]( id_row + 1, id_col ) ) ) &&
-    ( pix_val > std::abs( slices[id_slice]( id_row + 1, id_col + 1 ) ) ) &&
-    // Above slice
-    ( pix_val > std::abs( slices[id_slice - 1]( id_row - 1, id_col - 1 ) ) ) &&
-    ( pix_val > std::abs( slices[id_slice - 1]( id_row - 1, id_col ) ) ) &&
-    ( pix_val > std::abs( slices[id_slice - 1]( id_row - 1, id_col + 1 ) ) ) &&
-    ( pix_val > std::abs( slices[id_slice - 1]( id_row, id_col - 1 ) ) ) &&
-    ( pix_val > std::abs( slices[id_slice - 1]( id_row, id_col ) ) ) &&
-    ( pix_val > std::abs( slices[id_slice - 1]( id_row, id_col + 1 ) ) ) &&
-    ( pix_val > std::abs( slices[id_slice - 1]( id_row + 1, id_col - 1 ) ) ) &&
-    ( pix_val > std::abs( slices[id_slice - 1]( id_row + 1, id_col ) ) ) &&
-    ( pix_val > std::abs( slices[id_slice - 1]( id_row + 1, id_col + 1 ) ) ) &&
-    // Bottom slice
-    ( pix_val > std::abs( slices[id_slice + 1]( id_row - 1, id_col - 1 ) ) ) &&
-    ( pix_val > std::abs( slices[id_slice + 1]( id_row - 1, id_col ) ) ) &&
-    ( pix_val > std::abs( slices[id_slice + 1]( id_row - 1, id_col + 1 ) ) ) &&
-    ( pix_val > std::abs( slices[id_slice + 1]( id_row, id_col - 1 ) ) ) &&
-    ( pix_val > std::abs( slices[id_slice + 1]( id_row, id_col ) ) ) &&
-    ( pix_val > std::abs( slices[id_slice + 1]( id_row, id_col + 1 ) ) ) &&
-    ( pix_val > std::abs( slices[id_slice + 1]( id_row + 1, id_col - 1 ) ) ) &&
-    ( pix_val > std::abs( slices[id_slice + 1]( id_row + 1, id_col ) ) ) &&
-    ( pix_val > std::abs( slices[id_slice + 1]( id_row + 1, id_col + 1 ) ) );
-
-  return is_min_or_max;
 }
 
 
@@ -189,21 +157,20 @@ void SIFT_KeypointExtractorGPU::Find_3d_discrete_extrema
       for ( int id_col = 1; id_col < w - 1; ++id_col )
       {
         const float pix_val = m_Dogs.slices[s]( id_row, id_col );
-        if ( std::abs( pix_val ) > m_peak_threshold * percent )
-          if ( is_local_min_max( m_Dogs.slices, s, id_row, id_col ) )
-          {
-            // if 3d discrete extrema, save a candidate keypoint
-            Keypoint key;
-            key.i = id_col;
-            key.j = id_row;
-            key.s = s;
-            key.o = m_Dogs.octave_level;
-            key.x = delta * id_col;
-            key.y = delta * id_row;
-            key.sigma = m_Dogs.sigmas[s];
-            key.val = pix_val;
-            keypoints.emplace_back( key );
-          }
+        if ( m_local_min_max_cpu.slices[ s - 1 ]( id_row , id_col ) > 0.f )
+        {
+          // if 3d discrete extrema, save a candidate keypoint
+          Keypoint key;
+          key.i = id_col;
+          key.j = id_row;
+          key.s = s;
+          key.o = m_Dogs.octave_level;
+          key.x = delta * id_col;
+          key.y = delta * id_row;
+          key.sigma = m_Dogs.sigmas[s];
+          key.val = pix_val;
+          keypoints.emplace_back( key );
+        }
       }
     }
   }
@@ -246,16 +213,16 @@ static inline bool Inverse_3D_Taylor_second_order_expansion
   hYY = slice( j + 1, i ) + slice( j - 1, i ) - 2.f * slice( j, i );
   hSS = sliceU( j, i )  + sliceD( j, i )  - 2.f * slice( j, i );
   hXY = (  ( slice( j + 1, i + 1 ) - slice( j - 1, i + 1 ) )
-           - ( slice( j + 1, i - 1 ) - slice( j - 1, i - 1 ) ) ) / 4.f;
+           - ( slice( j + 1, i - 1 ) - slice( j - 1, i - 1 ) ) ) * 0.25f ;
   hXS = (  ( sliceU( j, i + 1 )  - sliceU( j, i - 1 ) )
-           - ( sliceD( j, i + 1 )  - sliceD( j, i - 1 ) ) ) / 4.f;
+           - ( sliceD( j, i + 1 )  - sliceD( j, i - 1 ) ) ) * 0.25f ;
   hYS = (  ( sliceU( j + 1, i )  - sliceU( j - 1, i ) )
-           - ( sliceD( j + 1, i )  - sliceD( j - 1, i ) ) ) / 4.f;
+           - ( sliceD( j + 1, i )  - sliceD( j - 1, i ) ) ) * 0.25f ;
 
   // Compute the 3d gradient at pixel (i,j,s)
-  gX = ( slice( j, i + 1 ) - slice( j, i - 1 ) ) / 2.f;
-  gY = ( slice( j + 1, i ) - slice( j - 1, i ) ) / 2.f;
-  gS = ( sliceU( j, i )  - sliceD( j, i )  ) / 2.f;
+  gX = ( slice( j, i + 1 ) - slice( j, i - 1 ) ) * 0.5f ;
+  gY = ( slice( j + 1, i ) - slice( j - 1, i ) ) * 0.5f ;
+  gS = ( sliceU( j, i )  - sliceD( j, i )  ) * 0.5f ;
 
   // Inverse the Hessian - Fitting a quadratic function
   Eigen::Matrix<float, 3, 3> A;
@@ -419,6 +386,31 @@ void SIFT_KeypointExtractorGPU::Keypoints_refine_position
   keypoints = std::move( kps );
   keypoints.shrink_to_fit();
 }
+
+// Find keypoints then refine it
+void SIFT_KeypointExtractorGPU::Find_and_refine_keypoints
+(
+  std::vector<Keypoint> & keypoints
+  const float percent ) const
+{
+  const float threshold = m_peak_threshold * percent;
+
+  const size_t offset_region[] = { 0 , 0 } ;
+  const size_t region_size[] = { m_Dogs_gpu.img_width , m_Dogs_gpu.img_height } ;
+
+  // Compute min max
+  cl_mem minMax = m_ctx.getTemporaryImage1( m_Dogs_gpu.img_width , m_Dogs_gpu.img_height , OPENCL_IMAGE_CHANNEL_ORDER_R , OPENCL_IMAGE_DATA_TYPE_FLOAT ) ;
+
+  for ( int s = 1; s < ns - 1; ++s )
+  {
+    cl_mem prev_dog = m_Dogs_gpu.slices[ s - 1 ] ;
+    cl_mem cur_dog = m_Dogs_gpu.slices[ s ] ;
+    cl_mem next_dog = m_Dogs_gpu.slices[ s + 1 ] ;
+
+    ImageLocalMaxima( minMax , prev_dog , cur_dog , next_dog , m_ctx , offset_region , region_size , threshold , m_ctx ) ;
+  }
+}
+
 
 
 } // namespace gpu

@@ -185,6 +185,45 @@ TEST( ImageGPUInterface , rgb_uchar_to_opencl_to_rgb_uchar )
   clReleaseMemObject( gpu_img ) ;
 }
 
+TEST( ImageGPUInterface , rgb_float_to_opencl_to_rgb_float )
+{
+  OpenCLContext ctx ;
+
+  const int nb_row = 24 ;
+  const int nb_col = 32 ;
+
+  Image<Rgb<float>> cpu_img( nb_col , nb_row ) ;
+
+  for( int id_row = 0 ; id_row < nb_row ; ++id_row )
+  {
+    for( int id_col = 0 ; id_col < nb_col ; ++id_col )
+    {
+      cpu_img( id_row , id_col ) = Rgb<float>( ( id_row * id_col ) % 256 , ( id_row * id_col + 1 ) % 256 , ( id_row * id_col + 2 ) % 256 ) ;
+    }
+  }
+
+  cl_mem gpu_img = ToOpenCLImage( cpu_img , ctx ) ;
+
+  Image<Rgb<float>> res ;
+
+  bool valid = FromOpenCLImage( gpu_img , res , ctx ) ;
+
+  EXPECT_EQ( valid , true ) ;
+  EXPECT_EQ( res.Width() , cpu_img.Width() ) ;
+  EXPECT_EQ( res.Height() , cpu_img.Height() ) ;
+
+  for( int id_row = 0 ; id_row < nb_row ; ++id_row )
+  {
+    for( int id_col = 0 ; id_col < nb_col ; ++id_col )
+    {
+      EXPECT_EQ( res( id_row , id_col ).r() , cpu_img( id_row , id_col ).r() ) ;
+      EXPECT_EQ( res( id_row , id_col ).g() , cpu_img( id_row , id_col ).g() ) ;
+      EXPECT_EQ( res( id_row , id_col ).b() , cpu_img( id_row , id_col ).b() ) ;
+    }
+  }
+  clReleaseMemObject( gpu_img ) ;
+}
+
 TEST( ImageGPUInterface , rgba_uchar_to_opencl_to_rgba_uchar )
 {
   OpenCLContext ctx ;

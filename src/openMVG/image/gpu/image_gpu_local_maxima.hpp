@@ -67,7 +67,45 @@ cl_mem ImageLocalMaxima( cl_mem imgA , cl_mem imgB , cl_mem imgC , openMVG::syst
  */
 bool ImageLocalMaxima( cl_mem res , cl_mem imgA , cl_mem imgB , cl_mem imgC , openMVG::system::gpu::OpenCLContext & ctx ) ;
 
+/**
+ * @brief Compute local maxima of the image
+ * @param res Image containing the local maxima
+ * @param imgA Image used as input
+ * @param imgB Image used as input (test is inside)
+ * @param imgC Image used as input
+ * @param offset_region Offset of the input image to work with
+ * @param region_size Region size of the input image to work with
+ * @param ctx OpenCL Context
+ * @retval true computation is ok
+ * @retval false if computation fails
+ * @note Input image is a float image
+ * @note Return image is a float image (pixel = 1 for local max, 0 else)
+ */
+bool ImageLocalMaxima( cl_mem res , cl_mem imgA , cl_mem imgB , cl_mem imgC ,
+                       const size_t offset_region[2] ,
+                       const size_t region_size[2] ,
+                       openMVG::system::gpu::OpenCLContext & ctx ) ;
 
+
+/**
+ * @brief Compute local maxima of the image (in a region and above an absolute threshold)
+ * @param res Image containing the local maxima
+ * @param imgA Image used as input
+ * @param imgB Image used as input (test is inside)
+ * @param imgC Image used as input
+ * @param offset_region Offset of the input image to work with
+ * @param region_size Region size of the input image to work with
+ * @param ctx OpenCL Context
+ * @retval true computation is ok
+ * @retval false if computation fails
+ * @note Input image is a float image
+ * @note Return image is a float image (pixel = 1 for local max, 0 else)
+ */
+bool ImageLocalMaxima( cl_mem res , cl_mem imgA , cl_mem imgB , cl_mem imgC ,
+                       const size_t offset_region[2] ,
+                       const size_t region_size[2] ,
+                       const float threshold ,
+                       openMVG::system::gpu::OpenCLContext & ctx ) ;
 
 } // namespace gpu
 } // namespace image

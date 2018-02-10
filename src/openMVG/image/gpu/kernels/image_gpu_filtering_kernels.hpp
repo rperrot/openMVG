@@ -793,6 +793,7 @@ R"(
         write_imagef( outImg , (int2)( pix_x , pix_y ) , 0.03125f * ( sobel_next - sobel_prev ) ) ; 
       }
     }
+
   )" ;
 
 

@@ -65,7 +65,7 @@ cl_mem ImageLocalMaxima( cl_mem img , openMVG::system::gpu::OpenCLContext & ctx 
   cl_kernel cl_krn = ctx.standardKernel( "image_local_min_max_2d" ) ;
   if( ! cl_krn )
   {
-    return nullptr ; 
+    return nullptr ;
   }
 
   clSetKernelArg( cl_krn , 0 , sizeof( cl_mem ) , &res ) ;
@@ -397,6 +397,281 @@ bool ImageLocalMaxima( cl_mem res , cl_mem imgA , cl_mem imgB , cl_mem imgC , op
   {
     static_cast<size_t>( widthRes ) ,
     static_cast<size_t>( heightRes )
+  } ;
+
+  const size_t workDim[] = { 16  , 16 } ;
+  if( ! ctx.runKernel2d( cl_krn , dim , workDim ) )
+  {
+    return false ;
+  }
+
+  return true ;
+}
+
+
+/**
+ * @brief Compute local maxima of the image
+ * @param res Image containing the local maxima
+ * @param imgA Image used as input
+ * @param imgB Image used as input (test is inside)
+ * @param imgC Image used as input
+ * @param offset_region Offset of the input image to work with
+ * @param region_size Region size of the input image to work with
+ * @param ctx OpenCL Context
+ * @retval true computation is ok
+ * @retval false if computation fails
+ * @note Input image is a float image
+ * @note Return image is a float image (pixel = 1 for local max, 0 else)
+ */
+bool ImageLocalMaxima( cl_mem res , cl_mem imgA , cl_mem imgB , cl_mem imgC ,
+                       const size_t offset_region[2] ,
+                       const size_t region_size[2] ,
+                       openMVG::system::gpu::OpenCLContext & ctx )
+{
+  cl_image_format formatA , formatB , formatC ;
+  cl_int err = clGetImageInfo( imgA , CL_IMAGE_FORMAT , sizeof( formatA ) , &formatA , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t widthA ;
+  err = clGetImageInfo( imgA , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthA , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t heightA ;
+  err = clGetImageInfo( imgA , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightA , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  err = clGetImageInfo( imgB , CL_IMAGE_FORMAT , sizeof( formatB ) , &formatB , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t widthB ;
+  err = clGetImageInfo( imgB , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthB , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t heightB ;
+  err = clGetImageInfo( imgB , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightB , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  err = clGetImageInfo( imgC , CL_IMAGE_FORMAT , sizeof( formatC ) , &formatC , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t widthC ;
+  err = clGetImageInfo( imgC , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthC , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t heightC ;
+  err = clGetImageInfo( imgC , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightC , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+
+  cl_image_format formatRes ;
+  err = clGetImageInfo( res , CL_IMAGE_FORMAT , sizeof( formatRes ) , &formatRes , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t widthRes ;
+  err = clGetImageInfo( res , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthRes , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t heightRes ;
+  err = clGetImageInfo( res , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightRes , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+
+  if( widthRes > widthA ||
+      heightRes > heightA ||
+      widthRes > widthB ||
+      heightRes > heightB ||
+      widthRes > widthC ||
+      heightRes > heightC ||
+      formatA.image_channel_data_type != formatB.image_channel_data_type ||
+      formatA.image_channel_order != formatB.image_channel_order ||
+      formatA.image_channel_data_type != formatC.image_channel_data_type ||
+      formatA.image_channel_order != formatC.image_channel_order ||
+      formatRes.image_channel_data_type != CL_FLOAT ||
+      formatRes.image_channel_order != CL_R )
+  {
+    return false ;
+  }
+
+  cl_kernel cl_krn = ctx.standardKernel( "image_local_min_max_range_3d" ) ;
+
+  cl_int2 offset_r = { ( int ) offset_region[0] , ( int ) offset_region[1] } ;
+  cl_int2 region_s = { ( int ) region_size[0] , ( int ) region_size[1] } ;
+
+
+  clSetKernelArg( cl_krn , 0 , sizeof( cl_mem ) , &res ) ;
+  clSetKernelArg( cl_krn , 1 , sizeof( cl_mem ) , &imgA ) ;
+  clSetKernelArg( cl_krn , 2 , sizeof( cl_mem ) , &imgB ) ;
+  clSetKernelArg( cl_krn , 3 , sizeof( cl_mem ) , &imgC ) ;
+  clSetKernelArg( cl_krn , 4 , sizeof( cl_int2 ) , &offset_r ) ;
+  clSetKernelArg( cl_krn , 5 , sizeof( cl_int2 ) , &region_s ) ;
+
+  const size_t dim[] =
+  {
+    static_cast<size_t>( region_size[0] ) ,
+    static_cast<size_t>( region_size[1] )
+  } ;
+
+  const size_t workDim[] = { 16  , 16 } ;
+  if( ! ctx.runKernel2d( cl_krn , dim , workDim ) )
+  {
+    return false ;
+  }
+
+  return true ;
+}
+
+
+/**
+ * @brief Compute local maxima of the image (in a region and above an absolute threshold)
+ * @param res Image containing the local maxima
+ * @param imgA Image used as input
+ * @param imgB Image used as input (test is inside)
+ * @param imgC Image used as input
+ * @param offset_region Offset of the input image to work with
+ * @param region_size Region size of the input image to work with
+ * @param ctx OpenCL Context
+ * @retval true computation is ok
+ * @retval false if computation fails
+ * @note Input image is a float image
+ * @note Return image is a float image (pixel = 1 for local max, 0 else)
+ */
+bool ImageLocalMaxima( cl_mem res , cl_mem imgA , cl_mem imgB , cl_mem imgC ,
+                       const size_t offset_region[2] ,
+                       const size_t region_size[2] ,
+                       const float threshold ,
+                       openMVG::system::gpu::OpenCLContext & ctx )
+{
+  cl_image_format formatA , formatB , formatC ;
+  cl_int err = clGetImageInfo( imgA , CL_IMAGE_FORMAT , sizeof( formatA ) , &formatA , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t widthA ;
+  err = clGetImageInfo( imgA , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthA , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t heightA ;
+  err = clGetImageInfo( imgA , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightA , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  err = clGetImageInfo( imgB , CL_IMAGE_FORMAT , sizeof( formatB ) , &formatB , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t widthB ;
+  err = clGetImageInfo( imgB , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthB , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t heightB ;
+  err = clGetImageInfo( imgB , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightB , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  err = clGetImageInfo( imgC , CL_IMAGE_FORMAT , sizeof( formatC ) , &formatC , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t widthC ;
+  err = clGetImageInfo( imgC , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthC , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t heightC ;
+  err = clGetImageInfo( imgC , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightC , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+
+  cl_image_format formatRes ;
+  err = clGetImageInfo( res , CL_IMAGE_FORMAT , sizeof( formatRes ) , &formatRes , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t widthRes ;
+  err = clGetImageInfo( res , CL_IMAGE_WIDTH , sizeof( size_t ) , &widthRes , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+  size_t heightRes ;
+  err = clGetImageInfo( res , CL_IMAGE_HEIGHT , sizeof( size_t ) , &heightRes , nullptr ) ;
+  if( err != CL_SUCCESS )
+  {
+    return false ;
+  }
+
+  if( widthRes > widthA ||
+      heightRes > heightA ||
+      widthRes > widthB ||
+      heightRes > heightB ||
+      widthRes > widthC ||
+      heightRes > heightC ||
+      formatA.image_channel_data_type != formatB.image_channel_data_type ||
+      formatA.image_channel_order != formatB.image_channel_order ||
+      formatA.image_channel_data_type != formatC.image_channel_data_type ||
+      formatA.image_channel_order != formatC.image_channel_order ||
+      formatRes.image_channel_data_type != CL_FLOAT ||
+      formatRes.image_channel_order != CL_R )
+  {
+    return false ;
+  }
+
+  cl_kernel cl_krn = ctx.standardKernel( "image_local_min_max_range_3d_threshold" ) ;
+
+  cl_int2 offset_r = { ( int ) offset_region[0] , ( int ) offset_region[1] } ;
+  cl_int2 region_s = { ( int ) region_size[0] , ( int ) region_size[1] } ;
+
+  cl_float thrs = threshold ;
+
+  clSetKernelArg( cl_krn , 0 , sizeof( cl_mem ) , &res ) ;
+  clSetKernelArg( cl_krn , 1 , sizeof( cl_mem ) , &imgA ) ;
+  clSetKernelArg( cl_krn , 2 , sizeof( cl_mem ) , &imgB ) ;
+  clSetKernelArg( cl_krn , 3 , sizeof( cl_mem ) , &imgC ) ;
+  clSetKernelArg( cl_krn , 4 , sizeof( cl_int2 ) , &offset_r ) ;
+  clSetKernelArg( cl_krn , 5 , sizeof( cl_int2 ) , &region_s ) ;
+  clSetKernelArg( cl_krn , 6 , sizeof( cl_float ) , &thrs ) ;
+
+  const size_t dim[] =
+  {
+    static_cast<size_t>( region_size[0] ) ,
+    static_cast<size_t>( region_size[1] )
   } ;
 
   const size_t workDim[] = { 16  , 16 } ;
