@@ -106,6 +106,7 @@ void MainWindow::onNewProject( void )
     connect( thread , SIGNAL( finished() ) , thread , SLOT( deleteLater() ) ) ;
     connect( thread , SIGNAL( started() ) , m_worker_project_creation.get() , SLOT( process() ) ) ;
     connect( m_worker_project_creation.get() , SIGNAL( finished( const WorkerNextAction & ) ) , this , SLOT( onHasCreatedProject( const WorkerNextAction & ) ) ) ;
+    connect( m_worker_project_creation.get() , SIGNAL( finished( const WorkerNextAction & ) ) , thread , SLOT( quit() ) ) ;
     connect( m_worker_project_creation.get() , SIGNAL( progress( int ) ) , m_progress_dialog , SLOT( setValue( int ) ) , Qt::BlockingQueuedConnection ) ;
 
     thread->start() ;
@@ -305,29 +306,9 @@ void MainWindow::onOpenProject( void )
 
     // Load the cloud file
     std::shared_ptr<SceneManager> mgr = m_project->sceneManager() ;
-    const std::string sparse = m_project->projectPaths().plyCloud( m_project->sfMMethod() ) ;
-
-    // Load from file
-    std::vector< openMVG::Vec3 > pts ;
-    std::vector< openMVG::Vec3 > col ;
-    LoadPly( sparse , pts , col ) ;
-
-    // Fit camera to the point cloud
-    /*
-    if( pts.size() > 0 )
-    {
-      openMVG::Vec3 bsCenter ;
-      double bsRad ;
-      computeBoundingSphere( pts , bsCenter , bsRad ) ;
-      std::shared_ptr<Camera> cam = mgr->camera() ;
-      cam->fitBoundingSphere( bsCenter , bsRad ) ;
-
-      sph_giz->setCenter( bsCenter ) ;
-    }
-    */
 
     // Add to the scene, to the project and to the result view
-    std::shared_ptr<RenderableObject> sprs  = std::make_shared<PointCloud>( m_result_view->pointShader() , pts , col ) ;
+    std::shared_ptr<RenderableObject> sprs  = std::make_shared<PointCloud>( m_result_view->pointShader() , m_project->SfMData() ) ; // pts , col ) ;
     mgr->addObject( sprs ) ;
     m_project->setSparsePointCloud( sprs ) ;
 
@@ -2070,33 +2051,15 @@ void MainWindow::postSfMComputation( void )
   // Remove old object in the project
   std::shared_ptr<SceneManager> mgr = m_project->sceneManager() ;
   mgr->removePointClouds() ;
-  /*
-  std::shared_ptr<RenderableObject> sprs = m_project->sparsePointCloud() ;
-  if( sprs )
-  {
-    mgr->removeObject( sprs ) ;
-  }
-  */
-
-  // Load sparse point cloud
-  const std::string sparse = m_project->projectPaths().plyCloud( m_project->sfMMethod() ) ;
-
-  if( stlplus::file_exists( sparse ) )
-  {
-    // Load from file
-    std::vector< openMVG::Vec3 > pts , col ;
-    LoadPly( sparse , pts , col ) ;
-
-    // Add to the scene, to the project and to the result view
-    std::shared_ptr<RenderableObject> sprs = std::make_shared<PointCloud>( m_result_view->pointShader() , pts , col ) ;
-    mgr->addObject( sprs ) ;
-    m_project->setSparsePointCloud( sprs ) ;
-  }
 
   // Add the camera gizmos
   std::shared_ptr<openMVG::sfm::SfM_Data> sfm = m_project->SfMData() ;
   if( sfm )
   {
+    std::shared_ptr<RenderableObject> sprs = std::make_shared<PointCloud>( m_result_view->pointShader() , sfm ) ;
+    mgr->addObject( sprs ) ;
+    m_project->setSparsePointCloud( sprs ) ;
+
     mgr->removeCameraGizmos() ;
     std::map<int, std::shared_ptr<RenderableObject>> cam_gizmos ;
 

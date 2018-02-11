@@ -1,6 +1,6 @@
 // This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
 
-// Copyright (c) 2017 Romuald PERROT.
+// Copyright (c) 2017, 2018 Romuald PERROT.
 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -10,6 +10,15 @@
 #define _OPENMVG_SOFTWARE_OPENMVG_GUI_GRAPHICS_OBJECTS_GRID_HH_
 
 #include "RenderableObject.hh"
+
+// fwrd declaration
+namespace openMVG
+{
+namespace sfm
+{
+struct SfM_Data ;
+} // namespace sfm
+} // namespace openMVG
 
 namespace openMVG_gui
 {
@@ -30,6 +39,16 @@ class PointCloud : public RenderableObject
     PointCloud( std::shared_ptr<ShaderProgram> pgm ,
                 const std::vector< openMVG::Vec3 > & pts ,
                 const std::vector< openMVG::Vec3 > & col ,
+                const openMVG::Vec3 defaultColor = openMVG::Vec3( 0.9 , 0.9 , 0.9 ) ) ;
+
+    /**
+     * @brief Ctr from SfM_Data
+     * @param pgm Shader program
+     * @param sfm_data The SfM Data file
+     * @param defaultColor The color associated with the points (since sfm_data does not have color inside)
+     */
+    PointCloud( std::shared_ptr<ShaderProgram> pgm ,
+                std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data ,
                 const openMVG::Vec3 defaultColor = openMVG::Vec3( 0.9 , 0.9 , 0.9 ) ) ;
 
     /**

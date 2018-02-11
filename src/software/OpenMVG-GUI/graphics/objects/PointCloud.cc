@@ -1,12 +1,14 @@
 // This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
 
-// Copyright (c) 2017 Romuald PERROT.
+// Copyright (c) 2017, 2018 Romuald PERROT.
 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "PointCloud.hh"
+
+#include "openMVG/sfm/sfm_data.hpp"
 
 #include <QOpenGLExtraFunctions>
 
@@ -30,6 +32,28 @@ PointCloud::PointCloud( std::shared_ptr<ShaderProgram> pgm ,
     m_nb_vert( 0 )
 {
 
+}
+
+/**
+ * @brief Ctr from SfM_Data
+ * @param pgm Shader program
+ * @param sfm_data The SfM Data file
+ * @param defaultColor The color associated with the points (since sfm_data does not have color inside)
+ */
+PointCloud::PointCloud( std::shared_ptr<ShaderProgram> pgm ,
+                        std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data ,
+                        const openMVG::Vec3 defaultColor  )
+  : RenderableObject( pgm ) ,
+    m_default_color( defaultColor ) ,
+    m_nb_vert( 0 )
+{
+  // Extract points from sfm data
+  const openMVG::sfm::Landmarks & landmarks = sfm_data->GetLandmarks();
+  m_pts.resize( landmarks.size() ) ;
+  for( const auto it_landmark : landmarks )
+  {
+    m_pts.emplace_back( it_landmark.second.X ) ;
+  }
 }
 
 /**
