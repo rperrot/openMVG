@@ -47,7 +47,7 @@ set( OPENMVG_GUI_WORKERS_SOURCES WorkerAutomaticReconstruction.cc
                                  WorkerNextAction.cc )
 
 add_library( OpenMVG_gui_workers STATIC ${OPENMVG_GUI_WORKERS_HEADERS} ${OPENMVG_GUI_WORKERS_SOURCES} )
-target_link_libraries( OpenMVG_gui_workers Qt5::Widgets Qt5::OpenGL domset)
+target_link_libraries( OpenMVG_gui_workers Qt5::Widgets Qt5::OpenGL domset openMVG_sfm )
 target_include_directories( OpenMVG_gui_workers PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../)
 target_include_directories( OpenMVG_gui_workers PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../dialogs )
 target_include_directories( OpenMVG_gui_workers PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../graphics )

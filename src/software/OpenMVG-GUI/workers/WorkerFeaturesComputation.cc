@@ -17,7 +17,7 @@
 #include <cereal/details/helpers.hpp>
 
 #include "nonFree/sift/SIFT_describer_io.hpp"
-#include "openMVG/features/image_describer_akaze_io.hpp"
+#include "openMVG/features/akaze/image_describer_akaze_io.hpp"
 #include "openMVG/features/sift/SIFT_Anatomy_Image_Describer_io.hpp"
 
 #include <QImage>

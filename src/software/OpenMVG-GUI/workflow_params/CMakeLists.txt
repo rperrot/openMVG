@@ -16,7 +16,7 @@ add_library( OpenMVG_gui_workflow_params STATIC ${WORKFLOW_PARAMS_HEADERS} ${WOR
 
 set_target_properties( OpenMVG_gui_workflow_params PROPERTIES CXX_STANDARD 11 )
 
-target_link_libraries( OpenMVG_gui_workflow_params openMVG_features )
+target_link_libraries( OpenMVG_gui_workflow_params openMVG_camera openMVG_features openMVG_sfm )
 
 set_property(TARGET OpenMVG_gui_workflow_params PROPERTY FOLDER OpenMVG/software/OpenMVG_gui)
 

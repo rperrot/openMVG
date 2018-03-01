@@ -21,7 +21,8 @@ target_link_libraries( OpenMVG_gui_graphics OpenMVG_gui_utils
                                             OpenMVG_gui_graphics_hierarchies 
                                             OpenMVG_gui_graphics_objects
                                             ${OPENGL_LIBRARIES} 
-                                            Qt5::OpenGL )
+                                            Qt5::OpenGL
+                                            openMVG_numeric )
 set_target_properties( OpenMVG_gui_graphics PROPERTIES CXX_STANDARD 11 )
 set_property(TARGET OpenMVG_gui_graphics PROPERTY FOLDER OpenMVG/software/OpenMVG_gui)
 
