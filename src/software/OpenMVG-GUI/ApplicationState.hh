@@ -16,7 +16,7 @@ namespace openMVG_gui
 enum ApplicationState
 {
   // No project loaded
-  STATE_EMPTY ,
+  STATE_EMPTY , 
   // Project opened
   STATE_PROJECT_OPENED ,
   // Features computed

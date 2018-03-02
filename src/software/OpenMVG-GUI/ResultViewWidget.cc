@@ -17,6 +17,8 @@
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include <QCoreApplication>
+#include <QOpenGLExtraFunctions>
+
 
 namespace openMVG_gui
 {
@@ -77,12 +79,16 @@ void ResultViewWidget::paintGL( void )
   const int w = width() ;
   const int h = height() ;
 
-  if( m_scn )
+  if( m_scn ) 
   {
+    m_point_shader->enable() ;
+    m_point_shader->setUniform( "uUseUniformColor" , ( int ) 0 ) ;
+    m_point_shader->setUniform( "uColor" , openMVG::Vec3( 1.0 , 1.0 , 1.0 ) ) ;
+
     m_scn->render( ( double )w , ( double )h ) ;
   }
 }
-
+ 
 /**
 * @brief When image is resized
 */

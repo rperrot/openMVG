@@ -35,6 +35,7 @@
 #include <algorithm>
 #include <exception>
 #include <fstream>
+#include <unordered_set>
 #include <vector>
 
 using namespace openMVG ;
@@ -1089,6 +1090,45 @@ std::map< std::string , std::vector< openMVG::Vec2 > > Project::getFeaturesPosit
   }
 
   return res ;
+}
+
+/**
+ * @brief Get all camera linked to a given one
+ * @param id The queried camera
+ * @return list of all cameras linked to the queried one
+ */
+std::vector<int> Project::linkedCameras( const int id ) const
+{
+  std::vector<IndexT> connected_views ;
+  std::vector<IndexT> views_for_this_track ;
+  for ( const auto & it_landmark : m_sfm_data->GetLandmarks() )
+  {
+    const Observations & obs = it_landmark.second.obs;
+    bool track_interesting = false ;
+    views_for_this_track.clear() ;
+    for ( const auto & it_obs : obs )
+    {
+      views_for_this_track.emplace_back( it_obs.first ) ;
+      if( id == it_obs.first )
+      {
+        track_interesting = true ;
+      }
+    }
+    if( track_interesting )
+    {
+      for( auto it_view : views_for_this_track )
+      {
+        if( it_view != id )
+        {
+          connected_views.emplace_back( it_view );
+        }
+      }
+    }
+  }
+  std::sort( connected_views.begin() , connected_views.end() ) ;
+  const auto end = std::unique( connected_views.begin() , connected_views.end() ) ;
+
+  return std::vector<int>( connected_views.begin() , end ) ;
 }
 
 

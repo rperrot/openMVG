@@ -289,6 +289,13 @@ class Project
      */
     std::map< std::string , std::vector< openMVG::Vec2 > > getFeaturesPositions( const size_t id_image ) const ;
 
+    /**
+     * @brief Get all camera linked to a given one
+     * @param id The queried camera 
+     * @return list of all cameras linked to the queried one 
+     */
+    std::vector<int> linkedCameras( const int id ) const ;
+
   private:
 
     /**

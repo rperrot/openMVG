@@ -601,13 +601,34 @@ void CameraGizmo::draw( void ) const
 {
   QOpenGLExtraFunctions *glFuncs = QOpenGLContext::currentContext()->extraFunctions();
 
-  if( selected() )
+  if( ( selectionState() == TRI_STATE_SELECTION_FIRST ) ||
+      ( selectionState() == TRI_STATE_SELECTION_SECOND ) )
   {
+    m_shader->setUniform( "uUseUniformColor" , 1 ) ;
+
+    if( selectionState() == TRI_STATE_SELECTION_FIRST )
+    {
+      // Camera selected
+      const double r = 60.0 / 255.0 ;
+      const double g = 254.0 / 255.0 ;
+      const double b = 39.0 / 255.0 ;
+      m_shader->setUniform( "uColor" , openMVG::Vec3( r , g , b ) ) ;
+    }
+    else
+    {
+      // camera selected indirectly (because linked to the selected one)
+      const double r = 21.0 / 255.0 ;
+      const double g = 150 / 255.0 ;
+      const double b = 0.0 / 255.0 ;
+      m_shader->setUniform( "uColor" , openMVG::Vec3( r , g , b ) ) ;
+    }
+
     glFuncs->glBindVertexArray( m_vao_selection ) ;
     glFuncs->glDrawArrays( GL_TRIANGLES , 0 , m_nb_vert_selection ) ;
     glFuncs->glBindVertexArray( 0 ) ;
   }
 
+  m_shader->setUniform( "uUseUniformColor" , 0 ) ;
 
   glFuncs->glBindVertexArray( m_vao ) ;
   glFuncs->glDrawArrays( GL_LINES , 0 , m_nb_vert ) ;

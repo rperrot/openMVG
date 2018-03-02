@@ -7,10 +7,20 @@ uniform mat4 uProjMat ;
 uniform mat4 uViewMat ; 
 uniform mat4 uModelMat ; 
 
+uniform vec3 uColor ; 
+uniform bool uUseUniformColor ; 
+
 out vec3 vCol ; 
 
 void main( )
 {
-  vCol = inCol ;
+  if( uUseUniformColor ) 
+  {
+    vCol = uColor ; 
+  }
+  else 
+  {
+    vCol = inCol ;
+  }
   gl_Position = uProjMat * uViewMat * uModelMat * vec4( inPos , 1.0 ) ; 
 }

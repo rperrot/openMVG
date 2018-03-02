@@ -981,16 +981,31 @@ void MainWindow::onSelectImage( int id )
         std::shared_ptr<CameraGizmo> c_gizmo = std::dynamic_pointer_cast<CameraGizmo>( it ) ;
         if( c_gizmo.use_count() )
         {
-          c_gizmo->setSelected( false ) ;
+          c_gizmo->setSelectionState( TRI_STATE_SELECTION_NONE ) ;
         }
       }
 
       // Select the specified one
-      std::shared_ptr<RenderableObject> gizmo = mgr->cameraGizmo( id ) ;
-      std::shared_ptr<CameraGizmo> c_gizmo = std::dynamic_pointer_cast<CameraGizmo>( gizmo ) ;
-      if( c_gizmo.use_count() )
       {
-        c_gizmo->setSelected( true );
+        std::shared_ptr<RenderableObject> gizmo = mgr->cameraGizmo( id ) ;
+        std::shared_ptr<CameraGizmo> c_gizmo = std::dynamic_pointer_cast<CameraGizmo>( gizmo ) ;
+        if( c_gizmo.use_count() )
+        {
+          c_gizmo->setSelectionState( TRI_STATE_SELECTION_FIRST );
+        }
+      }
+      
+      // TODO : add the linked cameras as second state selection
+      const std::vector<int> linked = m_project->linkedCameras( id ) ;
+      for( const auto linked_id : linked )
+      {
+        std::shared_ptr<RenderableObject> gizmo = mgr->cameraGizmo( linked_id ) ;
+        std::shared_ptr<CameraGizmo> c_gizmo = std::dynamic_pointer_cast<CameraGizmo>( gizmo ) ;
+        if( c_gizmo.use_count() )
+        {
+          c_gizmo->setSelectionState( TRI_STATE_SELECTION_SECOND );
+        }
+
       }
     }
   }
