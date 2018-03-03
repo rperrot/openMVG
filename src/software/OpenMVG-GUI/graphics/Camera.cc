@@ -8,7 +8,9 @@
 
 #include "Camera.hh"
 
-#include "DualQuaternion.hh"
+#include "utils/DualQuaternion.hh"
+
+#include <sstream>
 
 namespace openMVG_gui
 {
@@ -407,6 +409,25 @@ void Camera::setOrtho( const bool iso )
 }
 
 /**
+ * @brief Dump structure to a string (for debug only)
+ * @return dump to string
+ */
+std::string Camera::dump( void ) const
+{
+  std::stringstream str ;
+
+  str << "Pos   : " << m_pos[0] << " , " << m_pos[1] << " , " << m_pos[2] << std::endl ;
+  str << "Dir   : " << m_dest[0] << " , " << m_dest[1] << " , " << m_dest[2] << std::endl ;
+  str << "Up    : " << m_up[0] << " , " << m_up[1] << " , " << m_up[2] << std::endl ;
+  str << "Fov   : " << m_fov << std::endl ;
+  str << "Near  : " << m_near << std::endl ;
+  str << "Far   : " << m_far << std::endl ;
+  str << "Ortho : " << ( m_is_ortho ? "true" : "false" ) << std::endl ;
+
+  return str.str() ;
+}
+
+/**
 * @brief Orthonormalize frame
 * ie: reset up vector to make an orthonormal frame
 */
@@ -416,6 +437,8 @@ void Camera::orthonormalize( void )
   openMVG::Vec3 right = ( dir.cross( m_up ) ).normalized() ;
   m_up = right.cross( dir ) ;
 }
+
+
 
 
 } // namespace openMVG_gui

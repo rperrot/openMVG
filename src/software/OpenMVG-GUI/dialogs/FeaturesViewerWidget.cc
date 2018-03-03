@@ -42,17 +42,20 @@ void FeaturesViewerWidget::setProject( std::shared_ptr<Project> proj )
   m_image_list->clear() ;
   m_feature_set->clear() ;
 
-  // Update image list
-  const std::vector< std::pair< int , std::string > > & images_names = m_project->GetImageNames() ;
-  for( const auto & it : images_names )
+  if( m_project )
   {
-    m_image_list->addItem( it.second.c_str() , QVariant( it.first ) ) ;
+    // Update image list
+    const std::vector< std::pair< int , std::string > > & images_names = m_project->GetImageNames() ;
+    for( const auto & it : images_names )
+    {
+      m_image_list->addItem( it.second.c_str() , QVariant( it.first ) ) ;
+    }
   }
 }
 
-void FeaturesViewerWidget::closeEvent( QCloseEvent * event ) 
+void FeaturesViewerWidget::closeEvent( QCloseEvent * event )
 {
-  emit hasBeenClosed() ; 
+  emit hasBeenClosed() ;
 }
 
 

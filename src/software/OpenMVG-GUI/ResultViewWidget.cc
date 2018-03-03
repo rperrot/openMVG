@@ -63,9 +63,9 @@ void ResultViewWidget::initializeGL( void )
   // Create grid
   const openMVG::Vec3 origin( 0.0 , 0.0 , 0.0 );
 
-  m_grid = std::shared_ptr<Grid>( new Grid( m_point_shader , 201 , 201 ) ) ;
+  m_grid = std::shared_ptr<Grid>( new Grid( getContext() , m_point_shader , 201 , 201 ) ) ;
   m_grid->setVisible( false ) ;
-  m_sph_gizmo = std::shared_ptr<SphericalGizmo>( new SphericalGizmo( m_point_shader , origin , 1.0 ) ) ;
+  m_sph_gizmo = std::shared_ptr<SphericalGizmo>( new SphericalGizmo( getContext() , m_point_shader , origin , 1.0 ) ) ;
   m_sph_gizmo->setVisible( false ) ;
 }
 
@@ -76,19 +76,28 @@ void ResultViewWidget::initializeGL( void )
 void ResultViewWidget::paintGL( void )
 {
   glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT ) ;
+
   const int w = width() ;
   const int h = height() ;
 
-  if( m_scn ) 
+  if( m_scn )
   {
-    m_point_shader->enable() ;
-    m_point_shader->setUniform( "uUseUniformColor" , ( int ) 0 ) ;
-    m_point_shader->setUniform( "uColor" , openMVG::Vec3( 1.0 , 1.0 , 1.0 ) ) ;
-
+    /*
+    if( m_point_shader )
+    {
+      m_point_shader->enable() ;
+      if( m_point_shader->hasUniform( "uUseUniformColor" ) )
+      {
+        m_point_shader->setUniform( "uUseUniformColor" , ( int ) 0 ) ;
+        m_point_shader->setUniform( "uColor" , openMVG::Vec3( 1.0 , 1.0 , 1.0 ) ) ;
+      }
+    }
+    */
+    
     m_scn->render( ( double )w , ( double )h ) ;
   }
 }
- 
+
 /**
 * @brief When image is resized
 */
@@ -425,11 +434,19 @@ void ResultViewWidget::mouseReleaseEvent( QMouseEvent * event )
   update() ;
 }
 
+std::shared_ptr<OpenGLContext> ResultViewWidget::getContext( void )
+{
+  static std::shared_ptr<OpenGLContext> ctx = std::make_shared<OpenGLContext>( this ) ;
+  return ctx ;
+}
+
+
 /**
 * @brief clean openGL data before quitting
 */
 void ResultViewWidget::destroyGLData( void )
 {
+  qInfo( "destroyGLData" ) ;
   makeCurrent() ;
 
   m_point_shader = nullptr ;

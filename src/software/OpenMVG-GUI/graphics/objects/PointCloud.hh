@@ -36,7 +36,8 @@ class PointCloud : public RenderableObject
     * @param pts The point list
     * @param col The colors associated with the points (if no color provide an empty array)
     */
-    PointCloud( std::shared_ptr<ShaderProgram> pgm ,
+    PointCloud( std::shared_ptr<OpenGLContext> ctx ,
+                std::shared_ptr<ShaderProgram> pgm ,
                 const std::vector< openMVG::Vec3 > & pts ,
                 const std::vector< openMVG::Vec3 > & col ,
                 const openMVG::Vec3 defaultColor = openMVG::Vec3( 0.9 , 0.9 , 0.9 ) ) ;
@@ -47,7 +48,8 @@ class PointCloud : public RenderableObject
      * @param sfm_data The SfM Data file
      * @param defaultColor The color associated with the points (since sfm_data does not have color inside)
      */
-    PointCloud( std::shared_ptr<ShaderProgram> pgm ,
+    PointCloud( std::shared_ptr<OpenGLContext> ctx ,
+                std::shared_ptr<ShaderProgram> pgm ,
                 std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data ,
                 const openMVG::Vec3 defaultColor = openMVG::Vec3( 0.9 , 0.9 , 0.9 ) ) ;
 

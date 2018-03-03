@@ -1,6 +1,6 @@
 // This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
 
-// Copyright (c) 2017 Romuald PERROT.
+// Copyright (c) 2017, 2018 Romuald PERROT.
 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -43,6 +43,10 @@ enum MatchingMethod
   MATCHING_METHOD_FAST_CASCADE_HASHING_L2 ,
   MATCHING_METHOD_BRUTE_FORCE_HAMMING
 } ;
+
+std::string to_string( const MatchingGeometryType mgeom ) ;
+
+std::string to_string( const MatchingMethod mmeth ) ;
 
 /**
 * @brief class holding the matching params
@@ -147,6 +151,12 @@ class MatchingParams
 
     template <class Archive >
     void save( Archive & ar ) const ;
+
+    /**
+     * @brief Dump structure to a string (for debug only)
+     * @return dump to string
+     */
+    std::string dump( void ) const ;
 
   private:
 

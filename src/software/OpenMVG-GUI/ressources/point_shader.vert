@@ -14,13 +14,10 @@ out vec3 vCol ;
 
 void main( )
 {
+  vCol = inCol ; 
   if( uUseUniformColor ) 
   {
     vCol = uColor ; 
-  }
-  else 
-  {
-    vCol = inCol ;
   }
   gl_Position = uProjMat * uViewMat * uModelMat * vec4( inPos , 1.0 ) ; 
 }

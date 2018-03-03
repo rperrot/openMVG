@@ -11,7 +11,7 @@
 #include <QGridLayout>
 
 namespace openMVG_gui
-{ 
+{
 
 /**
 * @brief Ctr

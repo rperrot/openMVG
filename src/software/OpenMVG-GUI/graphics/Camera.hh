@@ -195,6 +195,12 @@ class Camera
     template< class Archive>
     void save( Archive & ar ) const ;
 
+    /**
+     * @brief Dump structure to a string (for debug only)
+     * @return dump to string 
+     */
+    std::string dump( void ) const ; 
+
   private:
 
     /**

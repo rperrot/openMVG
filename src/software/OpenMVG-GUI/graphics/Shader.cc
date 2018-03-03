@@ -8,7 +8,7 @@
 
 #include "Shader.hh"
 
-#include "UtilString.hh"
+#include "utils/UtilString.hh"
 
 #include <QOpenGLFunctions>
 #include <iostream>

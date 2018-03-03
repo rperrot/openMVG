@@ -32,6 +32,8 @@ class SceneManager : public std::enable_shared_from_this<SceneManager>
     */
     SceneManager( std::shared_ptr<Camera> cam , std::shared_ptr<SceneHierarchy> s_hier ) ;
 
+    ~SceneManager( void ) ;
+
     /**
     * @brief add object to scene
     */
@@ -45,7 +47,7 @@ class SceneManager : public std::enable_shared_from_this<SceneManager>
     /**
      * @brief Remove point clouds
      */
-    void removePointClouds( void ) ; 
+    void removePointClouds( void ) ;
 
     /**
      * @brief Clear all scene

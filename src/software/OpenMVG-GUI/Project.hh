@@ -66,6 +66,8 @@ class Project
              std::shared_ptr<SceneManager> mgr ,
              C_Progress * progress = nullptr ) ;
 
+    ~Project( void ) ;
+
     /**
     * @brief The number of image in the project
     */
@@ -291,8 +293,8 @@ class Project
 
     /**
      * @brief Get all camera linked to a given one
-     * @param id The queried camera 
-     * @return list of all cameras linked to the queried one 
+     * @param id The queried camera
+     * @return list of all cameras linked to the queried one
      */
     std::vector<int> linkedCameras( const int id ) const ;
 

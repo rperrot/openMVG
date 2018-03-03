@@ -29,7 +29,7 @@ set_target_properties( OpenMVG_gui_graphics PROPERTIES CXX_STANDARD 11 )
 set_property(TARGET OpenMVG_gui_graphics PROPERTY FOLDER OpenMVG/software/OpenMVG_gui)
 
 
-target_include_directories( OpenMVG_gui_graphics PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../utils )
+target_include_directories( OpenMVG_gui_graphics PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../ )
 target_include_directories( OpenMVG_gui_graphics PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/hierarchies )
 target_include_directories( OpenMVG_gui_graphics PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/objects )
 target_include_directories( OpenMVG_gui_graphics PRIVATE ${OPENGL_INCLUDE_DIR} )

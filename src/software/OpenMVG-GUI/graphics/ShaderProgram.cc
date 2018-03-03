@@ -83,7 +83,7 @@ GLuint ShaderProgram::getID( void ) const
 /**
 * @brief Set uniform for 1-variable
 * @param name Name of the uniform
-* @param x value to pass
+* @param x value to pass 
 */
 void ShaderProgram::setUniform( const std::string & name , const int x )
 {

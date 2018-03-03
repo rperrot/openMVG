@@ -33,6 +33,7 @@
 #include <cereal/types/utility.hpp>
 
 #include <algorithm>
+#include <clocale>
 #include <exception>
 #include <fstream>
 #include <unordered_set>
@@ -55,7 +56,8 @@ Project::Project( const std::string & projectFile , std::shared_ptr<SceneManager
   : m_project_paths( "" ) ,
     m_scene_mgr( scn ) ,
     m_sfm_data( nullptr ) ,
-    m_sparse_point_cloud( nullptr )
+    m_sparse_point_cloud( nullptr ) ,
+    m_viewport_camera( nullptr )
 {
   open( projectFile ) ;
 }
@@ -85,6 +87,14 @@ Project::Project( const std::string & base_path ,
   createProject( base_path , image_path , intrin_params , camera_sensor_width_database_file , progress ) ;
 }
 
+Project::~Project( void )
+{
+  m_scene_mgr = nullptr ;
+  m_sparse_point_cloud = nullptr ;
+  m_viewport_camera = nullptr ;
+}
+
+
 /**
 * @brief The number of image in the project
 */
@@ -105,6 +115,9 @@ void Project::save( void )
     throw std::runtime_error( "Could not save project" ) ;
     return ;
   }
+
+  setlocale( LC_ALL, "C" ) ;
+  setlocale( LC_NUMERIC, "C" ) ;
 
   // Save global project state
   cereal::XMLOutputArchive archive( file );
@@ -155,6 +168,10 @@ void Project::open( const std::string & projectFile )
     return  ;
   }
 
+  // It's mandatory since Qt can change locale at any time !
+  setlocale( LC_ALL, "C" ) ;
+  setlocale( LC_NUMERIC, "C" ) ;
+
   // Save global project state
   cereal::XMLInputArchive archive( file );
 
@@ -166,7 +183,6 @@ void Project::open( const std::string & projectFile )
   archive( cereal::make_nvp( "revision_version" , revision_version ) ) ;
 
   archive( cereal::make_nvp( "project_path" , m_project_base_path ) ) ;
-  m_project_paths = ProjectPaths( m_project_base_path ) ;
   archive( cereal::make_nvp( "image_path" , m_project_image_path ) ) ;
   archive( cereal::make_nvp( "sfm_method" , m_sfm_method ) ) ;
 
@@ -182,6 +198,11 @@ void Project::open( const std::string & projectFile )
 
   // Save mask enabled/disabled param
   archive( cereal::make_nvp( "mask_enabled" , m_mask_enabled ) ) ;
+
+  // Load camera
+  archive( cereal::make_nvp( "viewport_camera" , m_viewport_camera ) ) ;
+
+  m_project_paths = ProjectPaths( m_project_base_path ) ;
 
   // Load sfm_data ?
   // either from reconstruction path or at least from matches path
@@ -217,8 +238,6 @@ void Project::open( const std::string & projectFile )
       std::cerr << "Could not load sfm_data" ;
     }
   }
-  // Load camera
-  archive( cereal::make_nvp( "viewport_camera" , m_viewport_camera ) ) ;
 
   m_saved = true ;
 }

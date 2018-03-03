@@ -41,7 +41,6 @@ int main( int argc , char ** argv )
   // Fonts 
   QFontDatabase::addApplicationFont( ":/fonts/SourceCodeVariable-Roman.otf" ) ;
 
-
   MainWindow win ;
   win.show() ;
 

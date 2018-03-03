@@ -146,7 +146,9 @@ void MainWindow::onOpenProject( void )
     return ;
   }
 
+  m_project = nullptr ;
   resetInterface() ;
+
   const std::string projectPath = path.toStdString() ;
 
   std::shared_ptr<SceneHierarchy> s_hier = std::make_shared<LinearHierarchy>() ;
@@ -154,8 +156,6 @@ void MainWindow::onOpenProject( void )
   default_scene_manager->addObject( m_result_view->grid() ) ;
   std::shared_ptr<SphericalGizmo> sph_giz = std::dynamic_pointer_cast<SphericalGizmo>( m_result_view->sphericalGizmo() );
   default_scene_manager->addObject( sph_giz ) ;
-
-  m_project = nullptr ;
 
   try
   {
@@ -168,7 +168,6 @@ void MainWindow::onOpenProject( void )
     updateInterface() ;
     return ;
   }
-
 
   m_feature_viewer_widget->setProject( m_project ) ;
 
@@ -195,7 +194,6 @@ void MainWindow::onOpenProject( void )
   * Select a matching method that is compatible with the features computed
   * Because project could have been saved before feature computation
   */
-  postFeaturesComputation() ;
 
   // Update scene state
   m_state = STATE_PROJECT_OPENED ;
@@ -206,147 +204,41 @@ void MainWindow::onOpenProject( void )
     std::shared_ptr<SceneManager> mgr = m_project->sceneManager() ;
     const std::string sparse = m_project->projectPaths().colorizedPlyCloud( m_project->sfMMethod() ) ;
 
+    postFeaturesComputation() ;
+    postMatchesComputation() ;
     postSfMComputation() ;
     postColorComputation() ;
     m_state = STATE_CLUSTERING_COMPUTED ;
-
-    // Load from file
-    std::vector< openMVG::Vec3 > pts ;
-    std::vector< openMVG::Vec3 > col ;
-    LoadPly( sparse , pts , col ) ;
-
-    // Add to the scene, to the project and to the result view
-    std::shared_ptr<RenderableObject> sprs  = std::make_shared<PointCloud>( m_result_view->pointShader() , pts , col ) ;
-    mgr->addObject( sprs ) ;
-    m_project->setSparsePointCloud( sprs ) ;
-
-    // Add the camera gizmos
-    std::shared_ptr<openMVG::sfm::SfM_Data> sfm = m_project->SfMData() ;
-    if( sfm )
-    {
-      mgr->removeCameraGizmos() ;
-      std::map<int, std::shared_ptr<RenderableObject>> cam_gizmos ;
-
-      // Get all spherical cameras
-      std::map<int, bool> map_is_spherical ;
-      for( auto & cur_view : sfm->GetViews() )
-      {
-        const auto & cur_intrin = sfm->GetIntrinsics().at( cur_view.second->id_intrinsic ) ;
-        const bool is_spherical = std::dynamic_pointer_cast<openMVG::cameras::Intrinsic_Spherical>( cur_intrin ) != nullptr ;
-        map_is_spherical.insert( { cur_view.second->id_pose , is_spherical } );
-      }
-
-      for( auto & cur_pose : sfm->GetPoses() )
-      {
-        const bool is_spherical = map_is_spherical[ cur_pose.first ] ;
-        cam_gizmos[ cur_pose.first ] = std::make_shared<CameraGizmo>( m_result_view->pointShader() , cur_pose.second , is_spherical ,  0.1 ) ;
-      }
-      mgr->setCameraGizmos( cam_gizmos ) ;
-    }
-
-    m_result_view->prepareObjects() ;
-    m_result_view->updateTrackballSize() ;
-
-    m_result_view->update() ;
   }
   else if( m_project->hasColorComputed() )
   {
-    m_state = STATE_COLOR_COMPUTED ;
-
     // Load the color file
     std::shared_ptr<SceneManager> mgr = m_project->sceneManager() ;
     const std::string sparse = m_project->projectPaths().colorizedPlyCloud( m_project->sfMMethod() ) ;
 
+    postFeaturesComputation() ;
+    postMatchesComputation() ;
     postSfMComputation() ;
     postColorComputation() ;
 
-    // Load from file
-    std::vector< openMVG::Vec3 > pts ;
-    std::vector< openMVG::Vec3 > col ;
-    LoadPly( sparse , pts , col ) ;
-
-    // Add to the scene, to the project and to the result view
-    std::shared_ptr<RenderableObject> sprs  = std::make_shared<PointCloud>( m_result_view->pointShader() , pts , col ) ;
-    mgr->addObject( sprs ) ;
-    m_project->setSparsePointCloud( sprs ) ;
-
-    // Add the camera gizmos
-    std::shared_ptr<openMVG::sfm::SfM_Data> sfm = m_project->SfMData() ;
-    if( sfm )
-    {
-      mgr->removeCameraGizmos() ;
-      std::map<int, std::shared_ptr<RenderableObject>> cam_gizmos ;
-
-      // Get all spherical cameras
-      std::map<int, bool> map_is_spherical ;
-      for( auto & cur_view : sfm->GetViews() )
-      {
-        const auto & cur_intrin = sfm->GetIntrinsics().at( cur_view.second->id_intrinsic ) ;
-        const bool is_spherical = std::dynamic_pointer_cast<openMVG::cameras::Intrinsic_Spherical>( cur_intrin ) != nullptr ;
-        map_is_spherical.insert( { cur_view.second->id_pose , is_spherical } );
-      }
-
-      for( auto & cur_pose : sfm->GetPoses() )
-      {
-        const bool is_spherical = map_is_spherical[ cur_pose.first ] ;
-        cam_gizmos[ cur_pose.first ] = std::make_shared<CameraGizmo>( m_result_view->pointShader() , cur_pose.second , is_spherical , 0.1 ) ;
-      }
-      mgr->setCameraGizmos( cam_gizmos ) ;
-    }
-
-    m_result_view->prepareObjects() ;
-    m_result_view->updateTrackballSize() ;
-
-    m_result_view->update() ;
+    m_state = STATE_COLOR_COMPUTED ;
   }
   else if( m_project->hasSfMComputed() )
   {
-    m_state = STATE_SFM_COMPUTED ;
+    postFeaturesComputation() ;
+    postMatchesComputation() ;
     postSfMComputation();
-
-    // Load the cloud file
-    std::shared_ptr<SceneManager> mgr = m_project->sceneManager() ;
-
-    // Add to the scene, to the project and to the result view
-    std::shared_ptr<RenderableObject> sprs  = std::make_shared<PointCloud>( m_result_view->pointShader() , m_project->SfMData() ) ; // pts , col ) ;
-    mgr->addObject( sprs ) ;
-    m_project->setSparsePointCloud( sprs ) ;
-
-    // Add the camera gizmos
-    std::shared_ptr<openMVG::sfm::SfM_Data> sfm = m_project->SfMData() ;
-    if( sfm )
-    {
-      mgr->removeCameraGizmos() ;
-      std::map<int, std::shared_ptr<RenderableObject>> cam_gizmos ;
-
-      // Get all spherical cameras
-      std::map<int, bool> map_is_spherical ;
-      for( auto & cur_view : sfm->GetViews() )
-      {
-        const auto & cur_intrin = sfm->GetIntrinsics().at( cur_view.second->id_intrinsic ) ;
-        const bool is_spherical = std::dynamic_pointer_cast<openMVG::cameras::Intrinsic_Spherical>( cur_intrin ) != nullptr ;
-        map_is_spherical.insert( { cur_view.second->id_pose , is_spherical } );
-      }
-
-      for( auto & cur_pose : sfm->GetPoses() )
-      {
-        const bool is_spherical = map_is_spherical[ cur_pose.first ] ;
-        cam_gizmos[ cur_pose.first ] = std::make_shared<CameraGizmo>( m_result_view->pointShader() , cur_pose.second , is_spherical , 0.1 ) ;
-      }
-      mgr->setCameraGizmos( cam_gizmos ) ;
-    }
-
-    m_result_view->prepareObjects() ;
-    m_result_view->updateTrackballSize() ;
-
-    m_result_view->update() ;
+    m_state = STATE_SFM_COMPUTED ;
   }
   else if( m_project->hasAllMatchesComputed() )
   {
+    postFeaturesComputation() ;
+    postMatchesComputation() ;
     m_state = STATE_MATCHES_COMPUTED ;
   }
   else if( m_project->hasAllFeaturesComputed() )
   {
+    postFeaturesComputation() ;
     m_state = STATE_FEATURES_COMPUTED ;
   }
   updateInterface() ;
@@ -408,6 +300,8 @@ void MainWindow::onCloseProject( void )
 
   // Reset interface (project/scene)
   m_project = nullptr ;
+  m_result_view->setScene( nullptr ) ;
+  m_feature_viewer_widget->setProject( nullptr ) ;
   m_detail_list->clear() ;
 
   resetInterface() ;
@@ -994,8 +888,7 @@ void MainWindow::onSelectImage( int id )
           c_gizmo->setSelectionState( TRI_STATE_SELECTION_FIRST );
         }
       }
-      
-      // TODO : add the linked cameras as second state selection
+
       const std::vector<int> linked = m_project->linkedCameras( id ) ;
       for( const auto linked_id : linked )
       {
@@ -2071,7 +1964,7 @@ void MainWindow::postSfMComputation( void )
   std::shared_ptr<openMVG::sfm::SfM_Data> sfm = m_project->SfMData() ;
   if( sfm )
   {
-    std::shared_ptr<RenderableObject> sprs = std::make_shared<PointCloud>( m_result_view->pointShader() , sfm ) ;
+    std::shared_ptr<RenderableObject> sprs = std::make_shared<PointCloud>( m_result_view->getContext() , m_result_view->pointShader() , sfm ) ;
     mgr->addObject( sprs ) ;
     m_project->setSparsePointCloud( sprs ) ;
 
@@ -2090,7 +1983,7 @@ void MainWindow::postSfMComputation( void )
     for( auto & cur_pose : sfm->GetPoses() )
     {
       const bool is_spherical = map_is_spherical[ cur_pose.first ] ;
-      cam_gizmos[ cur_pose.first ] = std::make_shared<CameraGizmo>( m_result_view->pointShader() , cur_pose.second , is_spherical , 0.1 ) ;
+      cam_gizmos[ cur_pose.first ] = std::make_shared<CameraGizmo>( m_result_view->getContext() , m_result_view->pointShader() , cur_pose.second , is_spherical , 0.1 ) ;
     }
     mgr->setCameraGizmos( cam_gizmos ) ;
   }
@@ -2116,13 +2009,7 @@ void MainWindow::postColorComputation( void )
   // Remove old object
   std::shared_ptr<SceneManager> mgr = m_project->sceneManager() ;
   mgr->removePointClouds() ;
-  /*
-  std::shared_ptr<RenderableObject> sprs = m_project->sparsePointCloud() ;
-  if( sprs )
-  {
-    mgr->removeObject( sprs ) ;
-  }
-  */
+
   // Load the colorized one
   const std::string colorized = m_project->projectPaths().colorizedPlyCloud( m_project->sfMMethod() ) ;
   if( stlplus::file_exists( colorized ) )
@@ -2132,7 +2019,7 @@ void MainWindow::postColorComputation( void )
     std::vector< openMVG::Vec3 > col ;
     LoadPly( colorized , pts , col ) ;
 
-    std::shared_ptr<RenderableObject> sprs = std::make_shared<PointCloud>( m_result_view->pointShader() , pts , col ) ;
+    std::shared_ptr<RenderableObject> sprs = std::make_shared<PointCloud>( m_result_view->getContext() , m_result_view->pointShader() , pts , col ) ;
     mgr->addObject( sprs ) ;
     m_project->setSparsePointCloud( sprs ) ;
     m_result_view->prepareObjects() ;
@@ -2152,6 +2039,8 @@ void MainWindow::postColorComputation( void )
 */
 void MainWindow::resetInterface( void )
 {
+  m_feature_viewer_widget->setProject( nullptr ) ;
+
   m_result_view->setScene( nullptr ) ;
   m_result_view->update() ;
 

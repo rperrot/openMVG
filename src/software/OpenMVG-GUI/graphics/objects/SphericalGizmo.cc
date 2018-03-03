@@ -19,10 +19,11 @@ namespace openMVG_gui
 * @param center Center of the gizmo
 * @param radius Radius of the gizmo
 */
-SphericalGizmo::SphericalGizmo( std::shared_ptr<ShaderProgram> pgm ,
+SphericalGizmo::SphericalGizmo( std::shared_ptr<OpenGLContext> ctx ,
+                                std::shared_ptr<ShaderProgram> pgm ,
                                 const openMVG::Vec3 & center ,
                                 const double radius )
-  : RenderableObject( pgm ) ,
+  : RenderableObject( ctx , pgm ) ,
     m_center( center ) ,
     m_radius( radius ) ,
     m_nb_vert( 0 )
@@ -32,7 +33,9 @@ SphericalGizmo::SphericalGizmo( std::shared_ptr<ShaderProgram> pgm ,
 
 SphericalGizmo::~SphericalGizmo( void )
 {
+  m_context->makeCurrent() ;
   destroyGLData() ;
+  m_context->doneCurrent() ;
 }
 
 
@@ -229,7 +232,6 @@ void SphericalGizmo::prepare( void )
 
   delete[] data ;
   m_prepared = true ;
-
 }
 
 /**

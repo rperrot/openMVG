@@ -31,7 +31,8 @@ class CameraGizmo : public RenderableObject , public TriStateSelectableObject
     * @param pose Current pose corresponding to the camera
     * @param size Size of the gizmo
     */
-    CameraGizmo( std::shared_ptr<ShaderProgram> shad ,
+    CameraGizmo( std::shared_ptr<OpenGLContext> ctx ,
+                 std::shared_ptr<ShaderProgram> shad ,
                  const openMVG::geometry::Pose3 & pose ,
                  const bool is_spherical = true ,
                  const double size = 1.0 ) ;

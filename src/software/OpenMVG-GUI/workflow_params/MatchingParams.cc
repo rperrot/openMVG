@@ -1,6 +1,6 @@
 // This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
 
-// Copyright (c) 2017 Romuald PERROT.
+// Copyright (c) 2017, 2018 Romuald PERROT.
 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -12,8 +12,58 @@
 #include "openMVG/matching_image_collection/Cascade_Hashing_Matcher_Regions.hpp"
 #include "openMVG/matching_image_collection/GeometricFilter.hpp"
 
+#include <sstream>
+
 namespace openMVG_gui
 {
+
+std::string to_string( const MatchingGeometryType mgeom )
+{
+  switch( mgeom )
+  {
+    case MATCHING_GEOMETRY_TYPE_FUNDAMENTAL:
+    {
+      return "Matching_Geometry_Type_Fundamental" ;
+    }
+    case MATCHING_GEOMETRY_TYPE_ESSENTIAL :
+    {
+      return "Matching_Geometry_Type_Essential" ;
+    }
+    case MATCHING_GEOMETRY_TYPE_HOMOGRAPHY :
+    {
+      return "Matching_Geometry_Type_Homography" ;
+    }
+  }
+  return "" ;
+}
+
+std::string to_string( const MatchingMethod mmeth )
+{
+  switch( mmeth )
+  {
+    case MATCHING_METHOD_BRUTEFORCE_L2 :
+    {
+      return "Matching_Method_Bruteforce_L2" ;
+    }
+    case MATCHING_METHOD_ANN_L2 :
+    {
+      return "Matching_Method_ANN_L2" ;
+    }
+    case MATCHING_METHOD_BRUTE_FORCE_HAMMING :
+    {
+      return "Matching_Method_Brute_force_Hamming" ;
+    }
+    case MATCHING_METHOD_CASCADE_HASHING_L2 :
+    {
+      return "Matching_Method_Cascade_Hashing_L2" ;
+    }
+    case MATCHING_METHOD_FAST_CASCADE_HASHING_L2 :
+    {
+      return "Matching_Method_Fast_Cascade_Hashing_L2" ;
+    }
+  }
+  return "" ;
+}
 
 /**
 * @brief Ctr
@@ -221,6 +271,23 @@ std::shared_ptr<openMVG::matching_image_collection::Matcher> MatchingParams::mat
 {
   return m_matcher ;
 }
+
+/**
+ * @brief Dump structure to a string (for debug only)
+ * @return dump to string
+ */
+std::string MatchingParams::dump( void ) const
+{
+  std::stringstream str ;
+
+  str << "Matching geometry : " << to_string( m_geometry ) << std::endl ;
+  str << "Nb filtering iteration : " << m_max_iteration_filtering << std::endl ;
+  str << "Matching method : " << to_string( m_method ) << std::endl ;
+  str << "Matching ratio : " << m_ratio << std::endl ;
+
+  return str.str() ;
+}
+
 
 
 } // namespace openMVG_gui

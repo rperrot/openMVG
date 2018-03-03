@@ -9,7 +9,9 @@
 #ifndef _OPENMVG_SOFTWARE_OPENMVG_GUI_VIEW_WIDGET_HH_
 #define _OPENMVG_SOFTWARE_OPENMVG_GUI_VIEW_WIDGET_HH_
 
+#include "utils/OpenGLContext.hh"
 #include "SceneManager.hh"
+
 
 #include <QMouseEvent>
 #include <QOpenGLWidget>
@@ -100,6 +102,8 @@ class ResultViewWidget : public QOpenGLWidget
     * Use to pan/rotate camera for ex
     */
     void mouseReleaseEvent( QMouseEvent * event ) override ;
+
+    std::shared_ptr<OpenGLContext> getContext( void ) ;
 
   private slots :
 

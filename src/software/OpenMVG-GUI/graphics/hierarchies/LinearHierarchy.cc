@@ -16,6 +16,13 @@
 namespace openMVG_gui
 {
 
+LinearHierarchy::~LinearHierarchy()
+{
+  destroyGLData() ;
+  m_objects.clear() ;
+}
+
+
 /**
 * @brief add an object to the hierarchy
 */
@@ -35,6 +42,7 @@ void LinearHierarchy::removeObject( std::shared_ptr<RenderableObject> obj )
   {
     if( it->get() == obj.get() )
     {
+      *it = nullptr ;
       it = m_objects.erase( it ) ;
     }
     else
@@ -54,6 +62,7 @@ void LinearHierarchy::removePointClouds()
   {
     if( std::dynamic_pointer_cast<PointCloud>( *it ) )
     {
+      *it = nullptr ;
       it = m_objects.erase( it ) ;
     }
     else
@@ -89,8 +98,18 @@ void LinearHierarchy::prepare( void )
 */
 void LinearHierarchy::render( std::shared_ptr<SceneManager> scn , const double w , const double h )
 {
+  if( ! scn )
+  {
+    return ;
+  }
+
+
   // TODO : get resolution for rendering
   std::shared_ptr<Camera> cam = scn->camera() ;
+  if( ! cam )
+  {
+    return ;
+  }
   const openMVG::Mat4 camViewMat = cam->viewMatrix() ;
   const openMVG::Mat4 camProjMat = cam->projMatrix( w , h ) ;
 
@@ -101,6 +120,10 @@ void LinearHierarchy::render( std::shared_ptr<SceneManager> scn , const double w
     if( object->isVisible() )
     {
       std::shared_ptr<ShaderProgram> pgm = object->shader() ;
+      if( ! pgm )
+      {
+        continue ;
+      }
       pgm->enable() ;
 
       const openMVG::Mat4 modelMat = object->modelMat() ;
@@ -118,9 +141,16 @@ void LinearHierarchy::render( std::shared_ptr<SceneManager> scn , const double w
       {
         pgm->setUniform( "uModelMat" , modelMat ) ;
       }
+      if( pgm->hasUniform( "uUseUniformColor" ) )
+      {
+        pgm->setUniform( "uUseUniformColor" , ( int ) 0 ) ;
+        pgm->setUniform( "uColor" , openMVG::Vec3( 1.0 , 1.0 , 1.0 ) ) ;
+      }
 
       // 2 - render this object itself
-      object->draw() ;
+      {
+        object->draw() ;
+      }
       pgm->disable() ;
     }
   }
@@ -131,10 +161,12 @@ void LinearHierarchy::render( std::shared_ptr<SceneManager> scn , const double w
 */
 void LinearHierarchy::destroyGLData( void )
 {
+  /*
   for( auto & object : m_objects )
   {
     object->destroyGLData() ;
   }
+  */
 }
 
 } // openMVG_gui

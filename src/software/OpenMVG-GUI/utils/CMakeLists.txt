@@ -4,6 +4,7 @@ set( OPENMVG_GUI_UTILS_HEADERS BellBall.hh
                                FeaturesStats.hh
                                ImageDescriberInfo.hh 
                                MatchingStats.hh
+                               OpenGLContext.hh
                                Plane.hh 
                                PlyLoader.hh
                                Sphere.hh 
@@ -15,6 +16,7 @@ set( OPENMVG_GUI_UTILS_SOURCES BellBall.cc
                                FeaturesStats.cc
                                ImageDescriberInfo.cc
                                MatchingStats.cc
+                               OpenGLContext.cc
                                Plane.cc 
                                PlyLoader.cc 
                                Sphere.cc

@@ -20,11 +20,12 @@ namespace openMVG_gui
 * @param pose Current pose corresponding to the camera
 * @param size Size of the gizmo
 */
-CameraGizmo::CameraGizmo( std::shared_ptr<ShaderProgram> shad ,
+CameraGizmo::CameraGizmo( std::shared_ptr<OpenGLContext> ctx ,
+                          std::shared_ptr<ShaderProgram> shad ,
                           const openMVG::geometry::Pose3 & pose ,
                           const bool is_spherical ,
                           const double size )
-  : RenderableObject( shad ) ,
+  : RenderableObject( ctx , shad ) ,
     m_pose( pose ) ,
     m_size( size ) ,
     m_is_spherical( is_spherical ) ,
@@ -39,7 +40,9 @@ CameraGizmo::CameraGizmo( std::shared_ptr<ShaderProgram> shad ,
 */
 CameraGizmo::~CameraGizmo( void )
 {
+  m_context->makeCurrent() ;
   destroyGLData() ;
+  m_context->doneCurrent() ;
 }
 
 /**

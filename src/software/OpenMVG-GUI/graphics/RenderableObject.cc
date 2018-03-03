@@ -17,8 +17,11 @@ namespace openMVG_gui
 * @param shader Shader to use for this object
 * @param visible Indicate if object is visible
 */
-RenderableObject::RenderableObject( std::shared_ptr<ShaderProgram> shader , const bool visible )
-  : m_shader( shader ) ,
+RenderableObject::RenderableObject( std::shared_ptr<OpenGLContext> ctx ,
+                                    std::shared_ptr<ShaderProgram> shader ,
+                                    const bool visible )
+  : m_context( ctx ) ,
+    m_shader( shader ) ,
     m_is_visible( visible ) ,
     m_prepared( false )
 {
@@ -27,7 +30,9 @@ RenderableObject::RenderableObject( std::shared_ptr<ShaderProgram> shader , cons
 
 RenderableObject::~RenderableObject( void )
 {
-
+  m_context->makeCurrent() ;
+  destroyGLData() ;
+  m_context->doneCurrent() ;
 }
 
 

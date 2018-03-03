@@ -9,6 +9,8 @@
 #ifndef _OPENMVG_SOFTWARE_OPENMVG_GUI_SFM_METHOD_HH_
 #define _OPENMVG_SOFTWARE_OPENMVG_GUI_SFM_METHOD_HH_
 
+#include <string>
+
 namespace openMVG_gui
 {
 
@@ -17,6 +19,14 @@ enum SfMMethod
   SFM_METHOD_INCREMENTAL ,
   SFM_METHOD_GLOBAL
 } ;
+
+/**
+ * @brief Helper function (only for debug purpose)
+ * Get a string for the given parameter 
+ * @param meth The parameter to convert to string 
+ * @return string corresponding to the parameter
+ */
+std::string to_string( const SfMMethod meth ) ;
 
 } // namespace openMVG_gui
 

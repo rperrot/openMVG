@@ -10,7 +10,8 @@ set( WORKFLOW_PARAMS_SOURCES FeatureParams.cc
                              IncrementalSfMParams.cc 
                              IntrinsicParams.cc 
                              IntrinsicRefinerOptions.cc 
-                             MatchingParams.cc )
+                             MatchingParams.cc 
+                             SfMMethod.cc )
 
 add_library( OpenMVG_gui_workflow_params STATIC ${WORKFLOW_PARAMS_HEADERS} ${WORKFLOW_PARAMS_SOURCES} ) 
 

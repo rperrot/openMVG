@@ -27,7 +27,8 @@ class SphericalGizmo: public RenderableObject
     * @param center Center of the gizmo
     * @param radius Radius of the gizmo
     */
-    SphericalGizmo( std::shared_ptr<ShaderProgram> pgm ,
+    SphericalGizmo( std::shared_ptr<OpenGLContext> ctx ,
+                    std::shared_ptr<ShaderProgram> pgm ,
                     const openMVG::Vec3 & center ,
                     const double radius ) ;
 

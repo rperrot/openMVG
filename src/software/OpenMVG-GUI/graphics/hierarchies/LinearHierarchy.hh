@@ -26,6 +26,8 @@ class LinearHierarchy : public SceneHierarchy
   public:
 
 
+    ~LinearHierarchy() ;
+
     /**
     * @brief add an object to the hierarchy
     */
@@ -40,7 +42,7 @@ class LinearHierarchy : public SceneHierarchy
     /**
      * @brief remove all objects that are point clouds
      */
-    void removePointClouds() override ; 
+    void removePointClouds() override ;
 
     /**
      * @brief Clear the scene

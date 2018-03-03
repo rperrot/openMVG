@@ -12,6 +12,8 @@
 #include "AABB.hh"
 #include "ShaderProgram.hh"
 
+#include "utils/OpenGLContext.hh"
+
 namespace openMVG_gui
 {
 
@@ -28,7 +30,8 @@ class RenderableObject
     * @param shader Shader to use for this object
     * @param visible Indicate if object is visible
     */
-    RenderableObject( std::shared_ptr<ShaderProgram> shader ,
+    RenderableObject( std::shared_ptr<OpenGLContext> ctx ,
+                      std::shared_ptr<ShaderProgram> shader ,
                       const bool visible = true ) ;
 
     virtual ~RenderableObject( void ) ;
@@ -89,6 +92,7 @@ class RenderableObject
 
   protected:
 
+    std::shared_ptr<OpenGLContext> m_context ;
     std::shared_ptr<ShaderProgram> m_shader ;
     bool m_prepared ;
 

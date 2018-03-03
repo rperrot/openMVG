@@ -21,11 +21,12 @@ namespace openMVG_gui
 * @param pts The point list
 * @param col The colors associated with the points (if no color provide an empty array)
 */
-PointCloud::PointCloud( std::shared_ptr<ShaderProgram> pgm ,
+PointCloud::PointCloud( std::shared_ptr<OpenGLContext> ctx ,
+                        std::shared_ptr<ShaderProgram> pgm ,
                         const std::vector< openMVG::Vec3 > & pts ,
                         const std::vector< openMVG::Vec3 > & col ,
                         const openMVG::Vec3 defaultColor )
-  : RenderableObject( pgm ) ,
+  : RenderableObject( ctx , pgm ) ,
     m_pts( pts ) ,
     m_col( col ) ,
     m_default_color( defaultColor ) ,
@@ -40,10 +41,11 @@ PointCloud::PointCloud( std::shared_ptr<ShaderProgram> pgm ,
  * @param sfm_data The SfM Data file
  * @param defaultColor The color associated with the points (since sfm_data does not have color inside)
  */
-PointCloud::PointCloud( std::shared_ptr<ShaderProgram> pgm ,
+PointCloud::PointCloud( std::shared_ptr<OpenGLContext> ctx ,
+                        std::shared_ptr<ShaderProgram> pgm ,
                         std::shared_ptr<openMVG::sfm::SfM_Data> sfm_data ,
                         const openMVG::Vec3 defaultColor  )
-  : RenderableObject( pgm ) ,
+  : RenderableObject( ctx , pgm ) ,
     m_default_color( defaultColor ) ,
     m_nb_vert( 0 )
 {
@@ -61,7 +63,9 @@ PointCloud::PointCloud( std::shared_ptr<ShaderProgram> pgm ,
 */
 PointCloud::~PointCloud()
 {
+  m_context->makeCurrent() ;
   destroyGLData() ;
+  m_context->doneCurrent() ;
 }
 
 

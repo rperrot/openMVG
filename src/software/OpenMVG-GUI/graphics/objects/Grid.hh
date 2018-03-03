@@ -30,7 +30,8 @@ class Grid : public RenderableObject
     * @note the function ensure nb_x and nb_y are odd
     * @note colors are in range [0;1]^3
     */
-    Grid( std::shared_ptr<ShaderProgram> pgm ,
+    Grid( std::shared_ptr<OpenGLContext> ctx ,
+          std::shared_ptr<ShaderProgram> pgm ,
           const int nb_x = 151 ,
           const int nb_y = 151 ,
           const openMVG::Vec3 col_axis_x = openMVG::Vec3( 1.0 , 0.0 , 0.0 ) ,

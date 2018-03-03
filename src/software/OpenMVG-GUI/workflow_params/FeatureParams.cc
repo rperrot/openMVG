@@ -1,6 +1,6 @@
 // This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
 
-// Copyright (c) 2017 Romuald PERROT.
+// Copyright (c) 2017, 2018 Romuald PERROT.
 
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -12,12 +12,72 @@
 #include "openMVG/features/sift/SIFT_Anatomy_Image_Describer.hpp"
 #include "nonFree/sift/SIFT_describer.hpp"
 
+#include <sstream>
+
 using namespace openMVG ;
 using namespace openMVG::features ;
 
 
 namespace openMVG_gui
 {
+
+/**
+ * @brief Helper function (only for debug purpose)
+ * Get a string for the given parameter
+ * @param ftype The parameter to convert to string
+ * @return string corresponding to the parameter
+ */
+std::string to_string( const FeatureType ftype )
+{
+  switch( ftype )
+  {
+    case FEATURE_TYPE_SIFT:
+    {
+      return "Feature_Type_SIFT" ;
+    }
+    case FEATURE_TYPE_SIFT_ANATOMY :
+    {
+      return "Feature_TYPE_SIFT_Anatomy" ;
+    }
+    case FEATURE_TYPE_AKAZE_FLOAT :
+    {
+      return "Feature_TYPE_AKAZE_Float" ;
+    }
+    case FEATURE_TYPE_AKAZE_MLDB :
+    {
+      return "Feature_TYPE_AKAZE_MLDB" ;
+    }
+  }
+  return "";
+}
+
+
+/**
+ * @brief Helper function (only for debug purpose)
+ * Get a string for the given parameter
+ * @param fpreset The parameter to convert to string
+ * @return string corresponding to the parameter
+ */
+std::string to_string( const FeaturePreset fpreset )
+{
+  switch( fpreset )
+  {
+    case FEATURE_PRESET_NORMAL :
+    {
+      return "Feature_preset_normal" ;
+    }
+    case FEATURE_PRESET_HIGH :
+    {
+      return "Feature_preset_high" ;
+    }
+    case FEATURE_PRESET_ULTRA :
+    {
+      return "Feature_preset_ULTRA" ;
+    }
+  }
+  return "" ;
+}
+
 
 /**
 * @brief ctr
@@ -208,6 +268,22 @@ std::vector< FeatureParams > FeatureParams::allFeatures( void )
   res.emplace_back( FEATURE_TYPE_AKAZE_MLDB , FEATURE_PRESET_ULTRA ) ;
 
   return res ;
+}
+
+/**
+ * @brief Dump structure to a string (for debug only)
+ * @return dump to string
+ */
+std::string FeatureParams::dump( void ) const
+{
+  std::stringstream str ;
+
+  str << "Feature type : " << to_string( m_feat_type ) << std::endl ;
+  str << "Feature preset : " << to_string( m_feat_preset ) << std::endl ;
+  str << "Upright : " << ( m_upright ? "true" : "false" ) << std::endl ;
+  str << "Nb prallel jobs : " << m_nb_parallel_job << std::endl ;
+
+  return str.str() ;
 }
 
 

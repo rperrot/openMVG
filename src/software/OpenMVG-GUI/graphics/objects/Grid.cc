@@ -10,6 +10,11 @@
 
 #include <QOpenGLExtraFunctions>
 
+// #define DEBUG_GL_CODE 
+
+#define OPENGL_DEBUG_MESSAGE(s) \
+  std::cerr << "Error : " << __FILE__ << ":" << __LINE__ << "After : " << s << std::endl
+
 namespace openMVG_gui
 {
 
@@ -18,14 +23,15 @@ namespace openMVG_gui
 * @param nb_element in x
 * @param nb_element in y
 */
-Grid::Grid( std::shared_ptr<ShaderProgram> pgm  ,
+Grid::Grid( std::shared_ptr<OpenGLContext> ctx ,
+            std::shared_ptr<ShaderProgram> pgm  ,
             const int nb_x ,
             const int nb_y ,
             const openMVG::Vec3 col_axis_x ,
             const openMVG::Vec3 col_axis_y ,
             const openMVG::Vec3 col_standard_lines ,
             const openMVG::Vec3 col_major_lines     )
-  : RenderableObject( pgm ) ,
+  : RenderableObject( ctx , pgm ) ,
     m_nb_x( ( nb_x ) % 2 == 0 ? nb_x + 1 : nb_x  ) ,
     m_nb_y( ( nb_y ) % 2 == 0 ? nb_y + 1 : nb_y  ) ,
     m_color_x( col_axis_x ) ,
@@ -39,7 +45,9 @@ Grid::Grid( std::shared_ptr<ShaderProgram> pgm  ,
 
 Grid::~Grid()
 {
+  m_context->makeCurrent() ;
   destroyGLData() ;
+  m_context->doneCurrent() ;
 }
 
 
@@ -235,9 +243,31 @@ void Grid::draw( void ) const
 {
   QOpenGLExtraFunctions *glFuncs = QOpenGLContext::currentContext()->extraFunctions();
 
+#ifdef DEBUG_GL_CODE
+  GLenum err ;
+  glFuncs->glBindVertexArray( m_vao ) ;
+  err = glFuncs->glGetError() ;
+  if( err != GL_NO_ERROR )
+  {
+    OPENGL_DEBUG_MESSAGE( "glFuncs->glBindVertexArray( m_vao )" ) ;
+  }
+  glFuncs->glDrawArrays( GL_LINES , 0 , m_nb_vert ) ;
+  err = glFuncs->glGetError() ;
+  if( err != GL_NO_ERROR )
+  {
+    OPENGL_DEBUG_MESSAGE( "glFuncs->glDrawArrays( GL_LINES , 0 , m_nb_vert )" ) ;
+  }
+  glFuncs->glBindVertexArray( 0 ) ;
+  err = glFuncs->glGetError() ;
+  if( err != GL_NO_ERROR )
+  {
+    OPENGL_DEBUG_MESSAGE( "  glFuncs->glBindVertexArray( 0 )" ) ;
+  }
+#else
   glFuncs->glBindVertexArray( m_vao ) ;
   glFuncs->glDrawArrays( GL_LINES , 0 , m_nb_vert ) ;
   glFuncs->glBindVertexArray( 0 ) ;
+#endif
 }
 
 /**
