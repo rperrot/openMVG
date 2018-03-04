@@ -25,12 +25,6 @@ SceneManager::SceneManager( std::shared_ptr<Camera> cam , std::shared_ptr<SceneH
 
 SceneManager::~SceneManager( void )
 {
-  m_hierarchy = nullptr ;
-  m_camera    = nullptr ;
-  for( auto & it : m_camera_gizmos )
-  {
-    it.second = nullptr ;
-  }
   m_camera_gizmos.clear() ;
 }
 

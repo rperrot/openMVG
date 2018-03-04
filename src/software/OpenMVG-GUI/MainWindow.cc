@@ -146,7 +146,7 @@ void MainWindow::onOpenProject( void )
     return ;
   }
 
-  m_project = nullptr ;
+  m_project.reset() ;
   resetInterface() ;
 
   const std::string projectPath = path.toStdString() ;
@@ -164,7 +164,7 @@ void MainWindow::onOpenProject( void )
   catch( std::runtime_error & err )
   {
     QMessageBox::StandardButton btn = QMessageBox::critical( this , "Error" , "Could not open project" ) ;
-    m_project = nullptr ;
+    m_project.reset() ;
     updateInterface() ;
     return ;
   }
@@ -299,7 +299,7 @@ void MainWindow::onCloseProject( void )
   }
 
   // Reset interface (project/scene)
-  m_project = nullptr ;
+  m_project.reset() ;
   m_result_view->setScene( nullptr ) ;
   m_feature_viewer_widget->setProject( nullptr ) ;
   m_detail_list->clear() ;
@@ -651,7 +651,7 @@ void MainWindow::onHasCreatedProject( const WorkerNextAction & next_action  )
   if( next_action == NEXT_ACTION_ERROR )
   {
     QMessageBox::critical( this , "Error" , "There was an error during project creation" ) ;
-    m_project = nullptr ;
+    m_project.reset() ;
     m_worker_project_creation.reset() ;
     resetInterface() ;
     return ;
@@ -1806,7 +1806,7 @@ void MainWindow::onHasDoneAutomaticReconstruction( const WorkerNextAction & next
 
     m_worker_automatic_reconstruction.reset() ;
 
-    m_project = nullptr ;
+    m_project.reset() ;
     resetInterface() ;
 
     return ;

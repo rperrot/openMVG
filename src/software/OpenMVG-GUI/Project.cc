@@ -89,9 +89,7 @@ Project::Project( const std::string & base_path ,
 
 Project::~Project( void )
 {
-  m_scene_mgr = nullptr ;
-  m_sparse_point_cloud = nullptr ;
-  m_viewport_camera = nullptr ;
+
 }
 
 

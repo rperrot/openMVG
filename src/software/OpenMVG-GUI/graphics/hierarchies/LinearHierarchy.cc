@@ -42,7 +42,7 @@ void LinearHierarchy::removeObject( std::shared_ptr<RenderableObject> obj )
   {
     if( it->get() == obj.get() )
     {
-      *it = nullptr ;
+      it->reset() ; 
       it = m_objects.erase( it ) ;
     }
     else
@@ -62,7 +62,7 @@ void LinearHierarchy::removePointClouds()
   {
     if( std::dynamic_pointer_cast<PointCloud>( *it ) )
     {
-      *it = nullptr ;
+      it->reset() ; 
       it = m_objects.erase( it ) ;
     }
     else
