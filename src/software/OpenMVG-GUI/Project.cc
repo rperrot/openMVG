@@ -60,6 +60,7 @@ Project::Project( const std::string & projectFile , std::shared_ptr<SceneManager
     m_viewport_camera( nullptr )
 {
   open( projectFile ) ;
+  m_sfm_data_helper = SfMDataHelper( m_sfm_data ) ;
 }
 
 /**
@@ -85,6 +86,7 @@ Project::Project( const std::string & base_path ,
   m_sparse_point_cloud( nullptr )
 {
   createProject( base_path , image_path , intrin_params , camera_sensor_width_database_file , progress ) ;
+  m_sfm_data_helper = SfMDataHelper( m_sfm_data ) ;
 }
 
 Project::~Project( void )
@@ -1114,8 +1116,10 @@ std::map< std::string , std::vector< openMVG::Vec2 > > Project::getFeaturesPosit
  * @param id The queried camera
  * @return list of all cameras linked to the queried one
  */
-std::vector<int> Project::linkedCameras( const int id ) const
+std::vector<int> Project::linkedViews( const int id ) const
 {
+  return m_sfm_data_helper.linkedViews( id ) ;
+  /*
   std::vector<IndexT> connected_views ;
   std::vector<IndexT> views_for_this_track ;
   for ( const auto & it_landmark : m_sfm_data->GetLandmarks() )
@@ -1146,9 +1150,18 @@ std::vector<int> Project::linkedCameras( const int id ) const
   const auto end = std::unique( connected_views.begin() , connected_views.end() ) ;
 
   return std::vector<int>( connected_views.begin() , end ) ;
+  */
 }
 
-
+/**
+ * @brief Get all camera linked to a given one
+ * @param id The queried camera
+ * @return list of all cameras linked to the queried one
+ */
+std::vector< std::pair<int, double> > Project::linkedViewsWithStrength( const int id ) const
+{
+  return m_sfm_data_helper.linkedViewsWithStrength( id ) ;
+}
 
 
 } // namespace openMVG_gui

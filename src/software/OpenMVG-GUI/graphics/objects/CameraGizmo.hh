@@ -12,7 +12,7 @@
 #include "openMVG/geometry/pose3.hpp"
 
 #include "RenderableObject.hh"
-#include "TriStateSelectableObject.hh"
+#include "WeightedSelectableObject.hh"
 
 namespace openMVG_gui
 {
@@ -21,7 +21,7 @@ namespace openMVG_gui
 * @brief Class holding a simple camera gizmo
 * @note Gizmo is a contained in a square of size x size x size
 */
-class CameraGizmo : public RenderableObject , public TriStateSelectableObject
+class CameraGizmo : public RenderableObject , public WeightedSelectableObject
 {
   public:
 

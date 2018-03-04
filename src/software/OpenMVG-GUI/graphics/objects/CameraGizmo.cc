@@ -597,6 +597,16 @@ void CameraGizmo::prepare( void )
   m_prepared = true ;
 }
 
+
+/**
+ * @brief Perform Linear interpolation in RGB 
+ * @note this is not a correct color interpolation but enough for our purpose
+ */
+static inline openMVG::Vec3 ColorInterpolation( const openMVG::Vec3 & a , const openMVG::Vec3 & b , const double t )
+{
+  return a * (1.0 - t ) + b * t ;
+}
+
 /**
 * @brief Draw code for the object
 */
@@ -604,12 +614,11 @@ void CameraGizmo::draw( void ) const
 {
   QOpenGLExtraFunctions *glFuncs = QOpenGLContext::currentContext()->extraFunctions();
 
-  if( ( selectionState() == TRI_STATE_SELECTION_FIRST ) ||
-      ( selectionState() == TRI_STATE_SELECTION_SECOND ) )
+  if( selected() )
   {
     m_shader->setUniform( "uUseUniformColor" , 1 ) ;
 
-    if( selectionState() == TRI_STATE_SELECTION_FIRST )
+    if( selectionWeight() > 1.0 )
     {
       // Camera selected
       const double r = 60.0 / 255.0 ;
@@ -620,10 +629,18 @@ void CameraGizmo::draw( void ) const
     else
     {
       // camera selected indirectly (because linked to the selected one)
-      const double r = 21.0 / 255.0 ;
-      const double g = 150 / 255.0 ;
+      const openMVG::Vec3 colLow( 21.0 / 255.0 , 70.0 / 255.0 , 0.0 ) ;
+      const openMVG::Vec3 colHigh( 60.0 / 255.0 , 254.0 / 255.0 , 39.0 / 255.0 ) ;
+
+      /*
+      const double r = 21.0 / 255.0 * selectionWeight() ;
+      const double g = 150 / 255.0 * selectionWeight() ;
       const double b = 0.0 / 255.0 ;
-      m_shader->setUniform( "uColor" , openMVG::Vec3( r , g , b ) ) ;
+      */
+
+      const openMVG::Vec3 col = ColorInterpolation( colLow , colHigh , selectionWeight() ) ;
+
+      m_shader->setUniform( "uColor" , col ) ; //openMVG::Vec3( r , g , b ) ) ;
     }
 
     glFuncs->glBindVertexArray( m_vao_selection ) ;

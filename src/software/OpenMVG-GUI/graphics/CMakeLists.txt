@@ -8,7 +8,8 @@ set( OPENMVG_GUI_GRAPHICS_HEADERS Camera.hh
                                   SceneManager.hh 
                                   Shader.hh 
                                   ShaderProgram.hh 
-                                  TriStateSelectableObject.hh )
+                                  TriStateSelectableObject.hh
+                                  WeightedSelectableObject.hh )
 set( OPENMVG_GUI_GRAPHICS_SOURCES Camera.cc 
                                   RenderableObject.cc 
                                   SceneHierarchy.cc 
@@ -16,7 +17,8 @@ set( OPENMVG_GUI_GRAPHICS_SOURCES Camera.cc
                                   SelectableObject.cc 
                                   Shader.cc 
                                   ShaderProgram.cc 
-                                  TriStateSelectableObject.cc )
+                                  TriStateSelectableObject.cc
+                                  WeightedSelectableObject.cc )
 
 add_library( OpenMVG_gui_graphics STATIC ${OPENMVG_GUI_GRAPHICS_HEADERS} ${OPENMVG_GUI_GRAPHICS_SOURCES} )
 target_link_libraries( OpenMVG_gui_graphics OpenMVG_gui_utils 

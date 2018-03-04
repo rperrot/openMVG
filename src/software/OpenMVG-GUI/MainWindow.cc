@@ -875,7 +875,7 @@ void MainWindow::onSelectImage( int id )
         std::shared_ptr<CameraGizmo> c_gizmo = std::dynamic_pointer_cast<CameraGizmo>( it ) ;
         if( c_gizmo.use_count() )
         {
-          c_gizmo->setSelectionState( TRI_STATE_SELECTION_NONE ) ;
+          c_gizmo->setSelectionWeight( -1.0 ) ; // setSelectionState( TRI_STATE_SELECTION_NONE ) ;
         }
       }
 
@@ -885,18 +885,18 @@ void MainWindow::onSelectImage( int id )
         std::shared_ptr<CameraGizmo> c_gizmo = std::dynamic_pointer_cast<CameraGizmo>( gizmo ) ;
         if( c_gizmo.use_count() )
         {
-          c_gizmo->setSelectionState( TRI_STATE_SELECTION_FIRST );
+          c_gizmo->setSelectionWeight( 2.0 ) ; // TRI_STATE_SELECTION_FIRST );
         }
       }
 
-      const std::vector<int> linked = m_project->linkedCameras( id ) ;
+      const std::vector<std::pair<int, double> > linked = m_project->linkedViewsWithStrength( id ) ;
       for( const auto linked_id : linked )
       {
-        std::shared_ptr<RenderableObject> gizmo = mgr->cameraGizmo( linked_id ) ;
+        std::shared_ptr<RenderableObject> gizmo = mgr->cameraGizmo( linked_id.first ) ;
         std::shared_ptr<CameraGizmo> c_gizmo = std::dynamic_pointer_cast<CameraGizmo>( gizmo ) ;
         if( c_gizmo.use_count() )
         {
-          c_gizmo->setSelectionState( TRI_STATE_SELECTION_SECOND );
+          c_gizmo->setSelectionWeight( linked_id.second ) ; // TRI_STATE_SELECTION_SECOND );
         }
 
       }

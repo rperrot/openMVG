@@ -9,6 +9,10 @@
 #ifndef _OPENMVG_SOFTWARE_OPENMVG_GUI_PROJECT_HH_
 #define _OPENMVG_SOFTWARE_OPENMVG_GUI_PROJECT_HH_
 
+
+#include "graphics/Camera.hh"
+#include "graphics/SceneManager.hh"
+
 #include "workflow_params/FeatureParams.hh"
 #include "workflow_params/GlobalSfMParams.hh"
 #include "workflow_params/IncrementalSfMParams.hh"
@@ -16,8 +20,7 @@
 #include "workflow_params/MatchingParams.hh"
 #include "workflow_params/SfMMethod.hh"
 
-#include "graphics/Camera.hh"
-#include "graphics/SceneManager.hh"
+#include "utils/SfMDataHelper.hh"
 
 #include "ProjectPaths.hh"
 
@@ -296,7 +299,14 @@ class Project
      * @param id The queried camera
      * @return list of all cameras linked to the queried one
      */
-    std::vector<int> linkedCameras( const int id ) const ;
+    std::vector<int> linkedViews( const int id ) const ;
+
+    /**
+     * @brief Get all camera linked to a given one
+     * @param id The queried camera
+     * @return list of all cameras linked to the queried one and their associated weights
+     */
+    std::vector< std::pair<int, double> > linkedViewsWithStrength( const int id ) const ;
 
   private:
 
@@ -344,6 +354,8 @@ class Project
 
     // The sfm data file
     std::shared_ptr<openMVG::sfm::SfM_Data> m_sfm_data ;
+    // Helper class used to compute some stats on SfM data file 
+    SfMDataHelper m_sfm_data_helper ;
 
     // Indicate if mask is enabled
     std::map< int , bool > m_mask_enabled ;

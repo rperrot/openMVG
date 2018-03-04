@@ -19,6 +19,8 @@ set_target_properties( OpenMVG_gui_workflow_params PROPERTIES CXX_STANDARD 11 )
 
 target_link_libraries( OpenMVG_gui_workflow_params openMVG_camera openMVG_features openMVG_sfm )
 
+target_include_directories( OpenMVG_gui_workflow_params PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../ )
+
 set_property(TARGET OpenMVG_gui_workflow_params PROPERTY FOLDER OpenMVG/software/OpenMVG_gui)
 
 add_subdirectory( widgets )
