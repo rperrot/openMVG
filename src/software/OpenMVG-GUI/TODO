@@ -1,8 +1,6 @@
 - Provide clickable cameras 
 
-- Interface to interact with sfm_data (intrinsics) 
 - Interface to show matches between pairs 
-- Interface to show features on a given image 
 
 - "Save as..." project 
 
@@ -10,3 +8,8 @@
 
 - Get back GPS priors
 - Node like reconstruction pipeline building 
+
+- Helper class used to get informations on sfm_data :
+  - Get all view linked to a specific one 
+  - Get all view-pairs 
+  - Get a score (0-1) on all view-pairs
