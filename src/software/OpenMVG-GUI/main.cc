@@ -30,8 +30,8 @@ int main( int argc , char ** argv )
 
   QApplication app( argc , argv ) ;
   setlocale( LC_ALL, "C" ) ;
-  setlocale( LC_NUMERIC, "C" ) ;
-
+  setlocale( LC_NUMERIC, "C" ) ; 
+ 
   QLocale locale( QLocale::C ) ; 
   QLocale::setDefault( locale ) ; 
 

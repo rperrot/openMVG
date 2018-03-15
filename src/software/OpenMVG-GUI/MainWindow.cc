@@ -645,6 +645,7 @@ void MainWindow::onChangeSfMSettings( void )
 */
 void MainWindow::onHasCreatedProject( const WorkerNextAction & next_action  )
 {
+  qInfo( "Project created" ) ;
   delete m_progress_dialog ;
   m_progress_dialog = nullptr ;
 

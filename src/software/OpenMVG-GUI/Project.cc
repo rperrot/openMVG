@@ -608,10 +608,13 @@ void Project::createProject( const std::string & base_path ,
       continue;
     }
 
+    std::cout << "Image file : " << sImageFilename << std::endl ;
+
     ImageHeader imgHeader;
     QImage img( sImageFilename.c_str() ) ;
     if ( img.isNull() ) // openMVG::image::ReadImageHeader( sImageFilename.c_str(), &imgHeader ) )
     {
+      std::cout << "Input image is null" << std::endl ;
       if( progress )
       {
         ++( *progress ) ;

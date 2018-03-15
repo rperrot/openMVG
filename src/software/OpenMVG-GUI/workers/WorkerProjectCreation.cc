@@ -76,11 +76,16 @@ void WorkerProjectCreation::process( void )
 
   try
   {
-    m_project = std::make_shared<Project>( m_project_base_path, m_input_image_path, m_intrin_params, m_database_path,
-                                           m_scn_manager, progressInterface );
+    m_project = std::make_shared<Project>( m_project_base_path,
+                                           m_input_image_path,
+                                           m_intrin_params,
+                                           m_database_path,
+                                           m_scn_manager,
+                                           progressInterface );
   }
   catch ( std::runtime_error &err )
   {
+    qInfo( "Error at project creation" );
     std::cerr << "Error while creating project: " << err.what() << std::endl;
     emit progress( vec_image.size() + 2 );
     emit finished( NEXT_ACTION_ERROR );
@@ -97,6 +102,7 @@ void WorkerProjectCreation::process( void )
   if ( !Save( *sfm_data, stlplus::create_filespec( matchesPath, "sfm_data.json" ).c_str(),
               openMVG::sfm::ESfM_Data( openMVG::sfm::ESfM_Data::VIEWS | openMVG::sfm::ESfM_Data::INTRINSICS ) ) )
   {
+    qInfo( "Error at project saving" ) ;
     std::cerr << "Error while saving sfm_data.json" << std::endl;
     emit progress( vec_image.size() + 2 );
     emit finished( NEXT_ACTION_ERROR );
