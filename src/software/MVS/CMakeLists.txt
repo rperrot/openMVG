@@ -38,7 +38,7 @@ SET( OPENMVG_COMPUTE_DEPTH_MAPS_HEADERS Camera.hpp
 
 ADD_EXECUTABLE( openMVG_main_computeDepthMaps ${OPENMVG_COMPUTE_DEPTH_MAPS_HEADERS} ${OPENMVG_COMPUTE_DEPTH_MAPS_SOURCES} ) 
 target_include_directories( openMVG_main_computeDepthMaps PRIVATE ${OpenCL_INCLUDE_DIRS} )
-target_link_libraries( openMVG_main_computeDepthMaps openMVG_image openMVG_multiview openMVG_sfm openMVG_features ${OpenCL_LIBRARIES} )
+target_link_libraries( openMVG_main_computeDepthMaps openMVG_image openMVG_multiview openMVG_sfm openMVG_features ${OpenCL_LIBRARIES} stlplus )
 
 
 # FUSION
@@ -64,7 +64,7 @@ SET( OPENMVS_FUSION_DEPTH_MAPS_HEADERS Camera.hpp
 
 ADD_EXECUTABLE( openMVG_main_fusionDepthMaps ${OPENMVS_FUSION_DEPTH_MAPS_HEADERS} ${OPENMVG_FUSION_DEPTH_MAPS_SOURCES} ) 
 target_include_directories( openMVG_main_fusionDepthMaps PRIVATE ${OpenCL_INCLUDE_DIRS} )
-target_link_libraries( openMVG_main_fusionDepthMaps openMVG_image openMVG_multiview openMVG_sfm ${OpenCL_LIBRARIES} )
+target_link_libraries( openMVG_main_fusionDepthMaps openMVG_image openMVG_multiview openMVG_sfm ${OpenCL_LIBRARIES} stlplus )
 
 
 

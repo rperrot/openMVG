@@ -6,6 +6,8 @@
 #include "openMVG/multiview/essential.hpp"
 #include "openMVG/numeric/numeric_io_cereal.hpp"
 
+#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
+
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/types/string.hpp> // std::string 
 #include <cereal/types/utility.hpp> // std::pair
