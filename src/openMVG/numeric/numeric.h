@@ -297,11 +297,11 @@ inline double FrobeniusDistance( const TMat &A, const TMat &B )
 
 
 /**
-* @brief Compute similarity of matrices given cosine similarity mesure
+* @brief Compute similarity of matrices given cosine similarity measure
 * \f$ \cos( A , B ) = \frac{ A . B }{ \| A \|_2 \| B \|_2 } \f$
 * @param a First matrix
 * @param b Second matrix
-* @return cosine similarity mesure between the input matrices
+* @return cosine similarity measure between the input matrices
 */
 template<class TMat>
 double CosinusBetweenMatrices( const TMat &a, const TMat &b )
@@ -410,9 +410,9 @@ void minMaxMeanMedian( DataInputIterator begin, DataInputIterator end )
  ** @param nb_split Number of desired split
  ** @param d_range Output splitted range
  **/
-template < typename T >
+template <typename T>
 void SplitRange( const T range_start , const T range_end , const int nb_split ,
-                 std::vector< T > & d_range )
+                 std::vector<T > & d_range )
 {
   const T range_length = range_end - range_start;
   if (range_length < nb_split )

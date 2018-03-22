@@ -85,7 +85,7 @@ public:
   //--
   SIFT_Image_describer
   (
-    const Params params = Params(),
+    const Params & params = Params(),
     bool bOrientation = true
   ):Image_describer(), _params(params), _bOrientation(bOrientation)
   {

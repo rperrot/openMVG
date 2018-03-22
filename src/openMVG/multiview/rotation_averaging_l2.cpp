@@ -104,7 +104,7 @@ bool L2RotationAveraging
   //--
   // Setup the Action Matrix
   //--
-  std::vector<Eigen::Triplet<double> > tripletList;
+  std::vector<Eigen::Triplet<double>> tripletList;
   tripletList.reserve(nRotationEstimation*12); // 3*3 + 3
   //-- Encode constraint (6.62 Martinec Thesis page 100):
   sMat::Index cpt = 0;
@@ -154,7 +154,7 @@ bool L2RotationAveraging
   // else
   {
     // Sort abs(eigenvalues)
-    std::vector<std::pair<double, Vec> > eigs(AtA.cols());
+    std::vector<std::pair<double, Vec>> eigs(AtA.cols());
     for (Mat::Index i = 0; i < AtA.cols(); ++i)
     {
       eigs[i] = {es.eigenvalues()[i], es.eigenvectors().col(i)};

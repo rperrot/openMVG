@@ -5,12 +5,6 @@
 find_package( Qt5Widgets )
 
 if(Qt5Widgets_FOUND)
-  # CMake version control
-  CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
-
-  if(POLICY CMP0020)
-  cmake_policy(SET CMP0020 OLD)
-  endif(POLICY CMP0020)
 
   set(CMAKE_INCLUDE_CURRENT_DIR ON)
   set(CMAKE_AUTOMOC ON)
@@ -21,17 +15,18 @@ if(Qt5Widgets_FOUND)
   # All Source Files here
   SET(SourceFiles
   main.cpp
-  mainLayout.cpp
-  GraphicsMainWindow.cpp
+  MainWindow.cpp
+  GraphicsView.cpp
   ControlPointTableView.cpp
-  node.cpp)
+  ControlPoint2DNode.cpp)
 
   # All non moc header files here
   SET(HeaderFiles
-  mainLayout.hpp
-  GraphicsMainWindow.hpp
-  node.hpp
-  document.hpp)
+  MainWindow.hpp
+  GraphicsView.hpp
+  ControlPoint2DNode.hpp
+  document.hpp
+  ControlPointTableView.hpp)
 
   # ==============================================================================
   # Add the following files, modules and libraries to the project.

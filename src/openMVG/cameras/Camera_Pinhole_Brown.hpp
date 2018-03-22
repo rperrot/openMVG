@@ -156,22 +156,17 @@ class Pinhole_Intrinsic_Brown_T2 : public Pinhole_Intrinsic
       if ( !(param & (int)Intrinsic_Parameter_Type::ADJUST_FOCAL_LENGTH)
           || param & (int)Intrinsic_Parameter_Type::NONE )
       {
-        constant_index.push_back(0);
+        constant_index.insert(constant_index.end(), 0);
       }
       if ( !(param & (int)Intrinsic_Parameter_Type::ADJUST_PRINCIPAL_POINT)
           || param & (int)Intrinsic_Parameter_Type::NONE )
       {
-        constant_index.push_back(1);
-        constant_index.push_back(2);
+        constant_index.insert(constant_index.end(), {1, 2});
       }
       if ( !(param & (int)Intrinsic_Parameter_Type::ADJUST_DISTORTION)
           || param & (int)Intrinsic_Parameter_Type::NONE )
       {
-        constant_index.push_back(3);
-        constant_index.push_back(4);
-        constant_index.push_back(5);
-        constant_index.push_back(6);
-        constant_index.push_back(7);
+        constant_index.insert(constant_index.end(), {3, 4, 5, 6, 7});
       }
       return constant_index;
     }
@@ -237,8 +232,7 @@ class Pinhole_Intrinsic_Brown_T2 : public Pinhole_Intrinsic
       const double k_diff = ( k1 * r2 + k2 * r4 + k3 * r6 );
       const double t_x = t2 * ( r2 + 2 * p( 0 ) * p( 0 ) ) + 2 * t1 * p( 0 ) * p( 1 );
       const double t_y = t1 * ( r2 + 2 * p( 1 ) * p( 1 ) ) + 2 * t2 * p( 0 ) * p( 1 );
-      Vec2 d( p( 0 ) * k_diff + t_x, p( 1 ) * k_diff + t_y );
-      return d;
+      return { p( 0 ) * k_diff + t_x, p( 1 ) * k_diff + t_y};
     }
 };
 

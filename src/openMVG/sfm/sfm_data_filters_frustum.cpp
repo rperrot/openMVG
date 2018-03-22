@@ -62,7 +62,7 @@ void Frustum_Filter::initFrustum
     const Pose3 pose = sfm_data.GetPoseOrDie(view);
 
     const Pinhole_Intrinsic * cam = dynamic_cast<const Pinhole_Intrinsic*>(iterIntrinsic->second.get());
-    if (cam == nullptr)
+    if (!cam)
       continue;
 
     if (!_bTruncated) // use infinite frustum
@@ -91,7 +91,7 @@ const
   // List active view Id
   std::vector<IndexT> viewIds;
   viewIds.reserve(z_near_z_far_perView.size());
-  std::transform(z_near_z_far_perView.begin(), z_near_z_far_perView.end(),
+  std::transform(z_near_z_far_perView.cbegin(), z_near_z_far_perView.cend(),
     std::back_inserter(viewIds), stl::RetrieveKey());
 
   C_Progress_display my_progress_bar(

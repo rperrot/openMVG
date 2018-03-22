@@ -13,8 +13,6 @@
 
 #include "openMVG/types.hpp"
 
-#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
-
 namespace openMVG {
 namespace sfm {
 
@@ -60,9 +58,6 @@ struct View
   template <class Archive>
   void load( Archive & ar );
 };
-
-/// Define a collection of View
-using Views = Hash_Map<IndexT, std::shared_ptr<View> >;
 
 } // namespace sfm
 } // namespace openMVG

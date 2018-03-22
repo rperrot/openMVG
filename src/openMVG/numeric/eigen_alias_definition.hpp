@@ -48,7 +48,7 @@ namespace std {                                                            \
     explicit vector(iterator start, iterator end) : vector_base(start, end) {}      \
     vector& operator=(const vector& x) = default;                          \
     /* Add initializer list constructor support*/                          \
-    vector(initializer_list<__VA_ARGS__> list)                             \
+    vector(std::initializer_list<__VA_ARGS__> list)                             \
         : vector_base(list.begin(), list.end()) {}                         \
   };                                                                       \
 }  // namespace std
@@ -127,7 +127,7 @@ namespace openMVG
   /// 4xN matrix using double internal format
   using Mat4X = Eigen::Matrix<double, 4, Eigen::Dynamic>;
 
-  /// 9xN matrix using double internal format
+  /// Nx9 matrix using double internal format
   using MatX9 = Eigen::Matrix<double, Eigen::Dynamic, 9>;
 
   //-- Sparse Matrix (Column major, and row major)

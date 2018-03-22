@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
     image_describer = AKAZE_Image_describer::create
       (AKAZE_Image_describer::Params(AKAZE::Params(), AKAZE_MLDB));
 
-  if (image_describer == nullptr)
+  if (!image_describer)
   {
     std::cerr << "Invalid Image_describer type" << std::endl;
     return EXIT_FAILURE;
@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
   //--
   // Detect regions thanks to the image_describer
   //--
-  std::map<IndexT, std::unique_ptr<features::Regions> > regions_perImage;
+  std::map<IndexT, std::unique_ptr<features::Regions>> regions_perImage;
   image_describer->Describe(imageL, regions_perImage[0]);
   image_describer->Describe(imageR, regions_perImage[1]);
 

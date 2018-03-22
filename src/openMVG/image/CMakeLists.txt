@@ -15,23 +15,24 @@ file(GLOB_RECURSE REMOVEFILESUNITTEST *_test.cpp)
 list(REMOVE_ITEM image_files_cpp ${REMOVEFILESUNITTEST})
 
 add_library(openMVG_image ${image_files_header} ${image_files_cpp})
-target_link_libraries(
-  openMVG_image
+target_link_libraries(openMVG_image
+  PUBLIC
     openMVG_numeric
+  PRIVATE
     ${JPEG_LIBRARIES}
     ${PNG_LIBRARIES}
-    ${TIFF_LIBRARIES})
-target_include_directories(
-  openMVG_image
-    PRIVATE
-      ${JPEG_INCLUDE_DIR}
-      ${PNG_INCLUDE_DIRS}
-      ${TIFF_INCLUDE_DIR})
+    ${TIFF_LIBRARIES}
+)
+target_include_directories(openMVG_image
+  PUBLIC
+    $<INSTALL_INTERFACE:include>
+)
 set_target_properties(openMVG_image PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")
 install(TARGETS openMVG_image DESTINATION lib EXPORT openMVG-targets)
 
 UNIT_TEST(openMVG image "openMVG_image")
 UNIT_TEST(openMVG image_drawing "openMVG_image")
+UNIT_TEST(openMVG image_integral "openMVG_image")
 UNIT_TEST(openMVG image_io "openMVG_image")
 UNIT_TEST(openMVG image_filtering "openMVG_image")
 UNIT_TEST(openMVG image_resampling "openMVG_image")

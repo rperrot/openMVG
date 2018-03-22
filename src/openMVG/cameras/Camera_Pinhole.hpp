@@ -127,17 +127,16 @@ class Pinhole_Intrinsic : public IntrinsicBase
     */
     inline Vec2 principal_point() const
     {
-      return Vec2( K_( 0, 2 ), K_( 1, 2 ) );
+      return {K_( 0, 2 ), K_( 1, 2 )};
     }
 
-
     /**
-    * @brief Get bearing vector of a point given an image coordinate
-    * @return bearing vector
+    * @brief Get bearing vectors from image coordinates
+    * @return bearing vectors
     */
-    Vec3 operator () ( const Vec2& p ) const override
+    Mat3X operator () ( const Mat2X& points ) const override
     {
-      return (Kinv_ * p.homogeneous()).normalized();
+      return Kinv_ * points.colwise().homogeneous();
     }
 
     /**
@@ -254,13 +253,12 @@ class Pinhole_Intrinsic : public IntrinsicBase
       if ( !(param & (int)Intrinsic_Parameter_Type::ADJUST_FOCAL_LENGTH)
            || param & (int)Intrinsic_Parameter_Type::NONE )
       {
-        constant_index.push_back(0);
+        constant_index.insert(constant_index.end(), 0);
       }
       if ( !(param & (int)Intrinsic_Parameter_Type::ADJUST_PRINCIPAL_POINT)
           || param & (int)Intrinsic_Parameter_Type::NONE )
       {
-        constant_index.push_back(1);
-        constant_index.push_back(2);
+        constant_index.insert(constant_index.end(), {1, 2});
       }
       return constant_index;
     }
