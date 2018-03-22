@@ -91,6 +91,7 @@ if(UNIX AND (CMAKE_COMPILER_IS_GNUCXX OR CV_ICC))
 endif()
 
 add_library(tiff STATIC ${lib_srcs} ${lib_headers})
+add_library(tiff::lib ALIAS tiff)
 target_link_libraries(tiff PUBLIC zlib)
 SET_PROPERTY(TARGET tiff PROPERTY FOLDER OpenMVG/3rdParty)
 

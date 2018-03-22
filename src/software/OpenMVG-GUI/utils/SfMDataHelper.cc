@@ -3,6 +3,7 @@
 #include "openMVG/sfm/sfm_data.hpp"
 
 #include <algorithm>
+#include <utility>
 
 bool pairCompareFirst( const std::pair<int, double> & a , const std::pair<int, double> & b )
 {
@@ -14,6 +15,11 @@ bool pairEqualFirst( const std::pair<int, double> & a , const std::pair<int, dou
   return a.first == b.first ;
 }
 
+bool pairIntIntSorted( const std::pair<int, int> & a , const std::pair<int, int> & b )
+{
+  return a.first < b.first ||
+         ( ( a.first == b.first ) && ( a.second < b.second ) ) ;
+}
 
 
 
@@ -155,6 +161,31 @@ std::vector< std::pair<int, int> > SfMDataHelper::allViewPairs( void ) const
     return {} ;
   }
 
+  std::vector<std::pair<int, int>> all_pairs ;
+  std::vector<int> cur_track_views ;
+  for ( const auto & it_landmark : m_sfm_data->GetLandmarks() )
+  {
+    const openMVG::sfm::Observations & obs = it_landmark.second.obs;
+    bool track_interesting = false ;
+    cur_track_views.clear();
+
+    for ( const auto & it_obs : obs )
+    {
+      cur_track_views.emplace_back( static_cast<int>( it_obs.first ) ) ;
+    }
+
+    for( int i = 0 ; i < cur_track_views.size() ; ++i )
+    {
+      for( int j = i + 1 ; j < cur_track_views.size() ; ++j )
+      {
+        all_pairs.emplace_back( std::make_pair( cur_track_views[i] , cur_track_views[j] ) ) ;
+      }
+    }
+  }
+  std::sort( all_pairs.begin() , all_pairs.end() , pairIntIntSorted ) ;
+  const auto end = std::unique( all_pairs.begin() , all_pairs.end() ) ;
+
+  return std::vector<std::pair<int, int>>( all_pairs.begin() , end ) ;
 }
 
 /**

@@ -23,7 +23,8 @@ if(WIN32)
   add_definitions( -DJPEGSTATIC -D_CRT_SECURE_NO_WARNINGS)
 endif(WIN32)
 
-add_library (jpeg STATIC ${SRC} ${HEADERS})
+add_library(jpeg STATIC ${SRC} ${HEADERS})
+add_library( jpeg::lib ALIAS jpeg )
 set_property(TARGET jpeg PROPERTY FOLDER OpenMVG/3rdParty)
 
 if(JPEG_INCLUDE_INSTALL_DIR)

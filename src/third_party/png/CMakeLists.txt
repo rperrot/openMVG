@@ -64,6 +64,7 @@ if(MSVC)
   add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
 endif(MSVC)
 add_library(png STATIC ${libpng_sources})
+add_library(png::lib ALIAS png)
 target_link_libraries(png PUBLIC zlib ${M_LIBRARY})
 set_property(TARGET png PROPERTY FOLDER OpenMVG/3rdParty)
 
