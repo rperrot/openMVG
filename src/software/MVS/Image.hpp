@@ -95,7 +95,7 @@ class Image
     * @param id_col Index of the column
     * @return census bitstring for corresponding pixel
     */
-    unsigned long long census( const int id_row , const int id_col ) const ;
+    uint64_t census( const int id_row , const int id_col ) const ;
 
     /**
     * @brief Get reference to the Intensity image
@@ -113,7 +113,7 @@ class Image
     /**
     * @brief Get Census image
     */
-    const openMVG::image::Image<unsigned long long> & census( void ) const ;
+    const openMVG::image::Image<uint64_t> & census( void ) const ;
 
 
     /**
@@ -186,6 +186,11 @@ class Image
                const std::string & census_path ,
                const ImageLoadType & load = IMAGE_ALL ) ;
 
+    /**
+     * @brief Used for std::map usage
+     */
+    friend bool operator<( const Image & imgA , const Image & imgB ) ;
+
   private:
 
     /**
@@ -205,7 +210,7 @@ class Image
     // ( Dx , Dy , Dxy , Dyx ) -> Dxy and Dyx are not computed yet
     openMVG::image::Image< openMVG::Vec4 > m_gradient ;
     // Census transform for each pixel
-    openMVG::image::Image< unsigned long long > m_census ;
+    openMVG::image::Image< uint64_t > m_census ;
 } ;
 
 

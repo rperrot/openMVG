@@ -12,10 +12,62 @@ namespace MVS
 
 const double DepthMapComputationParameters::MAX_COST_NCC = 2.0 ;
 const double DepthMapComputationParameters::MAX_COST_PM = 10e6 ;
-const double DepthMapComputationParameters::MAX_COST_CENSUS = 10e4 ;
+const double DepthMapComputationParameters::MAX_COST_CENSUS = 2.0 ; //10e4 ;
+const double DepthMapComputationParameters::MAX_COST_DAISY = 1 ;
 
 
+std::string to_string( const PropagationScheme & pscheme )
+{
+  std::stringstream str ;
 
+  switch( pscheme )
+  {
+    case PROPAGATION_SCHEME_FULL:
+    {
+      str << "full" ;
+      break ;
+    }
+    case PROPAGATION_SCHEME_SPEED:
+    {
+      str << "speed" ;
+      break ;
+    }
+  }
+
+  return str.str() ;
+}
+
+
+std::string to_string( const cost_metric & metric )
+{
+  std::stringstream str ;
+
+  switch( metric )
+  {
+    case COST_METRIC_NCC:
+    {
+      str << "ncc" ;
+      break ;
+    }
+    case COST_METRIC_PM:
+    {
+      str << "patch-match" ;
+      break ;
+    }
+    case COST_METRIC_DAISY:
+    {
+      str << "daisy" ;
+      break ;
+    }
+    case COST_METRIC_CENSUS:
+    {
+      str << "census" ;
+      break ;
+    }
+  }
+
+  return str.str();
+}
 
 
 /**
@@ -39,6 +91,8 @@ DepthMapComputationParameters::DepthMapComputationParameters( const int scale ,
     const double tau_i ,
     const double tau_g ,
     const double gamma ,
+    // For PM propagation scheme
+    const PropagationScheme pScheme ,
     const double min_view_angle ,
     const double max_view_angle ,
     const int max_view_selection_nb ,
@@ -50,6 +104,7 @@ DepthMapComputationParameters::DepthMapComputationParameters( const int scale ,
     m_tau_i( tau_i ) ,
     m_tau_g( tau_g ) ,
     m_gamma( gamma ) ,
+    m_p_scheme( pScheme ) ,
     m_minimum_view_angle( min_view_angle ) ,
     m_maximum_view_angle( max_view_angle ) ,
     m_maximum_view_nb( max_view_selection_nb ) ,
@@ -88,6 +143,10 @@ double DepthMapComputationParameters::metricMaxCostValue( const cost_metric metr
     case COST_METRIC_CENSUS:
     {
       return MAX_COST_CENSUS ;
+    }
+    case COST_METRIC_DAISY :
+    {
+      return MAX_COST_DAISY ;
     }
   }
   return std::numeric_limits<double>::max() ;
@@ -137,6 +196,15 @@ double DepthMapComputationParameters::tauG( void ) const
 double DepthMapComputationParameters::gamma( void ) const
 {
   return m_gamma ;
+}
+
+/**
+ * @brief Get Propagation scheme
+ * @return Propagation Scheme
+ */
+PropagationScheme DepthMapComputationParameters::propagationScheme( void ) const
+{
+  return m_p_scheme ;
 }
 
 

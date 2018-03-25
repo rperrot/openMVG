@@ -248,7 +248,8 @@ static inline double DepthFromPlane( const MVS::Camera & cam ,
   const double u = K( 0 , 2 ) ;
   const double v = K( 1 , 2 ) ;
 
-  return -d * fx / ( n[0] * ( x - u ) + n[1] * ( y - v ) * alpha + n[2] * fx ) ;
+  return -d * fx / ( n[0] * ( x - u ) + 
+                     n[1] * ( y - v ) * alpha + n[2] * fx ) ;
 }
 
 /**

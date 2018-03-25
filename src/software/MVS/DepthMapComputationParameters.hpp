@@ -5,6 +5,18 @@
 
 namespace MVS
 {
+
+/**
+ * @brief Propagation Schemes as defined in GIPUMA publication
+ */
+enum PropagationScheme
+{
+  PROPAGATION_SCHEME_FULL , // Using 20 neighbors
+  PROPAGATION_SCHEME_SPEED  // Using 8 neighbors
+} ;
+
+std::string to_string( const PropagationScheme & pscheme ) ;
+
 /**
 * @brief Where are the pixel cost computed
 */
@@ -22,9 +34,11 @@ enum cost_metric
 {
   COST_METRIC_NCC ,
   COST_METRIC_PM ,
-  COST_METRIC_CENSUS
+  COST_METRIC_CENSUS ,
+  COST_METRIC_DAISY
 } ;
 
+std::string to_string( const cost_metric & metric ) ;
 
 
 struct DepthMapComputationParameters
@@ -33,6 +47,7 @@ struct DepthMapComputationParameters
   static const double MAX_COST_NCC ;
   static const double MAX_COST_PM ;
   static const double MAX_COST_CENSUS ;
+  static const double MAX_COST_DAISY ;
 
   /**
   * @brief Ctr
@@ -41,6 +56,7 @@ struct DepthMapComputationParameters
   * @param tau_i Threshold on intensity difference
   * @param tau_g Threshold on gradient difference
   * @param gamma Gaussian factor used to give less weight to far (in intensity) samples
+  * @param pScheme Propagation scheme (as defined in gipuma)
   * @param min_view_angle Minimum view angle for camera selection
   * @param max_view_angle Maximum view angle for camera selection
   * @param max_view_selection_nb Maximum number of view for view selection
@@ -56,13 +72,15 @@ struct DepthMapComputationParameters
                                  const double tau_i ,
                                  const double tau_g ,
                                  const double gamma ,
+                                 // For PM propagation scheme
+                                 const PropagationScheme pScheme ,
                                  // For view selection
                                  const double min_view_angle ,
                                  const double max_view_angle ,
                                  const int max_view_selection_nb ,
                                  // For multipleview cost computation
                                  const int nb_image_for_cost ,
-                                 // For convenience only
+                                 // For convenience only ,
                                  const std::string base_path ) ;
 
   /**
@@ -132,6 +150,12 @@ struct DepthMapComputationParameters
   * @return gaussian factor
   */
   double gamma( void ) const ;
+
+  /**
+   * @brief Get Propagation scheme
+   * @return Propagation Scheme
+   */
+  PropagationScheme propagationScheme( void ) const ;
 
   /**
   * @brief Get minimum view angle for view selection
@@ -245,6 +269,9 @@ struct DepthMapComputationParameters
 
   /// Gaussian factor to weight samples
   double m_gamma ;
+
+  /// Propagation scheme
+  PropagationScheme m_p_scheme ;
 
   /// Minimum angle for view selection (in degree)
   double m_minimum_view_angle ;

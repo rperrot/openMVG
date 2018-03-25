@@ -491,9 +491,9 @@ void DepthMap::exportNormal( const std::string & path ) const
       const int cgi = static_cast<int>( cg * 255.0 ) ;
       const int cbi = static_cast<int>( cb * 255.0 ) ;
 
-      const int val_r = cri < 0 ? 0 : cri > 255 ? 255 : cri ;
-      const int val_g = cgi < 0 ? 0 : cgi > 255 ? 255 : cgi ;
-      const int val_b = cbi < 0 ? 0 : cbi > 255 ? 255 : cbi ;
+      const int val_r = Clamp( cri , 0 , 255 ) ;
+      const int val_g = Clamp( cgi , 0 , 255 ) ;
+      const int val_b = Clamp( cbi , 0 , 255 ) ;
 
       outImg( id_row , id_col ) = openMVG::image::RGBColor( val_r , val_g , val_b ) ;
     }

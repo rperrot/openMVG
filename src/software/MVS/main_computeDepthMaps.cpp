@@ -17,7 +17,7 @@
 #include <iostream>
 #include <random>
 
-#define MULTISCALE
+// #define MULTISCALE
 // #define USE_OPENCL
 #define EXPORT_INTERMEDIATE_RESULT
 
@@ -373,7 +373,7 @@ void ComputeMultipleScaleDepthMap( MVS::Camera & cam ,
 #ifdef EXPORT_INTERMEDIATE_RESULT
       map.exportCost( GetRefinementCostName( id_step , scale ) ) ;
       map.exportToGrayscale( GetRefinementDepthName( id_step , scale ) ) ;
-      map.exportToPly( GetRefinementPlyName( id_step , scale ) , cam , MAX_COST / 20.0 ) ;
+      map.exportToPly( GetRefinementPlyName( id_step , scale ) , cam , MAX_COST / 20.0 , scale ) ;
       map.exportNormal( GetRefinementNormalName( id_step , scale ) ) ;
 #endif
 
@@ -471,9 +471,9 @@ void ComputeDepthMap( MVS::Camera & cam ,
 
   // Compute relative motion between current camera and it's neighbors
   std::vector<std::pair< openMVG::Mat3 , openMVG::Vec3 >> StereoRIG ;
-  for( size_t id_neigh = 0 ; id_neigh < cam.m_view_neighbors.size() ; ++id_neigh )
+  for( const size_t neighbor_id : cam.m_view_neighbors )
   {
-    StereoRIG.emplace_back( MVS::RelativeMotion( cam , cams[cam.m_view_neighbors[id_neigh] ] ) );
+    StereoRIG.emplace_back( MVS::RelativeMotion( cam , cams[neighbor_id] ) ) ;
   }
 
   // Initialize depth map
@@ -481,7 +481,7 @@ void ComputeDepthMap( MVS::Camera & cam ,
   const double min_disparity = cam.depthDisparityConversion( cam.m_max_depth * 1.2 ) ;
   const double max_disparity = cam.depthDisparityConversion( cam.m_min_depth * 0.8 ) ;
 
-  map.randomizePlanes( cam , min_disparity , max_disparity ) ; 
+  map.randomizePlanes( cam , min_disparity , max_disparity ) ;
   map.setGroundTruthDepth( cam , params , params.scale() ) ;
 
   auto start_time = std::chrono::high_resolution_clock::now() ;
@@ -497,7 +497,7 @@ void ComputeDepthMap( MVS::Camera & cam ,
 
 #ifdef EXPORT_INTERMEDIATE_RESULT
   map.exportToGrayscale( "init.png" ) ;
-  map.exportToPly( "init.ply" , cam , MAX_COST / 10.0 ) ;
+  map.exportToPly( "init.ply" , cam , MAX_COST / 20.0 ) ;
   map.exportCost( "init_cost.png" ) ;
   map.exportNormal( "init_normal.png" ) ;
 #endif
@@ -520,9 +520,9 @@ void ComputeDepthMap( MVS::Camera & cam ,
                krn_sort_n_store , krn_update_planes , krn_compute_depth ) ;
 #else
     // Red
-    Propagate( map , 0 , cam , cams , StereoRIG , image_ref , neigh_imgs , params ) ;
+    Propagate( map , 0 , cam , cams , StereoRIG , image_ref , neigh_imgs , params , params.scale() ) ;
     // Black
-    Propagate( map , 1 , cam , cams , StereoRIG , image_ref , neigh_imgs , params ) ;
+    Propagate( map , 1 , cam , cams , StereoRIG , image_ref , neigh_imgs , params , params.scale() ) ;
 
     // Propagate( map , 0 , cam , cams , StereoRIG , image_ref , params ) ;
     // Propagate( map , 1 , cam , cams , StereoRIG , image_ref , params ) ;
@@ -537,7 +537,7 @@ void ComputeDepthMap( MVS::Camera & cam ,
     strcost << "iter_" << id_iteration << "_cost.png" ;
     strnor << "iter_" << id_iteration << "_nor.png" ;
     map.exportToGrayscale( str.str() );
-    map.exportToPly( strplyspa.str() , cam , MAX_COST / 10.0 ) ;
+    map.exportToPly( strplyspa.str() , cam , MAX_COST / 20.0 ) ;
     map.exportCost( strcost.str() ) ;
     map.exportNormal( strnor.str() ) ;
 #endif
@@ -548,9 +548,7 @@ void ComputeDepthMap( MVS::Camera & cam ,
     Refinement( map , cam , cams , StereoRIG , image_ref , params ,
                 clWObject , krn_cost_full , krn_sum_kernel , krn_sort_n_store , krn_update_planes2 , krn_compute_planes ) ;
 #else
-    Refinement( map , cam , cams , StereoRIG , image_ref , neigh_imgs , params ) ;
-
-    //    Refinement( map , cam , cams , StereoRIG , image_ref , params ) ;
+    Refinement( map , cam , cams , StereoRIG , image_ref , neigh_imgs , params , params.scale() ) ;
 #endif
     end_time = std::chrono::high_resolution_clock::now() ;
 
@@ -563,7 +561,7 @@ void ComputeDepthMap( MVS::Camera & cam ,
     strcostref << "iter_" << id_iteration << "_cost_ref.png" ;
     strnorref << "iter_" << id_iteration << "_nor_ref.png" ;
     map.exportToGrayscale( str2.str() ) ;
-    map.exportToPly( strply.str() , cam , MAX_COST / 10.0 ) ;
+    map.exportToPly( strply.str() , cam , MAX_COST / 20.0 ) ;
     map.exportCost( strcostref.str() ) ;
     map.exportNormal( strnorref.str() ) ;
 #endif
@@ -604,8 +602,9 @@ int main( int argc , char ** argv )
   double kMaxAngleSelection = 60.0 ; // Maximum view angle for elements
   int kMaxViewSelectionNb = 9 ; // Maximum of neighbors for view selection
   int kMaxViewPerCost = 3 ; //
+  MVS::PropagationScheme kScheme = MVS::PROPAGATION_SCHEME_SPEED ;
 
-  MVS::cost_metric kMetric = MVS::COST_METRIC_CENSUS ;
+  MVS::cost_metric kMetric = MVS::COST_METRIC_NCC ;
 
   cmd.add( make_option( 'i', sSfM_Data_Filename, "input_file" ) ) ;
   cmd.add( make_option( 'o', sOutDir, "outdir" ) ) ;
@@ -616,7 +615,7 @@ int main( int argc , char ** argv )
   cmd.add( make_option( 'g', kTauGrad , "thresholdGradient" ) ) ;
   cmd.add( make_option( 'f', kForceOverwrite , "forceOverwrite" ) ) ;
   cmd.add( make_option( 'm', kMinAngleSelection , "minAngleSelection" ) );
-  cmd.add( make_option( 'm', kMaxAngleSelection , "maxAngleSelection" ) ) ;
+  cmd.add( make_option( 'M', kMaxAngleSelection , "maxAngleSelection" ) ) ;
   cmd.add( make_option( 's', kMaxViewSelectionNb , "maxViewSelectionNb" ) ) ;
   cmd.add( make_option( 'k', kMaxViewPerCost , "maxImageForCost" ) ) ;
   cmd.add( make_option( 'y', kGamma , "gamma" ) ) ;
@@ -624,7 +623,6 @@ int main( int argc , char ** argv )
   cmd.process( argc, argv );
 
   std::cerr << "metric : " << sCostMetric << std::endl ;
-  std::cerr << "to_lower : " << MVS::to_lower( sCostMetric ) << std::endl ;
 
   if( MVS::to_lower( sCostMetric ) == "ncc" )
   {
@@ -638,9 +636,13 @@ int main( int argc , char ** argv )
   {
     kMetric = MVS::COST_METRIC_CENSUS ;
   }
+  else if( MVS::to_lower( sCostMetric ) == "daisy" )
+  {
+    kMetric = MVS::COST_METRIC_DAISY ;
+  }
   else
   {
-    std::cerr << "Unknown metric (PM of NCC are the only valid choices)" << std::endl ;
+    std::cerr << "Unknown metric" << std::endl ;
     std::cerr << "Switch back to census metric " << std::endl ;
   }
 
@@ -648,17 +650,18 @@ int main( int argc , char ** argv )
   std::cout << "input                   : " << sSfM_Data_Filename << std::endl ;
   std::cout << "outdir                  : " << sOutDir << std::endl ;
   std::cout << "scale                   : " << kScale << std::endl ;
-  std::cout << "metric                  : " << ( ( kMetric == MVS::COST_METRIC_PM ) ? "PM " : ( kMetric == MVS::COST_METRIC_CENSUS ) ? "census" : "NCC" ) << std::endl ;
+  std::cout << "metric                  : " << to_string( kMetric ) << std::endl ;
   std::cout << "alpha                   : " << kAlpha << std::endl ;
   std::cout << "Tau I                   : " << kTauCol << std::endl ;
   std::cout << "Tau G                   : " << kTauGrad << std::endl ;
   std::cout << "Gamma                   : " << kGamma << std::endl ;
+  std::cout << "Propagation scheme      : " << to_string( kScheme ) << std::endl ;
   std::cout << "Min angle               : " << kMinAngleSelection << std::endl ;
   std::cout << "Max angle               : " << kMaxAngleSelection << std::endl ;
   std::cout << "Max neighbor (S)        : " << kMaxViewSelectionNb << std::endl ;
   std::cout << "Max view for cost (K)   : " << kMaxViewPerCost << std::endl ;
 
-  MVS::DepthMapComputationParameters params( kScale , kMetric , kAlpha , kTauCol , kTauGrad , kGamma , kMinAngleSelection , kMaxAngleSelection , kMaxViewSelectionNb , kMaxViewPerCost , sOutDir ) ;
+  MVS::DepthMapComputationParameters params( kScale , kMetric , kAlpha , kTauCol , kTauGrad , kGamma , kScheme , kMinAngleSelection , kMaxAngleSelection , kMaxViewSelectionNb , kMaxViewPerCost , sOutDir ) ;
 
   // Load the SfM data
   openMVG::sfm::SfM_Data sfm_data ;

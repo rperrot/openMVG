@@ -102,7 +102,7 @@ unsigned char Image::intensity( const openMVG::Vec2i & pos ) const
 * @param id_col Index of the column
 * @return census bitstring for corresponding pixel
 */
-unsigned long long Image::census( const int id_row , const int id_col ) const
+uint64_t Image::census( const int id_row , const int id_col ) const
 {
   return m_census.coeffRef( id_row , id_col ) ;
 }
@@ -380,6 +380,51 @@ bool Image::load( const std::string & color_path ,
   return true ;
 }
 
+/**
+ * @brief Used for std::map usage
+ */
+bool operator<( const Image & imgA , const Image & imgB )
+{
+  if( imgA.m_color.data() < imgB.m_color.data() )
+  {
+    return true ;
+  }
+  else if( imgA.m_color.data() > imgB.m_color.data() )
+  {
+    return false ;
+  }
+  else
+  {
+    // m_color == m_color
+    if( imgA.m_grayscale.data() < imgB.m_grayscale.data() )
+    {
+      return true ;
+    }
+    else if( imgA.m_grayscale.data() > imgB.m_grayscale.data() )
+    {
+      return false ;
+    }
+    else
+    {
+      // m_color == m_color && m_grayscale == m_grayscale
+      if( imgA.m_gradient.data() < imgB.m_gradient.data() )
+      {
+        return true ;
+      }
+      else if( imgA.m_gradient.data() > imgB.m_gradient.data() )
+      {
+        return false ;
+      }
+      else
+      {
+        // m_color == m_color && m_grayscale == m_grayscale && m_gradient == m_gradient
+        return imgA.m_census.data() < imgB.m_census.data() ;
+      }
+    }
+  }
+}
+
+
 const openMVG::image::Image<unsigned char> & Image::intensity( void ) const
 {
   return m_grayscale ;
@@ -393,7 +438,7 @@ const openMVG::image::Image<openMVG::Vec4> & Image::gradient( void ) const
 /**
 * @brief Get Census image
 */
-const openMVG::image::Image<unsigned long long> & Image::census( void ) const
+const openMVG::image::Image<uint64_t> & Image::census( void ) const
 {
   return m_census ;
 }
@@ -520,7 +565,7 @@ void Image::computeCensus( void )
 
 #endif
 
-      unsigned long long  census = 0 ;
+      uint64_t  census = 0 ;
 
 #ifdef STAR_CENSUS_TRANSFORM
       // Ref : https://www.spiedigitallibrary.org/journals/Optical-Engineering/volume-55/issue-06/063107/Improved-census-transform-for-noise-robust-stereo-matching/10.1117/1.OE.55.6.063107.full?SSO=1

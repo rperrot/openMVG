@@ -7,31 +7,21 @@
 #include <cmath>
 #include <string>
 
-/*
-#define MAX_COST_PM 10e6
-#define MAX_COST_NCC 2.0
-
-//#define DO_NCC
-#ifdef DO_NCC
-  #define MAXIMUM_COST MAX_COST_NCC
-#else
-  #define MAXIMUM_COST MAX_COST_PM
-#endif
-*/
-
-
 namespace MVS
 {
 /**
-* @brief Convert a string to a lowercase form
+* @brief Convert a string to a lowercase form 
 */
 std::string to_lower( const std::string & str ) ;
 
 // Count the number of bit set to one
 // @see wikipedia page hamming_weight
 // @todo enable popcnt on CPU that supports it
-static inline int popcount( const unsigned long long val )
+static inline int popcount( const uint64_t val )
 {
+#ifdef HAVE_POPCNT 
+  return __builtin_popcountll( val ) ; 
+#else 
   uint64_t x = val ;
 
   uint64_t m1 = 0x5555555555555555ll;
@@ -44,6 +34,7 @@ static inline int popcount( const unsigned long long val )
   x = ( x + ( x >> 4 ) ) & m4;
 
   return ( x * h01 ) >> 56;
+#endif 
 }
 
 /**

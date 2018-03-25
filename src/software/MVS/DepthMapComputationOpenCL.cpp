@@ -124,6 +124,11 @@ cl_mem ComputeCost( cl_mem & outCost ,
       has_gradient = false ;
       has_census = true ;
     }
+    case COST_METRIC_DAISY:
+    {
+      has_gradient = false ; 
+      has_census = false ; 
+    }
   }
 
 

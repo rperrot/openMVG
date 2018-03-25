@@ -38,7 +38,8 @@ SET( OPENMVG_COMPUTE_DEPTH_MAPS_HEADERS Camera.hpp
 
 ADD_EXECUTABLE( openMVG_main_computeDepthMaps ${OPENMVG_COMPUTE_DEPTH_MAPS_HEADERS} ${OPENMVG_COMPUTE_DEPTH_MAPS_SOURCES} ) 
 target_include_directories( openMVG_main_computeDepthMaps PRIVATE ${OpenCL_INCLUDE_DIRS} )
-target_link_libraries( openMVG_main_computeDepthMaps openMVG_image openMVG_multiview openMVG_sfm openMVG_features ${OpenCL_LIBRARIES} stlplus )
+target_include_directories( openMVG_main_computeDepthMaps PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/daisy/include )
+target_link_libraries( openMVG_main_computeDepthMaps openMVG_image openMVG_multiview openMVG_sfm openMVG_features ${OpenCL_LIBRARIES} stlplus daisy )
 
 
 # FUSION
@@ -61,6 +62,7 @@ SET( OPENMVS_FUSION_DEPTH_MAPS_HEADERS Camera.hpp
                                        PutativePoint.hpp 
                                        Util.hpp ) 
 
+add_subdirectory( daisy )
 
 ADD_EXECUTABLE( openMVG_main_fusionDepthMaps ${OPENMVS_FUSION_DEPTH_MAPS_HEADERS} ${OPENMVG_FUSION_DEPTH_MAPS_SOURCES} ) 
 target_include_directories( openMVG_main_fusionDepthMaps PRIVATE ${OpenCL_INCLUDE_DIRS} )

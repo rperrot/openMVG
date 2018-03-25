@@ -4,6 +4,9 @@
 #include "Image.hpp"
 #include "DepthMapComputationParameters.hpp"
 
+#include "daisy/daisy.h"
+
+#include <map>
 
 namespace MVS
 {
@@ -62,6 +65,7 @@ class ZNCCCostMetric : public AbstractCostMetric
      * @return Aggregated matching cost at specified pixel
      */
     double operator()( const int id_row , const int id_col , const openMVG::Mat3 & H ) const override ;
+
 } ;
 
 /**
@@ -87,6 +91,8 @@ class PatchMatchCostMetric : public AbstractCostMetric
      * @return Aggregated matching cost at specified pixel
      */
     double operator()( const int id_row , const int id_col , const openMVG::Mat3 & H ) const override ;
+
+
 } ;
 
 /**
@@ -97,21 +103,59 @@ class CensusCostMetric : public AbstractCostMetric
   public:
 
     /**
-    * @brief Ctr
-    * @param img_ref Reference image
-    * @param img_other Target image
-    * @param params Various parameters of the functor
-    */
+     * @brief Ctr
+     * @param img_ref Reference image
+     * @param img_other Target image
+     * @param params Various parameters of the functor
+     */
     CensusCostMetric( const Image & img_ref , const Image & img_other , const DepthMapComputationParameters & params ) ;
 
     /**
-    * @brief Compute aggregated matching cost at a given pixel
-    * @param id_row Row index of the queried pixel
-    * @param id_col Col index of the queried pixel
-    * @param H Homography that maps pixels from Reference image to the Target image
-    * @return Aggregated matching cost at specified pixel
-    */
+     * @brief Compute aggregated matching cost at a given pixel
+     * @param id_row Row index of the queried pixel
+     * @param id_col Col index of the queried pixel
+     * @param H Homography that maps pixels from Reference image to the Target image
+     * @return Aggregated matching cost at specified pixel
+     */
     double operator()( const int id_row , const int id_col , const openMVG::Mat3 & H ) const override ;
+
+} ;
+
+/**
+ * @brief DAISY based cost metric
+ */
+class DaisyCostMetric : public AbstractCostMetric
+{
+  public:
+
+    /**
+     * @brief Ctr
+     * @param img_ref Reference image
+     * @param img_other Target image
+     * @param params Various parameters of the functor
+     */
+    DaisyCostMetric( const Image & img_ref , const Image & img_other , const DepthMapComputationParameters & params ) ;
+
+    /**
+     * @brief Compute aggregated matching cost at a given pixel
+     * @param id_row Row index of the queried pixel
+     * @param id_col Col index of the queried pixel
+     * @param H Homography that maps pixels from Reference image to the Target image
+     * @return Aggregated matching cost at specified pixel
+     */
+    double operator()( const int id_row , const int id_col , const openMVG::Mat3 & H ) const override ;
+
+    /**
+     * @brief Release internal memory
+     */
+    static void releaseInternalMemory( void ) ;
+
+  private:
+
+    static std::map<Image, std::shared_ptr<daisy> > all_daisy_descs ;
+
+    std::shared_ptr<daisy> m_desc_ref ;
+    std::shared_ptr<daisy> m_desc_other ;
 } ;
 
 } // namespace MVS

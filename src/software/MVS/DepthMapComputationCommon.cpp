@@ -19,6 +19,10 @@ ImageLoadType ComputeLoadType( const cost_metric & metric )
     {
       return ImageLoadType( IMAGE_GRAYSCALE | IMAGE_COLOR | IMAGE_CENSUS ) ;
     }
+    case COST_METRIC_DAISY:
+    {
+      return ImageLoadType( IMAGE_GRAYSCALE ) ;
+    }
     default:
     {
       return IMAGE_ALL ;
