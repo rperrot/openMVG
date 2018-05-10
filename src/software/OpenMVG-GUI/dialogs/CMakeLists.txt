@@ -1,5 +1,7 @@
-set( OPENMVG_GUI_DIALOGS_HEADERS AutomaticReconstructionDialog.hh 
+set( OPENMVG_GUI_DIALOGS_HEADERS ApplicationSettingsDialog.hh
+                                 AutomaticReconstructionDialog.hh 
                                  ClusterComputationSettingsDialog.hh
+                                 ColorIndicatorWidget.hh
                                  DoubleProgressBarDialog.hh
                                  FeaturesViewerWidget.hh
                                  MaskDefinitionDialog.hh
@@ -7,8 +9,10 @@ set( OPENMVG_GUI_DIALOGS_HEADERS AutomaticReconstructionDialog.hh
                                  NewProjectDialog.hh 
                                  ZoomableGraphicsView.hh )
 
-set( OPENMVG_GUI_DIALOGS_SOURCES AutomaticReconstructionDialog.cc  
+set( OPENMVG_GUI_DIALOGS_SOURCES ApplicationSettingsDialog.cc
+                                 AutomaticReconstructionDialog.cc  
                                  ClusterComputationSettingsDialog.cc
+                                 ColorIndicatorWidget.cc 
                                  DoubleProgressBarDialog.cc
                                  FeaturesViewerWidget.cc
                                  MaskDefinitionDialog.cc

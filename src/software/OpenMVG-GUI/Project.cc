@@ -172,7 +172,7 @@ void Project::open( const std::string & projectFile )
   setlocale( LC_ALL, "C" ) ;
   setlocale( LC_NUMERIC, "C" ) ;
 
-  // Save global project state
+  // Load global project state
   cereal::XMLInputArchive archive( file );
 
   int major_version ;

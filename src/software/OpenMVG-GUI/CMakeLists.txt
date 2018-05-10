@@ -38,7 +38,8 @@ add_subdirectory( workers )
 add_subdirectory( workflow_params )
 
 
-set( OPENMVG_GUI_HEADERS ApplicationState.hh 
+set( OPENMVG_GUI_HEADERS ApplicationSettings.hh 
+                         ApplicationState.hh 
                          ConsoleWidget.hh
                          DetailListWidget.hh 
                          ImageListWidget.hh 
@@ -49,7 +50,8 @@ set( OPENMVG_GUI_HEADERS ApplicationState.hh
                          ReconstructionSummaryWidget.hh
                          ResultViewWidget.hh 
                          Version.hh )
-set( OPENMVG_GUI_SOURCES ConsoleWidget.cc 
+set( OPENMVG_GUI_SOURCES ApplicationSettings.cc 
+                         ConsoleWidget.cc 
                          DetailListWidget.cc
                          ImageListWidget.cc
                          MainWindow.cc 
@@ -57,7 +59,8 @@ set( OPENMVG_GUI_SOURCES ConsoleWidget.cc
                          Project.cc 
                          ProjectPaths.cc
                          ReconstructionSummaryWidget.cc
-                         ResultViewWidget.cc )
+                         ResultViewWidget.cc
+                         Version.cc )
 
 if( APPLE )
 

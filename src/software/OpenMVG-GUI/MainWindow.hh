@@ -141,9 +141,14 @@ public slots:
   void onChangeMatchesSettings( void );
 
   /**
-   * @brief Action to be executed when user wants to change
+   * @brief Action to be executed when user wants to change SfM settings 
    */
   void onChangeSfMSettings( void );
+
+  /**
+   * @brief Action to be executed when user wants to change Application settings 
+   */
+  void onChangeApplicationSettings( void ) ; 
 
   /**
    * @brief Action to be executed when user wants to update image list widget
@@ -341,6 +346,7 @@ public slots:
   bool hasUnsavedChange( void ) const;
 
 private:
+
   /**
    * @brief Post actions to be executed after feature computation (or feature computation failure)
    */
@@ -371,6 +377,11 @@ private:
    * @brief Update interface based on the state of the application
    */
   void updateInterface( void );
+
+  /**
+   * @brief Set settings of the application using the ApplicationSettings::instance()
+   */
+  void setGlobalSettings( void ) ;
 
   /**
    * @brief Build interface elements
@@ -451,6 +462,7 @@ private:
   QAction *m_setting_features_act;
   QAction *m_setting_matches_act;
   QAction *m_setting_sfm_act;
+  QAction *m_setting_application_settings;
   /// View
   QMenu *  m_view_menu;
   QAction *m_show_hide_grid_act;

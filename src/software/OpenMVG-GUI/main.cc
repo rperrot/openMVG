@@ -6,6 +6,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+#include "ApplicationSettings.hh"
 #include "MainWindow.hh"
 
 #include "workers/WorkerNextAction.hh"
@@ -13,6 +14,7 @@
 #include <QApplication>
 #include <QFontDatabase>
 #include <QLocale>
+#include <QStandardPaths>
 
 #include <clocale>
 #include <string>
@@ -40,6 +42,22 @@ int main( int argc, char **argv )
 
   // Fonts
   QFontDatabase::addApplicationFont( ":/fonts/SourceCodeVariable-Roman.otf" );
+
+  // Application Path - Create it at the first time
+  const std::string appDirPath = QStandardPaths::writableLocation( QStandardPaths::AppDataLocation ).toStdString();
+
+  if ( !stlplus::folder_exists( appDirPath ) )
+  {
+    stlplus::folder_create( appDirPath );
+
+    if ( !stlplus::file_exists( ApplicationSettings::configPath() ) )
+    {
+      ApplicationSettings default_settings;
+      default_settings.save( ApplicationSettings::configPath() );
+    }
+  }
+  // Load the configuration
+  ApplicationSettings::instance() = ApplicationSettings( ApplicationSettings::configPath() );
 
   MainWindow win;
   win.show();
