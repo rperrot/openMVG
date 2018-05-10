@@ -17,32 +17,32 @@
 #include <clocale>
 #include <string>
 
-using namespace openMVG_gui ;
+using namespace openMVG_gui;
 
-int main( int argc , char ** argv )
+int main( int argc, char **argv )
 {
   // OpenGL
   // OpenGL use 3.2 minimum
-  QSurfaceFormat format = QSurfaceFormat::defaultFormat() ;
-  format.setVersion( 3 , 2 );
+  QSurfaceFormat format = QSurfaceFormat::defaultFormat();
+  format.setVersion( 3, 2 );
   format.setProfile( QSurfaceFormat::CoreProfile );
   QSurfaceFormat::setDefaultFormat( format );
 
-  QApplication app( argc , argv ) ;
-  setlocale( LC_ALL, "C" ) ;
-  setlocale( LC_NUMERIC, "C" ) ; 
- 
-  QLocale locale( QLocale::C ) ; 
-  QLocale::setDefault( locale ) ; 
+  QApplication app( argc, argv );
+  setlocale( LC_ALL, "C" );
+  setlocale( LC_NUMERIC, "C" );
+
+  QLocale locale( QLocale::C );
+  QLocale::setDefault( locale );
 
   qRegisterMetaType<openMVG_gui::WorkerNextAction>( "WorkerNextAction" );
-  qRegisterMetaType<std::string>( "std::string" ) ;
+  qRegisterMetaType<std::string>( "std::string" );
 
-  // Fonts 
-  QFontDatabase::addApplicationFont( ":/fonts/SourceCodeVariable-Roman.otf" ) ;
+  // Fonts
+  QFontDatabase::addApplicationFont( ":/fonts/SourceCodeVariable-Roman.otf" );
 
-  MainWindow win ;
-  win.show() ;
+  MainWindow win;
+  win.show();
 
-  return app.exec() ;
+  return app.exec();
 }

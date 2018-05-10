@@ -230,7 +230,11 @@ void ImageListWidget::onSelectionChanged( void )
     if( item )
     {
       emit hasSelectedAnImage( item->id() ) ;
-    }
+     }
+  }
+  else 
+  {
+    emit hasSelectedAnImage( -1 ) ; 
   }
 }
 

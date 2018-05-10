@@ -79,7 +79,7 @@ target_link_libraries( OpenMVG-GUI
                        # sub libraries 
                        OpenMVG_gui_dialogs
                        OpenMVG_gui_graphics
-#                       OpenMVG_gui_node_edition 
+                       # OpenMVG_gui_node_edition 
                        OpenMVG_gui_utils
                        OpenMVG_gui_workers 
                        OpenMVG_gui_workflow_params
