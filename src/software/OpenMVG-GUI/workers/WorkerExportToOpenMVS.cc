@@ -15,7 +15,7 @@
 #include "openMVG/sfm/sfm_data_io.hpp"
 
 #define _USE_EIGEN
-#include "software/SfM/InterfaceMVS.h"
+#include "software/SfM/export/InterfaceMVS.h"
 
 #include "third_party/progress/progress_display.hpp"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
