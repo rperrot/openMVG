@@ -66,7 +66,7 @@ public:
    */
   bool save( const std::string &file );
 
-  void set( const ApplicationSettings & src);
+  void set( const ApplicationSettings &src );
 
 private:
   /**

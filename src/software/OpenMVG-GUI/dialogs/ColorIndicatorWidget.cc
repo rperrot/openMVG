@@ -28,7 +28,7 @@ void ColorIndicatorWidget::setColor( const QColor &col )
   setPalette( palette );
 }
 
-void ColorIndicatorWidget::mousePressEvent( QMouseEvent *event ) 
+void ColorIndicatorWidget::mousePressEvent( QMouseEvent *event )
 {
   emit clicked();
 }

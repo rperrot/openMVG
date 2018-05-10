@@ -72,6 +72,7 @@ private:
   ApplicationSettings m_currentSettings;
   ApplicationSettings m_initialSettings;
 
+  QPushButton *m_btn_reset_default;
   QPushButton *m_btn_cancel;
   QPushButton *m_btn_ok;
 

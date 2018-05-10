@@ -20,8 +20,8 @@ namespace openMVG_gui
 
 ApplicationSettingsDialog::ApplicationSettingsDialog( QWidget *parent, const ApplicationSettings &setting )
     : QDialog( parent )
-    , m_initialSettings( setting ) , 
-      m_currentSettings( setting )
+    , m_initialSettings( setting )
+    , m_currentSettings( setting )
 {
   buildInterface();
   makeConnections();
@@ -86,6 +86,7 @@ void ApplicationSettingsDialog::onWantToSetBackgroundColor( void )
 void ApplicationSettingsDialog::reinitSettings( void )
 {
   m_currentSettings = m_initialSettings;
+  update();
 }
 
 /**
@@ -94,6 +95,7 @@ void ApplicationSettingsDialog::reinitSettings( void )
 void ApplicationSettingsDialog::resetDefaultSettings( void )
 {
   m_currentSettings = ApplicationSettings();
+  update();
 }
 
 void ApplicationSettingsDialog::buildInterface( void )
@@ -107,12 +109,14 @@ void ApplicationSettingsDialog::buildInterface( void )
   viewGrpLayout->addWidget( m_view_background_color_indicator, 0, 1 );
   viewGrp->setLayout( viewGrpLayout );
 
-  m_btn_cancel = new QPushButton( "Cancel" );
+  m_btn_reset_default = new QPushButton( "Reset Default" );
+  m_btn_cancel        = new QPushButton( "Cancel" );
   m_btn_cancel->setDefault( false );
   m_btn_ok = new QPushButton( "OK" );
   m_btn_ok->setDefault( true );
 
   QHBoxLayout *btnLayout = new QHBoxLayout;
+  btnLayout->addWidget( m_btn_reset_default );
   btnLayout->addStretch();
   btnLayout->addWidget( m_btn_cancel );
   btnLayout->addWidget( m_btn_ok );
@@ -127,6 +131,7 @@ void ApplicationSettingsDialog::buildInterface( void )
 
 void ApplicationSettingsDialog::makeConnections( void )
 {
+  connect( m_btn_reset_default, SIGNAL( clicked() ), this, SLOT( resetDefaultSettings() ) );
   connect( m_btn_cancel, SIGNAL( clicked() ), this, SLOT( onCancel() ) );
   connect( m_btn_ok, SIGNAL( clicked() ), this, SLOT( onOk() ) );
 
