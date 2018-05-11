@@ -139,17 +139,19 @@ get_filename_component(QT_LIBRARY_DIR ${QT_LIBRARY_DIR} PATH)
 get_filename_component(QT_LIBRARY_DIR "${QT_LIBRARY_DIR}/.." ABSOLUTE)
 
 
-set( FIXUP_DIRS
-${APP}/Contents/plugins/platforms
-${QT_BINARY_DIR}
-${QT_LIBRARY_DIR}
-)
 
 if( APPLE )
   set( OPENMVG_BUNDLE_FILE "OpenMVG-GUI.app" )
 else( APPLE )
   set( OPENMVG_BUNDLE_FILE "OpenMVG-GUI" )
 endif( APPLE )
+
+set( FIXUP_DIRS
+\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${OPENMVG_BUNDLE_FILE}/Contents/plugins/platforms
+${QT_BINARY_DIR}
+${QT_LIBRARY_DIR}
+)
+
 
 macro(install_qt5_plugin _qt_plugin_name _qt_plugins_var)
 get_target_property(_qt_plugin_path "${_qt_plugin_name}" LOCATION)
@@ -159,16 +161,15 @@ if(EXISTS "${_qt_plugin_path}")
   get_filename_component(_qt_plugin_type "${_qt_plugin_type}" NAME)
   if(APPLE)
     set(_qt_plugin_dir "PlugIns")
-    set(_qt_plugin_dest "${CMAKE_INSTALL_PREFIX}/bin/${OPENMVG_BUNDLE_FILE}/Contents/${_qt_plugin_dir}/${_qt_plugin_type}")
+    set(_qt_plugin_dest "bin/${OPENMVG_BUNDLE_FILE}/Contents/${_qt_plugin_dir}/${_qt_plugin_type}")
   elseif(WIN32)
-    set(_qt_plugin_dest "${CMAKE_INSTALL_PREFIX}/bin/${_qt_plugin_dir}/${_qt_plugin_type}")
     set(_qt_plugin_dir "plugins")
+    set(_qt_plugin_dest "bin/${_qt_plugin_dir}/${_qt_plugin_type}")
   endif()
   install(FILES "${_qt_plugin_path}"
-    DESTINATION "${_qt_plugin_dest}"
-    ${COMPONENT})
+    DESTINATION "${_qt_plugin_dest}" )
   set(${_qt_plugins_var}
-    "${${_qt_plugins_var}};${_qt_plugin_dest}/${_qt_plugin_file}")
+    "${${_qt_plugins_var}};\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${_qt_plugin_dest}/${_qt_plugin_file}")
 else()
   message(FATAL_ERROR "QT plugin ${_qt_plugin_name} not found")
 endif()
@@ -179,22 +180,25 @@ if( APPLE )
   install_qt5_plugin("Qt5::QJpegPlugin" QT_PLUGINS)
   install_qt5_plugin("Qt5::QTiffPlugin" QT_PLUGINS)
   file( WRITE "${CMAKE_CURRENT_BINARY_DIR}/qt.conf" "[Paths]\nPlugins = ${_qt_plugin_dir}\n")
-  install( FILES "${CMAKE_CURRENT_BINARY_DIR}/qt.conf" DESTINATION "${CMAKE_INSTALL_PREFIX}/bin/${OPENMVG_BUNDLE_FILE}/Contents/Resources" ${COMPONENT} )
+  install( FILES "${CMAKE_CURRENT_BINARY_DIR}/qt.conf" DESTINATION "bin/${OPENMVG_BUNDLE_FILE}/Contents/Resources" ${COMPONENT} )
 else( APPLE )
   if( WIN32 )
     install_qt5_plugin("Qt5::QWindowsIntegrationPlugin" QT_PLUGINS)
     install_qt5_plugin("Qt5::QJpegPlugin" QT_PLUGINS)
     install_qt5_plugin("Qt5::QTiffPlugin" QT_PLUGINS)
     file( WRITE "${CMAKE_CURRENT_BINARY_DIR}/qt.conf" "[Paths]\nPlugins = ${_qt_plugin_dir}\n")
-    install( FILES "${CMAKE_CURRENT_BINARY_DIR}/qt.conf" DESTINATION "${CMAKE_INSTALL_PREFIX}/bin" )  
+    install( FILES "${CMAKE_CURRENT_BINARY_DIR}/qt.conf" DESTINATION "bin" )  
   endif( WIN32 )
 endif( APPLE )
 
+set(APP "\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/bin/${OPENMVG_BUNDLE_FILE}")
 
 INSTALL( CODE 
   "include(BundleUtilities)
   set( BU_CHMOD_BUNDLE_ITEMS 1 )
-  fixup_bundle( \"${CMAKE_INSTALL_PREFIX}/bin/${OPENMVG_BUNDLE_FILE}\"   \"${QT_PLUGINS}\" \"${FIXUP_DIRS}\" )"  
+  fixup_bundle( \"${APP}\"  \"${QT_PLUGINS}\" \"${FIXUP_DIRS}\" )"  
   COMPONENTS Runtime )
 
 endif()
+
+set(CPACK_PACKAGE_EXECUTABLES "${OPENMVG_BUNDLE_FILE}" "OpenMVG")

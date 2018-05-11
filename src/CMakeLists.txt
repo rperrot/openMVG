@@ -166,9 +166,9 @@ endif()
 # ==============================================================================
 # IMAGE IO detection
 # ==============================================================================
-find_package(JPEG QUIET)
-find_package(PNG QUIET)
-find_package(TIFF QUIET)
+#find_package(JPEG QUIET)
+#find_package(PNG QUIET)
+#find_package(TIFF QUIET)
 
 # Folders
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -616,3 +616,23 @@ configure_file(
 
 add_custom_target(uninstall
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+
+include(InstallRequiredSystemLibraries)
+
+set(CPACK_SET_DESTDIR ${CMAKE_INSTALL_PREFIX} )
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "OpenMVG")
+set(CPACK_PACKAGE_VENDOR "OpenMVG team")
+set(CPACK_PACKAGE_VERSION_MAJOR "${OPENMVG_VERSION_MAJOR}")
+set(CPACK_PACKAGE_VERSION_MINOR "${OPENMVG_VERSION_MINOR}")
+set(CPACK_PACKAGE_VERSION_PATCH "${OPENMVG_VERSION_REVISION}")
+
+
+if(APPLE)
+	set(CPACK_BINARY_DRAGNDROP ON)
+endif(APPLE)
+
+if(WIN32)
+	set(CPACK_GENERATOR "NSIS64")
+endif( WIN32 )
+
+include(CPack)
