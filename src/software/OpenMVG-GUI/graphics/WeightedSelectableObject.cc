@@ -7,10 +7,9 @@ namespace openMVG_gui
  * @param w Weight of the selection
  * @note Default selection mode is unselected
  */
-WeightedSelectableObject::WeightedSelectableObject( const double w )
-  : m_weight( w )
+WeightedSelectableObject::WeightedSelectableObject( const bool selected, const double w ) :
+    SelectableObject( selected ), m_weight( w )
 {
-
 }
 
 /**
@@ -18,7 +17,7 @@ WeightedSelectableObject::WeightedSelectableObject( const double w )
  */
 double WeightedSelectableObject::selectionWeight( void ) const
 {
-  return m_weight ;
+  return m_weight;
 }
 
 /**
@@ -27,18 +26,7 @@ double WeightedSelectableObject::selectionWeight( void ) const
  */
 void WeightedSelectableObject::setSelectionWeight( const double w )
 {
-  m_weight = w ;
-}
-
-
-/**
- * @brief get current selection state
- * @retval true if object is selected
- * @retval false if object is not selected
- */
-bool WeightedSelectableObject::selected( void ) const
-{
-  return m_weight >= 0.0 ;
+  m_weight = w;
 }
 
 } // namespace openMVG_gui

@@ -141,14 +141,14 @@ public slots:
   void onChangeMatchesSettings( void );
 
   /**
-   * @brief Action to be executed when user wants to change SfM settings 
+   * @brief Action to be executed when user wants to change SfM settings
    */
   void onChangeSfMSettings( void );
 
   /**
-   * @brief Action to be executed when user wants to change Application settings 
+   * @brief Action to be executed when user wants to change Application settings
    */
-  void onChangeApplicationSettings( void ) ; 
+  void onChangeApplicationSettings( void );
 
   /**
    * @brief Action to be executed when user wants to update image list widget
@@ -345,8 +345,14 @@ public slots:
    */
   bool hasUnsavedChange( void ) const;
 
-private:
+  /**
+   * @brief Acto to be executed when user has selected an object in the 3d view
+   *
+   * @param obj The selected object
+   */
+  void onHasSelectedAnObject( std::shared_ptr<SelectableObject> obj );
 
+private:
   /**
    * @brief Post actions to be executed after feature computation (or feature computation failure)
    */
@@ -381,7 +387,7 @@ private:
   /**
    * @brief Set settings of the application using the ApplicationSettings::instance()
    */
-  void setGlobalSettings( void ) ;
+  void setGlobalSettings( void );
 
   /**
    * @brief Build interface elements

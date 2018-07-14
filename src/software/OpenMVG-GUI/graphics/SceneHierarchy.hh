@@ -9,68 +9,75 @@
 #ifndef _SCENE_HIERARCHY_HH_
 #define _SCENE_HIERARCHY_HH_
 
+#include "Intersection.hh"
+#include "Ray.hh"
 #include "RenderableObject.hh"
 
 namespace openMVG_gui
 {
 
-class SceneManager ;
+class SceneManager;
 
 /**
-* @brief Class managing a hierarchy
-* this contains renderable objects and is responsible for rendering it
-* -> Maybe used for culling
-*/
+ * @brief Class managing a hierarchy
+ * this contains renderable objects and is responsible for rendering it
+ * -> Maybe used for culling
+ */
 class SceneHierarchy
 {
-  public:
+public:
+  /**
+   * @brief Ctr
+   */
+  SceneHierarchy( void );
 
-    /**
-    * @brief Ctr
-    */
-    SceneHierarchy( void ) ;
+  /**
+   * @brief add an object to the hierarchy
+   */
+  virtual void addObject( std::shared_ptr<RenderableObject> obj ) = 0;
 
-    /**
-    * @brief add an object to the hierarchy
-    */
-    virtual void addObject( std::shared_ptr<RenderableObject> obj ) = 0 ;
+  /**
+   * @brief remove an object from the hierarchy
+   * @note if object does not exists in the hierarchy, do nothing
+   */
+  virtual void removeObject( std::shared_ptr<RenderableObject> obj ) = 0;
 
-    /**
-    * @brief remove an object from the hierarchy
-    * @note if object does not exists in the hierarchy, do nothing
-    */
-    virtual void removeObject( std::shared_ptr<RenderableObject> obj ) = 0 ;
+  /**
+   * @brief remove all objects that are point clouds
+   */
+  virtual void removePointClouds() = 0;
 
-    /**
-     * @brief remove all objects that are point clouds
-     */
-    virtual void removePointClouds() = 0 ;
+  /**
+   * @brief Clear the scene
+   */
+  virtual void clear( void ) = 0;
 
-    /**
-     * @brief Clear the scene
-     */
-    virtual void clear( void ) = 0 ;
+  /**
+   * @brief Build internal structure
+   */
+  virtual void prepare( void ) = 0;
 
-    /**
-    * @brief Build internal structure
-    */
-    virtual void prepare( void ) = 0 ;
+  /**
+   * @brief Render current scene
+   * @param mgr Scene manager (containing camera and lights)
+   */
+  virtual void render( std::shared_ptr<SceneManager> scn, const double w, const double h ) = 0;
 
-    /**
-    * @brief Render current scene
-    * @param mgr Scene manager (containing camera and lights)
-    */
-    virtual void render( std::shared_ptr<SceneManager> scn , const double w , const double h ) = 0 ;
+  /**
+   * @brief Perform intersection with the scene
+   * @param ray The ray used as intersection primitive
+   * @retval nullptr if no intersection
+   * @retval the nearest object with the ray origin if an intersection exists
+   */
+  virtual Intersection intersect( const Ray &ray ) const = 0;
 
-    /**
-    * @brief destroy all openGL data (if any present)
-    */
-    virtual void destroyGLData( void ) = 0 ;
+  /**
+   * @brief destroy all openGL data (if any present)
+   */
+  virtual void destroyGLData( void ) = 0;
 
-  private:
-
-
-} ;
+private:
+};
 
 } // namespace openMVG_gui
 

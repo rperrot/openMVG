@@ -19,59 +19,62 @@ namespace openMVG_gui
 class SceneManager;
 
 /**
-* @brief class holding a linear hierarchy (ie: a soup of object without structure)
-*/
+ * @brief class holding a linear hierarchy (ie: a soup of object without structure)
+ */
 class LinearHierarchy : public SceneHierarchy
 {
-  public:
+public:
+  ~LinearHierarchy();
 
+  /**
+   * @brief add an object to the hierarchy
+   */
+  void addObject( std::shared_ptr<RenderableObject> obj ) override;
 
-    ~LinearHierarchy() ;
+  /**
+   * @brief remove an object from the hierarchy
+   * @note if object does not exists in the hierarchy, do nothing
+   */
+  void removeObject( std::shared_ptr<RenderableObject> obj ) override;
 
-    /**
-    * @brief add an object to the hierarchy
-    */
-    void addObject( std::shared_ptr<RenderableObject> obj ) override ;
+  /**
+   * @brief remove all objects that are point clouds
+   */
+  void removePointClouds() override;
 
-    /**
-    * @brief remove an object from the hierarchy
-    * @note if object does not exists in the hierarchy, do nothing
-    */
-    void removeObject( std::shared_ptr<RenderableObject> obj ) override ;
+  /**
+   * @brief Clear the scene
+   */
+  void clear( void ) override;
 
-    /**
-     * @brief remove all objects that are point clouds
-     */
-    void removePointClouds() override ;
+  /**
+   * @brief Build internal structure
+   */
+  void prepare( void ) override;
 
-    /**
-     * @brief Clear the scene
-     */
-    void clear( void ) override ;
+  /**
+   * @brief Render current scene
+   * @param scn Scene
+   * @param ratio Aspect ratio
+   */
+  void render( std::shared_ptr<SceneManager> scn, const double w, const double h ) override;
 
-    /**
-    * @brief Build internal structure
-    */
-    void prepare( void ) override ;
+  /**
+   * @brief Perform intersection with the scene
+   * @param ray The ray used as intersection primitive
+   * @retval nullptr if no intersection
+   * @retval the nearest object with the ray origin if an intersection exists
+   */
+  Intersection intersect( const Ray &ray ) const override;
 
-    /**
-    * @brief Render current scene
-    * @param scn Scene
-    * @param ratio Aspect ratio
-    */
-    void render( std::shared_ptr<SceneManager> scn , const double w , const double h ) override ;
+  /**
+   * @brief destroy all openGL data (if any present)
+   */
+  void destroyGLData( void ) override;
 
-    /**
-    * @brief destroy all openGL data (if any present)
-    */
-    void destroyGLData( void ) override ;
-
-
-  private:
-
-    std::vector < std::shared_ptr<RenderableObject> > m_objects ;
-
-} ;
+private:
+  std::vector<std::shared_ptr<RenderableObject>> m_objects;
+};
 
 } // namespace openMVG_gui
 

@@ -26,10 +26,10 @@ namespace openMVG_gui
  */
 class ImageListDrawingDelegate : public QStyledItemDelegate
 {
-  public:
-    ImageListDrawingDelegate( QWidget *parent );
+public:
+  ImageListDrawingDelegate( QWidget *parent );
 
-    void paint( QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index ) const override;
+  void paint( QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index ) const override;
 };
 
 /**
@@ -38,19 +38,19 @@ class ImageListDrawingDelegate : public QStyledItemDelegate
  */
 class ImageListWidgetItem : public QListWidgetItem
 {
-  public:
-    ImageListWidgetItem( const std::string &name = "", QListWidget *parent = nullptr, const int id = -1,
-                         const bool has_mask = false );
+public:
+  ImageListWidgetItem( const std::string &name = "", QListWidget *parent = nullptr, const int id = -1,
+                       const bool has_mask = false );
 
-    int id( void ) const;
+  int id( void ) const;
 
-    bool hasMask( void ) const;
+  bool hasMask( void ) const;
 
-    void setHasMask( const bool has );
+  void setHasMask( const bool has );
 
-  private:
-    int m_id;
-    bool m_has_mask;
+private:
+  int  m_id;
+  bool m_has_mask;
 };
 
 /**
@@ -59,87 +59,95 @@ class ImageListWidgetItem : public QListWidgetItem
  */
 class ImageListWidget : public QWidget
 {
-  public:
-    /**
-     * @brief ctr
-     * @param parent parent widget
-     */
-    ImageListWidget( QWidget *parent );
+public:
+  /**
+   * @brief ctr
+   * @param parent parent widget
+   */
+  ImageListWidget( QWidget *parent );
 
-    /**
-     * @brief Handle right click
-     */
-    void contextMenuEvent( QContextMenuEvent *e ) override;
+  /**
+   * @brief Handle right click
+   */
+  void contextMenuEvent( QContextMenuEvent *e ) override;
 
-  public slots:
+public slots:
 
-    /**
-     * @brief Set the list of images to display
-     * @param paths list of path of the images to display
-     * @note if there are existing images, it replace everything
-     */
-    void setImages( const std::vector<std::pair<int, std::string>> &paths );
+  /**
+   * @brief Set the list of images to display
+   * @param paths list of path of the images to display
+   * @note if there are existing images, it replace everything
+   */
+  void setImages( const std::vector<std::pair<int, std::string>> &paths );
 
-    /**
-     * @brief Set enable/disable mask on selected image
-     * @param id_image Id of the image to enable
-     * @param enable Enable status
-     */
-    void setMaskEnabled( const int id_image, const bool enable );
+  /**
+   * @brief Set the Selected Image
+   *
+   * @param id If of the selection
+   * @note if id is -1 then disable selection
+   */
+  void setSelectedImage( const int id );
 
-    /**
-     * @brief remove all images of the widget
-     */
-    void clear( void );
+  /**
+   * @brief Set enable/disable mask on selected image
+   * @param id_image Id of the image to enable
+   * @param enable Enable status
+   */
+  void setMaskEnabled( const int id_image, const bool enable );
 
-    /**
-     * @brief Launch widget to define image mask
-     * @param id Id of the image to define
-     */
-    void onMaskDefinition( int id );
+  /**
+   * @brief remove all images of the widget
+   */
+  void clear( void );
 
-    /**
-     * @brief Launch widget to define image mask
-     * @param id Id of the image to define
-     */
-    void onIntrinsicSelection( int id );
+  /**
+   * @brief Launch widget to define image mask
+   * @param id Id of the image to define
+   */
+  void onMaskDefinition( int id );
 
-  signals:
+  /**
+   * @brief Launch widget to define image mask
+   * @param id Id of the image to define
+   */
+  void onIntrinsicSelection( int id );
 
-    /**
-     * @brief Action to be executed when the user has selected an image
-     * @param the selected image ID
-     */
-    void hasSelectedAnImage( int id );
+signals:
 
-    /**
-     * @brief Signal to inform the main window that user would like to define mask for an image
-     * @param id Id of the image which requested the definition
-     */
-    void hasRequestedMaskDefinition( int id );
+  /**
+   * @brief Action to be executed when the user has selected an image
+   * @param the selected image ID
+   */
+  void hasSelectedAnImage( int id );
 
-    /**
-     * @brief Signal to inform the main window that user would like to define intrinsic for an image
-     * @param id Id of the image which requested the definition
-     */
-    void hasRequestedIntrinsicSelection( int id );
+  /**
+   * @brief Signal to inform the main window that user would like to define mask for an image
+   * @param id Id of the image which requested the definition
+   */
+  void hasRequestedMaskDefinition( int id );
 
-  private slots:
+  /**
+   * @brief Signal to inform the main window that user would like to define intrinsic for an image
+   * @param id Id of the image which requested the definition
+   */
+  void hasRequestedIntrinsicSelection( int id );
 
-    void onSelectionChanged( void );
+private slots:
 
-  private:
-    /**
-     * @brief Build interface widgets
-     */
-    void buildInterface( void );
-    void makeConnections( void );
+  void onSelectionChanged( void );
 
-    std::vector<std::pair<int, std::string>> m_images;
+private:
+  /**
+   * @brief Build interface widgets
+   */
+  void buildInterface( void );
+  void makeConnections( void );
 
-    QListWidget *m_image_list_view;
+  std::vector<std::pair<int, std::string>> m_images;
 
-    Q_OBJECT
+  QListWidget *m_image_list_view;
+
+  Q_OBJECT
 };
 
 } // namespace openMVG_gui

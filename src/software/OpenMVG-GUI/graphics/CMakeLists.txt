@@ -1,7 +1,11 @@
 add_subdirectory( hierarchies ) 
 add_subdirectory( objects )
 
-set( OPENMVG_GUI_GRAPHICS_HEADERS Camera.hh 
+set( OPENMVG_GUI_GRAPHICS_HEADERS AABB.hh 
+                                  Camera.hh 
+                                  IntersectableObject.hh
+                                  Intersection.hh 
+                                  Ray.hh 
                                   RenderableObject.hh 
                                   SelectableObject.hh 
                                   SceneHierarchy.hh 
@@ -10,7 +14,11 @@ set( OPENMVG_GUI_GRAPHICS_HEADERS Camera.hh
                                   ShaderProgram.hh 
                                   TriStateSelectableObject.hh
                                   WeightedSelectableObject.hh )
-set( OPENMVG_GUI_GRAPHICS_SOURCES Camera.cc 
+set( OPENMVG_GUI_GRAPHICS_SOURCES AABB.cc 
+                                  Camera.cc 
+                                  IntersectableObject.cc 
+                                  Intersection.cc
+                                  Ray.cc 
                                   RenderableObject.cc 
                                   SceneHierarchy.cc 
                                   SceneManager.cc 

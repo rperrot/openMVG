@@ -22,6 +22,7 @@
 #include "workflow_params/widgets/MatchingParamsDialog.hh"
 #include "workflow_params/widgets/SfMParamsDialog.hh"
 
+#include "graphics/SelectableObject.hh"
 #include "graphics/hierarchies/LinearHierarchy.hh"
 #include "graphics/objects/CameraGizmo.hh"
 #include "graphics/objects/PointCloud.hh"
@@ -52,8 +53,7 @@ namespace openMVG_gui
 /**
  * @brief Main window
  */
-MainWindow::MainWindow()
-    : m_project( nullptr )
+MainWindow::MainWindow() : m_project( nullptr )
 {
   setWindowTitle( "OpenMVG-GUI" );
   showMaximized();
@@ -66,7 +66,6 @@ MainWindow::MainWindow()
   m_state = STATE_EMPTY;
   setGlobalSettings();
   updateInterface();
-
 
   m_progress_dialog = nullptr;
 
@@ -676,28 +675,27 @@ void MainWindow::onChangeSfMSettings( void )
   }
 }
 
-  /**
-   * @brief Action to be executed when user wants to change Application settings 
-   */
-  void MainWindow::onChangeApplicationSettings( void ) 
+/**
+ * @brief Action to be executed when user wants to change Application settings
+ */
+void MainWindow::onChangeApplicationSettings( void )
+{
+  qInfo( "Change Application settings" );
+
+  ApplicationSettingsDialog dlg( this, ApplicationSettings::instance() );
+
+  const int res = dlg.exec();
+  if ( res == QDialog::Accepted )
   {
-    qInfo( "Change Application settings" ) ;
-  
-    ApplicationSettingsDialog dlg( this , ApplicationSettings::instance() ) ;
+    ApplicationSettings newSettings = dlg.settings();
+    ApplicationSettings::instance() = newSettings;
 
-    const int res = dlg.exec() ;
-    if( res == QDialog::Accepted )
-    {
-      ApplicationSettings newSettings = dlg.settings() ;
-      ApplicationSettings::instance() = newSettings ; 
+    // Save it.
+    ApplicationSettings::instance().save( ApplicationSettings::configPath() );
 
-      // Save it.
-      ApplicationSettings::instance().save( ApplicationSettings::configPath() ) ; 
-
-      setGlobalSettings( );
-    }
+    setGlobalSettings();
   }
-
+}
 
 /**
  * @brief Action to be executed when a project has been created
@@ -934,7 +932,8 @@ void MainWindow::onSelectImage( int id )
         std::shared_ptr<CameraGizmo> c_gizmo = std::dynamic_pointer_cast<CameraGizmo>( it );
         if ( c_gizmo.use_count() )
         {
-          c_gizmo->setSelectionWeight( -1.0 );
+          c_gizmo->setSelected( false );
+          c_gizmo->setSelectionWeight( -1 );
         }
       }
 
@@ -945,7 +944,7 @@ void MainWindow::onSelectImage( int id )
         std::shared_ptr<CameraGizmo>      c_gizmo = std::dynamic_pointer_cast<CameraGizmo>( gizmo );
         if ( c_gizmo.use_count() )
         {
-          c_gizmo->setSelectionWeight( 2.0 );
+          c_gizmo->setSelected( true );
         }
 
         const std::vector<std::pair<int, double>> linked = m_project->linkedViewsWithStrength( id );
@@ -955,6 +954,7 @@ void MainWindow::onSelectImage( int id )
           std::shared_ptr<CameraGizmo>      c_gizmo = std::dynamic_pointer_cast<CameraGizmo>( gizmo );
           if ( c_gizmo.use_count() )
           {
+            c_gizmo->setSelected( true );
             c_gizmo->setSelectionWeight( linked_id.second );
           }
         }
@@ -1968,6 +1968,30 @@ bool MainWindow::hasUnsavedChange( void ) const
   return false;
 }
 
+/**
+ * @brief Acto to be executed when user has selected an object in the 3d view
+ *
+ * @param obj The selected object
+ */
+void MainWindow::onHasSelectedAnObject( std::shared_ptr<SelectableObject> obj )
+{
+  // Test if it's a camera
+  std::shared_ptr<CameraGizmo> camGizmo = std::dynamic_pointer_cast<CameraGizmo>( obj );
+  if ( camGizmo )
+  {
+    std::shared_ptr<SceneManager> mgr = m_project->sceneManager();
+    if ( mgr )
+    {
+      // Find which image ID is associated with this gizmo
+      const int id = mgr->cameraGizmoId( camGizmo );
+      if ( id >= 0 )
+      {
+        onSelectImage( id );
+        m_image_list->setSelectedImage( id );
+      }
+    }
+  }
+}
 
 /**
  * @brief Post actions to be executed after feature computation (or feature computation failure)
@@ -2417,14 +2441,13 @@ void MainWindow::updateInterface( void )
 /**
  * @brief Set settings of the application using the ApplicationSettings::instance()
  */
-void MainWindow::setGlobalSettings( void ) 
+void MainWindow::setGlobalSettings( void )
 {
-  const ApplicationSettings & curSettings = ApplicationSettings::instance() ; 
-  
-  m_result_view->setBackgroundColor( curSettings.viewBackgroundColor() ) ; 
+  const ApplicationSettings &curSettings = ApplicationSettings::instance();
+
+  m_result_view->setBackgroundColor( curSettings.viewBackgroundColor() );
   m_result_view->update();
 }
-
 
 /**
  * @brief Build interface elements
@@ -2434,7 +2457,7 @@ void MainWindow::buildInterface( void )
   m_image_list  = new ImageListWidget( this );
   m_detail_list = new DetailListWidget( this );
 
-  m_result_view = new ResultViewWidget( ApplicationSettings::instance().viewBackgroundColor() , this );
+  m_result_view = new ResultViewWidget( ApplicationSettings::instance().viewBackgroundColor(), this );
 
   // Add everything to the main window
   QWidget *    mainWidget = new QWidget;
@@ -2512,7 +2535,7 @@ void MainWindow::buildMenus( void )
   m_setting_matches_act    = m_settings_menu->addAction( "Matching" );
   m_setting_sfm_act        = m_settings_menu->addAction( "SfM" );
   m_settings_menu->addSeparator();
-  m_setting_application_settings = m_settings_menu->addAction( "Application settings" ) ; 
+  m_setting_application_settings = m_settings_menu->addAction( "Application settings" );
 
   // View actions
   m_show_hide_image_list_act = m_view_menu->addAction( "Image list" );
@@ -2610,7 +2633,7 @@ void MainWindow::makeConnections( void )
   connect( m_setting_features_act, SIGNAL( triggered() ), this, SLOT( onChangeFeatureSettings() ) );
   connect( m_setting_matches_act, SIGNAL( triggered() ), this, SLOT( onChangeMatchesSettings() ) );
   connect( m_setting_sfm_act, SIGNAL( triggered() ), this, SLOT( onChangeSfMSettings() ) );
-  connect(m_setting_application_settings , SIGNAL( triggered() ) , this , SLOT( onChangeApplicationSettings()) ) ;
+  connect( m_setting_application_settings, SIGNAL( triggered() ), this, SLOT( onChangeApplicationSettings() ) );
   connect( m_show_hide_grid_act, SIGNAL( triggered() ), this, SLOT( onShowHideGrid() ) );
   connect( m_show_hide_camera_gizmos_act, SIGNAL( triggered() ), this, SLOT( onShowHideCameraGizmos() ) );
   connect( m_show_hide_image_list_act, SIGNAL( triggered() ), this, SLOT( onShowImageList() ) );
@@ -2629,6 +2652,8 @@ void MainWindow::makeConnections( void )
   // Interface
   connect( m_image_list, SIGNAL( hasSelectedAnImage( int ) ), this, SLOT( onSelectImage( int ) ) );
   connect( m_image_list, SIGNAL( hasRequestedMaskDefinition( int ) ), this, SLOT( onDefineMask( int ) ) );
+  connect( m_result_view, SIGNAL( hasSelectedAnObject( std::shared_ptr<SelectableObject> ) ), this,
+           SLOT( onHasSelectedAnObject( std::shared_ptr<SelectableObject> ) ) );
 }
 
 void MainWindow::createProgress( const std::string &message, const int minvalue, const int maxvalue )

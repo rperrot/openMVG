@@ -18,6 +18,9 @@
 
 namespace openMVG_gui
 {
+
+class SelectableObject;
+
 /**
  * @brief Widget used to display a 3d view of the result
  */
@@ -28,7 +31,7 @@ public:
    * @brief Ctr
    * @param parent Parent widget
    */
-  ResultViewWidget( const openMVG::Vec4 & backgroundColor ,  QWidget *parent = nullptr );
+  ResultViewWidget( const openMVG::Vec4 &backgroundColor, QWidget *parent = nullptr );
 
   ~ResultViewWidget( void );
 
@@ -120,6 +123,15 @@ private slots:
    */
   void destroyGLData( void );
 
+signals:
+
+  /**
+   * @brief Signal emitted when user as clicked on an object
+   *
+   * @param obj The selection
+   */
+  void hasSelectedAnObject( std::shared_ptr<SelectableObject> obj );
+
 private:
   void makeConnections( void );
 
@@ -132,7 +144,9 @@ private:
   double m_last_mouse_x;
   double m_last_mouse_y;
 
-  openMVG::Vec4 m_backgroundColor ; 
+  bool m_has_dragged;
+
+  openMVG::Vec4 m_backgroundColor;
 
   Q_OBJECT
 };

@@ -9,50 +9,39 @@
 #ifndef _OPENMVG_SOFTWARE_OPENMVG_GUI_GRAPHICS_WEIGHTED_SELECTION_HH_
 #define _OPENMVG_SOFTWARE_OPENMVG_GUI_GRAPHICS_WEIGHTED_SELECTION_HH_
 
+#include "SelectableObject.hh"
+
 namespace openMVG_gui
 {
 
 /**
  * @brief Class used to have a weight associated with a selection
- * -> Used to indicate the link between views
- * -> Link negative -> No selection
- * -> Link > 1 FUll selection
- * -> Link \in [0;1] -> weight of the selection
  */
-class WeightedSelectableObject
+class WeightedSelectableObject : public SelectableObject
 {
-  public:
+public:
+  /**
+   * @brief Ctr
+   * @param selected Indicate if the object is selected
+   * @param w Weight of the selection
+   */
+  WeightedSelectableObject( const bool selected = false, const double w = -1.0 );
 
-    /**
-     * @brief Ctr
-     * @param w Weight of the selection
-     * @note Default selection mode is unselected
-     */
-    WeightedSelectableObject( const double w = -1.0 ) ;
+  /**
+   * @brief Weight of the selection
+   * @return weight of the selection
+   */
+  double selectionWeight( void ) const;
 
-    /**
-     * @brief Weight of the selection
-     * @return weight of the selection 
-     */
-    double selectionWeight( void ) const ;
+  /**
+   * @brief Set weight of the selection
+   * @param w Weight of the selection
+   */
+  void setSelectionWeight( const double w );
 
-    /**
-     * @brief Set weight of the selection 
-     * @param w Weight of the selection 
-     */
-    void setSelectionWeight( const double w ) ;
-
-    /**
-     * @brief get current selection state
-     * @retval true if object is selected
-     * @retval false if object is not selected
-     */
-    bool selected( void ) const ;
-
-  private:
-
-    double m_weight ;
-} ;
+private:
+  double m_weight;
+};
 
 } // namespace openMVG_gui
 

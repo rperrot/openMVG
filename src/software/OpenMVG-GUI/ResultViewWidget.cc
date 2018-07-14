@@ -14,6 +14,9 @@
 #include "utils/Plane.hh"
 #include "utils/Sphere.hh"
 
+#include "graphics/IntersectableObject.hh"
+#include "graphics/WeightedSelectableObject.hh"
+
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include <QCoreApplication>
@@ -25,10 +28,8 @@ namespace openMVG_gui
  * @brief Ctr
  * @param parent Parent widget
  */
-ResultViewWidget::ResultViewWidget( const openMVG::Vec4 & backgroundColor , QWidget *parent )
-    : QOpenGLWidget( parent ),
-    m_backgroundColor( backgroundColor ) ,
-    m_scn( nullptr )
+ResultViewWidget::ResultViewWidget( const openMVG::Vec4 &backgroundColor, QWidget *parent ) :
+    QOpenGLWidget( parent ), m_backgroundColor( backgroundColor ), m_scn( nullptr )
 {
   /*
   QOpenGLContext * context = new QOpenGLContext ;
@@ -50,7 +51,7 @@ ResultViewWidget::~ResultViewWidget( void )
  */
 void ResultViewWidget::initializeGL( void )
 {
-  glClearColor( m_backgroundColor[0] , m_backgroundColor[1] , m_backgroundColor[2] , m_backgroundColor[3] );
+  glClearColor( m_backgroundColor[ 0 ], m_backgroundColor[ 1 ], m_backgroundColor[ 2 ], m_backgroundColor[ 3 ] );
   glEnable( GL_DEPTH_TEST );
 
   // Create point shader
@@ -81,18 +82,6 @@ void ResultViewWidget::paintGL( void )
 
   if ( m_scn )
   {
-    /*
-    if( m_point_shader )
-    {
-      m_point_shader->enable() ;
-      if( m_point_shader->hasUniform( "uUseUniformColor" ) )
-      {
-        m_point_shader->setUniform( "uUseUniformColor" , ( int ) 0 ) ;
-        m_point_shader->setUniform( "uColor" , openMVG::Vec3( 1.0 , 1.0 , 1.0 ) ) ;
-      }
-    }
-    */
-
     m_scn->render( (double)w, (double)h );
   }
 }
@@ -292,9 +281,9 @@ void ResultViewWidget::mousePressEvent( QMouseEvent *event )
   {
     m_last_mouse_x = event->x();
     m_last_mouse_y = event->y();
-
-    m_sph_gizmo->setVisible( true );
   }
+
+  m_has_dragged = false;
 
   update();
 }
@@ -305,6 +294,8 @@ void ResultViewWidget::mousePressEvent( QMouseEvent *event )
  */
 void ResultViewWidget::mouseMoveEvent( QMouseEvent *event )
 {
+  m_has_dragged = true;
+
   std::shared_ptr<Camera> camera = nullptr;
   if ( m_scn )
   {
@@ -353,8 +344,8 @@ void ResultViewWidget::mouseMoveEvent( QMouseEvent *event )
   {
   case PAN:
   {
-    openMVG::Vec3 oldPos( m_last_mouse_x, static_cast<double>( height() ) - m_last_mouse_y, 0.0 );
-    openMVG::Vec3 newPos( event->x(), static_cast<double>( height() ) - event->y(), 0.0 );
+    const openMVG::Vec3 oldPos( m_last_mouse_x, static_cast<double>( height() ) - m_last_mouse_y, 0.0 );
+    const openMVG::Vec3 newPos( event->x(), static_cast<double>( height() ) - event->y(), 0.0 );
 
     const double viewport[] = {0, 0, static_cast<double>( width() ), static_cast<double>( height() )};
 
@@ -377,6 +368,8 @@ void ResultViewWidget::mouseMoveEvent( QMouseEvent *event )
   }
   case ROTATE:
   {
+    m_sph_gizmo->setVisible( true );
+
     // Compute parameters of the rotation
     const BellBall ball( std::min( 0.8 * width() / 2.0, 0.8 * height() / 2.0 ) );
 
@@ -421,6 +414,37 @@ void ResultViewWidget::mouseMoveEvent( QMouseEvent *event )
  */
 void ResultViewWidget::mouseReleaseEvent( QMouseEvent *event )
 {
+  if ( m_has_dragged == false )
+  {
+    if ( m_scn )
+    {
+      std::shared_ptr<Camera> camera = m_scn->camera();
+      // Perform selection on the position
+      const openMVG::Vec3 tmp1( event->x(), static_cast<double>( height() ) - event->y(), 1.0 );
+      const openMVG::Vec3 tmp0( event->x(), static_cast<double>( height() ) - event->y(), 0.0 );
+
+      const double viewport[] = {0, 0, static_cast<double>( width() ), static_cast<double>( height() )};
+
+      const openMVG::Vec3 pos1 = camera->unProject( tmp1, viewport );
+      const openMVG::Vec3 pos0 = camera->unProject( tmp0, viewport );
+
+      const openMVG::Vec3 rayDir = ( pos1 - pos0 ).normalized();
+
+      const Ray ray( camera->position(), rayDir );
+
+      Intersection inter = m_scn->intersect( ray );
+
+      if ( inter )
+      {
+        std::shared_ptr<SelectableObject> selectable = std::dynamic_pointer_cast<SelectableObject>( inter.object() );
+        if ( selectable )
+        {
+          emit hasSelectedAnObject( selectable );
+        }
+      }
+    }
+  }
+
   m_sph_gizmo->setVisible( false );
   update();
 }
@@ -437,7 +461,7 @@ std::shared_ptr<OpenGLContext> ResultViewWidget::getContext( void )
  */
 void ResultViewWidget::setBackgroundColor( const openMVG::Vec4 &color )
 {
-  m_backgroundColor = color ; 
+  m_backgroundColor = color;
   makeCurrent();
   glClearColor( color[ 0 ], color[ 1 ], color[ 2 ], color[ 3 ] );
 }
@@ -463,7 +487,8 @@ void ResultViewWidget::destroyGLData( void )
 
 void ResultViewWidget::makeConnections( void )
 {
-  // see the Qt doc : we must be sure that we have a direct connection to use makeCurrent in slot
+  // see the Qt doc : we must be sure that we have a direct connection to use
+  // makeCurrent in slot
   connect( context(), SIGNAL( aboutToBeDestroyed() ), this, SLOT( destroyGLData() ), Qt::DirectConnection );
 }
 

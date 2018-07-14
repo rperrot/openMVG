@@ -13,40 +13,40 @@ namespace openMVG_gui
 {
 
 /**
-* @brief class holding object that can be selectable ·
-*/
+ * @brief class holding object that can be selectable ·
+ */
 class SelectableObject
 {
-  public:
+public:
+  /**
+   * @brief ctr
+   * @param selected current selection
+   */
+  SelectableObject( const bool selected = false );
 
-    /**
-    * @brief ctr
-    * @param selected current selection
-    */
-    SelectableObject( const bool selected = false ) ;
+  virtual ~SelectableObject() = default;
 
-    /**
-    * @brief get current selection state
-    * @retval true if object is selected
-    * @retval false if object is not selected
-    */
-    bool selected( void ) const ;
+  /**
+   * @brief get current selection state
+   * @retval true if object is selected
+   * @retval false if object is not selected
+   */
+  bool selected( void ) const;
 
-    /**
-    * @brief set current selection
-    * @param sel new selection
-    */
-    void setSelected( const bool sel ) ;
+  /**
+   * @brief set current selection
+   * @param sel new selection
+   */
+  void setSelected( const bool sel );
 
-    /**
-    * @brief switch selection state
-    */
-    void switchSelection( void ) ;
+  /**
+   * @brief switch selection state
+   */
+  void switchSelection( void );
 
-  private:
-
-    bool m_selected ;
-} ;
+private:
+  bool m_selected;
+};
 
 } // namespace openMVG_gui
 
