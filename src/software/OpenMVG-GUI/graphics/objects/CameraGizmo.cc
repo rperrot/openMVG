@@ -703,8 +703,38 @@ Intersection CameraGizmo::intersect( const Ray &ray ) const
 {
   if ( m_is_spherical )
   {
-    // No intersection for now
-    return Intersection();
+    const openMVG::Vec3 C      = m_pose.center();
+    const double        radius = m_size;
+
+    const openMVG::Vec3 l   = C - ray.origin();
+    const double        tca = l.dot( ray.direction() );
+    if ( tca < 0.0 )
+    {
+      return Intersection();
+    }
+    const double d2   = l.dot( l ) - tca * tca;
+    const double rad2 = radius * radius;
+    if ( d2 > rad2 )
+    {
+      return Intersection();
+    }
+    const double thc = std::sqrt( rad2 - d2 );
+    const double t0  = tca - thc;
+    const double t1  = tca + thc;
+
+    if ( t1 <= 0.0 )
+    {
+      return Intersection();
+    }
+    else
+    {
+      double t = t0;
+      if ( t0 <= 0.0 )
+      {
+        t = t1;
+      }
+      return Intersection( true, std::const_pointer_cast<IntersectableObject>( shared_from_this() ), t );
+    }
   }
   else
   {
