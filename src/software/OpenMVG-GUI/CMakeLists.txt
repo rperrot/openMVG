@@ -94,13 +94,13 @@ target_link_libraries( OpenMVG-GUI
                        # openGL 
                        ${OPENGL_LIBRARIES}
                        # openMVG
+                       openMVG_exif
                        openMVG_features 
                        openMVG_image
                        openMVG_matching_image_collection
                        openMVG_sfm
                        # third party 
-                       easyexif
-                       stlplus
+                       openMVG_stlplus
                        vlsift )
 
 target_include_directories( OpenMVG-GUI PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/dialogs )                   
