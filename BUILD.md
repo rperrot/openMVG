@@ -147,7 +147,7 @@ $ ./bootstrap-vcpkg.sh/bat
 
 Checking OpenMVG 3rd party dependencies by using VCPKG (configure your build triplet if needed see `--triplet`)
 ```shell
-$ ./vcpkg install cereal ceres eigen3 libjpeg-turbo libpng tiff  
+$ ./vcpkg install cereal ceres eigen3 libjpeg-turbo libpng tiff
 ```
 Note: If you want to use ceres with a sparse back end, please use one of this choice `ceres[cxsparse]` or `ceres[suitesparse]` or `ceres[eigensparse]`.
 
@@ -156,7 +156,7 @@ Checking out OpenMVG and build it
 $ git clone --recursive https://github.com/openMVG/openMVG.git
 $ mkdir openMVG_Build
 $ cd openMVG_Build
-$ cmake ../openMVG/src/ -DCMAKE_TOOLCHAIN_FILE=<VCPK_ROOT>/scripts/buildsystems/vcpkg.cmake
+$ cmake -DCMAKE_TOOLCHAIN_FILE=<VCPKG_ROOT>/scripts/buildsystems/vcpkg.cmake ../openMVG/src/
 $ cmake --build .
 ```
 
@@ -166,7 +166,7 @@ Using OpenCV sample
 Add `-DOpenMVG_USE_OPENCV=ON` to your cmake command and set the OpenCV_DIR variable to your OpenCV build directory
 e.g. `-DOpenCV_DIR="/home/user/Dev/github/itseez/opencv_Build" -DOpenMVG_USE_OPENCV=ON`
 
-Using OpenMVG as a third party library dependency in CMake
+Using OpenMVG as a third party library dependency with CMake
 -------------------------------------------------------------
 
 OpenMVG can be used as a third party library once it has been installed.
@@ -188,7 +188,7 @@ add_executable(main main.cpp)
 target_link_libraries(main ${OPENMVG_LIBRARIES})
 ```
 
-or with modern target-based approach (CMake 3.0+)
+or with modern target-based approach (CMake 3.0+, Includes directories will be added by CMake target transitivity)
 
 ```
 find_package(OpenMVG REQUIRED)
@@ -197,10 +197,31 @@ target_link_libraries(main
   PRIVATE
     OpenMVG::openMVG_sfm
     OpenMVG::openMVG_matching
+    ...
 )
 ```
 
-Specify in CMake where OpenMVG has been installed by using the CMake OpenMVG_DIR variable
-e.g. `-DOpenMVG_DIR:STRING="YourInstallPath"/share/openMVG/cmake`
+The list of available openMVG libraries is (use only the ones you need):
+```
+OpenMVG::openMVG_camera
+OpenMVG::openMVG_exif
+OpenMVG::openMVG_features
+OpenMVG::openMVG_geodesy
+OpenMVG::openMVG_geometry
+OpenMVG::openMVG_graph
+OpenMVG::openMVG_image
+OpenMVG::openMVG_linearProgramming
+OpenMVG::openMVG_matching
+OpenMVG::openMVG_matching_image_collection
+OpenMVG::openMVG_multiview
+OpenMVG::openMVG_numeric
+OpenMVG::openMVG_robust_estimation
+OpenMVG::openMVG_sfm
+OpenMVG::openMVG_system
+```
+
+If OpenMVG has been installed by using the CMake OpenMVG_DIR variable you can specify where the install have been done manually by using:
+
+  `-DOpenMVG_DIR:STRING="YourInstallPath"/share/openMVG/cmake`
 
 A message will be displayed if OpenMVG is found or not at the CMake configure step.
