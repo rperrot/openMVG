@@ -63,16 +63,9 @@ set(libpng_sources
 if(MSVC)
   add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
 endif(MSVC)
-<<<<<<< HEAD
-add_library(png STATIC ${libpng_sources})
-add_library(png::lib ALIAS png)
-target_link_libraries(png PUBLIC zlib ${M_LIBRARY})
-set_property(TARGET png PROPERTY FOLDER OpenMVG/3rdParty)
-=======
 add_library(openMVG_png STATIC ${libpng_sources})
 target_link_libraries(openMVG_png PUBLIC openMVG_zlib ${M_LIBRARY})
 set_property(TARGET openMVG_png PROPERTY FOLDER OpenMVG/3rdParty)
->>>>>>> upstream/develop
 
 target_include_directories(openMVG_png PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
