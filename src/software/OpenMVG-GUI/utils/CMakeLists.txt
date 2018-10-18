@@ -12,6 +12,7 @@ set( OPENMVG_GUI_UTILS_HEADERS BellBall.hh
                                SfMDataHelper.hh
                                Sphere.hh 
                                StdStreamHandlers.hh
+                               UtilFile.hh
                                UtilString.hh )
 set( OPENMVG_GUI_UTILS_SOURCES BellBall.cc 
                                BoundingSphere.cc 
@@ -27,6 +28,7 @@ set( OPENMVG_GUI_UTILS_SOURCES BellBall.cc
                                SfMDataHelper.cc 
                                Sphere.cc
                                StdStreamHandlers.cc 
+                               UtilFile.cc
                                UtilString.cc )
 
 add_library( OpenMVG_gui_utils STATIC ${OPENMVG_GUI_UTILS_HEADERS} ${OPENMVG_GUI_UTILS_SOURCES} )
