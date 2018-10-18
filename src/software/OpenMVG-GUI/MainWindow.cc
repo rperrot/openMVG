@@ -30,6 +30,7 @@
 #include "utils/BoundingSphere.hh"
 #include "utils/ImageDescriberInfo.hh"
 #include "utils/PlyLoader.hh"
+#include "utils/UtilFile.hh"
 
 #include "openMVG/sfm/sfm_data.hpp"
 #include "openMVG/sfm/sfm_data_io.hpp"
@@ -41,6 +42,7 @@
 #include <QHBoxLayout>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QStandardPaths>
 #include <QThread>
 #include <QToolBar>
 #include <QVBoxLayout>
@@ -53,7 +55,8 @@ namespace openMVG_gui
 /**
  * @brief Main window
  */
-MainWindow::MainWindow() : m_project( nullptr )
+MainWindow::MainWindow() :
+    m_project( nullptr )
 {
   setWindowTitle( "OpenMVG-GUI" );
   showMaximized();
@@ -70,6 +73,33 @@ MainWindow::MainWindow() : m_project( nullptr )
   m_progress_dialog = nullptr;
 
   m_detail_list->setVisible( false );
+}
+
+static inline std::string sensorWidthDatabasePath( void )
+{
+  // Choose the base sensor width database :
+  // - Use the one in the application settings directory if it exists.
+  // - If it does not exists, use the one bundled with the application
+  std::string camera_sensor_width_database_file = ApplicationSettings::defaultSensorWidthDatabasePath();
+  if ( stlplus::file_exists( ApplicationSettings::applicationWideSensorWidthDatabasePath() ) )
+  {
+    camera_sensor_width_database_file = ApplicationSettings::applicationWideSensorWidthDatabasePath();
+  }
+  std::string res = camera_sensor_width_database_file;
+
+  // Now manage the user define sensor width (if it exists)
+  if ( stlplus::file_exists( ApplicationSettings::applicationWideUserDefinedSensorWidthDatabasePath() ) )
+  {
+    // Merge the two files and return the given name
+    const std::string mergedPath = ( QStandardPaths::writableLocation( QStandardPaths::AppDataLocation ) + QDir::separator() + "merged_sensor_width_camera_database.txt" ).toStdString();
+
+    const bool ok = mergeFiles( camera_sensor_width_database_file, ApplicationSettings::applicationWideUserDefinedSensorWidthDatabasePath(), mergedPath );
+    if ( ok )
+    {
+      res = mergedPath;
+    }
+  }
+  return res;
 }
 
 /**
@@ -100,16 +130,7 @@ void MainWindow::onNewProject( void )
     const IntrinsicParams intrin_params;
 
     // Choose the sensor width database :
-    // - Use the one in the application settings directory if it exists.
-    // - If it does not exists, use the one bundled with the application
-    std::string camera_sensor_width_database_file =
-        ApplicationSettings::defaultSensorWidthDatabasePath();
-    if ( stlplus::file_exists(
-             ApplicationSettings::applicationWideSensorWidthDatabasePath() ) )
-    {
-      camera_sensor_width_database_file =
-          ApplicationSettings::applicationWideSensorWidthDatabasePath();
-    }
+    const std::string camera_sensor_width_database_file = sensorWidthDatabasePath();
 
     m_worker_project_creation = std::make_shared<WorkerProjectCreation>(
         base_path, image_path, intrin_params, camera_sensor_width_database_file,

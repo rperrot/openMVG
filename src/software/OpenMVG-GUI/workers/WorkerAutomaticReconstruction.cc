@@ -9,6 +9,7 @@
 #include "WorkerAutomaticReconstruction.hh"
 
 #include "ApplicationSettings.hh"
+#include "utils/UtilFile.hh"
 
 #include "WorkerColorComputation.hh"
 #include "WorkerFeaturesComputation.hh"
@@ -28,6 +29,8 @@
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include <QApplication>
+#include <QDir>
+#include <QStandardPaths>
 
 namespace openMVG_gui
 {
@@ -207,11 +210,9 @@ void WorkerAutomaticReconstruction::sendProgressOverall( void )
   emit progressOverall( progress_value );
 }
 
-void WorkerAutomaticReconstruction::doProjectCreation( void )
+static inline std::string sensorWidthDatabasePath( void )
 {
-  // Default scene manager
-
-  // Choose the sensor width database :
+  // Choose the base sensor width database :
   // - Use the one in the application settings directory if it exists.
   // - If it does not exists, use the one bundled with the application
   std::string camera_sensor_width_database_file = ApplicationSettings::defaultSensorWidthDatabasePath();
@@ -219,6 +220,27 @@ void WorkerAutomaticReconstruction::doProjectCreation( void )
   {
     camera_sensor_width_database_file = ApplicationSettings::applicationWideSensorWidthDatabasePath();
   }
+  std::string res = camera_sensor_width_database_file;
+
+  // Now manage the user define sensor width (if it exists)
+  if ( stlplus::file_exists( ApplicationSettings::applicationWideUserDefinedSensorWidthDatabasePath() ) )
+  {
+    // Merge the two files and return the given name
+    const std::string mergedPath = ( QStandardPaths::writableLocation( QStandardPaths::AppDataLocation ) + QDir::separator() + "merged_sensor_width_camera_database.txt" ).toStdString();
+
+    const bool ok = mergeFiles( camera_sensor_width_database_file, ApplicationSettings::applicationWideUserDefinedSensorWidthDatabasePath(), mergedPath );
+    if ( ok )
+    {
+      res = mergedPath;
+    }
+  }
+  return res;
+}
+
+void WorkerAutomaticReconstruction::doProjectCreation( void )
+{
+
+  const std::string camera_sensor_width_database_file = sensorWidthDatabasePath();
   const IntrinsicParams intrin_params;
   m_worker_project_creation = std::make_shared<WorkerProjectCreation>(
       m_output_project_folder, m_input_image_folder, intrin_params, camera_sensor_width_database_file, m_scn_mgr );
@@ -417,7 +439,7 @@ void WorkerAutomaticReconstruction::hasDoneRegionProviderLoad( void )
   hasIncrementedStage();
 
   std::shared_ptr<openMVG::sfm::Regions_Provider> region = m_worker_regions_provider_load->regionsProvider();
-  m_worker_matches_computation = std::make_shared<WorkerMatchesComputation>( m_project, region );
+  m_worker_matches_computation                           = std::make_shared<WorkerMatchesComputation>( m_project, region );
   int min, max;
   m_worker_matches_computation->progressRange( min, max );
   emit( progressRangeCurrentStage( min, max ) );
