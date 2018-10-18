@@ -86,7 +86,7 @@ void SensorDatabaseDialog::onWantToUpdateFromInternet( void )
   }
   else
   {
-    // TODO show an error message
+    QMessageBox::critical( this, "Error during download", "The sensor database file could not be downloaded" );
   }
 }
 
