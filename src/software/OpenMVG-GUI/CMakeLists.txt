@@ -1,6 +1,7 @@
 find_package( Qt5Widgets REQUIRED )
 find_package( Qt5OpenGL REQUIRED )
 find_package( Qt5WebEngineWidgets REQUIRED )
+find_package( Qt5Network )
 find_package( OpenGL REQUIRED )
 
 if( NOT Qt5Widgets_FOUND )
