@@ -8,3 +8,5 @@
 
 - Get back GPS priors
 - Node like reconstruction pipeline building 
+
+- Provide installer / packager for executables (fix executable and deploy for qt)
