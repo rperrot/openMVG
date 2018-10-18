@@ -19,7 +19,7 @@
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
 // Parse the database
-bool parseDatabase( const std::string& sfileDatabase, std::vector<Datasheet>& vec_database )
+static bool parseDatabase( const std::string& sfileDatabase, std::vector<Datasheet>& vec_database )
 {
   std::ifstream iFilein( sfileDatabase.c_str() );
   if ( stlplus::is_file(sfileDatabase) && iFilein)
@@ -54,7 +54,7 @@ bool parseDatabase( const std::string& sfileDatabase, std::vector<Datasheet>& ve
 
 // Retrieve camera 'Datasheet' information for the given camera model model name
 //  iff it is found in the database
-bool getInfo
+static bool getInfo
 (
   const std::string & sModel,
   const std::vector<Datasheet>& vec_database,
