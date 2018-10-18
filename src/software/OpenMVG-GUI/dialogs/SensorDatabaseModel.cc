@@ -186,7 +186,6 @@ void SensorDatabaseModel::append( const std::string &brand, const std::string &m
    */
 bool SensorDatabaseModel::removeRows( int row, int count, const QModelIndex &parent )
 {
-  std::cerr << "Removing " << count << " rows, starting from : " << row << std::endl;
   if ( row + count <= m_data.size() )
   {
     beginRemoveRows( parent, row, row + count - 1 );
