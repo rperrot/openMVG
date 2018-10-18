@@ -16,6 +16,8 @@
 #include <cereal/types/utility.hpp>
 #include <cereal/types/vector.hpp>
 
+#include <QCoreApplication>
+#include <QDir>
 #include <QStandardPaths>
 
 #include <clocale>
@@ -25,7 +27,8 @@
 namespace openMVG_gui
 {
 
-const openMVG::Vec4 ApplicationSettings::DEFAULT_VIEW_BACKGROUND_COLOR = {0.251, 0.251, 0.251, 1.0};
+const openMVG::Vec4 ApplicationSettings::DEFAULT_VIEW_BACKGROUND_COLOR = {
+    0.251, 0.251, 0.251, 1.0};
 
 ApplicationSettings &ApplicationSettings::instance()
 {
@@ -37,7 +40,8 @@ ApplicationSettings &ApplicationSettings::instance()
 // Get the path of the application configuration file
 std::string ApplicationSettings::configPath( void )
 {
-  QString dir = QStandardPaths::writableLocation( QStandardPaths::AppDataLocation );
+  QString dir =
+      QStandardPaths::writableLocation( QStandardPaths::AppDataLocation );
   dir += "/application_settings.xml";
   return dir.toUtf8().constData();
 }
@@ -45,8 +49,9 @@ std::string ApplicationSettings::configPath( void )
 /**
  * Default settings
  */
-ApplicationSettings::ApplicationSettings( void )
-    : m_view_background_color( ApplicationSettings::DEFAULT_VIEW_BACKGROUND_COLOR )
+ApplicationSettings::ApplicationSettings( void ) :
+    m_view_background_color(
+        ApplicationSettings::DEFAULT_VIEW_BACKGROUND_COLOR )
 {
 }
 
@@ -101,14 +106,18 @@ bool ApplicationSettings::save( const std::string &file )
 
   try
   {
-    archive( cereal::make_nvp( "major_version", GuiVersion::CURRENT_VERSION_MAJOR ) );
-    archive( cereal::make_nvp( "minor_version", GuiVersion::CURRENT_VERSION_MINOR ) );
-    archive( cereal::make_nvp( "revision_version", GuiVersion::CURRENT_VERSION_REVISION ) );
+    archive( cereal::make_nvp( "major_version",
+                               GuiVersion::CURRENT_VERSION_MAJOR ) );
+    archive( cereal::make_nvp( "minor_version",
+                               GuiVersion::CURRENT_VERSION_MINOR ) );
+    archive( cereal::make_nvp( "revision_version",
+                               GuiVersion::CURRENT_VERSION_REVISION ) );
 
     // Background
     {
-      const std::vector<double> data = {m_view_background_color[ 0 ], m_view_background_color[ 1 ],
-                                        m_view_background_color[ 2 ], m_view_background_color[ 3 ]};
+      const std::vector<double> data = {
+          m_view_background_color[ 0 ], m_view_background_color[ 1 ],
+          m_view_background_color[ 2 ], m_view_background_color[ 3 ]};
       archive( cereal::make_nvp( "view_background_color", data ) );
     }
   }
@@ -163,7 +172,8 @@ bool ApplicationSettings::load( const std::string &file )
     }
     else
     {
-      m_view_background_color = ApplicationSettings::DEFAULT_VIEW_BACKGROUND_COLOR;
+      m_view_background_color =
+          ApplicationSettings::DEFAULT_VIEW_BACKGROUND_COLOR;
     }
   }
   catch ( ... )
@@ -174,10 +184,50 @@ bool ApplicationSettings::load( const std::string &file )
   return true;
 }
 
-  void ApplicationSettings::set( const ApplicationSettings & src)
-  {
-    (*this) = src ; 
-  }
+void ApplicationSettings::set( const ApplicationSettings &src )
+{
+  ( *this ) = src;
+}
 
+/**
+ * @brief Get sensor_width_database path situated in the application settings
+ * directory
+ *
+ * @return sensor width database path
+ */
+std::string ApplicationSettings::applicationWideSensorWidthDatabasePath( void )
+{
+  const QString out_path =
+      QStandardPaths::writableLocation( QStandardPaths::AppDataLocation ) +
+      QDir::separator() + "sensor_width_camera_database.txt";
+  return out_path.toStdString();
+}
+
+/**
+ * @brief Get default sensor width database (ie: bundled with the application)
+ *
+ * @return sensor width database path
+ */
+std::string ApplicationSettings::defaultSensorWidthDatabasePath( void )
+{
+  return stlplus::create_filespec(
+      stlplus::folder_append_separator(
+          stlplus::folder_append_separator(
+              QCoreApplication::applicationDirPath().toStdString() ) +
+          "ressources" ) +
+          "sensor_database",
+      "sensor_width_camera_database.txt" );
+}
+
+/**
+ * @brief Get user defined sensor width database file path
+ *
+ * @return sensor width database path
+ */
+std::string ApplicationSettings::applicationWideUserDefinedSensorWidthDatabasePath( void )
+{
+  const QString out_path = QStandardPaths::writableLocation( QStandardPaths::AppDataLocation ) + QDir::separator() + "user_defined_sensor_width_camera_database.txt";
+  return out_path.toStdString();
+}
 
 } // namespace openMVG_gui

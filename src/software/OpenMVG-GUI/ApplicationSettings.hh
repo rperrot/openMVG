@@ -68,6 +68,28 @@ public:
 
   void set( const ApplicationSettings &src );
 
+  /**
+   * @brief Get sensor_width_database path situated in the application settings
+   * directory
+   *
+   * @return sensor width database path
+   */
+  static std::string applicationWideSensorWidthDatabasePath( void );
+
+  /**
+   * @brief Get default sensor width database (ie: bundled with the application)
+   *
+   * @return sensor width database path
+   */
+  static std::string defaultSensorWidthDatabasePath( void );
+
+  /**
+   * @brief Get user defined sensor width database file path
+   *
+   * @return sensor width database path
+   */
+  static std::string applicationWideUserDefinedSensorWidthDatabasePath( void );
+
 private:
   /**
    *  Load a settings file
