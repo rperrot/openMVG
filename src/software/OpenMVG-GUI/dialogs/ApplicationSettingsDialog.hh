@@ -54,6 +54,12 @@ private slots:
   void onWantToSetBackgroundColor( void );
 
   /**
+   * @brief When user click on sensor database btn
+   *
+   */
+  void onWantToManageSensorDatabase( void );
+
+  /**
    * @brief Get back to the initial settings
    */
   void reinitSettings( void );
@@ -75,6 +81,8 @@ private:
   QPushButton *m_btn_reset_default;
   QPushButton *m_btn_cancel;
   QPushButton *m_btn_ok;
+
+  QPushButton *m_sensorDatabaseMgmt;
 
   ColorIndicatorWidget *m_view_background_color_indicator;
 

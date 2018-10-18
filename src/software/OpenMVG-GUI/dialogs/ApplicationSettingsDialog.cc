@@ -8,6 +8,10 @@
 
 #include "ApplicationSettingsDialog.hh"
 
+#include "SensorDatabaseDialog.hh"
+
+#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
+
 #include <QColorDialog>
 #include <QGridLayout>
 #include <QGroupBox>
@@ -18,10 +22,8 @@
 namespace openMVG_gui
 {
 
-ApplicationSettingsDialog::ApplicationSettingsDialog( QWidget *parent, const ApplicationSettings &setting )
-    : QDialog( parent )
-    , m_initialSettings( setting )
-    , m_currentSettings( setting )
+ApplicationSettingsDialog::ApplicationSettingsDialog( QWidget *parent, const ApplicationSettings &setting ) :
+    QDialog( parent ), m_initialSettings( setting ), m_currentSettings( setting )
 {
   buildInterface();
   makeConnections();
@@ -60,8 +62,7 @@ void ApplicationSettingsDialog::onOk( void )
 void ApplicationSettingsDialog::onWantToSetBackgroundColor( void )
 {
   const openMVG::Vec4 backgroundColor = m_currentSettings.viewBackgroundColor();
-  const QColor        col( backgroundColor[ 0 ] * 255, backgroundColor[ 1 ] * 255, backgroundColor[ 2 ] * 255,
-                    backgroundColor[ 3 ] * 255 );
+  const QColor        col( backgroundColor[ 0 ] * 255, backgroundColor[ 1 ] * 255, backgroundColor[ 2 ] * 255, backgroundColor[ 3 ] * 255 );
 
   QColorDialog dlg( col );
 
@@ -78,6 +79,33 @@ void ApplicationSettingsDialog::onWantToSetBackgroundColor( void )
 
     m_currentSettings.setViewBackgroundColor( {r, g, b, a} );
   }
+}
+
+/**
+ * @brief When user click on sensor database btn
+ *
+ */
+void ApplicationSettingsDialog::onWantToManageSensorDatabase( void )
+{
+  SensorDatabaseDialog dlg( this );
+
+  // Load the sensor width database
+  // Choose the sensor width database :
+  // - Use the one in the application settings directory if it exists.
+  // - If it does not exists, use the one bundled with the application
+  std::string camera_sensor_width_database_file = ApplicationSettings::defaultSensorWidthDatabasePath();
+  if ( stlplus::file_exists( ApplicationSettings::applicationWideSensorWidthDatabasePath() ) )
+  {
+    camera_sensor_width_database_file = ApplicationSettings::applicationWideSensorWidthDatabasePath();
+  }
+  dlg.setMainDatabaseFromFile( camera_sensor_width_database_file );
+  const std::string user_defined_sensor_width_database_file = ApplicationSettings::applicationWideUserDefinedSensorWidthDatabasePath();
+  if ( stlplus::file_exists( user_defined_sensor_width_database_file ) )
+  {
+    dlg.setUserDefinedDatabaseFromFile( user_defined_sensor_width_database_file );
+  }
+
+  const int res = dlg.exec();
 }
 
 /**
@@ -100,6 +128,7 @@ void ApplicationSettingsDialog::resetDefaultSettings( void )
 
 void ApplicationSettingsDialog::buildInterface( void )
 {
+  // 3d view group
   QGroupBox *  viewGrp              = new QGroupBox( "3d View" );
   QGridLayout *viewGrpLayout        = new QGridLayout;
   QLabel *     lblBackgroundColor   = new QLabel( "Background color" );
@@ -109,6 +138,14 @@ void ApplicationSettingsDialog::buildInterface( void )
   viewGrpLayout->addWidget( m_view_background_color_indicator, 0, 1 );
   viewGrp->setLayout( viewGrpLayout );
 
+  // Application settings group
+  QGroupBox *applicationGrp         = new QGroupBox( "Application" );
+  m_sensorDatabaseMgmt              = new QPushButton( "Sensor database" );
+  QGridLayout *applicationGrpLayout = new QGridLayout;
+  applicationGrpLayout->addWidget( m_sensorDatabaseMgmt );
+  applicationGrp->setLayout( applicationGrpLayout );
+
+  // Main dialog buttons
   m_btn_reset_default = new QPushButton( "Reset Default" );
   m_btn_cancel        = new QPushButton( "Cancel" );
   m_btn_cancel->setDefault( false );
@@ -124,6 +161,7 @@ void ApplicationSettingsDialog::buildInterface( void )
   QVBoxLayout *mainLayout = new QVBoxLayout;
 
   mainLayout->addWidget( viewGrp );
+  mainLayout->addWidget( applicationGrp );
   mainLayout->addLayout( btnLayout );
 
   setLayout( mainLayout );
@@ -136,6 +174,8 @@ void ApplicationSettingsDialog::makeConnections( void )
   connect( m_btn_ok, SIGNAL( clicked() ), this, SLOT( onOk() ) );
 
   connect( m_view_background_color_indicator, SIGNAL( clicked() ), this, SLOT( onWantToSetBackgroundColor() ) );
+
+  connect( m_sensorDatabaseMgmt, SIGNAL( clicked() ), this, SLOT( onWantToManageSensorDatabase() ) );
 }
 
 void ApplicationSettingsDialog::update( void )
