@@ -1,7 +1,5 @@
-find_package( Qt5Widgets REQUIRED )
-find_package( Qt5OpenGL REQUIRED )
-find_package( Qt5WebEngineWidgets REQUIRED )
-find_package( Qt5Network )
+find_package( Qt5 COMPONENTS Widgets OpenGL WebEngineWidgets Network REQUIRED )
+
 find_package( OpenGL REQUIRED )
 
 if( NOT Qt5Widgets_FOUND )
@@ -135,71 +133,35 @@ add_custom_command( TARGET OpenMVG-GUI POST_BUILD
 
 INSTALL( TARGETS OpenMVG-GUI DESTINATION bin )
 
-get_target_property(QT_LIBRARY_DIR Qt5::Core LOCATION)
-get_filename_component(QT_LIBRARY_DIR ${QT_LIBRARY_DIR} PATH)
-get_filename_component(QT_LIBRARY_DIR "${QT_LIBRARY_DIR}/.." ABSOLUTE)
-
-
-
+# employ deploy Qt on executable 
+get_target_property(_qmake_executable Qt5::qmake IMPORTED_LOCATION)
+get_filename_component(_qt_bin_dir "${_qmake_executable}" DIRECTORY)
 if( APPLE )
-  set( OPENMVG_BUNDLE_FILE "OpenMVG-GUI.app" )
-else( APPLE )
-  set( OPENMVG_BUNDLE_FILE "OpenMVG-GUI" )
-endif( APPLE )
-
-set( FIXUP_DIRS
-\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${OPENMVG_BUNDLE_FILE}/Contents/plugins/platforms
-${QT_BINARY_DIR}
-${QT_LIBRARY_DIR}
-)
-
-
-macro(install_qt5_plugin _qt_plugin_name _qt_plugins_var)
-get_target_property(_qt_plugin_path "${_qt_plugin_name}" LOCATION)
-if(EXISTS "${_qt_plugin_path}")
-  get_filename_component(_qt_plugin_file "${_qt_plugin_path}" NAME)
-  get_filename_component(_qt_plugin_type "${_qt_plugin_path}" PATH)
-  get_filename_component(_qt_plugin_type "${_qt_plugin_type}" NAME)
-  if(APPLE)
-    set(_qt_plugin_dir "PlugIns")
-    set(_qt_plugin_dest "bin/${OPENMVG_BUNDLE_FILE}/Contents/${_qt_plugin_dir}/${_qt_plugin_type}")
-  elseif(WIN32)
-    set(_qt_plugin_dir "plugins")
-    set(_qt_plugin_dest "bin/${_qt_plugin_dir}/${_qt_plugin_type}")
-  endif()
-  install(FILES "${_qt_plugin_path}"
-    DESTINATION "${_qt_plugin_dest}" )
-  set(${_qt_plugins_var}
-    "${${_qt_plugins_var}};\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${_qt_plugin_dest}/${_qt_plugin_file}")
+  find_program(DEPLOYQT_EXECUTABLE macdeployqt HINTS "${_qt_bin_dir}" )
 else()
-  message(FATAL_ERROR "QT plugin ${_qt_plugin_name} not found")
-endif()
-endmacro()
-
-if( APPLE ) 
-  install_qt5_plugin("Qt5::QCocoaIntegrationPlugin" QT_PLUGINS)
-  install_qt5_plugin("Qt5::QJpegPlugin" QT_PLUGINS)
-  install_qt5_plugin("Qt5::QTiffPlugin" QT_PLUGINS)
-  file( WRITE "${CMAKE_CURRENT_BINARY_DIR}/qt.conf" "[Paths]\nPlugins = ${_qt_plugin_dir}\n")
-  install( FILES "${CMAKE_CURRENT_BINARY_DIR}/qt.conf" DESTINATION "bin/${OPENMVG_BUNDLE_FILE}/Contents/Resources" ${COMPONENT} )
-else( APPLE )
   if( WIN32 )
-    install_qt5_plugin("Qt5::QWindowsIntegrationPlugin" QT_PLUGINS)
-    install_qt5_plugin("Qt5::QJpegPlugin" QT_PLUGINS)
-    install_qt5_plugin("Qt5::QTiffPlugin" QT_PLUGINS)
-    file( WRITE "${CMAKE_CURRENT_BINARY_DIR}/qt.conf" "[Paths]\nPlugins = ${_qt_plugin_dir}\n")
-    install( FILES "${CMAKE_CURRENT_BINARY_DIR}/qt.conf" DESTINATION "bin" )  
-  endif( WIN32 )
-endif( APPLE )
+    find_program(DEPLOYQT_EXECUTABLE windeployqt HINTS "${_qt_bin_dir}")
+  endif()
+endif()
 
-set(APP "\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/bin/${OPENMVG_BUNDLE_FILE}")
+message( STATUS "Found deploy executable here : ${DEPLOYQT_EXECUTABLE}" )
 
-INSTALL( CODE 
-  "include(BundleUtilities)
-  set( BU_CHMOD_BUNDLE_ITEMS 1 )
-  fixup_bundle( \"${APP}\"  \"${QT_PLUGINS}\" \"${FIXUP_DIRS}\" )"  
-  COMPONENTS Runtime )
-
+if( WIN32 )
+add_custom_command(TARGET OpenMVG-GUI POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E
+        env PATH="${_qt_bin_dir}" "${DEPLOYQT_EXECUTABLE}"
+            "$<TARGET_FILE:OpenMVG-GUI>"
+    COMMENT "Running windeployqt..." )
+else()
+  if( APPLE )
+    add_custom_command(TARGET OpenMVG-GUI POST_BUILD
+    COMMAND "${DEPLOYQT_EXECUTABLE}"
+        "$<TARGET_FILE_DIR:OpenMVG-GUI>/../.."
+        -always-overwrite
+    COMMENT "Running macdeployqt..." )
+  endif()
 endif()
 
 set(CPACK_PACKAGE_EXECUTABLES "${OPENMVG_BUNDLE_FILE}" "OpenMVG")
+
+endif()
