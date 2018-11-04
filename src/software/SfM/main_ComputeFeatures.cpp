@@ -10,7 +10,7 @@
 #include <cereal/archives/json.hpp>
 
 #include "openMVG/features/akaze/image_describer_akaze_io.hpp"
-
+#include "openMVG/features/sfop/SFOPImageDescriber_io.hpp"
 #include "openMVG/features/sift/SIFT_Anatomy_Image_Describer_io.hpp"
 #include "openMVG/image/image_io.hpp"
 #include "openMVG/features/regions_factory_io.hpp"
@@ -38,6 +38,7 @@
 using namespace openMVG;
 using namespace openMVG::image;
 using namespace openMVG::features;
+using namespace openMVG::features::sfop;
 using namespace openMVG::sfm;
 using namespace std;
 
@@ -99,6 +100,7 @@ int main(int argc, char **argv)
       << "  (method to use to describe an image):\n"
       << "   SIFT (default),\n"
       << "   SIFT_ANATOMY,\n"
+      << "   SFOP,\n"
       << "   AKAZE_FLOAT: AKAZE with floating point descriptors,\n"
       << "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
       << "[-u|--upright] Use Upright feature 0 or 1\n"
@@ -208,6 +210,10 @@ int main(int argc, char **argv)
     {
       image_describer = AKAZE_Image_describer::create
         (AKAZE_Image_describer::Params(AKAZE::Params(), AKAZE_MLDB), !bUpRight);
+    }
+    if( sImage_Describer_Method == "SFOP" )
+    {
+      image_describer.reset( new SFOPImageDescriber( (SFOPParams()) )) ;
     }
     if (!image_describer)
     {
