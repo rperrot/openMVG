@@ -23,137 +23,151 @@
 #include <vector>
 
 // Extend EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION with initializer list support.
-#define EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST(...)       \
-namespace std {                                                            \
-  template <>                                                              \
-  class vector<__VA_ARGS__, std::allocator<__VA_ARGS__>>                   \
-      : public vector<__VA_ARGS__, Eigen::aligned_allocator<__VA_ARGS__>> { \
-    typedef vector<__VA_ARGS__, Eigen::aligned_allocator<__VA_ARGS__>>      \
-        vector_base;                                                       \
-                                                                           \
-   public:                                                                 \
-    typedef __VA_ARGS__ value_type;                                        \
-    typedef vector_base::allocator_type allocator_type;                    \
-    typedef vector_base::size_type size_type;                              \
-    typedef vector_base::iterator iterator;                                \
-    explicit vector(const allocator_type& a = allocator_type())            \
-        : vector_base(a) {}                                                \
-    template <typename InputIterator>                                      \
-    explicit vector(InputIterator first, InputIterator last,                        \
-           const allocator_type& a = allocator_type())                     \
-        : vector_base(first, last, a) {}                                   \
-    vector(const vector& c) = default;                                     \
-    explicit vector(size_type num, const value_type& val = value_type())   \
-        : vector_base(num, val) {}                                         \
-    explicit vector(iterator start, iterator end) : vector_base(start, end) {}      \
-    vector& operator=(const vector& x) = default;                          \
-    /* Add initializer list constructor support*/                          \
-    vector(std::initializer_list<__VA_ARGS__> list)                             \
-        : vector_base(list.begin(), list.end()) {}                         \
-  };                                                                       \
-}  // namespace std
+#define EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST( ... )                                     \
+  namespace std                                                                                            \
+  {                                                                                                        \
+  template <>                                                                                              \
+  class vector<__VA_ARGS__, std::allocator<__VA_ARGS__>>                                                   \
+      : public vector<__VA_ARGS__, Eigen::aligned_allocator<__VA_ARGS__>>                                  \
+  {                                                                                                        \
+    typedef vector<__VA_ARGS__, Eigen::aligned_allocator<__VA_ARGS__>>                                     \
+        vector_base;                                                                                       \
+                                                                                                           \
+  public:                                                                                                  \
+    typedef __VA_ARGS__                 value_type;                                                        \
+    typedef vector_base::allocator_type allocator_type;                                                    \
+    typedef vector_base::size_type      size_type;                                                         \
+    typedef vector_base::iterator       iterator;                                                          \
+    explicit vector( const allocator_type& a = allocator_type() )                                          \
+        : vector_base( a )                                                                                 \
+    {                                                                                                      \
+    }                                                                                                      \
+    template <typename InputIterator>                                                                      \
+    explicit vector( InputIterator first, InputIterator last, const allocator_type& a = allocator_type() ) \
+        : vector_base( first, last, a )                                                                    \
+    {                                                                                                      \
+    }                                                                                                      \
+    vector( const vector& c ) = default;                                                                   \
+    explicit vector( size_type num, const value_type& val = value_type() )                                 \
+        : vector_base( num, val )                                                                          \
+    {                                                                                                      \
+    }                                                                                                      \
+    explicit vector( iterator start, iterator end ) : vector_base( start, end )                            \
+    {                                                                                                      \
+    }                                                                                                      \
+    vector& operator=( const vector& x ) = default;                                                        \
+    /* Add initializer list constructor support*/                                                          \
+    vector( std::initializer_list<__VA_ARGS__> list )                                                      \
+        : vector_base( list.begin(), list.end() )                                                          \
+    {                                                                                                      \
+    }                                                                                                      \
+  };                                                                                                       \
+  } // namespace std
 
 namespace openMVG
 {
-  using Eigen::Map;
+using Eigen::Map;
 
-  /// Trait used for double type
-  using EigenDoubleTraits = Eigen::NumTraits<double>;
+/// Trait used for double type
+using EigenDoubleTraits = Eigen::NumTraits<double>;
 
-  /// 3d vector using double internal format
-  using Vec3 = Eigen::Vector3d;
+/// 3d vector using double internal format
+using Vec3 = Eigen::Vector3d;
 
-  /// 2d vector using int internal format
-  using Vec2i = Eigen::Vector2i;
+/// 2d vector using int internal format
+using Vec2i = Eigen::Vector2i;
 
-  /// 2d vector using float internal format
-  using Vec2f = Eigen::Vector2f;
+/// 2d vector using float internal format
+using Vec2f = Eigen::Vector2f;
 
-  /// 3d vector using float internal format
-  using Vec3f =Eigen::Vector3f;
+/// 3d vector using float internal format
+using Vec3f = Eigen::Vector3f;
 
-  /// 9d vector using double internal format
-  using Vec9 = Eigen::Matrix<double, 9, 1>;
+/// 9d vector using double internal format
+using Vec9 = Eigen::Matrix<double, 9, 1>;
 
-  /// Quaternion type
-  using Quaternion = Eigen::Quaternion<double>;
+/// Quaternion type
+using Quaternion = Eigen::Quaternion<double>;
 
-  /// 3x3 matrix using double internal format
-  using Mat3 = Eigen::Matrix<double, 3, 3>;
+/// 3x3 matrix using double internal format
+using Mat3 = Eigen::Matrix<double, 3, 3>;
 
-  /// 3x4 matrix using double internal format
-  using Mat34 = Eigen::Matrix<double, 3, 4>;
+/// 3x3 matrix using float internal format
+using Mat3f = Eigen::Matrix<float, 3, 3>;
 
-  /// 2d vector using double internal format
-  using Vec2 = Eigen::Vector2d;
+/// 3x4 matrix using double internal format
+using Mat34 = Eigen::Matrix<double, 3, 4>;
 
-  /// 4d vector using double internal format
-  using Vec4 = Eigen::Vector4d;
+/// 2d vector using double internal format
+using Vec2 = Eigen::Vector2d;
 
-  /// 6d vector using double internal format
-  using Vec6 = Eigen::Matrix<double, 6, 1>;
+/// 4d vector using double internal format
+using Vec4 = Eigen::Vector4d;
 
-  /// 4x4 matrix using double internal format
-  using Mat4 = Eigen::Matrix<double, 4, 4>;
+/// 6d vector using double internal format
+using Vec6 = Eigen::Matrix<double, 6, 1>;
 
-  /// generic matrix using unsigned int internal format
-  using Matu = Eigen::Matrix<unsigned int, Eigen::Dynamic, Eigen::Dynamic>;
+/// 4x4 matrix using double internal format
+using Mat4 = Eigen::Matrix<double, 4, 4>;
 
-  /// 3x3 matrix using double internal format with RowMajor storage
-  using RMat3 = Eigen::Matrix<double, 3, 3, Eigen::RowMajor>;
+/// generic matrix using unsigned int internal format
+using Matu = Eigen::Matrix<unsigned int, Eigen::Dynamic, Eigen::Dynamic>;
 
-  //-- General purpose Matrix and Vector
-  /// Unconstrained matrix using double internal format
-  using Mat = Eigen::MatrixXd;
+/// 3x3 matrix using double internal format with RowMajor storage
+using RMat3 = Eigen::Matrix<double, 3, 3, Eigen::RowMajor>;
 
-  /// Unconstrained vector using double internal format
-  using Vec = Eigen::VectorXd;
+//-- General purpose Matrix and Vector
+/// Unconstrained matrix using double internal format
+using Mat = Eigen::MatrixXd;
 
-  /// Unconstrained vector using unsigned int internal format
-  using Vecu = Eigen::Matrix<unsigned int, Eigen::Dynamic, 1>;
+/// Unconstrained vector using double internal format
+using Vec = Eigen::VectorXd;
 
-  /// Unconstrained matrix using float internal format
-  using Matf = Eigen::MatrixXf;
+/// Unconstrained vector using unsigned int internal format
+using Vecu = Eigen::Matrix<unsigned int, Eigen::Dynamic, 1>;
 
-  /// Unconstrained vector using float internal format
-  using Vecf = Eigen::VectorXf;
+/// Unconstrained matrix using float internal format
+using Matf = Eigen::MatrixXf;
 
-  /// 2xN matrix using double internal format
-  using Mat2X = Eigen::Matrix<double, 2, Eigen::Dynamic>;
+/// Unconstrained vector using float internal format
+using Vecf = Eigen::VectorXf;
 
-  /// 3xN matrix using double internal format
-  using Mat3X = Eigen::Matrix<double, 3, Eigen::Dynamic>;
+/// 2xN matrix using double internal format
+using Mat2X = Eigen::Matrix<double, 2, Eigen::Dynamic>;
 
-  /// 4xN matrix using double internal format
-  using Mat4X = Eigen::Matrix<double, 4, Eigen::Dynamic>;
+/// 3xN matrix using double internal format
+using Mat3X = Eigen::Matrix<double, 3, Eigen::Dynamic>;
 
-  /// Nx9 matrix using double internal format
-  using MatX9 = Eigen::Matrix<double, Eigen::Dynamic, 9>;
+/// 4xN matrix using double internal format
+using Mat4X = Eigen::Matrix<double, 4, Eigen::Dynamic>;
 
-  //-- Sparse Matrix (Column major, and row major)
-  /// Sparse unconstrained matrix using double internal format
-  using sMat = Eigen::SparseMatrix<double>;
+/// Nx9 matrix using double internal format
+using MatX9 = Eigen::Matrix<double, Eigen::Dynamic, 9>;
 
-  /// Sparse unconstrained matrix using double internal format and Row Major storage
-  using sRMat = Eigen::SparseMatrix<double, Eigen::RowMajor>;
+//-- Sparse Matrix (Column major, and row major)
+/// Sparse unconstrained matrix using double internal format
+using sMat = Eigen::SparseMatrix<double>;
+
+/// Sparse unconstrained matrix using double internal format and Row Major storage
+using sRMat = Eigen::SparseMatrix<double, Eigen::RowMajor>;
 
 } // namespace openMVG
 
-EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST(openMVG::Vec2)
-EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST(openMVG::Vec3)
-EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST(openMVG::Vec4)
-EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST(openMVG::Vec6)
-EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST(openMVG::Vec9)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST( openMVG::Vec2 )
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST( openMVG::Vec3 )
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST( openMVG::Vec4 )
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST( openMVG::Vec6 )
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST( openMVG::Vec9 )
 
-EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST(openMVG::Vec2i)
-EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST(openMVG::Vec2f)
-EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST(openMVG::Vec3f)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST( openMVG::Vec2i )
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST( openMVG::Vec2f )
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST( openMVG::Vec3f )
 
-EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST(openMVG::Quaternion)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST( openMVG::Quaternion )
 
-EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST(openMVG::Mat3)
-EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST(openMVG::RMat3)
-EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST(openMVG::Mat4)
-EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST(openMVG::Mat34)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST( openMVG::Mat3 )
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST( openMVG::RMat3 )
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST( openMVG::Mat4 )
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_INITIALIZER_LIST( openMVG::Mat34 )
 
-#endif  // OPENMVG_NUMERIC_EIGEN_ALIAS_DEFINITION_HPP
+#endif // OPENMVG_NUMERIC_EIGEN_ALIAS_DEFINITION_HPP
