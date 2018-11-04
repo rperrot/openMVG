@@ -27,6 +27,10 @@ using namespace std;
 #include "openMVG/features/sift/SIFT_Anatomy_Image_Describer.hpp"
 #include "nonFree/sift/SIFT_describer.hpp"
 
+#include "openMVG/features/sfop/SFOPImageDescriber.hpp"
+
+using namespace openMVG::features::sfop;
+
 // Class to load images and ground truth homography matrices
 // A reference image
 // And a series of transformed images with the Homography mapping to the reference
@@ -238,6 +242,7 @@ int main(int argc, char **argv)
       << "\n[Optional]\n"
       << "[-d|--describer_method]\n"
       << "  (method to use to describe an image):\n"
+      << "   SFOP,\n"
       << "   SIFT (default),\n"
       << "   SIFT_ANATOMY,\n"
       << "   AKAZE_FLOAT: AKAZE with floating point descriptors.\n"
@@ -305,6 +310,10 @@ int main(int argc, char **argv)
       {
         image_describer = AKAZE_Image_describer::create
           (AKAZE_Image_describer::Params(AKAZE::Params(), AKAZE_MSURF));
+      }
+      else if( sImage_Describer_Method == "SFOP" )
+      {
+        image_describer.reset( new SFOPImageDescriber );
       }
 
       if (!image_describer)
