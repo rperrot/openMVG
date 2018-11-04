@@ -114,6 +114,50 @@ public:
     Keypoints_description(keypoints);
   }
 
+  /**
+  * @brief Compute the local orientation and descriptor of a list of given Keypoints
+  * @param[in] dx Gradient on X 
+  * @param[in] dy Gradient on Y 
+  * @param[in,out] keypoints The list of found extrema as Keypoints with updated orientation and descriptor
+  * 
+  * @note keypoints must have slice id (s param) equal to 0 
+  */
+  void operator()( const image::Image<float>& dx, const image::Image<float>& dy, const float octave_delta, std::vector<Keypoint>& keypoints )
+  {
+    m_xgradient.slices.resize( 1 );
+    m_ygradient.slices.resize( 1 );
+    m_xgradient.delta = octave_delta;
+    m_ygradient.delta = octave_delta;
+
+    m_xgradient.slices[ 0 ] = dx;
+    m_ygradient.slices[ 0 ] = dy;
+
+    Keypoints_orientations( keypoints );
+    Keypoints_description( keypoints );
+  }
+
+  /**
+  * @brief Compute the local orientation and descriptor of a list of given Keypoints
+  * @param[in] dx Gradient on X 
+  * @param[in] dy Gradient on Y 
+  * @param[in,out] keypoints The list of found extrema as Keypoints with updated orientation and descriptor
+  * 
+  * @note keypoints must have slice id (s param) equal to 0 
+  */
+  void operator()( const image::Image<float>& img, const float octave_delta, std::vector<Keypoint>& keypoints )
+  {
+    m_xgradient.slices.resize( 1 );
+    m_ygradient.slices.resize( 1 );
+    m_xgradient.delta = octave_delta;
+    m_ygradient.delta = octave_delta;
+
+    image::ImageXDerivative( img, m_xgradient.slices[ 0 ] );
+    image::ImageYDerivative( img, m_ygradient.slices[ 0 ] );
+
+    Keypoints_orientations( keypoints );
+    Keypoints_description( keypoints );
+  }
+
   void Compute_Orientations
   (
     const Octave & octave,
@@ -194,11 +238,12 @@ protected:
     const float y = key.y / delta;
     const float sigma = key.sigma / delta;
 
-    const int w = m_xgradient.slices[1].Width(); // 1 since 0 is empty
-    const int h = m_xgradient.slices[1].Height();
 
     const image::Image<float> & xgradient = m_xgradient.slices[key.s];
     const image::Image<float> & ygradient = m_ygradient.slices[key.s];
+
+    const int w = xgradient.Width(); 
+    const int h = xgradient.Height();
 
     // Contributing pixels are inside a patch [siMin;siMax] X [sjMin;sjMax]
     // of width w 6*lambda_ori*sigma_key (=9*sigma_key)
@@ -399,8 +444,6 @@ protected:
   {
     descr.fill(0.0f);
     const float delta = m_xgradient.delta;
-    const int w = m_xgradient.slices[1].Width();
-    const int h = m_xgradient.slices[1].Height();
     const float x = k.x / delta;
     const float y = k.y / delta;
     const float sigma = k.sigma / delta;
@@ -410,6 +453,9 @@ protected:
 
     const image::Image<float> & xgradient = m_xgradient.slices[k.s];
     const image::Image<float> & ygradient = m_ygradient.slices[k.s];
+
+    const int w = xgradient.Width(); 
+    const int h = xgradient.Height();
 
     // Local patch size is [siMin;siMax]X[sjMin;sjMax] which width W
     // W = 2*lambda_descr*sigma_key*(m_nb_split2d+1)/m_nb_split2d
