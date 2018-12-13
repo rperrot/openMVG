@@ -10,65 +10,67 @@
 namespace MVS
 {
 
-const double DepthMapComputationParameters::MAX_COST_NCC = 2.0 ;
-const double DepthMapComputationParameters::MAX_COST_PM = 10e6 ;
-const double DepthMapComputationParameters::MAX_COST_CENSUS = 2.0 ; //10e4 ;
-const double DepthMapComputationParameters::MAX_COST_DAISY = 1 ;
+const double DepthMapComputationParameters::MAX_COST_NCC           = 2.0;
+const double DepthMapComputationParameters::MAX_COST_PM            = 10e6;
+const double DepthMapComputationParameters::MAX_COST_CENSUS        = 2.0; //10e4 ;
+const double DepthMapComputationParameters::MAX_COST_DAISY         = 1;
+const double DepthMapComputationParameters::MAX_COST_BILATERAL_NCC = 2.0;
 
-
-std::string to_string( const PropagationScheme & pscheme )
+std::string to_string( const PropagationScheme& pscheme )
 {
-  std::stringstream str ;
+  std::stringstream str;
 
-  switch( pscheme )
+  switch ( pscheme )
   {
-    case PROPAGATION_SCHEME_FULL:
-    {
-      str << "full" ;
-      break ;
-    }
-    case PROPAGATION_SCHEME_SPEED:
-    {
-      str << "speed" ;
-      break ;
-    }
+  case PROPAGATION_SCHEME_FULL:
+  {
+    str << "full";
+    break;
   }
-
-  return str.str() ;
-}
-
-
-std::string to_string( const cost_metric & metric )
-{
-  std::stringstream str ;
-
-  switch( metric )
+  case PROPAGATION_SCHEME_SPEED:
   {
-    case COST_METRIC_NCC:
-    {
-      str << "ncc" ;
-      break ;
-    }
-    case COST_METRIC_PM:
-    {
-      str << "patch-match" ;
-      break ;
-    }
-    case COST_METRIC_DAISY:
-    {
-      str << "daisy" ;
-      break ;
-    }
-    case COST_METRIC_CENSUS:
-    {
-      str << "census" ;
-      break ;
-    }
+    str << "speed";
+    break;
+  }
   }
 
   return str.str();
 }
 
+std::string to_string( const cost_metric& metric )
+{
+  std::stringstream str;
+
+  switch ( metric )
+  {
+  case COST_METRIC_NCC:
+  {
+    str << "ncc";
+    break;
+  }
+  case COST_METRIC_PM:
+  {
+    str << "patch-match";
+    break;
+  }
+  case COST_METRIC_DAISY:
+  {
+    str << "daisy";
+    break;
+  }
+  case COST_METRIC_CENSUS:
+  {
+    str << "census";
+    break;
+  }
+  case COST_METRIC_BILATERAL_NCC:
+  {
+    str << "bilateral-ncc";
+  }
+  }
+
+  return str.str();
+}
 
 /**
 * @brief Ctr
@@ -85,42 +87,40 @@ std::string to_string( const cost_metric & metric )
 * @note min_view_angle in degree
 * @note max_view_angle in degree
 */
-DepthMapComputationParameters::DepthMapComputationParameters( const int scale ,
-    const cost_metric metric ,
-    const double alpha ,
-    const double tau_i ,
-    const double tau_g ,
-    const double gamma ,
-    // For PM propagation scheme
-    const PropagationScheme pScheme ,
-    const double min_view_angle ,
-    const double max_view_angle ,
-    const int max_view_selection_nb ,
-    const int nb_image_for_cost ,
-    const std::string base_path )
-  : m_scale( scale ) ,
-    m_metric( metric ) ,
-    m_alpha( alpha ) ,
-    m_tau_i( tau_i ) ,
-    m_tau_g( tau_g ) ,
-    m_gamma( gamma ) ,
-    m_p_scheme( pScheme ) ,
-    m_minimum_view_angle( min_view_angle ) ,
-    m_maximum_view_angle( max_view_angle ) ,
-    m_maximum_view_nb( max_view_selection_nb ) ,
-    m_nb_image_for_cost_computation( nb_image_for_cost ) ,
-    m_base_path( base_path )
+DepthMapComputationParameters::DepthMapComputationParameters( const int         scale,
+                                                              const cost_metric metric,
+                                                              const double      alpha,
+                                                              const double      tau_i,
+                                                              const double      tau_g,
+                                                              const double      gamma,
+                                                              // For PM propagation scheme
+                                                              const PropagationScheme pScheme,
+                                                              const double            min_view_angle,
+                                                              const double            max_view_angle,
+                                                              const int               max_view_selection_nb,
+                                                              const int               nb_image_for_cost,
+                                                              const std::string       base_path )
+    : m_scale( scale ),
+      m_metric( metric ),
+      m_alpha( alpha ),
+      m_tau_i( tau_i ),
+      m_tau_g( tau_g ),
+      m_gamma( gamma ),
+      m_p_scheme( pScheme ),
+      m_minimum_view_angle( min_view_angle ),
+      m_maximum_view_angle( max_view_angle ),
+      m_maximum_view_nb( max_view_selection_nb ),
+      m_nb_image_for_cost_computation( nb_image_for_cost ),
+      m_base_path( base_path )
 {
-
 }
-
 
 /**
 * @brief Get cost metric used to compute pixel score
 */
 cost_metric DepthMapComputationParameters::metric( void ) const
 {
-  return m_metric ;
+  return m_metric;
 }
 
 /**
@@ -130,28 +130,31 @@ cost_metric DepthMapComputationParameters::metric( void ) const
 */
 double DepthMapComputationParameters::metricMaxCostValue( const cost_metric metric )
 {
-  switch( metric )
+  switch ( metric )
   {
-    case COST_METRIC_NCC :
-    {
-      return MAX_COST_NCC ;
-    }
-    case COST_METRIC_PM:
-    {
-      return MAX_COST_PM ;
-    }
-    case COST_METRIC_CENSUS:
-    {
-      return MAX_COST_CENSUS ;
-    }
-    case COST_METRIC_DAISY :
-    {
-      return MAX_COST_DAISY ;
-    }
+  case COST_METRIC_NCC:
+  {
+    return MAX_COST_NCC;
   }
-  return std::numeric_limits<double>::max() ;
+  case COST_METRIC_PM:
+  {
+    return MAX_COST_PM;
+  }
+  case COST_METRIC_CENSUS:
+  {
+    return MAX_COST_CENSUS;
+  }
+  case COST_METRIC_DAISY:
+  {
+    return MAX_COST_DAISY;
+  }
+  case COST_METRIC_BILATERAL_NCC:
+  {
+    return MAX_COST_BILATERAL_NCC;
+  }
+  }
+  return std::numeric_limits<double>::max();
 }
-
 
 /**
 * @brief Get scale of the computation( 0 for original size)
@@ -159,7 +162,7 @@ double DepthMapComputationParameters::metricMaxCostValue( const cost_metric metr
 */
 int DepthMapComputationParameters::scale( void ) const
 {
-  return m_scale ;
+  return m_scale;
 }
 
 /**
@@ -168,7 +171,7 @@ int DepthMapComputationParameters::scale( void ) const
 */
 double DepthMapComputationParameters::alpha( void ) const
 {
-  return m_alpha ;
+  return m_alpha;
 }
 
 /**
@@ -177,7 +180,7 @@ double DepthMapComputationParameters::alpha( void ) const
 */
 double DepthMapComputationParameters::tauI( void ) const
 {
-  return m_tau_i ;
+  return m_tau_i;
 }
 
 /**
@@ -186,7 +189,7 @@ double DepthMapComputationParameters::tauI( void ) const
 */
 double DepthMapComputationParameters::tauG( void ) const
 {
-  return m_tau_g ;
+  return m_tau_g;
 }
 
 /**
@@ -195,7 +198,7 @@ double DepthMapComputationParameters::tauG( void ) const
 */
 double DepthMapComputationParameters::gamma( void ) const
 {
-  return m_gamma ;
+  return m_gamma;
 }
 
 /**
@@ -204,9 +207,8 @@ double DepthMapComputationParameters::gamma( void ) const
  */
 PropagationScheme DepthMapComputationParameters::propagationScheme( void ) const
 {
-  return m_p_scheme ;
+  return m_p_scheme;
 }
-
 
 /**
 * @brief Get minimum view angle for view selection
@@ -215,7 +217,7 @@ PropagationScheme DepthMapComputationParameters::propagationScheme( void ) const
 */
 double DepthMapComputationParameters::minimumViewAngle( void ) const
 {
-  return m_minimum_view_angle ;
+  return m_minimum_view_angle;
 }
 
 /**
@@ -225,7 +227,7 @@ double DepthMapComputationParameters::minimumViewAngle( void ) const
 */
 double DepthMapComputationParameters::maximumViewAngle( void ) const
 {
-  return m_maximum_view_angle ;
+  return m_maximum_view_angle;
 }
 
 /**
@@ -234,7 +236,7 @@ double DepthMapComputationParameters::maximumViewAngle( void ) const
 */
 int DepthMapComputationParameters::nbMaximumViewSelection( void ) const
 {
-  return m_maximum_view_nb ;
+  return m_maximum_view_nb;
 }
 
 /**
@@ -243,7 +245,7 @@ int DepthMapComputationParameters::nbMaximumViewSelection( void ) const
 */
 int DepthMapComputationParameters::nbMultiViewImageForCost( void ) const
 {
-  return m_nb_image_for_cost_computation ;
+  return m_nb_image_for_cost_computation;
 }
 
 /**
@@ -252,7 +254,7 @@ int DepthMapComputationParameters::nbMultiViewImageForCost( void ) const
 */
 std::string DepthMapComputationParameters::workingDirectory( void ) const
 {
-  return m_base_path ;
+  return m_base_path;
 }
 
 /**
@@ -261,8 +263,8 @@ std::string DepthMapComputationParameters::workingDirectory( void ) const
 */
 std::string DepthMapComputationParameters::depthDirectory( void ) const
 {
-  const std::string base = workingDirectory() ;
-  return stlplus::create_filespec( base , "depth" ) ;
+  const std::string base = workingDirectory();
+  return stlplus::create_filespec( base, "depth" );
 }
 
 /**
@@ -272,42 +274,41 @@ std::string DepthMapComputationParameters::depthDirectory( void ) const
 */
 std::string DepthMapComputationParameters::getCameraDirectory( const int id ) const
 {
-  std::stringstream str ;
-  str << "cam_" << id ;
+  std::stringstream str;
+  str << "cam_" << id;
   const std::string depth_path = depthDirectory();
 
-  return stlplus::create_filespec( depth_path , str.str() ) ;
+  return stlplus::create_filespec( depth_path, str.str() );
 }
 
 std::string DepthMapComputationParameters::getColorPath( const int id ) const
 {
-  const std::string camera_path = getCameraDirectory( id ) ;
-  std::stringstream str ;
+  const std::string camera_path = getCameraDirectory( id );
+  std::stringstream str;
 
-  str << "color_" << m_scale << ".bin" ;
+  str << "color_" << m_scale << ".bin";
 
-  return stlplus::create_filespec( camera_path , str.str() ) ;
+  return stlplus::create_filespec( camera_path, str.str() );
 }
-
 
 std::string DepthMapComputationParameters::getGrayscalePath( const int id ) const
 {
-  const std::string camera_path = getCameraDirectory( id ) ;
-  std::stringstream str ;
+  const std::string camera_path = getCameraDirectory( id );
+  std::stringstream str;
 
-  str << "grayscale_" << m_scale << ".bin" ;
+  str << "grayscale_" << m_scale << ".bin";
 
-  return stlplus::create_filespec( camera_path , str.str() ) ;
+  return stlplus::create_filespec( camera_path, str.str() );
 }
 
 std::string DepthMapComputationParameters::getGradientPath( const int id ) const
 {
-  const std::string camera_path = getCameraDirectory( id ) ;
-  std::stringstream str ;
+  const std::string camera_path = getCameraDirectory( id );
+  std::stringstream str;
 
-  str << "gradient_" << m_scale << ".bin" ;
+  str << "gradient_" << m_scale << ".bin";
 
-  return stlplus::create_filespec( camera_path , str.str() ) ;
+  return stlplus::create_filespec( camera_path, str.str() );
 }
 
 /**
@@ -317,33 +318,32 @@ std::string DepthMapComputationParameters::getGradientPath( const int id ) const
 */
 std::string DepthMapComputationParameters::getCensusPath( const int id ) const
 {
-  const std::string camera_path = getCameraDirectory( id ) ;
-  std::stringstream str ;
+  const std::string camera_path = getCameraDirectory( id );
+  std::stringstream str;
 
-  str << "census_" << m_scale << ".bin" ;
+  str << "census_" << m_scale << ".bin";
 
-  return stlplus::create_filespec( camera_path , str.str() ) ;
+  return stlplus::create_filespec( camera_path, str.str() );
 }
-
 
 std::string DepthMapComputationParameters::getCameraPath( const int id ) const
 {
-  const std::string camera_path = getCameraDirectory( id ) ;
-  std::stringstream str ;
+  const std::string camera_path = getCameraDirectory( id );
+  std::stringstream str;
 
-  str << "cam_" << m_scale << ".bin" ;
+  str << "cam_" << m_scale << ".bin";
 
-  return stlplus::create_filespec( camera_path , str.str() ) ;
+  return stlplus::create_filespec( camera_path, str.str() );
 }
 
 std::string DepthMapComputationParameters::getDepthPath( const int id ) const
 {
-  const std::string camera_path = getCameraDirectory( id ) ;
-  std::stringstream str ;
+  const std::string camera_path = getCameraDirectory( id );
+  std::stringstream str;
 
-  str << "dm_" << m_scale << ".bin" ;
+  str << "dm_" << m_scale << ".bin";
 
-  return stlplus::create_filespec( camera_path , str.str() ) ;
+  return stlplus::create_filespec( camera_path, str.str() );
 }
 
 /**
@@ -352,9 +352,8 @@ std::string DepthMapComputationParameters::getDepthPath( const int id ) const
  */
 std::string DepthMapComputationParameters::getModelDirectory( void ) const
 {
-  const std::string base = workingDirectory() ;
-  return stlplus::create_filespec( base , "model" ) ;
+  const std::string base = workingDirectory();
+  return stlplus::create_filespec( base, "model" );
 }
-
 
 } // namespace MVS
