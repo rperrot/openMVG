@@ -582,7 +582,7 @@ int main( int argc, char** argv )
   double                 kMaxAngleSelection  = 60.0;  // Maximum view angle for elements
   int                    kMaxViewSelectionNb = 9;     // Maximum of neighbors for view selection
   int                    kMaxViewPerCost     = 3;     //
-  MVS::PropagationScheme kScheme             = MVS::PROPAGATION_SCHEME_FULL;
+  MVS::PropagationScheme kScheme             = MVS::PROPAGATION_SCHEME_ASYMETRIC;
 
   MVS::cost_metric kMetric = MVS::COST_METRIC_NCC;
 

@@ -22,6 +22,11 @@ std::string to_string( const PropagationScheme& pscheme )
 
   switch ( pscheme )
   {
+  case PROPAGATION_SCHEME_ASYMETRIC:
+  {
+    str << "asymetric";
+    break;
+  }
   case PROPAGATION_SCHEME_FULL:
   {
     str << "full";

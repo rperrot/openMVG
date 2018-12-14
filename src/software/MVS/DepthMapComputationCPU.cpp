@@ -257,7 +257,7 @@ double ComputeMultiViewCost( const int id_row, const int id_col,
 
   double cost = 0.0;
   int    nb   = 0;
-  for ( int k = 0; k < K && k < static_cast<int>( costs.size() ) && k < nb_valid; ++k )
+  for ( int k = 0; ( k < K ) && ( k < static_cast<int>( costs.size() ) ) && ( k < nb_valid ) ; ++k )
   {
     cost += costs[ k ];
     ++nb;
@@ -307,6 +307,158 @@ void ComputeCost( DepthMap&                                                   ma
       map.cost( id_row, id_col, costs( id_row, id_col ) );
     }
   }
+}
+
+void DetermineNeighborBySampling( const DepthMap&                      map,
+                                  const int                            id_row,
+                                  const int                            id_col,
+                                  const std::vector<std::vector<int>>& putative,
+                                  std::vector<int>&                    res )
+{
+  int    best_id   = -1;
+  double best_cost = std::numeric_limits<double>::max();
+  for ( int id = 0; id < putative.size(); ++id )
+  {
+    const int y = id_row + putative[ id ][ 1 ];
+    const int x = id_col + putative[ id ][ 0 ];
+
+    if ( map.inside( y, x ) )
+    {
+      const double cost = map.cost( y, x );
+      if ( cost < best_cost )
+      {
+        best_cost = cost;
+        best_id   = id;
+      }
+    }
+  }
+
+  if ( best_id != -1 )
+  {
+    res[ 0 ] = putative[ best_id ][ 0 ];
+    res[ 1 ] = putative[ best_id ][ 1 ];
+  }
+  else
+  {
+    res[ 0 ] = 0;
+    res[ 1 ] = 0;
+  }
+}
+
+/**
+ * @brief Get the best neighbors to use for sampling 
+ * 
+ * @param map 
+ * @param id_row 
+ * @param id_col 
+ * @return std::vector<std::vector<int>> 
+ */
+void DetermineNeighborBySampling( const DepthMap&                map,
+                                  const int                      id_row,
+                                  const int                      id_col,
+                                  std::vector<std::vector<int>>& res )
+{
+  // Checkboard close north - asymetric
+  static const std::vector<std::vector<int>> neigh_idx_asymetric_close_north =
+      {
+          {0, -1},
+          {-1, -2},
+          {1, -2},
+          {-2, -3},
+          {2, -3},
+          {-3, -4},
+          {3, -4}};
+  // Checkboard close south - asymetric
+  static const std::vector<std::vector<int>> neigh_idx_asymetric_close_south =
+      {
+          {0, 1},
+          {-1, 2},
+          {1, 2},
+          {-2, 3},
+          {2, 3},
+          {-3, 4},
+          {3, 4}};
+  // Checkboard close west - asymetric
+  static const std::vector<std::vector<int>> neigh_idx_asymetric_close_west =
+      {
+          {-1, 0},
+          {-2, -1},
+          {-2, 1},
+          {-3, -2},
+          {-3, 2},
+          {-4, -3},
+          {-4, 3}};
+  // Checkboard close est - asymetric
+  static const std::vector<std::vector<int>> neigh_idx_asymetric_close_east =
+      {
+          {1, 0},
+          {2, -1},
+          {2, 1},
+          {3, -2},
+          {3, 2},
+          {4, -3},
+          {4, 3}};
+  static const std::vector<std::vector<int>> neigh_idx_asymetric_far_north =
+      {
+          {0, -3},
+          {0, -5},
+          {0, -7},
+          {0, -9},
+          {0, -11},
+          {0, -13},
+          {0, -15},
+          {0, -17},
+          {0, -19},
+          {0, -21},
+          {0, -23}};
+  static const std::vector<std::vector<int>> neigh_idx_asymetric_far_south =
+      {
+          {0, 3},
+          {0, 5},
+          {0, 7},
+          {0, 9},
+          {0, 11},
+          {0, 13},
+          {0, 15},
+          {0, 17},
+          {0, 19},
+          {0, 21},
+          {0, 23}};
+  static const std::vector<std::vector<int>> neigh_idx_asymetric_far_west =
+      {
+          {-3, 0},
+          {-5, 0},
+          {-7, 0},
+          {-9, 0},
+          {-11, 0},
+          {-13, 0},
+          {-15, 0},
+          {-17, 0},
+          {-19, 0},
+          {-21, 0},
+          {-23, 0}};
+  static const std::vector<std::vector<int>> neigh_idx_asymetric_far_east =
+      {
+          {3, 0},
+          {5, 0},
+          {7, 0},
+          {9, 0},
+          {11, 0},
+          {13, 0},
+          {15, 0},
+          {17, 0},
+          {19, 0},
+          {21, 0},
+          {23, 0}};
+
+  DetermineNeighborBySampling( map, id_row, id_col, neigh_idx_asymetric_close_north, res[ 0 ] );
+  DetermineNeighborBySampling( map, id_row, id_col, neigh_idx_asymetric_close_south, res[ 1 ] );
+  DetermineNeighborBySampling( map, id_row, id_col, neigh_idx_asymetric_close_west, res[ 2 ] );
+  DetermineNeighborBySampling( map, id_row, id_col, neigh_idx_asymetric_close_east, res[ 3 ] );
+  DetermineNeighborBySampling( map, id_row, id_col, neigh_idx_asymetric_far_north, res[ 4 ] );
+  DetermineNeighborBySampling( map, id_row, id_col, neigh_idx_asymetric_far_south, res[ 5 ] );
+  DetermineNeighborBySampling( map, id_row, id_col, neigh_idx_asymetric_far_west, res[ 6 ] );
+  DetermineNeighborBySampling( map, id_row, id_col, neigh_idx_asymetric_far_east, res[ 7 ] );
 }
 
 /**
@@ -400,6 +552,7 @@ void Propagate( DepthMap& map, const int id_start, const Camera& cam, const std:
           {0, 1},
           {0, 5}};
 
+  bool                          sampling = false;
   int                           nb_neigh = 0;
   std::vector<std::vector<int>> neighs_idx; // = neighs_idx_speed ;
   switch ( params.propagationScheme() )
@@ -408,18 +561,32 @@ void Propagate( DepthMap& map, const int id_start, const Camera& cam, const std:
   {
     nb_neigh   = 20;
     neighs_idx = neighs_idx_full;
+    sampling   = false;
     break;
   }
   case PROPAGATION_SCHEME_SPEED:
   {
     nb_neigh   = 8;
     neighs_idx = neighs_idx_speed;
+    sampling   = false;
+    break;
+  }
+  case PROPAGATION_SCHEME_ASYMETRIC:
+  {
+    sampling = true;
+    nb_neigh = 8; // 1 per region
+    neighs_idx.resize( 8 );
+    for ( int i = 0; i < 8; ++i )
+    {
+      neighs_idx[ i ].resize( 2 );
+    }
     break;
   }
   default:
   {
     nb_neigh   = 20;
     neighs_idx = neighs_idx_full;
+    sampling   = false;
   }
   }
 
@@ -429,11 +596,22 @@ void Propagate( DepthMap& map, const int id_start, const Camera& cam, const std:
     const int pad = ( id_row % 2 == 0 ) ? id_start : ( ( id_start + 1 ) % 2 );
     for ( int id_col = pad; id_col < map.width(); id_col += 2 )
     {
-      // Get neighbors using
+      if ( sampling )
+      {
+        // Sample each region to determine the neighbors to use
+        DetermineNeighborBySampling( map, id_row, id_col, neighs_idx );
+      }
+
+      // Get neighbors in a fixed scheme
       for ( int id_n = 0; id_n < nb_neigh; ++id_n )
       {
-        const int x = id_col + neighs_idx[ id_n ][ 0 ];
-        const int y = id_row + neighs_idx[ id_n ][ 1 ];
+        const int dx = neighs_idx[ id_n ][ 0 ];
+        const int dy = neighs_idx[ id_n ][ 1 ];
+        if ( dx == 0 && dy == 0 )
+          continue;
+
+        const int x = id_col + dx;
+        const int y = id_row + dy;
 
         if ( map.inside( y, x ) )
         {
@@ -462,7 +640,7 @@ void Propagate( DepthMap& map, const int id_start, const Camera& cam, const std:
   }
 
   CostMetricFactoryClean( params );
-}
+} // namespace MVS
 
 static inline void GenerateRandomVectorAndDisparity( double&              dispOut,
                                                      openMVG::Vec3&       normOut,
@@ -552,7 +730,7 @@ void Refinement( DepthMap&                                                   map
     for ( int id_col = 0; id_col < map.width(); ++id_col )
     {
       const openMVG::Vec3 cam_dir = cam.getViewVector( id_col, id_row, scale ); //  cam.GetRay( openMVG::Vec2( id_col , id_row ) ).second ;
-#define USE_GIPUMA_REFINEMENT 1
+#define USE_GIPUMA_REFINEMENT 
 #ifdef USE_GIPUMA_REFINEMENT
 
       const double min_disparity = cam.depthDisparityConversion( cam.m_max_depth, scale );

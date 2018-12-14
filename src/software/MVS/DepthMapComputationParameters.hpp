@@ -7,12 +7,13 @@ namespace MVS
 {
 
 /**
- * @brief Propagation Schemes as defined in GIPUMA publication
+ * @brief Propagation Schemes 
  */
 enum PropagationScheme
 {
-  PROPAGATION_SCHEME_FULL, // Using 20 neighbors
-  PROPAGATION_SCHEME_SPEED // Using 8 neighbors
+  PROPAGATION_SCHEME_FULL,     // Using 20 neighbors,
+  PROPAGATION_SCHEME_SPEED,    // Using 8 neighbors,
+  PROPAGATION_SCHEME_ASYMETRIC // Using 8 neighbors choosen from sampling 8 regions.
 };
 
 std::string to_string( const PropagationScheme& pscheme );
