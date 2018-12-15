@@ -148,40 +148,31 @@ void ComputeMultipleViewCost( openMVG::image::Image<double>&                    
     for ( int id_col = 0; id_col < image_ref.width(); ++id_col )
     {
       std::vector<double> cur_costs( reference_cam.m_view_neighbors.size() );
-      size_t              nb_valid = 0;
       // 1 - retreive all costs
       for ( size_t id_cam = 0; id_cam < reference_cam.m_view_neighbors.size(); ++id_cam )
       {
         const double cur_c  = all_costs[ id_cam ]( id_row, id_col );
         const bool   valid  = cur_c < MAX_COST && !std::isnan( cur_c ) && !std::isinf( cur_c );
         cur_costs[ id_cam ] = valid ? cur_c : MAX_COST;
-        nb_valid += valid ? 1 : 0;
       }
 
       // 2 - Sort cost
       std::sort( cur_costs.begin(), cur_costs.end() );
 
       double cur_sum = 0.0;
-      //
-      int nb_used = 0;
-      for ( size_t id = 0; id < K && id < nb_valid; ++id, ++nb_used )
+      for ( size_t id = 0; id < K && id < cur_costs.size(); ++id )
       {
         cur_sum += cur_costs[ id ];
       }
+      cur_sum /= static_cast<double>( K );
 
-      // Compute final value
-      cur_sum /= static_cast<double>( nb_used );
-      if ( nb_valid > 0 &&
-           cur_sum < MAX_COST &&
-           cur_sum >= 0.0 &&
-           !std::isinf( cur_sum ) &&
-           !std::isnan( cur_sum ) )
+      if ( std::isnan( cur_sum ) || std::isinf( cur_sum ) || cur_sum < 0.0 || cur_sum > MAX_COST )
       {
-        cost( id_row, id_col ) = cur_sum;
+        cost( id_row, id_col ) = MAX_COST;
       }
       else
       {
-        cost( id_row, id_col ) = MAX_COST;
+        cost( id_row, id_col ) = cur_sum;
       }
     }
   }
@@ -216,8 +207,7 @@ double ComputeMultiViewCost( const int id_row, const int id_col,
 {
   const double MAX_COST = DepthMapComputationParameters::metricMaxCostValue( params.metric() );
 
-  const int K        = params.nbMultiViewImageForCost();
-  int       nb_valid = 0;
+  const int K = params.nbMultiViewImageForCost();
 
   std::vector<double> costs( reference_cam.m_view_neighbors.size() );
 
@@ -244,7 +234,6 @@ double ComputeMultiViewCost( const int id_row, const int id_col,
     if ( cur_cost < MAX_COST )
     {
       costs[ id_cam ] = cur_cost;
-      nb_valid++;
     }
     else
     {
@@ -256,17 +245,15 @@ double ComputeMultiViewCost( const int id_row, const int id_col,
   std::sort( costs.begin(), costs.end() );
 
   double cost = 0.0;
-  int    nb   = 0;
-  for ( int k = 0; ( k < K ) && ( k < static_cast<int>( costs.size() ) ) && ( k < nb_valid ) ; ++k )
+  for ( int k = 0; ( k < K ) && ( k < static_cast<int>( costs.size() ) ); ++k )
   {
     cost += costs[ k ];
-    ++nb;
   }
 
-  cost /= static_cast<double>( nb );
+  cost /= static_cast<double>( K );
 
   // No valid
-  if ( nb == 0 || std::isnan( cost ) || std::isinf( cost ) || cost < 0.0 || cost > MAX_COST )
+  if ( std::isnan( cost ) || std::isinf( cost ) || cost < 0.0 || cost > MAX_COST )
   {
     return MAX_COST;
   }
@@ -730,7 +717,7 @@ void Refinement( DepthMap&                                                   map
     for ( int id_col = 0; id_col < map.width(); ++id_col )
     {
       const openMVG::Vec3 cam_dir = cam.getViewVector( id_col, id_row, scale ); //  cam.GetRay( openMVG::Vec2( id_col , id_row ) ).second ;
-#define USE_GIPUMA_REFINEMENT 
+#define USE_GIPUMA_REFINEMENT
 #ifdef USE_GIPUMA_REFINEMENT
 
       const double min_disparity = cam.depthDisparityConversion( cam.m_max_depth, scale );

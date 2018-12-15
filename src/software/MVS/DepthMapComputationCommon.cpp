@@ -23,6 +23,10 @@ ImageLoadType ComputeLoadType( const cost_metric & metric )
     {
       return ImageLoadType( IMAGE_GRAYSCALE ) ;
     }
+    case COST_METRIC_BILATERAL_NCC:
+    {
+      return ImageLoadType( IMAGE_GRAYSCALE );
+    }
     default:
     {
       return IMAGE_ALL ;

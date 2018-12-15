@@ -493,7 +493,7 @@ double ComputeDepth( const openMVG::Vec4& plane, const int id_row, const int id_
   }
 
 // The plane [n,d]
-#define FULL_INTERSECTION 0
+// #define FULL_INTERSECTION 0
 #ifdef FULL_INTERSECTION
 // Note : DO NOT USE THE FOLLOWING CODE 
   // The ray (src,dst)
@@ -509,7 +509,7 @@ double ComputeDepth( const openMVG::Vec4& plane, const int id_row, const int id_
   return Clamp( openMVG::Depth( cam.m_R, cam.m_t, ptX ), cam.m_min_depth * 0.7, cam.m_max_depth * 1.3 );
 #else
 
-  return Clamp( DepthFromPlane( cam, plane_n, plane_d, id_col, id_row, scale ), 0.0, cam.m_max_depth * 1.3 );
+  return Clamp( DepthFromPlane( cam, plane_n, plane_d, id_col, id_row, scale ), 0.7 * cam.m_min_depth , cam.m_max_depth * 1.3 );
 #endif
 }
 
