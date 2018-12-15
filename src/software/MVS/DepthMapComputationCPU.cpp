@@ -152,7 +152,7 @@ void ComputeMultipleViewCost( openMVG::image::Image<double>&                    
       for ( size_t id_cam = 0; id_cam < reference_cam.m_view_neighbors.size(); ++id_cam )
       {
         const double cur_c  = all_costs[ id_cam ]( id_row, id_col );
-        const bool   valid  = cur_c < MAX_COST && !std::isnan( cur_c ) && !std::isinf( cur_c );
+        const bool   valid  = cur_c < MAX_COST && !std::isnan( cur_c ) && !std::isinf( cur_c ) && cur_c >= 0.0;
         cur_costs[ id_cam ] = valid ? cur_c : MAX_COST;
       }
 
@@ -166,14 +166,7 @@ void ComputeMultipleViewCost( openMVG::image::Image<double>&                    
       }
       cur_sum /= static_cast<double>( K );
 
-      if ( std::isnan( cur_sum ) || std::isinf( cur_sum ) || cur_sum < 0.0 || cur_sum > MAX_COST )
-      {
-        cost( id_row, id_col ) = MAX_COST;
-      }
-      else
-      {
-        cost( id_row, id_col ) = cur_sum;
-      }
+      cost( id_row, id_col ) = cur_sum;
     }
   }
 
@@ -717,6 +710,7 @@ void Refinement( DepthMap&                                                   map
     for ( int id_col = 0; id_col < map.width(); ++id_col )
     {
       const openMVG::Vec3 cam_dir = cam.getViewVector( id_col, id_row, scale ); //  cam.GetRay( openMVG::Vec2( id_col , id_row ) ).second ;
+
 #define USE_GIPUMA_REFINEMENT
 #ifdef USE_GIPUMA_REFINEMENT
 

@@ -77,7 +77,7 @@ struct Camera
   * @param baseline Camera baseline
   * @return Disparity/Depth
   */
-  double depthDisparityConversion( const double d, const double baseline ) const;
+  //  double depthDisparityConversion( const double d, const double baseline ) const;
 
   /**
   * @brief Get depth value for given 3d point
@@ -265,18 +265,22 @@ static inline double GetPlaneD( const MVS::Camera&   cam,
                                 const openMVG::Vec3& n,
                                 const int            scale = -1 )
 {
+  /*
   const openMVG::Mat34& P     = ( scale == -1 ) ? cam.m_P : cam.m_P_scaled[ scale ];
   const openMVG::Mat3&  M_inv = ( scale == -1 ) ? cam.m_M_inv : cam.m_M_inv_scaled[ scale ];
   const openMVG::Vec3   x( id_col, id_row, 1.0 );
 
   const openMVG::Vec3 pt = x * depth - P.col( 3 );
+  */
   /*
   pt[0] = depth * id_col - P( 0 , 3 ) ;
   pt[1] = depth * id_row - P( 1 , 3 ) ;
   pt[2] = depth - P( 2 , 3 ) ;
   */
+  const openMVG::Vec3 ptX = cam.unProject( id_col, id_row, depth, scale );
 
-  openMVG::Vec3 ptX = M_inv * pt;
+
+  //  openMVG::Vec3 ptX = M_inv * pt;
 
   return -ptX.dot( n );
 }

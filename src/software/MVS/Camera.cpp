@@ -391,10 +391,12 @@ double Camera::depthDisparityConversion( const double d, const int scale ) const
   return K( 0, 0 ) * m_mean_baseline / d;
 }
 
+/*
 double Camera::depthDisparityConversion( const double d, const double baseline ) const
 {
   return m_K( 0, 0 ) * baseline / d;
 }
+*/
 
 /**
 * @brief Compute homography induced by a given stereo rig and a plane
@@ -469,7 +471,8 @@ openMVG::Vec3 Camera::get3dPoint( const double x, const double y, const int scal
 
 openMVG::Vec3 Camera::getViewVector( const double x, const double y, const int scale ) const
 {
-  return ( get3dPoint( x, y, scale ) - m_C ).normalized();
+  const openMVG::Vec3 X = unProject( x, y, 1.0, scale );
+  return ( X - m_C ).normalized();
 }
 
 /**
@@ -495,7 +498,7 @@ double ComputeDepth( const openMVG::Vec4& plane, const int id_row, const int id_
 // The plane [n,d]
 // #define FULL_INTERSECTION 0
 #ifdef FULL_INTERSECTION
-// Note : DO NOT USE THE FOLLOWING CODE 
+  // Note : DO NOT USE THE FOLLOWING CODE
   // The ray (src,dst)
   const std::pair<openMVG::Vec3, openMVG::Vec3> ray = cam.getRay( openMVG::Vec2( id_col, id_row ), scale );
 
@@ -509,7 +512,7 @@ double ComputeDepth( const openMVG::Vec4& plane, const int id_row, const int id_
   return Clamp( openMVG::Depth( cam.m_R, cam.m_t, ptX ), cam.m_min_depth * 0.7, cam.m_max_depth * 1.3 );
 #else
 
-  return Clamp( DepthFromPlane( cam, plane_n, plane_d, id_col, id_row, scale ), 0.7 * cam.m_min_depth , cam.m_max_depth * 1.3 );
+  return Clamp( DepthFromPlane( cam, plane_n, plane_d, id_col, id_row, scale ), 0.7 * cam.m_min_depth, cam.m_max_depth * 1.3 );
 #endif
 }
 
