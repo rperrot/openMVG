@@ -18,7 +18,7 @@
 #include <random>
 
 // #define MULTISCALE
-// #define USE_OPENCL
+//#define USE_OPENCL
 #define EXPORT_INTERMEDIATE_RESULT
 
 #ifdef EXPORT_INTERMEDIATE_RESULT
@@ -337,6 +337,7 @@ void ComputeMultipleScaleDepthMap( MVS::Camera&                              cam
 #else
       Propagate( map, 0, cam, cams, StereoRIG, reference_image, neigh_imgs, params, scale );
       Propagate( map, 1, cam, cams, StereoRIG, reference_image, neigh_imgs, params, scale );
+
 #endif
 #ifdef EXPORT_INTERMEDIATE_RESULT
       map.exportCost( GetPropagationCostName( id_step, scale ) );
@@ -378,6 +379,9 @@ void ComputeMultipleScaleDepthMap( MVS::Camera&                              cam
       map = map.upscale( imgs_dims[ scale - 1 ].first, imgs_dims[ scale - 1 ].second );
     }
   }
+
+  // Filter at the end
+  map = map.medianFilter( cam, 3, 3 );
 
   // Save the depth map
   map.save( out_path );
@@ -448,7 +452,7 @@ void ComputeDepthMap( MVS::Camera&                              cam,
   }
   }
 #else
-  const MVS::ImageLoadType load_type = ComputeLoadType( params.metric() );
+  const MVS::ImageLoadType      load_type  = ComputeLoadType( params.metric() );
   const std::vector<MVS::Image> neigh_imgs = LoadNeighborImages( cam, params, load_type );
 
 #endif
@@ -546,6 +550,9 @@ void ComputeDepthMap( MVS::Camera&                              cam,
     map.exportNormal( strnorref.str() );
 #endif
   }
+
+  // Filter
+  map = map.medianFilter( cam, 3, 3, params.scale() );
 
   // Now save the depth map
   map.save( out_path );
@@ -690,7 +697,7 @@ int main( int argc, char** argv )
       ComputeMultipleScaleDepthMap( cams[ id_cam ], cams, params, params.scale() + 2, cur_depth_path );
 #else
       const MVS::ImageLoadType load_type = MVS::ComputeLoadType( params.metric() );
-      const MVS::Image cur_image( color_path, grayscale_path, gradient_path, census_path, load_type );
+      const MVS::Image         cur_image( color_path, grayscale_path, gradient_path, census_path, load_type );
       ComputeDepthMap( cams[ id_cam ], cams, params, cur_image, cur_depth_path );
 #endif
     }
