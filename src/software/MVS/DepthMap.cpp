@@ -680,4 +680,91 @@ DepthMap DepthMap::upscale( const int target_height, const int target_width ) co
   return res;
 }
 
+double MedianFilter( std::vector<double>& val )
+{
+  const size_t n = val.size() / 2;
+  nth_element( val.begin(), val.begin() + n, val.end() );
+  return val[ n ];
+}
+
+DepthMap DepthMap::medianFilter( const Camera& cam, const int x_size, const int y_size, const int scale ) const
+{
+  // TODO: this only works for odd sizes
+  DepthMap res = *this;
+
+  std::vector<double> tmp( x_size * y_size );
+  std::vector<double> tmp2( x_size * y_size );
+  std::vector<double> tmp3( x_size * y_size );
+  const int           half_size_x = x_size / 2;
+  const int           half_size_y = y_size / 2;
+
+  // Filter cost
+  for ( int id_row = half_size_y; id_row < m_cost.Height() - half_size_y; ++id_row )
+  {
+    for ( int id_col = half_size_x; id_col < m_cost.Width() - half_size_x; ++id_col )
+    {
+
+      // Get the value
+      size_t index = 0;
+      for ( int dy = -half_size_y; dy <= half_size_y; ++dy )
+      {
+        for ( int dx = -half_size_x; dx <= half_size_x; ++dx )
+        {
+          tmp[ index ] = m_cost( id_row + dy, id_col + dx );
+          ++index;
+        }
+      }
+      res.cost( id_row, id_col, MedianFilter( tmp ) );
+    }
+  }
+  // Filter depth
+  for ( int id_row = half_size_y; id_row < m_depth.Height() - half_size_y; ++id_row )
+  {
+    for ( int id_col = half_size_x; id_col < m_depth.Width() - half_size_x; ++id_col )
+    {
+      // Get the value
+      size_t index = 0;
+      for ( int dy = -half_size_y; dy <= half_size_y; ++dy )
+      {
+        for ( int dx = -half_size_x; dx <= half_size_x; ++dx )
+        {
+          tmp[ index ] = m_depth( id_row + dy, id_col + dx );
+          ++index;
+        }
+      }
+      res.depth( id_row, id_col, MedianFilter( tmp ) );
+    }
+  }
+  // Filter planes
+  for ( int id_row = half_size_y; id_row < m_depth.Height() - half_size_y; ++id_row )
+  {
+    for ( int id_col = half_size_x; id_col < m_depth.Width() - half_size_x; ++id_col )
+    {
+      // Get the value
+      size_t index = 0;
+      for ( int dy = -half_size_y; dy <= half_size_y; ++dy )
+      {
+        for ( int dx = -half_size_x; dx <= half_size_x; ++dx )
+        {
+          tmp[ index ]  = m_plane( id_row + dy, id_col + dx )[ 0 ];
+          tmp2[ index ] = m_plane( id_row + dy, id_col + dx )[ 1 ];
+          tmp3[ index ] = m_plane( id_row + dy, id_col + dx )[ 2 ];
+          index++;
+        }
+      }
+      const double x = MedianFilter( tmp );
+      const double y = MedianFilter( tmp2 );
+      const double z = MedianFilter( tmp3 );
+
+      const openMVG::Vec3 n = openMVG::Vec3( x, y, z ).normalized();
+
+      const openMVG::Vec3 X = cam.unProject( id_col, id_row, m_depth( id_row, id_col ), scale );
+      const double        d = -X.dot( n );
+      res.plane( id_row, id_col, openMVG::Vec4( n[ 0 ], n[ 1 ], n[ 2 ], d ) );
+    }
+  }
+
+  return res;
+}
+
 } // namespace MVS
