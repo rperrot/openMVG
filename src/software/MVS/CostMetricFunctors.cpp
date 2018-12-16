@@ -504,23 +504,82 @@ void DaisyCostMetric::releaseInternalMemory( void )
   all_daisy_descs.clear();
 }
 
-/**
-    * @brief Ctr
-    * @param img_ref Reference image
-    * @param img_other Target image
-    * @param params Various parameters of the functor
-    */
-BilateralWeightedNCC::BilateralWeightedNCC( const Image& img_ref, const Image& img_other, const DepthMapComputationParameters& params )
-    : AbstractCostMetric( img_ref, img_other, params )
-{
-}
-
 static inline double weight( const double square_col_diff,
                              const double color_dispersion,
                              const double square_spatial_diff,
                              const double spatial_dispersion )
 {
   return std::exp( -square_col_diff * color_dispersion - square_spatial_diff * spatial_dispersion );
+}
+
+/**
+  * @brief Ctr
+  * @param img_ref Reference image
+  * @param img_other Target image
+  * @param params Various parameters of the functor
+  */
+BilateralWeightedNCC::BilateralWeightedNCC( const Image& img_ref, const Image& img_other, const DepthMapComputationParameters& params )
+    : AbstractCostMetric( img_ref, img_other, params )
+{
+  // TODO: get sigma_color and sigma distance from parameters
+  const double sigma_color    = 0.3;
+  const double sigma_distance = 3.0;
+
+  m_inv_sigma_color_2    = 1.0 / ( 2.0 * sigma_color * sigma_color );
+  m_inv_sigma_distance_2 = 1.0 / ( 2.0 * sigma_distance * sigma_distance );
+
+  // TODO: get window and step from parameters
+  m_window      = 15;
+  m_half_window = m_window / 2;
+  m_step        = 2;
+
+  m_inv_sum_weights.resize( m_image_ref.width(), m_image_ref.height() );
+  m_sum_w_ref.resize( m_image_ref.width(), m_image_ref.height() );
+  m_variance_w_ref.resize( m_image_ref.width(), m_image_ref.height() );
+
+  for ( int id_row = m_half_window; id_row < m_image_ref.height() - m_half_window - 1; ++id_row )
+  {
+    for ( int id_col = m_half_window; id_col < m_image_ref.width() - m_half_window - 1; ++id_col )
+    {
+      const double center_ref = static_cast<double>( m_image_ref.intensity( id_row, id_col ) ) / 255.0;
+
+      double sum_w        = 0.0;
+      double sum_w_ref    = 0.0;
+      double sum_w_ref_sq = 0.0;
+
+      for ( int y = id_row - m_half_window; y <= id_row + m_half_window; y += m_step )
+      {
+        for ( int x = id_col - m_half_window; x <= id_col + m_half_window; x += m_step )
+        {
+          // spatial diff
+          const double dx                  = x - id_col;
+          const double dy                  = y - id_row;
+          const double square_spatial_diff = dx * dx + dy * dy;
+          // Color diff
+
+          const double v1 = static_cast<double>( m_image_ref.intensity( y, x ) ) / 255.0;
+
+          const double diff_ref = v1 - center_ref;
+          const double w_ref    = weight( diff_ref * diff_ref, m_inv_sigma_color_2, square_spatial_diff, m_inv_sigma_distance_2 );
+
+          const double w_ref_v1 = w_ref * v1;
+
+          sum_w += w_ref;
+          sum_w_ref += w_ref_v1;
+          sum_w_ref_sq += w_ref_v1 * v1;
+        }
+      }
+
+      const double inv_sum             = 1.0 / sum_w;
+      const double sum_w_ref_scaled    = sum_w_ref * inv_sum;
+      const double sum_w_ref_sq_scaled = sum_w_ref_sq * inv_sum;
+
+      m_inv_sum_weights( id_row, id_col ) = inv_sum;
+      m_sum_w_ref( id_row, id_col )       = sum_w_ref_scaled;
+
+      m_variance_w_ref( id_row, id_col ) = sum_w_ref_sq_scaled - ( sum_w_ref_scaled * sum_w_ref_scaled );
+    }
+  }
 }
 
 /**
@@ -532,38 +591,22 @@ static inline double weight( const double square_col_diff,
   */
 double BilateralWeightedNCC::operator()( const int id_row, const int id_col, const openMVG::Mat3& H ) const
 {
-  // TODO: lots of computation could be saved in constructor then reused later
-  const double sigma_color        = 0.3;
-  const double sigma_dist         = 3.0;
-  const double color_dispersion   = 1.0 / ( 2.0 * sigma_color * sigma_color );
-  const double spatial_dispersion = 1.0 / ( 2.0 * sigma_dist * sigma_dist );
-  const int    window             = 15;
-  const int    half_w             = window / 2;
-  const int    step               = 2;
-
-  if ( ( ( id_row - half_w ) < 0 ) || ( ( id_row + half_w ) >= m_image_ref.height() ) ||
-       ( ( id_col - half_w ) < 0 ) || ( ( id_col + half_w ) >= m_image_ref.width() ) )
+  if ( ( ( id_row - m_half_window ) < 0 ) || ( ( id_row + m_half_window ) >= m_image_ref.height() ) ||
+       ( ( id_col - m_half_window ) < 0 ) || ( ( id_col + m_half_window ) >= m_image_ref.width() ) )
   {
     return DepthMapComputationParameters::MAX_COST_BILATERAL_NCC;
   }
 
-  double sum_w_ref       = 0.0;
-  double sum_w_ref_sq    = 0.0;
   double sum_w_other     = 0.0;
   double sum_w_other_sq  = 0.0;
   double sum_w_ref_other = 0.0;
-  double sum_w1          = 0.0;
 
   const double center_ref = static_cast<double>( m_image_ref.intensity( id_row, id_col ) ) / 255.0;
 
-  for ( int y = id_row - half_w; y <= id_row + half_w; y += step )
+  for ( int y = id_row - m_half_window; y <= id_row + m_half_window; y += m_step )
   {
-    for ( int x = id_col - half_w; x <= id_col + half_w; x += step )
+    for ( int x = id_col - m_half_window; x <= id_col + m_half_window; x += m_step )
     {
-      if ( !m_image_ref.inside( y, x ) )
-      {
-        return DepthMapComputationParameters::MAX_COST_BILATERAL_NCC;
-      }
       const openMVG::Vec3 p( x, y, 1.0 );
       const openMVG::Vec3 q = H * p;
 
@@ -591,31 +634,28 @@ double BilateralWeightedNCC::operator()( const int id_row, const int id_col, con
       const double v1 = static_cast<double>( m_image_ref.intensity( y, x ) ) / 255.0;
       const double v2 = static_cast<double>( m_image_other.intensity( qy, qx ) ) / 255.0;
 
-      const double diff_ref = v1 - center_ref;                                                                          // TODO: precompute
-      const double w_ref    = weight( diff_ref * diff_ref, color_dispersion, square_spatial_diff, spatial_dispersion ); // TODO: precompute
+      const double diff_ref = v1 - center_ref;
+      const double w_ref    = weight( diff_ref * diff_ref, m_inv_sigma_color_2, square_spatial_diff, m_inv_sigma_distance_2 );
 
-      sum_w_ref += w_ref * v1;         // TODO: precompute
-      sum_w_ref_sq += w_ref * v1 * v1; // TODO: precompute
+      const double w_ref_v2 = w_ref * v2;
 
-      sum_w_other += w_ref * v2;
-      sum_w_other_sq += w_ref * v2 * v2;
-
-      sum_w_ref_other += w_ref * v1 * v2;
-
-      sum_w1 += w_ref; // TODO: precompute
+      sum_w_other += w_ref_v2;
+      sum_w_other_sq += w_ref_v2 * v2;
+      sum_w_ref_other += w_ref_v2 * v1;
     }
   }
 
-  sum_w_ref /= sum_w1;
-  sum_w_ref_sq /= sum_w1;
+  const double inv = m_inv_sum_weights( id_row, id_col );
 
-  sum_w_other /= sum_w1;
-  sum_w_other_sq /= sum_w1;
-  sum_w_ref_other /= sum_w1;
+  sum_w_other *= inv;
+  sum_w_other_sq *= inv;
+  sum_w_ref_other *= inv;
 
-  const double variance_w_ref       = sum_w_ref_sq - ( sum_w_ref * sum_w_ref );
+  const double sum_w_ref = m_sum_w_ref( id_row, id_col ); // Note: already scaled
+
+  const double variance_w_ref       = m_variance_w_ref( id_row, id_col );
   const double variance_w_other     = sum_w_other_sq - ( sum_w_other * sum_w_other );
-  const double variance_w_ref_other = sum_w_ref_other - ( sum_w_ref * sum_w_other );
+  const double variance_w_ref_other = sum_w_ref_other - ( sum_w_other * sum_w_ref );
 
   if ( variance_w_ref < 1e-6 ||
        variance_w_other < 1e-6 )

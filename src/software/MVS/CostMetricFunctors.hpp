@@ -168,6 +168,16 @@ public:
   double operator()( const int id_row, const int id_col, const openMVG::Mat3& H ) const override;
 
 private:
+  double m_inv_sigma_color_2;
+  double m_inv_sigma_distance_2;
+
+  int m_window;
+  int m_half_window;
+  int m_step;
+
+  openMVG::image::Image<double> m_inv_sum_weights;
+  openMVG::image::Image<double> m_sum_w_ref;
+  openMVG::image::Image<double> m_variance_w_ref;
 };
 
 } // namespace MVS
