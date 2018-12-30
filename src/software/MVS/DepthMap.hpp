@@ -12,6 +12,7 @@ namespace MVS
 {
 /**
 * @brief Structure holding a depth map with their associated normal
+* @note depth and normals are relative to the current view (they must be back projected to have global frame in the fusion step)
 */
 struct DepthMap
 {
@@ -117,12 +118,12 @@ public:
 
   /**
     * @brief Apply randomization on normals
-    * @param cam Camera associated with the depth
-    * @param d_min Minimum disparity
-    * @param d_max Maximum disparity
-    * @param scale Scale of the computation
+    * @param cam    Camera associated with the depth
+    * @param d_min  Minimum depth
+    * @param d_max  Maximum depth
+    * @param scale  Scale of the computation
     */
-  void randomizePlanes( const Camera& cam, const double d_min, const double d_max, const int scale = -1 );
+  void randomizePlanes( const Camera& cam, const double d_min, const double d_max, const int scale );
 
   /**
     * @brief Get plane at specified position
@@ -155,13 +156,34 @@ public:
   void plane( const openMVG::Vec2i& pos, const openMVG::Vec4& new_normal );
 
   /**
+   * @brief Set best view for selected pixel 
+   * 
+   * @param id_row Row index
+   * @param id_col Column index
+   * 
+   * @param best_view The new best view 
+   */
+  void bestView( const int id_row, const int id_col, const int best_view );
+
+  /**
+   * @brief Get best view for selected pixel 
+   * 
+   * @param id_row Row index
+   * @param id_col Column index
+   * 
+   * @return the best view for the given pixel 
+   */
+  int bestView( const int id_row, const int id_col ) const;
+
+  /**
     * @brief Indicate if a point is inside the image
     * @param id_row Row index
     * @param id_col Col index
     * @retval true if the point is inside
     * @retval false if the point is outside
     */
-  bool inside( const int id_row, const int id_col ) const;
+  bool
+  inside( const int id_row, const int id_col ) const;
 
   /**
     * @brief Save depth map to a file
@@ -221,7 +243,7 @@ public:
     * @param cam The camera used to compute point position
     * @param cost_threshold Threshold to remove some points (point with cost above are discarted)
     */
-  void exportToPly( const std::string& path, const Camera& cam, const double cost_threshold = std::numeric_limits<double>::max(), const int scale = -1 );
+  void exportToPly( const std::string& path, const Camera& cam, const double cost_threshold, const int scale );
 
   /**
     * @brief Set ground truth depth for known points
@@ -238,7 +260,7 @@ public:
     */
   DepthMap upscale( const int target_height, const int target_width ) const;
 
-  DepthMap medianFilter( const Camera& cam, const int x_size, const int y_size, const int scale = -1 ) const;
+  DepthMap medianFilter( const Camera& cam, const int x_size, const int y_size, const int scale ) const;
 
 private:
   // Matching cost
@@ -249,6 +271,9 @@ private:
 
   // Plane ( n , d )
   openMVG::image::Image<openMVG::Vec4> m_plane;
+
+  // The current best important view index (relative to the neighbors list)
+  openMVG::image::Image<int> m_most_important_view;
 };
 
 } // namespace MVS

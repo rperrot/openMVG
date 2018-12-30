@@ -19,6 +19,10 @@ AbstractCostMetric::AbstractCostMetric( const Image& img_ref, const Image& img_o
 {
 }
 
+AbstractCostMetric::~AbstractCostMetric( void )
+{
+}
+
 ///////////////////////////////
 ///////////// ZNCC ////////////
 ///////////////////////////////
@@ -31,6 +35,10 @@ AbstractCostMetric::AbstractCostMetric( const Image& img_ref, const Image& img_o
  */
 ZNCCCostMetric::ZNCCCostMetric( const Image& img_ref, const Image& img_other, const DepthMapComputationParameters& params )
     : AbstractCostMetric( img_ref, img_other, params )
+{
+}
+
+ZNCCCostMetric::~ZNCCCostMetric( void )
 {
 }
 
@@ -190,6 +198,14 @@ PatchMatchCostMetric::PatchMatchCostMetric( const Image& img_ref, const Image& i
 }
 
 /**
+  * @brief Dtr
+  * 
+  */
+PatchMatchCostMetric::~PatchMatchCostMetric( void )
+{
+}
+
+/**
  * @brief Compute aggregated matching cost at a given pixel
  * @param id_row Row index of the queried pixel
  * @param id_col Col index of the queried pixel
@@ -285,6 +301,10 @@ double PatchMatchCostMetric::operator()( const int id_row, const int id_col, con
 */
 CensusCostMetric::CensusCostMetric( const Image& img_ref, const Image& img_other, const DepthMapComputationParameters& params )
     : AbstractCostMetric( img_ref, img_other, params )
+{
+}
+
+CensusCostMetric::~CensusCostMetric( void )
 {
 }
 
@@ -449,6 +469,10 @@ DaisyCostMetric::DaisyCostMetric( const Image& img_ref, const Image& img_other, 
   }
 }
 
+DaisyCostMetric::~DaisyCostMetric( void )
+{
+}
+
 /**
  * @brief Compute aggregated matching cost at a given pixel
  * @param id_row Row index of the queried pixel
@@ -493,7 +517,8 @@ double DaisyCostMetric::operator()( const int id_row, const int id_col, const op
 
   const float sum = ( mapDescA - mapDescB ).squaredNorm();
 
-  return 1.0 - std::exp( -static_cast<double>( sum ) );
+  // Map between 0.0-2.0
+  return 2.0 * ( 1.0 - std::exp( -static_cast<double>( sum ) ) );
 }
 
 /**
@@ -504,6 +529,7 @@ void DaisyCostMetric::releaseInternalMemory( void )
   all_daisy_descs.clear();
 }
 
+/*
 static inline double weight( const double square_col_diff,
                              const double color_dispersion,
                              const double square_spatial_diff,
@@ -511,6 +537,10 @@ static inline double weight( const double square_col_diff,
 {
   return std::exp( -square_col_diff * color_dispersion - square_spatial_diff * spatial_dispersion );
 }
+*/
+
+std::vector<double> BilateralWeightedNCC::m_precomputed_spatial_weight;
+std::vector<double> BilateralWeightedNCC::m_precomputed_color_weight;
 
 /**
   * @brief Ctr
@@ -521,6 +551,8 @@ static inline double weight( const double square_col_diff,
 BilateralWeightedNCC::BilateralWeightedNCC( const Image& img_ref, const Image& img_other, const DepthMapComputationParameters& params )
     : AbstractCostMetric( img_ref, img_other, params )
 {
+  static const double norm_color = 1.0 / 255.0;
+
   // TODO: get sigma_color and sigma distance from parameters
   const double sigma_color    = 0.3;
   const double sigma_distance = 3.0;
@@ -533,6 +565,34 @@ BilateralWeightedNCC::BilateralWeightedNCC( const Image& img_ref, const Image& i
   m_half_window = m_window / 2;
   m_step        = 2;
 
+  if ( m_precomputed_spatial_weight.size() < ( ( 2 * m_half_window + 1 ) * ( 2 * m_half_window + 1 ) + 1 ) )
+  {
+    m_precomputed_spatial_weight.resize( ( 2 * m_half_window + 1 ) * ( 2 * m_half_window + 1 ) + 1 );
+    for ( int window_row = -m_half_window; window_row <= m_half_window; window_row++ )
+    {
+      for ( int window_col = -m_half_window; window_col <= m_half_window; window_col++ )
+      {
+        const int id_y  = window_row + m_half_window;
+        const int id_x  = window_col + m_half_window;
+        const int index = id_x + ( 2 * m_half_window + 1 ) * id_y;
+        assert( index < m_precomputed_spatial_weight.size() );
+
+        m_precomputed_spatial_weight[ index ] = std::exp( -( window_row * window_row + window_col * window_col ) * m_inv_sigma_distance_2 );
+      }
+    }
+  }
+  if ( m_precomputed_color_weight.size() < 512 )
+  {
+    m_precomputed_color_weight.resize( 512 );
+    for ( int color_diff = -255; color_diff <= 255; ++color_diff )
+    {
+      const double floatDiff = static_cast<double>( color_diff ) * norm_color;
+      const size_t cur_index = 255 + color_diff;
+      assert( cur_index < m_precomputed_color_weight.size() );
+      m_precomputed_color_weight[ cur_index ] = std::exp( -( floatDiff * floatDiff ) * m_inv_sigma_color_2 );
+    }
+  }
+
   m_inv_sum_weights.resize( m_image_ref.width(), m_image_ref.height() );
   m_sum_w_ref.resize( m_image_ref.width(), m_image_ref.height() );
   m_variance_w_ref.resize( m_image_ref.width(), m_image_ref.height() );
@@ -541,7 +601,7 @@ BilateralWeightedNCC::BilateralWeightedNCC( const Image& img_ref, const Image& i
   {
     for ( int id_col = m_half_window; id_col < m_image_ref.width() - m_half_window - 1; ++id_col )
     {
-      const double center_ref = static_cast<double>( m_image_ref.intensity( id_row, id_col ) ) / 255.0;
+      const int center_ref = m_image_ref.intensity( id_row, id_col );
 
       double sum_w        = 0.0;
       double sum_w_ref    = 0.0;
@@ -552,15 +612,14 @@ BilateralWeightedNCC::BilateralWeightedNCC( const Image& img_ref, const Image& i
         for ( int x = id_col - m_half_window; x <= id_col + m_half_window; x += m_step )
         {
           // spatial diff
-          const double dx                  = x - id_col;
-          const double dy                  = y - id_row;
-          const double square_spatial_diff = dx * dx + dy * dy;
+          const double dx = x - id_col;
+          const double dy = y - id_row;
           // Color diff
 
-          const double v1 = static_cast<double>( m_image_ref.intensity( y, x ) ) / 255.0;
+          const int    i1 = m_image_ref.intensity( y, x );
+          const double v1 = static_cast<double>( i1 ) * norm_color;
 
-          const double diff_ref = v1 - center_ref;
-          const double w_ref    = weight( diff_ref * diff_ref, m_inv_sigma_color_2, square_spatial_diff, m_inv_sigma_distance_2 );
+          const double w_ref = weight( dy, dx, i1 - center_ref ); // diff_ref * diff_ref, m_inv_sigma_color_2, square_spatial_diff, m_inv_sigma_distance_2 );
 
           const double w_ref_v1 = w_ref * v1;
 
@@ -582,6 +641,10 @@ BilateralWeightedNCC::BilateralWeightedNCC( const Image& img_ref, const Image& i
   }
 }
 
+BilateralWeightedNCC::~BilateralWeightedNCC( void )
+{
+}
+
 /**
   * @brief Compute aggregated matching cost at a given pixel
   * @param id_row Row index of the queried pixel
@@ -591,6 +654,7 @@ BilateralWeightedNCC::BilateralWeightedNCC( const Image& img_ref, const Image& i
   */
 double BilateralWeightedNCC::operator()( const int id_row, const int id_col, const openMVG::Mat3& H ) const
 {
+  static const double norm_color = 1.0 / 255.0;
   if ( ( ( id_row - m_half_window ) < 0 ) || ( ( id_row + m_half_window ) >= m_image_ref.height() ) ||
        ( ( id_col - m_half_window ) < 0 ) || ( ( id_col + m_half_window ) >= m_image_ref.width() ) )
   {
@@ -601,7 +665,7 @@ double BilateralWeightedNCC::operator()( const int id_row, const int id_col, con
   double sum_w_other_sq  = 0.0;
   double sum_w_ref_other = 0.0;
 
-  const double center_ref = static_cast<double>( m_image_ref.intensity( id_row, id_col ) ) / 255.0;
+  const int center_ref = m_image_ref.intensity( id_row, id_col );
 
   for ( int y = id_row - m_half_window; y <= id_row + m_half_window; y += m_step )
   {
@@ -626,16 +690,16 @@ double BilateralWeightedNCC::operator()( const int id_row, const int id_col, con
       }
 
       // spatial diff
-      const double dx                  = x - id_col;
-      const double dy                  = y - id_row;
-      const double square_spatial_diff = dx * dx + dy * dy;
+      const int dx = x - id_col;
+      const int dy = y - id_row;
       // Color diff
+      const int i1 = m_image_ref.intensity( y, x );
+      const int i2 = m_image_other.intensity( qy, qx );
 
-      const double v1 = static_cast<double>( m_image_ref.intensity( y, x ) ) / 255.0;
-      const double v2 = static_cast<double>( m_image_other.intensity( qy, qx ) ) / 255.0;
+      const double v1 = static_cast<double>( i1 ) * norm_color;
+      const double v2 = static_cast<double>( i2 ) * norm_color;
 
-      const double diff_ref = v1 - center_ref;
-      const double w_ref    = weight( diff_ref * diff_ref, m_inv_sigma_color_2, square_spatial_diff, m_inv_sigma_distance_2 );
+      const double w_ref = weight( dy, dx, i1 - center_ref ); // weight( diff_ref * diff_ref, m_inv_sigma_color_2, square_spatial_diff, m_inv_sigma_distance_2 );
 
       const double w_ref_v2 = w_ref * v2;
 
@@ -666,6 +730,26 @@ double BilateralWeightedNCC::operator()( const int id_row, const int id_col, con
   const double ncc = variance_w_ref_other / std::sqrt( variance_w_other * variance_w_ref );
 
   return 1.0 - Clamp( ncc, -1.0, 1.0 );
+}
+
+double BilateralWeightedNCC::weight( const int row_diff, const int col_diff, const int delta_color ) const
+{
+  // uses precomputed weigth
+  // exp( a + b ) = exp( a ) * exp( b )
+  // exp( a ) could be precomputed (row_diff and col_diff are limited to 2 * window size)
+  // exp( b ) also color_diff is limited since it corresponds to image pixel values (0;255)
+  // for history, the computed value is:
+  // return std::exp( -( color_diff * color_diff ) * color_dispersion - ( row_diff * row_diff + col_diff * col_diff ) * spatial_dispersion );
+
+  const int    id_y           = row_diff + m_half_window;
+  const int    id_x           = col_diff + m_half_window;
+  const int    index          = id_x + id_y * m_window;
+  const double spatial_weight = m_precomputed_spatial_weight[ index ];
+
+  const int    i_color_diff = Clamp( delta_color + 255, 0, 510 );
+  const double color_weight = m_precomputed_color_weight[ i_color_diff ];
+
+  return spatial_weight * color_weight;
 }
 
 } // namespace MVS

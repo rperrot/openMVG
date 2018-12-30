@@ -7,8 +7,6 @@
 #include "DepthMapComputationParameters.hpp"
 #include "Image.hpp"
 
-
-
 namespace MVS
 {
 
@@ -24,16 +22,16 @@ namespace MVS
 * @param params Computation parameters
 * @param scale Optionnal scale of the computation (if not specified , used the user specified resolution)
 */
-void ComputeImagePairCost( openMVG::image::Image<double> & cost ,
-                           const openMVG::image::Image<openMVG::Vec4> & planes ,
-                           const Camera & reference_cam ,
-                           const Camera & other_cam ,
-                           const std::pair< openMVG::Mat3 , openMVG::Vec3 > & stereo_rig ,
-                           const Image & image_ref ,
-                           const Image & image_other ,
-                           const DepthMapComputationParameters & params ,
-                           std::shared_ptr<AbstractCostMetric> cost_metric ,
-                           const int scale = -1 ) ;
+void ComputeImagePairCost( openMVG::image::Image<double>&                 cost,
+                           const openMVG::image::Image<openMVG::Vec4>&    planes,
+                           const Camera&                                  reference_cam,
+                           const Camera&                                  other_cam,
+                           const std::pair<openMVG::Mat3, openMVG::Vec3>& stereo_rig,
+                           const Image&                                   image_ref,
+                           const Image&                                   image_other,
+                           const DepthMapComputationParameters&           params,
+                           std::shared_ptr<AbstractCostMetric>            cost_metric,
+                           const int                                      scale = -1 );
 
 /**
 * @brief Compute cost (of all pixels) using all neighboring images
@@ -47,16 +45,15 @@ void ComputeImagePairCost( openMVG::image::Image<double> & cost ,
 * @param params Computation parameters
 * @param scale Optionnal scale of the computation (if not specified , used the user specified resolution)
 */
-void ComputeMultipleViewCost( openMVG::image::Image<double> & cost ,
-                              const openMVG::image::Image<openMVG::Vec4> & planes ,
-                              const Camera & reference_cam ,
-                              const std::vector< Camera > & cams ,
-                              const std::vector< std::pair< openMVG::Mat3 , openMVG::Vec3 > > & stereo_rig ,
-                              const Image & image_ref ,
-                              const std::vector< Image > & neigh_imgs ,
-                              const DepthMapComputationParameters & params ,
-                              const int scale = -1 ) ;
-
+void ComputeMultipleViewCost( openMVG::image::Image<double>&                              cost,
+                              const openMVG::image::Image<openMVG::Vec4>&                 planes,
+                              const Camera&                                               reference_cam,
+                              const std::vector<Camera>&                                  cams,
+                              const std::vector<std::pair<openMVG::Mat3, openMVG::Vec3>>& stereo_rig,
+                              const Image&                                                image_ref,
+                              const std::vector<Image>&                                   neigh_imgs,
+                              const DepthMapComputationParameters&                        params,
+                              const int                                                   scale = -1 );
 
 /**
 * @brief Compute multiple view cost for specified pixel
@@ -72,17 +69,47 @@ void ComputeMultipleViewCost( openMVG::image::Image<double> & cost ,
 * @return Multiple view cost for the specified pixel
 * @param scale Optionnal scale of the computation (if not specified , used the user specified resolution)
 */
-double ComputeMultiViewCost( const int id_row , const int id_col ,
-                             const openMVG::Vec3 & cur_normal , // Normal parameter
-                             const double & cur_d , // Plane d
-                             const Camera & reference_cam ,
-                             const std::vector< Camera > & cams ,
-                             const std::vector< std::pair< openMVG::Mat3 , openMVG::Vec3 > > & stereo_rig ,
-                             const Image & image_ref ,
-                             const std::vector< Image > & neigh_imgs ,
-                             const DepthMapComputationParameters & params ,
-                             std::vector< std::shared_ptr<AbstractCostMetric>> cost_metrics ,
-                             const int scale = -1 ) ;
+double ComputeMultiViewCost( const int id_row, const int id_col,
+                             const openMVG::Vec3&                                        cur_normal, // Normal parameter
+                             const double&                                               cur_d,      // Plane d
+                             const Camera&                                               reference_cam,
+                             const std::vector<Camera>&                                  cams,
+                             const std::vector<std::pair<openMVG::Mat3, openMVG::Vec3>>& stereo_rig,
+                             const Image&                                                image_ref,
+                             const std::vector<Image>&                                   neigh_imgs,
+                             const DepthMapComputationParameters&                        params,
+                             std::vector<std::shared_ptr<AbstractCostMetric>>            cost_metrics,
+                             const int                                                   scale = -1 );
+
+/**
+* @brief Compute multiple hypothesis cost matrix for a specified pixel 
+* @param[out] res result of the computation 
+* @param id_row Y-coordinate of the pixel
+* @param id_col X-coordinate of the pixel
+* @param hypothesis Hypotheses for which we want to compute cost
+* @param cams Array of all neighboring cameras
+* @param stereo_rig Stereo motion wrt all neighboring cameras
+* @param image_ref Image data of the reference view
+* @param neigh_imgs Image data of all the neighbors of the camera
+* @param params Computation parameters
+* @param cos_metrics Metrics for cost computation pair 
+* @return Multiple view cost for the specified pixel
+* @param scale Optionnal scale of the computation (if not specified , used the user specified resolution)
+*
+* @note result matrix has n-hypt rows and n-cams cols 
+*/
+void ComputeMultiViewCostMatrix( openMVG::Mat&                                               res,
+                                 const int                                                   id_row,
+                                 const int                                                   id_col,
+                                 const std::vector<openMVG::Vec4>&                           hypotheses, // Plane normal, Plane d
+                                 const Camera&                                               reference_cam,
+                                 const std::vector<Camera>&                                  cams,
+                                 const std::vector<std::pair<openMVG::Mat3, openMVG::Vec3>>& stereo_rig,
+                                 const Image&                                                image_ref,
+                                 const std::vector<Image>&                                   neigh_imgs,
+                                 const DepthMapComputationParameters&                        params,
+                                 std::vector<std::shared_ptr<AbstractCostMetric>>            cost_metrics,
+                                 const int                                                   scale = -1 );
 
 /**
 * @brief Compute initial cost at a specific scale
@@ -95,15 +122,14 @@ double ComputeMultiViewCost( const int id_row , const int id_col ,
 * @param params Computation parameters
 * @param scale Scale of the computation
 */
-void ComputeCost( DepthMap & map ,
-                  const Camera & reference_cam ,
-                  const std::vector< Camera > & cams ,
-                  const std::vector< std::pair< openMVG::Mat3 , openMVG::Vec3 > > & stereo_rig ,
-                  const Image & image_ref ,
-                  const std::vector< Image > & neigh_imgs ,
-                  const DepthMapComputationParameters & params ,
-                  const int scale = -1 );
-
+void ComputeCost( DepthMap&                                                   map,
+                  const Camera&                                               reference_cam,
+                  const std::vector<Camera>&                                  cams,
+                  const std::vector<std::pair<openMVG::Mat3, openMVG::Vec3>>& stereo_rig,
+                  const Image&                                                image_ref,
+                  const std::vector<Image>&                                   neigh_imgs,
+                  const DepthMapComputationParameters&                        params,
+                  const int                                                   scale = -1 );
 
 /**
 * @brief Perform propagation using Red or Black scheme at specific scale
@@ -117,14 +143,7 @@ void ComputeCost( DepthMap & map ,
 * @param params Computation parameters
 * @param scale Scale of the computation
 */
-void Propagate( DepthMap & map , const int id_start ,
-                const Camera & cam ,
-                const std::vector< Camera > & cams ,
-                const std::vector< std::pair< openMVG::Mat3 , openMVG::Vec3 > > & stereo_rig ,
-                const Image & image_ref ,
-                const std::vector< Image > & neigh_imgs ,
-                const DepthMapComputationParameters & params ,
-                const int scale = -1 ) ;
+void Propagate( DepthMap& map, const int id_start, const Camera& cam, const std::vector<Camera>& cams, const std::vector<std::pair<openMVG::Mat3, openMVG::Vec3>>& stereo_rig, const Image& image_ref, const std::vector<Image>& neigh_imgs, const DepthMapComputationParameters& params, const int scale = -1 );
 
 /**
 * @brief Perform plane refinement at specific scale
@@ -135,16 +154,14 @@ void Propagate( DepthMap & map , const int id_start ,
 * @param image_ref Image data of the reference view
 * @param params Computation parameters
 */
-void Refinement( DepthMap & map ,
-                 const Camera & cam ,
-                 const std::vector< Camera > & cams ,
-                 const std::vector< std::pair< openMVG::Mat3 , openMVG::Vec3 > > & stereo_rig ,
-                 const Image & image_ref ,
-                 const std::vector< Image > & neigh_imgs ,
-                 const DepthMapComputationParameters & params ,
-                 const int scale = -1 ) ;
-
-
+void Refinement( DepthMap&                                                   map,
+                 const Camera&                                               cam,
+                 const std::vector<Camera>&                                  cams,
+                 const std::vector<std::pair<openMVG::Mat3, openMVG::Vec3>>& stereo_rig,
+                 const Image&                                                image_ref,
+                 const std::vector<Image>&                                   neigh_imgs,
+                 const DepthMapComputationParameters&                        params,
+                 const int                                                   scale = -1 );
 
 } // namespace MVS
 

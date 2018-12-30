@@ -12,21 +12,21 @@ namespace MVS
 /**
 * @brief Convert a string to a lowercase form 
 */
-std::string to_lower( const std::string & str ) ;
+std::string to_lower( const std::string& str );
 
 // Count the number of bit set to one
 // @see wikipedia page hamming_weight
 // @todo enable popcnt on CPU that supports it
 static inline int popcount( const uint64_t val )
 {
-#ifdef HAVE_POPCNT 
-  return __builtin_popcountll( val ) ; 
-#else 
-  uint64_t x = val ;
+#ifdef HAVE_POPCNT
+  return __builtin_popcountll( val );
+#else
+  uint64_t x = val;
 
-  uint64_t m1 = 0x5555555555555555ll;
-  uint64_t m2 = 0x3333333333333333ll;
-  uint64_t m4 = 0x0F0F0F0F0F0F0F0Fll;
+  uint64_t m1  = 0x5555555555555555ll;
+  uint64_t m2  = 0x3333333333333333ll;
+  uint64_t m4  = 0x0F0F0F0F0F0F0F0Fll;
   uint64_t h01 = 0x0101010101010101ll;
 
   x -= ( x >> 1 ) & m1;
@@ -34,7 +34,7 @@ static inline int popcount( const uint64_t val )
   x = ( x + ( x >> 4 ) ) & m4;
 
   return ( x * h01 ) >> 56;
-#endif 
+#endif
 }
 
 /**
@@ -44,11 +44,10 @@ static inline int popcount( const uint64_t val )
 * @param max Maximum bound of the wanted range
 * @return value in range
 */
-template< typename T >
-T Clamp( const T & val , const T & min , const T & max )
+template <typename T>
+T Clamp( const T& val, const T& min, const T& max )
 {
-  return ( val < min ) ? min :
-         ( ( val > max ) ? max : val ) ;
+  return ( val < min ) ? min : ( ( val > max ) ? max : val );
 }
 
 /**
@@ -58,7 +57,7 @@ T Clamp( const T & val , const T & min , const T & max )
 */
 static inline double l1_norm( const double val )
 {
-  return std::fabs( val ) ;
+  return std::fabs( val );
 }
 
 /**
@@ -66,15 +65,14 @@ static inline double l1_norm( const double val )
 * @param gamma, gamma value
 * @return exponential table
 */
-std::vector< double > GetExpTable( const double gamma );
-
+std::vector<double> GetExpTable( const double gamma );
 
 /**
 * @brief Get content of a file into a string
 * @param path Input path
 * @return content of the file specified by path
 */
-std::string GetFileContent( const std::string &path ) ;
+std::string GetFileContent( const std::string& path );
 
 /**
 * @brief Compute angle in radian between two normalized vectors
@@ -82,7 +80,16 @@ std::string GetFileContent( const std::string &path ) ;
 * @param v2 second vector
 * @return angle between v1 and v2
 */
-double AngleBetween( const openMVG::Vec3 & v1 , const openMVG::Vec3 & v2 ) ;
+double AngleBetween( const openMVG::Vec3& v1, const openMVG::Vec3& v2 );
+
+/**
+ * @brief Same as Angle between but instead of returning an angle, returns cosinus of this angle 
+ * 
+ * @param v1    First vector 
+ * @param v2    Second vector 
+ * @return      Cosinus of the angle between the two vectors 
+ */
+double CosAngleBetween( const openMVG::Vec3& v1, const openMVG::Vec3& v2 );
 
 /**
 * @brief Sample a unit direction
@@ -91,8 +98,7 @@ double AngleBetween( const openMVG::Vec3 & v1 , const openMVG::Vec3 & v2 ) ;
 * @param alpha_max Maximum angle of the cone to sample (in radian)
 * @return direction with solid angle centered on Z
 */
-openMVG::Vec3 UniformSampleWRTSolidAngle( const double u1 , const double u2 , const double alpha_max ) ;
-
+openMVG::Vec3 UniformSampleWRTSolidAngle( const double u1, const double u2, const double alpha_max );
 
 /**
 * @brief Sample a unit direction
@@ -102,8 +108,7 @@ openMVG::Vec3 UniformSampleWRTSolidAngle( const double u1 , const double u2 , co
 * @param n Sampling direction
 * @return direction with solid angle centered on Z
 */
-openMVG::Vec3 UniformSampleWRTSolidAngle( const double u1 , const double u2 , const double alpha_max , const openMVG::Vec3 & n );
-
+openMVG::Vec3 UniformSampleWRTSolidAngle( const double u1, const double u2, const double alpha_max, const openMVG::Vec3& n );
 
 /**
 * @brief Given a direction generate an ortho-normalized coordinate frame
@@ -111,7 +116,7 @@ openMVG::Vec3 UniformSampleWRTSolidAngle( const double u1 , const double u2 , co
 * @param[out] x New x direction
 * @param[out] y New y direction
 */
-void GenerateNormalizedFrame( const openMVG::Vec3 & n , openMVG::Vec3 & x , openMVG::Vec3 & y ) ;
+void GenerateNormalizedFrame( const openMVG::Vec3& n, openMVG::Vec3& x, openMVG::Vec3& y );
 
 /**
 * @brief Computes Barycentric coordinates of P in triangle (A,B,C)
@@ -122,10 +127,8 @@ void GenerateNormalizedFrame( const openMVG::Vec3 & n , openMVG::Vec3 & x , open
 * @return (alpha,beta,gamma) The barycentric coordinates of P in (A,B,C)
 * @note p is : alpha * A + beta * B + gamma * C
 */
-openMVG::Vec3 BarycentricCoordinates( const openMVG::Vec3 & A , const openMVG::Vec3 & B , const openMVG::Vec3 & C ,
-                                      const openMVG::Vec3 & p ) ;
+openMVG::Vec3 BarycentricCoordinates( const openMVG::Vec3& A, const openMVG::Vec3& B, const openMVG::Vec3& C, const openMVG::Vec3& p );
+
 } // namespace MVS
-
-
 
 #endif

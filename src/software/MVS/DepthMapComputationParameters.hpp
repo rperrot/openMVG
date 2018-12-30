@@ -252,6 +252,37 @@ struct DepthMapComputationParameters
    */
   std::string getModelDirectory( void ) const;
 
+  /**
+   * @brief Set the Iteration Id 
+   * 
+   * @param id New iteration ID
+   */
+  void setIterationId( const int id );
+
+  /**
+   * @brief Get the Iteration Id 
+   * 
+   * @return the current iteration ID
+   */
+  int getIterationId( void ) const;
+
+  /**
+   * @brief Set the Use Joint View Selection mode (AMHMVS)
+   * 
+   * @param use Enable/diable joint view selection for unified cost 
+   */
+  void setUseJointViewSelection( const bool use );
+
+  /**
+   * @brief Indicate if Joint view selection must be used 
+   * 
+   * @return true   Use joint view selection for unified cost 
+   * @return false  Use Gipuma multiple view cost 
+   */
+  bool useJointViewSelection( void ) const;
+
+  int m_iteration; // ID of the iteration
+
   /// Scale of the computation
   int m_scale;
 
@@ -284,6 +315,9 @@ struct DepthMapComputationParameters
 
   /// Number of image used for cost computation
   int m_nb_image_for_cost_computation;
+
+  /// Use cost matrix with multiple view selection
+  bool m_use_joint_view_selection;
 
   /// base working directory
   std::string m_base_path;

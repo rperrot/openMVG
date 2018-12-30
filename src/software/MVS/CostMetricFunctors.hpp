@@ -25,6 +25,8 @@ public:
      */
   AbstractCostMetric( const Image& img_ref, const Image& img_other, const DepthMapComputationParameters& params );
 
+  virtual ~AbstractCostMetric( void );
+
   /**
      * @brief Compute aggregated matching cost at a given pixel
      * @param id_row Row index of the queried pixel
@@ -55,6 +57,12 @@ public:
   ZNCCCostMetric( const Image& img_ref, const Image& img_other, const DepthMapComputationParameters& params );
 
   /**
+   * @brief Dtr
+   * 
+   */
+  virtual ~ZNCCCostMetric( void );
+
+  /**
      * @brief Compute aggregated matching cost at a given pixel
      * @param id_row Row index of the queried pixel
      * @param id_col Col index of the queried pixel
@@ -77,6 +85,12 @@ public:
      * @param params Various parameters of the functor
      */
   PatchMatchCostMetric( const Image& img_ref, const Image& img_other, const DepthMapComputationParameters& params );
+
+  /**
+   * @brief Dtr
+   * 
+   */
+  virtual ~PatchMatchCostMetric( void );
 
   /**
      * @brief Compute aggregated matching cost at a given pixel
@@ -102,6 +116,8 @@ public:
      */
   CensusCostMetric( const Image& img_ref, const Image& img_other, const DepthMapComputationParameters& params );
 
+  virtual ~CensusCostMetric( void );
+
   /**
      * @brief Compute aggregated matching cost at a given pixel
      * @param id_row Row index of the queried pixel
@@ -125,6 +141,8 @@ public:
      * @param params Various parameters of the functor
      */
   DaisyCostMetric( const Image& img_ref, const Image& img_other, const DepthMapComputationParameters& params );
+
+  virtual ~DaisyCostMetric( void );
 
   /**
      * @brief Compute aggregated matching cost at a given pixel
@@ -158,6 +176,8 @@ public:
     */
   BilateralWeightedNCC( const Image& img_ref, const Image& img_other, const DepthMapComputationParameters& params );
 
+  virtual ~BilateralWeightedNCC( void );
+
   /**
     * @brief Compute aggregated matching cost at a given pixel
     * @param id_row Row index of the queried pixel
@@ -168,6 +188,8 @@ public:
   double operator()( const int id_row, const int id_col, const openMVG::Mat3& H ) const override;
 
 private:
+  double weight( const int delta_row, const int delta_col, const int delta_color ) const;
+
   double m_inv_sigma_color_2;
   double m_inv_sigma_distance_2;
 
@@ -178,6 +200,9 @@ private:
   openMVG::image::Image<double> m_inv_sum_weights;
   openMVG::image::Image<double> m_sum_w_ref;
   openMVG::image::Image<double> m_variance_w_ref;
+
+  static std::vector<double> m_precomputed_spatial_weight;
+  static std::vector<double> m_precomputed_color_weight;
 };
 
 } // namespace MVS

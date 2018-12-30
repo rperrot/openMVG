@@ -42,6 +42,10 @@ std::pair<int, int> Rescale( const std::pair<int, int>& dim, const int scale )
 
 Camera::Camera( void )
 {
+  // Initialize RNG
+  std::random_device device;
+  std::seed_seq      seq{device(), device(), device(), device()};
+  m_rng.seed( seq );
 }
 
 // Load cameras from serialization file
@@ -260,8 +264,7 @@ std::vector<Camera> LoadCameras( const openMVG::sfm::SfM_Data& sfm_data, const D
 
       const openMVG::Vec2 x = itObs->second.x;
 
-      const double cur_depth = cur_cam.depth( X ); //  openMVG::Depth( cur_cam.m_R , cur_cam.m_t , X ) ;
-      const double tmp_depth = cur_depth;
+      const double cur_depth = openMVG::Depth( cur_cam.m_R, cur_cam.m_t, X );
       if ( cur_depth > 0.0 )
       {
         cur_cam.m_min_depth = std::min( cur_cam.m_min_depth, cur_depth );
@@ -372,17 +375,42 @@ openMVG::Vec3 Camera::unProject( const double x, const double y, const double de
 /**
 * @brief Get 3d point in local coordinate frame (ie assuming the camera is at origin)
 */
-openMVG::Vec3 Camera::unProjectLocal( const double x, const double y, const double depth ) const
+openMVG::Vec3 Camera::unProjectLocal( const double x, const double y, const double depth, const int scale ) const
 {
-  return depth * m_K_inv * openMVG::Vec3( x, y, 1.0 );
+  const openMVG::Mat3& Kinv = ( scale == -1 ) ? m_K_inv : m_K_inv_scaled[ scale ];
+  return depth * Kinv * openMVG::Vec3( x, y, 1.0 );
 }
 
-double Camera::depth( const openMVG::Vec3& pt ) const
+/**
+   * @brief Transform normal in local frame to normal in global frame 
+   * 
+   * @return openMVG::Vec3 
+   */
+openMVG::Vec3 Camera::unProject( const openMVG::Vec3& n ) const
 {
-  return m_P( 2, 0 ) * pt[ 0 ] +
-         m_P( 2, 1 ) * pt[ 1 ] +
-         m_P( 2, 2 ) * pt[ 2 ] +
-         m_P( 2, 3 );
+  return ( m_R.transpose() * n ).normalized();
+}
+
+double Camera::localDepth( const openMVG::Vec3& pt, const int scale ) const
+{
+  return pt[ 2 ];
+}
+
+/**
+   * @brief Get depth value 
+   * 
+   * @param pt        3d point (in global frame)
+   * @param scale     Scale of the computation
+   * @return double   Depth of the point from the camera 
+   */
+double Camera::depth( const openMVG::Vec3& pt, const int scale ) const
+{
+  const openMVG::Mat34& P = ( scale == -1 ) ? m_P : m_P_scaled[ scale ];
+
+  return P( 2, 0 ) * pt[ 0 ] +
+         P( 2, 1 ) * pt[ 1 ] +
+         P( 2, 2 ) * pt[ 2 ] +
+         P( 2, 3 );
 }
 
 double Camera::depthDisparityConversion( const double d, const int scale ) const
@@ -391,12 +419,11 @@ double Camera::depthDisparityConversion( const double d, const int scale ) const
   return K( 0, 0 ) * m_mean_baseline / d;
 }
 
-/*
-double Camera::depthDisparityConversion( const double d, const double baseline ) const
+double Camera::depthDisparityConversion( const double d, const double baseline, const int scale ) const
 {
-  return m_K( 0, 0 ) * baseline / d;
+  const openMVG::Mat3& K = ( scale == -1 ) ? m_K : m_K_scaled[ scale ];
+  return K( 0, 0 ) * baseline / d;
 }
-*/
 
 /**
 * @brief Compute homography induced by a given stereo rig and a plane
@@ -407,6 +434,7 @@ double Camera::depthDisparityConversion( const double d, const double baseline )
 * @param n Plane normal
 * @param d depth (relative to the origin)
 */
+/*
 openMVG::Mat3 HomographyTransformation( const openMVG::Mat3& R,
                                         const openMVG::Vec3& t,
                                         const openMVG::Mat3& K,
@@ -416,6 +444,7 @@ openMVG::Mat3 HomographyTransformation( const openMVG::Mat3& R,
 {
   return Kp * ( R - ( t * n.transpose() ) / d ) * K.inverse();
 }
+*/
 
 openMVG::Mat3 HomographyTransformation( const openMVG::Mat3& R,
                                         const openMVG::Vec3& t,
@@ -427,6 +456,7 @@ openMVG::Mat3 HomographyTransformation( const openMVG::Mat3& R,
   const openMVG::Mat3 other_K   = ( scale == -1 ) ? cam_other.m_K : cam_other.m_K_scaled[ scale ];
   const openMVG::Mat3 ref_K_inv = ( scale == -1 ) ? cam_ref.m_K_inv : cam_ref.m_K_inv_scaled[ scale ];
   const openMVG::Vec3 n( pl[ 0 ], pl[ 1 ], pl[ 2 ] );
+
   return other_K * ( R - ( t * n.transpose() ) / pl[ 3 ] ) * ref_K_inv;
 }
 
@@ -471,8 +501,8 @@ openMVG::Vec3 Camera::get3dPoint( const double x, const double y, const int scal
 
 openMVG::Vec3 Camera::getViewVector( const double x, const double y, const int scale ) const
 {
-  const openMVG::Vec3 X = unProject( x, y, 1.0, scale );
-  return ( X - m_C ).normalized();
+  const openMVG::Vec3 X = unProjectLocal( x, y, 1.0, scale );
+  return ( X ).normalized();
 }
 
 /**
@@ -485,7 +515,45 @@ openMVG::Mat3 Camera::getK( const int scale )
   return m_K_scaled[ scale ];
 }
 
-double ComputeDepth( const openMVG::Vec4& plane, const int id_row, const int id_col, const Camera& cam, const int scale )
+/**
+   * @brief Generate a random plane to be viewed from the camera 
+   * 
+   * @param pl 
+   */
+double Camera::randomPlane( openMVG::Vec4& pl, const int id_row, const int id_col, const int scale ) const
+{
+  const double theta_max = 89;
+
+  std::uniform_real_distribution<double> distrib_d( m_min_depth, m_max_depth );
+  std::uniform_real_distribution<double> distrib_01( 0.0, 1.0 );
+
+  openMVG::Vec3 dir = getViewVector( m_cam_dims.first / 2.0, m_cam_dims.second / 2.0, scale );
+
+  const double  u1 = distrib_01( m_rng );
+  const double  u2 = distrib_01( m_rng );
+  openMVG::Vec3 n  = MVS::UniformSampleWRTSolidAngle( u1, u2, theta_max, -dir );
+
+  if ( n.dot( dir ) > 0.0 )
+  {
+    n = -n;
+  }
+
+  const double d       = distrib_d( m_rng );
+  const double plane_d = GetPlaneD( *this, id_row, id_col, d, n, scale ); // - n.dot( ptX ) ;
+
+  pl[ 0 ] = n[ 0 ];
+  pl[ 1 ] = n[ 1 ];
+  pl[ 2 ] = n[ 2 ];
+  pl[ 3 ] = plane_d;
+
+  return d;
+}
+
+double ComputeDepth( const openMVG::Vec4& plane,
+                     const int            id_row,
+                     const int            id_col,
+                     const Camera&        cam,
+                     const int            scale )
 {
   const openMVG::Vec3 plane_n( plane[ 0 ], plane[ 1 ], plane[ 2 ] );
   const double        plane_d = plane[ 3 ];
@@ -498,22 +566,46 @@ double ComputeDepth( const openMVG::Vec4& plane, const int id_row, const int id_
 // The plane [n,d]
 // #define FULL_INTERSECTION 0
 #ifdef FULL_INTERSECTION
-  // Note : DO NOT USE THE FOLLOWING CODE
-  // The ray (src,dst)
-  const std::pair<openMVG::Vec3, openMVG::Vec3> ray = cam.getRay( openMVG::Vec2( id_col, id_row ), scale );
 
-  // Intersection point
-  const openMVG::Vec3 X   = cam.unProject( id_col, id_row, plane_d, scale );
-  const double        d   = X.dot( plane_n );
-  const double        t   = ( d ) / plane_n.dot( ray.second );
-  openMVG::Vec3       ptX = ray.first + t * ray.second;
-
-  // Ensure it's in a valid range
-  return Clamp( openMVG::Depth( cam.m_R, cam.m_t, ptX ), cam.m_min_depth * 0.7, cam.m_max_depth * 1.3 );
 #else
-
   return Clamp( DepthFromPlane( cam, plane_n, plane_d, id_col, id_row, scale ), 0.7 * cam.m_min_depth, cam.m_max_depth * 1.3 );
 #endif
+}
+
+/**
+ * @brief Propagate depth from a pixel "from" to an other one named "to" 
+ * 
+ * @param d_from        Depth at pixel from 
+ * @param n_from        Normal at pixel from 
+ * @param id_row_from   Y-coord of the pixel from
+ * @param id_col_from   X-coord of the pixel from 
+ * @param id_row_to     Y-coord of the pixel to 
+ * @param id_col_to     X-coord of the pixel to 
+ * @param cam           Camera 
+ * @param scale         Scale of the camera 
+ * 
+ * @return depth at pixel to 
+ */
+double PropagateDepth( const double         d_from,
+                       const openMVG::Vec3& n_from,
+                       const int            id_row_from,
+                       const int            id_col_from,
+                       const int            id_row_to,
+                       const int            id_col_to,
+                       const Camera&        cam,
+                       const int            scale )
+{
+  // Point on plane
+  const openMVG::Vec3 X_from = cam.unProjectLocal( id_col_from, id_row_from, d_from, scale );
+  // Compute plane
+  Eigen::Hyperplane<double, 3> plane( n_from, X_from );
+  // Compute intersection point with ray starting from pixel to
+  Eigen::ParametrizedLine<double, 3> ray( openMVG::Vec3::Zero(), cam.getViewVector( id_col_to, id_row_to, scale ) );
+  const openMVG::Vec3                X_to = ray.intersectionPoint( plane );
+
+  const double z = X_to[ 2 ];
+
+  return z > 0 ? z : d_from;
 }
 
 } // namespace MVS

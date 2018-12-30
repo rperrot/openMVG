@@ -5,6 +5,8 @@ ELSE()
 ENDIF()
 ADD_DEFINITIONS( -DMVS_BUILD_DIR="${OPENMVG_SOFTWARE_MVS_BUILD_DIR}" )
 
+# ADD_DEFINITIONS( -W -Wall -Wextra )
+# ADD_DEFINITIONS( -g )
 
 FIND_PACKAGE( OpenCL )
 
@@ -16,6 +18,7 @@ SET( OPENMVG_COMPUTE_DEPTH_MAPS_SOURCES Camera.cpp
                                         DepthMapComputationCPU.cpp 
                                         DepthMapComputationOpenCL.cpp
                                         DepthMapComputationParameters.cpp
+                                        Generators.cpp
                                         Image.cpp 
                                         MatchingCost.cpp 
                                         OpenCLUtils.cpp 
@@ -30,6 +33,7 @@ SET( OPENMVG_COMPUTE_DEPTH_MAPS_HEADERS Camera.hpp
                                         DepthMapComputationCPU.hpp 
                                         DepthMapComputationOpenCL.hpp
                                         DepthMapComputationParameters.hpp
+                                        Generators.hpp
                                         Image.hpp 
                                         MatchingCost.hpp
                                         OpenCLUtils.hpp 
@@ -47,6 +51,7 @@ SET( OPENMVG_FUSION_DEPTH_MAPS_SOURCES Camera.cpp
                                        DepthMap.cpp 
                                        DepthMapComputationParameters.cpp
                                        DepthMapFusionParameters.cpp 
+                                       Generators.cpp
                                        Image.cpp 
                                        PointCloud.cpp 
                                        PutativePoint.cpp 
@@ -57,6 +62,7 @@ SET( OPENMVS_FUSION_DEPTH_MAPS_HEADERS Camera.hpp
                                        DepthMap.hpp 
                                        DepthMapComputationParameters.hpp 
                                        DepthMapFusionParameters.hpp 
+                                       Generators.hpp
                                        Image.hpp
                                        PointCloud.hpp 
                                        PutativePoint.hpp 

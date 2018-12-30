@@ -6,6 +6,7 @@
 #include "openMVG/numeric/numeric.h"
 #include "openMVG/sfm/sfm_data.hpp"
 
+#include <random>
 #include <utility>
 
 namespace MVS
@@ -52,7 +53,7 @@ struct Camera
   * @param depth Depth value
   * @return 3d point at given pixel postion at given depth
   */
-  openMVG::Vec3 unProject( const double x, const double y, const double depth, const int scale = -1 ) const;
+  openMVG::Vec3 unProject( const double x, const double y, const double depth, const int scale ) const;
 
   /**
   * @brief Get 3d point for a 2d position and it's depth
@@ -62,14 +63,21 @@ struct Camera
   * @return 3d point at given pixel postion at given depth
   * @note this function is like UnProject but works considering camera at origin
   */
-  openMVG::Vec3 unProjectLocal( const double x, const double y, const double depth ) const;
+  openMVG::Vec3 unProjectLocal( const double x, const double y, const double depth, const int scale ) const;
+
+  /**
+   * @brief Transform normal in local frame to normal in global frame 
+   * 
+   * @return openMVG::Vec3 
+   */
+  openMVG::Vec3 unProject( const openMVG::Vec3& n ) const;
 
   /**
   * @brief Convert disparity and depth
   * @param d Depth/disparity
   * @return Disparity/Depth
   */
-  double depthDisparityConversion( const double d, const int scale = -1 ) const;
+  double depthDisparityConversion( const double d, const int scale ) const;
 
   /**
   * @brief Convert disparity and depth
@@ -77,13 +85,23 @@ struct Camera
   * @param baseline Camera baseline
   * @return Disparity/Depth
   */
-  //  double depthDisparityConversion( const double d, const double baseline ) const;
+  double depthDisparityConversion( const double d, const double baseline, const int scale ) const;
 
   /**
   * @brief Get depth value for given 3d point
-  * @return Depth for given point
+  * @param pt Point (in camera frame)
+  * @return Depth for given point 
   */
-  double depth( const openMVG::Vec3& pt ) const;
+  double localDepth( const openMVG::Vec3& pt, const int scale ) const;
+
+  /**
+   * @brief Get depth value 
+   * 
+   * @param pt        3d point (in global frame)
+   * @param scale     Scale of the computation
+   * @return double   Depth of the point from the camera 
+   */
+  double depth( const openMVG::Vec3& pt, const int scale ) const;
 
   /**
   * @brief Get a 3d point at depth=1
@@ -91,7 +109,7 @@ struct Camera
   * @param y pixel y-position
   * @return 3d point width depth = 1
   */
-  openMVG::Vec3 get3dPoint( const double x, const double y, const int scale = -1 ) const;
+  openMVG::Vec3 get3dPoint( const double x, const double y, const int scale ) const;
 
   /**
   * @brief Get a view direction through a pixel
@@ -99,14 +117,26 @@ struct Camera
   * @param y pixel y-position
   * @return View direction passing through a pixel
   */
-  openMVG::Vec3 getViewVector( const double x, const double y, const int scale = -1 ) const;
+  openMVG::Vec3 getViewVector( const double x, const double y, const int scale ) const;
 
   /**
   * @brief Get intrinsic matrix at a specified scale
   * @param scale The requested scale
   * @return The intrinsic at specified scale
   */
-  openMVG::Mat3 getK( const int scale = 0 );
+  openMVG::Mat3 getK( const int scale );
+
+  /**
+   * @brief Generate a random plane to be viewed from the camera 
+   * 
+   * @param pl      The new plane 
+   * @param id_row  Row 
+   * @param id_col  Column
+   * @param scale   Scale of the camera 
+   * 
+   * @return depth used to generate the plane   
+   */
+  double randomPlane( openMVG::Vec4& pl, const int id_row, const int id_col, const int scale ) const;
 
   // Intrinsic (at user specific scale)
   openMVG::Mat3 m_K;
@@ -142,6 +172,9 @@ struct Camera
 
   // (2D position and 3d point)
   std::vector<std::pair<openMVG::Vec2, openMVG::Vec3>> m_ground_truth;
+
+  // random generators/distrib used to generate planes
+  mutable std::mt19937_64 m_rng;
 
   // Minimum depth value
   double m_min_depth;
@@ -197,12 +230,13 @@ std::vector<Camera> LoadCameras( const openMVG::sfm::SfM_Data& sfm_data, const D
 * @param d depth (relative to the origin)
 * @return Homography
 */
-openMVG::Mat3 HomographyTransformation( const openMVG::Mat3& R,
+/*openMVG::Mat3 HomographyTransformation( const openMVG::Mat3& R,
                                         const openMVG::Vec3& t,
                                         const openMVG::Mat3& K,
                                         const openMVG::Mat3& Kp,
                                         const openMVG::Vec3& n,
                                         const double         d );
+*/
 
 /**
 * @brief Compute homography induced by a given stereo rig and a plane
@@ -235,7 +269,7 @@ static inline double DepthFromPlane( const MVS::Camera&   cam,
                                      const double         d,
                                      const double         x,
                                      const double         y,
-                                     const int            scale = -1 )
+                                     const int            scale )
 {
   const openMVG::Mat3& K = ( scale == -1 ) ? cam.m_K : cam.m_K_scaled[ scale ];
 
@@ -263,7 +297,7 @@ static inline double GetPlaneD( const MVS::Camera&   cam,
                                 const int            id_col,
                                 const double         depth,
                                 const openMVG::Vec3& n,
-                                const int            scale = -1 )
+                                const int            scale )
 {
   /*
   const openMVG::Mat34& P     = ( scale == -1 ) ? cam.m_P : cam.m_P_scaled[ scale ];
@@ -277,8 +311,7 @@ static inline double GetPlaneD( const MVS::Camera&   cam,
   pt[1] = depth * id_row - P( 1 , 3 ) ;
   pt[2] = depth - P( 2 , 3 ) ;
   */
-  const openMVG::Vec3 ptX = cam.unProject( id_col, id_row, depth, scale );
-
+  const openMVG::Vec3 ptX = cam.unProjectLocal( id_col, id_row, depth, scale );
 
   //  openMVG::Vec3 ptX = M_inv * pt;
 
@@ -294,7 +327,30 @@ static inline double GetPlaneD( const MVS::Camera&   cam,
 * @return depth value at specified pixel
 * @note This computes intersection between ray through the pixel and the plane, then get final depth
 */
-double ComputeDepth( const openMVG::Vec4& plane, const int id_row, const int id_col, const Camera& cam, const int scale = -1 );
+double ComputeDepth( const openMVG::Vec4& plane, const int id_row, const int id_col, const Camera& cam, const int scale );
+
+/**
+ * @brief Propagate depth from a pixel "from" to an other one named "to" 
+ * 
+ * @param d_from        Depth at pixel from 
+ * @param n_from        Normal at pixel from 
+ * @param id_row_from   Y-coord of the pixel from
+ * @param id_col_from   X-coord of the pixel from 
+ * @param id_row_to     Y-coord of the pixel to 
+ * @param id_col_to     X-coord of the pixel to 
+ * @param cam           Camera 
+ * @param scale         Scale of the camera 
+ * 
+ * @return depth at pixel to 
+ */
+double PropagateDepth( const double         d_from,
+                       const openMVG::Vec3& n_from,
+                       const int            id_row_from,
+                       const int            id_col_from,
+                       const int            id_row_to,
+                       const int            id_col_to,
+                       const Camera&        cam,
+                       const int            scale );
 
 } // namespace MVS
 

@@ -13,7 +13,7 @@ namespace MVS
 const double DepthMapComputationParameters::MAX_COST_NCC           = 2.0;
 const double DepthMapComputationParameters::MAX_COST_PM            = 10e6;
 const double DepthMapComputationParameters::MAX_COST_CENSUS        = 2.0; //10e4 ;
-const double DepthMapComputationParameters::MAX_COST_DAISY         = 1;
+const double DepthMapComputationParameters::MAX_COST_DAISY         = 2.0;
 const double DepthMapComputationParameters::MAX_COST_BILATERAL_NCC = 2.0;
 
 std::string to_string( const PropagationScheme& pscheme )
@@ -105,7 +105,8 @@ DepthMapComputationParameters::DepthMapComputationParameters( const int         
                                                               const int               max_view_selection_nb,
                                                               const int               nb_image_for_cost,
                                                               const std::string       base_path )
-    : m_scale( scale ),
+    : m_iteration( 0 ),
+      m_scale( scale ),
       m_metric( metric ),
       m_alpha( alpha ),
       m_tau_i( tau_i ),
@@ -116,7 +117,8 @@ DepthMapComputationParameters::DepthMapComputationParameters( const int         
       m_maximum_view_angle( max_view_angle ),
       m_maximum_view_nb( max_view_selection_nb ),
       m_nb_image_for_cost_computation( nb_image_for_cost ),
-      m_base_path( base_path )
+      m_base_path( base_path ),
+      m_use_joint_view_selection( false )
 {
 }
 
@@ -359,6 +361,47 @@ std::string DepthMapComputationParameters::getModelDirectory( void ) const
 {
   const std::string base = workingDirectory();
   return stlplus::create_filespec( base, "model" );
+}
+
+/**
+   * @brief Set the Iteration Id 
+   * 
+   * @param id New iteration ID
+   */
+void DepthMapComputationParameters::setIterationId( const int id )
+{
+  m_iteration = id;
+}
+
+/**
+   * @brief Get the Iteration Id 
+   * 
+   * @return the current iteration ID
+   */
+int DepthMapComputationParameters::getIterationId( void ) const
+{
+  return m_iteration;
+}
+
+/**
+   * @brief Set the Use Joint View Selection mode (AMHMVS)
+   * 
+   * @param use Enable/diable joint view selection for unified cost 
+   */
+void DepthMapComputationParameters::setUseJointViewSelection( const bool use )
+{
+  m_use_joint_view_selection = use;
+}
+
+/**
+   * @brief Indicate if Joint view selection must be used 
+   * 
+   * @return true   Use joint view selection for unified cost 
+   * @return false  Use Gipuma multiple view cost 
+   */
+bool DepthMapComputationParameters::useJointViewSelection( void ) const
+{
+  return m_use_joint_view_selection;
 }
 
 } // namespace MVS

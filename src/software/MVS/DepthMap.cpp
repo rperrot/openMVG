@@ -1,4 +1,6 @@
 #include "DepthMap.hpp"
+
+#include "Generators.hpp"
 #include "Util.hpp"
 
 #include "openMVG/image/image_io.hpp"
@@ -37,7 +39,8 @@ DepthMap::DepthMap( const std::string& path )
 DepthMap::DepthMap( const int height, const int width, const double depth, const openMVG::Vec4& pl )
     : m_cost( width, height, true, std::numeric_limits<double>::max() ),
       m_depth( width, height, true, depth ),
-      m_plane( width, height, true, pl )
+      m_plane( width, height, true, pl ),
+      m_most_important_view( width, height, true, -1 )
 {
 }
 
@@ -183,63 +186,28 @@ void DepthMap::depth( const openMVG::Vec2i& pos, const double new_depth )
 /**
 * @brief Apply randomization on normals
 */
-void DepthMap::randomizePlanes( const Camera& cam, const double disp_min, const double disp_max, const int scale )
+void DepthMap::randomizePlanes( const Camera& cam, const double min_depth, const double max_depth, const int scale )
 {
-
-  const double theta_max = openMVG::D2R( 75.0 );
-
   // Initialize RNG
-  std::mt19937_64    rng;
+  std::mt19937       rng;
   std::random_device device;
   std::seed_seq      seq{device(), device(), device(), device()};
   rng.seed( seq );
-  std::uniform_real_distribution<double> distrib( -1.0, 1.0 );
-  std::uniform_real_distribution<double> distrib_01( 0.0, 1.0 );
-  std::uniform_real_distribution<double> distrib_d( disp_min, disp_max );
 
-  openMVG::Vec3 dir = cam.getViewVector( m_plane.Width() / 2.0, m_plane.Height() / 2.0, scale ); //  cam.getRay( openMVG::Vec2( id_col, id_row ), scale ).second;
+  DepthGenerator  d_gen( min_depth, max_depth );
+  NormalGenerator n_gen( 80 );
 
   for ( int id_row = 0; id_row < m_plane.Height(); ++id_row )
   {
     for ( int id_col = 0; id_col < m_plane.Width(); ++id_col )
     {
+      openMVG::Vec3 dir = cam.getViewVector( id_col, id_row, scale ); //  cam.getRay( openMVG::Vec2( id_col, id_row ), scale ).second;
 
-      // Generate a sequence q1 , q2 in [-1;1] such as
-      // q1^2 + q2^2 < 1
-      /*
-      double S  = 2.0;
-      double q1 = 0.0;
-      double q2 = 0.0;
-
-      while ( S >= 1.0 )
-      {
-        q1 = distrib( rng );
-        q2 = distrib( rng );
-        S  = q1 * q1 + q2 * q2;
-      }
-
-      const double  sq = std::sqrt( 1.0 - S );
-      openMVG::Vec3 n( 2.0 * q1 * sq, 2.0 * q2 * sq, 1.0 - 2.0 * S );
-      n = n.normalized();
-      */
-
-      const double  u1 = distrib_01( rng );
-      const double  u2 = distrib_01( rng );
-      openMVG::Vec3 n  = MVS::UniformSampleWRTSolidAngle( u1, u2, theta_max, -dir );
-
-      if ( n.dot( dir ) > 0.0 )
-      {
-        n = -n;
-      }
-
-      // Sample disparity
-      const double disp = distrib_d( rng );
-      // Convert disparity to depth value
-      const double d = cam.depthDisparityConversion( disp, scale );
+      const double        d = d_gen.random( rng );
+      const openMVG::Vec3 n = n_gen.random( -dir, rng );
 
       // Compute plane_d using the current depth
-      //            const openMVG::Vec3 ptX = cam.UnProject( id_col , id_row , d ) ;
-      const double plane_d = GetPlaneD( cam, id_row, id_col, d, n, scale ); // - n.dot( ptX ) ;
+      const double plane_d = GetPlaneD( cam, id_row, id_col, d, n, scale );
 
       m_plane( id_row, id_col ) = openMVG::Vec4( n[ 0 ], n[ 1 ], n[ 2 ], plane_d );
       m_depth( id_row, id_col ) = d;
@@ -287,6 +255,32 @@ void DepthMap::plane( const int id_row, const int id_col, const openMVG::Vec4& n
 void DepthMap::plane( const openMVG::Vec2i& pos, const openMVG::Vec4& new_normal )
 {
   plane( pos[ 0 ], pos[ 1 ], new_normal );
+}
+
+/**
+   * @brief Set best view for selected pixel 
+   * 
+   * @param id_row Row index
+   * @param id_col Column index
+   * 
+   * @param best_view The new best view 
+   */
+void DepthMap::bestView( const int id_row, const int id_col, const int best_view )
+{
+  m_most_important_view( id_row, id_col ) = best_view;
+}
+
+/**
+   * @brief Get best view for selected pixel 
+   * 
+   * @param id_row Row index
+   * @param id_col Column index
+   * 
+   * @return the best view for the given pixel 
+   */
+int DepthMap::bestView( const int id_row, const int id_col ) const
+{
+  return m_most_important_view( id_row, id_col );
 }
 
 /**

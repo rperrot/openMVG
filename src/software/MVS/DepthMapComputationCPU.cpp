@@ -1,6 +1,8 @@
 #include "DepthMapComputationCPU.hpp"
 
 #include "DepthMapComputationCommon.hpp"
+#include "Generators.hpp"
+#include "JointViewSelection.hpp"
 #include "MatchingCost.hpp"
 #include "Util.hpp"
 
@@ -104,6 +106,7 @@ static inline void CostMetricFactoryClean( const DepthMapComputationParameters& 
 
 /**
 * @brief Compute cost using all neighboring images
+*
 * @param[out] Final cost value for all pixels
 * @param planes The planes parameters for each pixel
 * @param reference_cam The reference view camera
@@ -123,53 +126,99 @@ void ComputeMultipleViewCost( openMVG::image::Image<double>&                    
                               const DepthMapComputationParameters&                        params,
                               const int                                                   scale )
 {
-  std::vector<openMVG::image::Image<double>> all_costs( reference_cam.m_view_neighbors.size() );
-
-  // 1 compute cost for all images
-  for ( size_t id_cam = 0; id_cam < reference_cam.m_view_neighbors.size(); ++id_cam )
-  {
-    const int                                      id_neigh  = reference_cam.m_view_neighbors[ id_cam ];
-    const Camera&                                  other_cam = cams[ id_neigh ];
-    const std::pair<openMVG::Mat3, openMVG::Vec3>& cur_rig   = stereo_rig[ id_cam ];
-
-    std::shared_ptr<AbstractCostMetric> c_metric = CostMetricFactoryBuilder( image_ref, neigh_imgs[ id_cam ], params );
-
-    ComputeImagePairCost( all_costs[ id_cam ], planes, reference_cam, other_cam, cur_rig, image_ref, neigh_imgs[ id_cam ], params, c_metric, scale );
-  }
-
   const double MAX_COST = DepthMapComputationParameters::metricMaxCostValue( params.metric() );
   cost.resize( image_ref.width(), image_ref.height(), true, MAX_COST );
 
-  // 2 Sort costs and compute final value
-  const size_t K = std::min( (size_t)params.nbMultiViewImageForCost(), reference_cam.m_view_neighbors.size() );
-#pragma omp parallel for
-  for ( int id_row = 0; id_row < image_ref.height(); ++id_row )
+  if ( params.m_use_joint_view_selection )
   {
-    for ( int id_col = 0; id_col < image_ref.width(); ++id_col )
+    // selection set parameters (TODO: pass it using parameters)
+    const double beta = 0.3;
+    const int    k    = 4;
+
+    // Build metrics
+    std::vector<std::shared_ptr<AbstractCostMetric>> c_metrics;
+    for ( const auto& image_other : neigh_imgs )
     {
-      std::vector<double> cur_costs( reference_cam.m_view_neighbors.size() );
-      // 1 - retreive all costs
-      for ( size_t id_cam = 0; id_cam < reference_cam.m_view_neighbors.size(); ++id_cam )
+      c_metrics.emplace_back( CostMetricFactoryBuilder( image_ref, image_other, params ) );
+    }
+
+#pragma omp parallel for
+    for ( int id_row = 0; id_row < image_ref.height(); ++id_row )
+    {
+      for ( int id_col = 0; id_col < image_ref.width(); ++id_col )
       {
-        const double cur_c  = all_costs[ id_cam ]( id_row, id_col );
-        const bool   valid  = cur_c < MAX_COST && !std::isnan( cur_c ) && !std::isinf( cur_c ) && cur_c >= 0.0;
-        cur_costs[ id_cam ] = valid ? cur_c : MAX_COST;
+        std::vector<openMVG::Vec4> hypoth;
+        hypoth.emplace_back( planes( id_row, id_col ) );
+
+        // Get cost matrix
+        openMVG::Mat cost_m;
+        ComputeMultiViewCostMatrix( cost_m, id_row, id_col, hypoth, reference_cam, cams, stereo_rig, image_ref, neigh_imgs, params, c_metrics, scale );
+
+        // Compute selection set
+        std::vector<int> selection_set( stereo_rig.size() );
+        std::fill( selection_set.begin(), selection_set.end(), 1 ); // All the views are in the selection set
+
+        // Compute importance for each view of the selection set
+        std::vector<double> importance;
+        ComputeViewImportance( importance, selection_set, cost_m, beta );
+        // Get only the k most important views, others get 0 importance
+        FilterBestNImportance( importance, k );
+
+        // Compute per hypothesis cost
+        std::vector<double> hypothesis_cost;
+        ComputePerHypothesisCost( hypothesis_cost, importance, cost_m, params );
+
+        cost( id_row, id_col ) = hypothesis_cost[ 0 ];
       }
-
-      // 2 - Sort cost
-      std::sort( cur_costs.begin(), cur_costs.end() );
-
-      double cur_sum = 0.0;
-      for ( size_t id = 0; id < K && id < cur_costs.size(); ++id )
-      {
-        cur_sum += cur_costs[ id ];
-      }
-      cur_sum /= static_cast<double>( K );
-
-      cost( id_row, id_col ) = cur_sum;
     }
   }
+  else
+  {
 
+    std::vector<openMVG::image::Image<double>> all_costs( reference_cam.m_view_neighbors.size() );
+
+    // 1 compute cost for all images
+    for ( size_t id_cam = 0; id_cam < reference_cam.m_view_neighbors.size(); ++id_cam )
+    {
+      const int                                      id_neigh  = reference_cam.m_view_neighbors[ id_cam ];
+      const Camera&                                  other_cam = cams[ id_neigh ];
+      const std::pair<openMVG::Mat3, openMVG::Vec3>& cur_rig   = stereo_rig[ id_cam ];
+
+      std::shared_ptr<AbstractCostMetric> c_metric = CostMetricFactoryBuilder( image_ref, neigh_imgs[ id_cam ], params );
+
+      ComputeImagePairCost( all_costs[ id_cam ], planes, reference_cam, other_cam, cur_rig, image_ref, neigh_imgs[ id_cam ], params, c_metric, scale );
+    }
+
+    // 2 Sort costs and compute final value
+    const size_t K = std::min( (size_t)params.nbMultiViewImageForCost(), reference_cam.m_view_neighbors.size() );
+#pragma omp parallel for
+    for ( int id_row = 0; id_row < image_ref.height(); ++id_row )
+    {
+      for ( int id_col = 0; id_col < image_ref.width(); ++id_col )
+      {
+        std::vector<double> cur_costs( reference_cam.m_view_neighbors.size() );
+        // 1 - retreive all costs
+        for ( size_t id_cam = 0; id_cam < reference_cam.m_view_neighbors.size(); ++id_cam )
+        {
+          const double cur_c  = all_costs[ id_cam ]( id_row, id_col );
+          const bool   valid  = cur_c < MAX_COST && !std::isnan( cur_c ) && !std::isinf( cur_c ) && cur_c >= 0.0;
+          cur_costs[ id_cam ] = valid ? cur_c : MAX_COST;
+        }
+
+        // 2 - Sort cost
+        std::sort( cur_costs.begin(), cur_costs.end() );
+
+        double cur_sum = 0.0;
+        for ( size_t id = 0; id < K && id < cur_costs.size(); ++id )
+        {
+          cur_sum += cur_costs[ id ];
+        }
+        cur_sum /= static_cast<double>( K );
+
+        cost( id_row, id_col ) = cur_sum;
+      }
+    }
+  }
   CostMetricFactoryClean( params );
 }
 
@@ -251,6 +300,47 @@ double ComputeMultiViewCost( const int id_row, const int id_col,
     return MAX_COST;
   }
   return cost;
+}
+
+void ComputeMultiViewCostMatrix( openMVG::Mat&                                               res,
+                                 const int                                                   id_row,
+                                 const int                                                   id_col,
+                                 const std::vector<openMVG::Vec4>&                           hypotheses, // Plane normal, Plane d
+                                 const Camera&                                               reference_cam,
+                                 const std::vector<Camera>&                                  cams,
+                                 const std::vector<std::pair<openMVG::Mat3, openMVG::Vec3>>& stereo_rig,
+                                 const Image&                                                image_ref,
+                                 const std::vector<Image>&                                   neigh_imgs,
+                                 const DepthMapComputationParameters&                        params,
+                                 std::vector<std::shared_ptr<AbstractCostMetric>>            cost_metrics,
+                                 const int                                                   scale )
+{
+  res.resize( hypotheses.size(), reference_cam.m_view_neighbors.size() );
+
+  // Compute cost for all camera
+  for ( size_t id_hyp = 0; id_hyp < hypotheses.size(); ++id_hyp )
+  {
+    const openMVG::Vec4& cur_hyp = hypotheses[ id_hyp ];
+    for ( size_t id_cam = 0; id_cam < reference_cam.m_view_neighbors.size(); ++id_cam )
+    {
+      const int                                      id_neigh = reference_cam.m_view_neighbors[ id_cam ];
+      const Camera&                                  cur_cam  = cams[ id_neigh ];
+      const std::pair<openMVG::Mat3, openMVG::Vec3>& cur_rig  = stereo_rig[ id_cam ];
+
+      // Get neigh intrinsic matrix
+      const openMVG::Mat3 H = HomographyTransformation( cur_rig.first,  // R
+                                                        cur_rig.second, // t
+                                                        reference_cam,  // first camera
+                                                        cur_cam,        // second camera
+                                                        cur_hyp,        // plane normal + plane d
+                                                        scale );        // scale parameter
+
+      // Compute cost at specified position
+      const double cur_cost = ( *cost_metrics[ id_cam ] )( id_row, id_col, H );
+
+      res( id_hyp, id_cam ) = cur_cost;
+    }
+  }
 }
 
 /**
@@ -453,7 +543,15 @@ void DetermineNeighborBySampling( const DepthMap&                map,
 * @param params Computation parameters
 * @param scale Scale of the computation
 */
-void Propagate( DepthMap& map, const int id_start, const Camera& cam, const std::vector<Camera>& cams, const std::vector<std::pair<openMVG::Mat3, openMVG::Vec3>>& stereo_rig, const Image& image_ref, const std::vector<Image>& neigh_imgs, const DepthMapComputationParameters& params, const int scale )
+void Propagate( DepthMap&                                                   map,
+                const int                                                   id_start,
+                const Camera&                                               cam,
+                const std::vector<Camera>&                                  cams,
+                const std::vector<std::pair<openMVG::Mat3, openMVG::Vec3>>& stereo_rig,
+                const Image&                                                image_ref,
+                const std::vector<Image>&                                   neigh_imgs,
+                const DepthMapComputationParameters&                        params,
+                const int                                                   scale )
 {
   // Build metrics
   std::vector<std::shared_ptr<AbstractCostMetric>> c_metrics;
@@ -570,49 +668,150 @@ void Propagate( DepthMap& map, const int id_start, const Camera& cam, const std:
   }
   }
 
+  // selection set parameters
+  const double tau_min   = 0.8;
+  const double tau_up    = 1.2;
+  const double alpha     = 90;
+  const double beta      = 0.3;
+  const int    k         = 4;
+  const int    n1        = 2;
+  const int    n2        = 3;
+  const double id_iter   = params.getIterationId();
+  const double threshold = tau_min * std::exp( -( id_iter * id_iter ) / alpha );
+
 #pragma omp parallel for
   for ( int id_row = 0; id_row < map.height(); ++id_row )
   {
-    const int pad = ( id_row % 2 == 0 ) ? id_start : ( ( id_start + 1 ) % 2 );
+    // Use thread local vector
+    std::vector<std::vector<int>> n_idx = neighs_idx;
+
+    const int pad = ( ( id_row % 2 ) == 0 ) ? id_start : ( ( id_start + 1 ) % 2 );
     for ( int id_col = pad; id_col < map.width(); id_col += 2 )
     {
       if ( sampling )
       {
         // Sample each region to determine the neighbors to use
-        DetermineNeighborBySampling( map, id_row, id_col, neighs_idx );
-      }
+        DetermineNeighborBySampling( map, id_row, id_col, n_idx );
 
-      // Get neighbors in a fixed scheme
-      for ( int id_n = 0; id_n < nb_neigh; ++id_n )
-      {
-        const int dx = neighs_idx[ id_n ][ 0 ];
-        const int dy = neighs_idx[ id_n ][ 1 ];
-        if ( dx == 0 && dy == 0 )
+        std::vector<openMVG::Vec4> hypoth;
+
+        // Build hypothesis vector
+        std::vector<int> real_index;
+        for ( int id_n = 0; id_n < nb_neigh; ++id_n )
+        {
+          const int dx = n_idx[ id_n ][ 0 ];
+          const int dy = n_idx[ id_n ][ 1 ];
+          if ( ( dx == 0 ) && ( dy == 0 ) )
+            continue;
+
+          const int x = id_col + dx;
+          const int y = id_row + dy;
+
+          if ( map.inside( y, x ) )
+          {
+            real_index.push_back( id_n );
+            hypoth.emplace_back( map.plane( y, x ) );
+          }
+        }
+
+        // Get cost matrix
+        openMVG::Mat cost_m;
+        ComputeMultiViewCostMatrix( cost_m, id_row, id_col, hypoth, cam, cams, stereo_rig, image_ref, neigh_imgs, params, c_metrics, scale );
+
+        // Compute selection set
+        std::vector<int> selection_set;
+        ComputeSelectionSet( selection_set, cost_m, threshold, tau_up, n1, n2 );
+
+        // No valid view give up
+        if ( std::accumulate( selection_set.begin(), selection_set.end(), 0 ) == 0 )
           continue;
 
-        const int x = id_col + dx;
-        const int y = id_row + dy;
+        // Compute importance for each view of the selection set
+        std::vector<double> importance;
+        ComputeViewImportance( importance, selection_set, cost_m, beta );
+        // Get only the k most important views, others get 0 importance
+        FilterBestNImportance( importance, k );
 
-        if ( map.inside( y, x ) )
+        // Update importance based on previous best view
+        int last_best_view = map.bestView( id_row, id_col );
+        int cur_best_view  = ComputeBestView( importance );
+
+        UpdateImportanceBasedOnPreviousBestView( importance, selection_set, last_best_view );
+        // Store best view
+        map.bestView( id_row, id_col, cur_best_view );
+
+        // Compute per hypothesis cost
+        std::vector<double> hypothesis_cost;
+        ComputePerHypothesisCost( hypothesis_cost, importance, cost_m , params );
+
+        int    id_best_hyp   = -1;
+        double best_hyp_cost = std::numeric_limits<double>::max();
+
+        for ( int id_hyp = 0; id_hyp < cost_m.rows(); ++id_hyp )
         {
-          // Compute cost at given pixel using the other planes
-          const openMVG::Vec4& plane = map.plane( y, x );
-          const openMVG::Vec3  plane_n( plane[ 0 ], plane[ 1 ], plane[ 2 ] );
-          const double         plane_d = plane[ 3 ];
-
-          // Given the depth, compute the d value of the plane (ie intersection between ray and the plane)
-          const double new_cost = ComputeMultiViewCost( id_row, id_col, plane_n, plane_d, cam, cams, stereo_rig, image_ref, neigh_imgs, params, c_metrics, scale );
-
-          if ( new_cost < map.cost( id_row, id_col ) )
+          if ( hypothesis_cost[ id_hyp ] < best_hyp_cost )
           {
-            // Copy cost
-            map.cost( id_row, id_col, new_cost );
-            // Copy plane
-            map.plane( id_row, id_col, plane );
+            id_best_hyp   = id_hyp;
+            best_hyp_cost = hypothesis_cost[ id_hyp ];
+          }
+        }
 
-            // Compute current depth at this pixel
-            const double z = ComputeDepth( plane, id_row, id_col, cam, scale );
-            map.depth( id_row, id_col, z );
+        if ( ( id_best_hyp != -1 ) && ( best_hyp_cost < map.cost( id_row, id_col ) ) )
+        {
+          map.cost( id_row, id_col, best_hyp_cost );
+          map.plane( id_row, id_col, hypoth[ id_best_hyp ] );
+
+          const int best_x = id_col + n_idx[ real_index[ id_best_hyp ] ][ 0 ];
+          const int best_y = id_row + n_idx[ real_index[ id_best_hyp ] ][ 1 ];
+
+          const double        initialDepth = map.depth( best_y, best_x );
+          const openMVG::Vec3 initialNormal( hypoth[ id_best_hyp ][ 0 ], hypoth[ id_best_hyp ][ 1 ], hypoth[ id_best_hyp ][ 2 ] );
+
+          const double z = PropagateDepth( initialDepth,
+                                           initialNormal,
+                                           best_y,
+                                           best_x,
+                                           id_row,
+                                           id_col,
+                                           cam,
+                                           scale );
+          map.depth( id_row, id_col, z );
+        }
+      }
+      else
+      {
+        // Get neighbors in a fixed scheme
+        for ( int id_n = 0; id_n < nb_neigh; ++id_n )
+        {
+          const int dx = neighs_idx[ id_n ][ 0 ];
+          const int dy = neighs_idx[ id_n ][ 1 ];
+          if ( dx == 0 && dy == 0 )
+            continue;
+
+          const int x = id_col + dx;
+          const int y = id_row + dy;
+
+          if ( map.inside( y, x ) )
+          {
+            // Compute cost at given pixel using the other planes
+            const openMVG::Vec4& plane = map.plane( y, x );
+            const openMVG::Vec3  plane_n( plane[ 0 ], plane[ 1 ], plane[ 2 ] );
+            const double         plane_d = plane[ 3 ];
+
+            // Given the depth, compute the d value of the plane (ie intersection between ray and the plane)
+            const double new_cost = ComputeMultiViewCost( id_row, id_col, plane_n, plane_d, cam, cams, stereo_rig, image_ref, neigh_imgs, params, c_metrics, scale );
+
+            if ( new_cost < map.cost( id_row, id_col ) )
+            {
+              // Copy cost
+              map.cost( id_row, id_col, new_cost );
+              // Copy plane
+              map.plane( id_row, id_col, plane );
+
+              // Compute current depth at this pixel
+              const double z = ComputeDepth( plane, id_row, id_col, cam, scale );
+              map.depth( id_row, id_col, z );
+            }
           }
         }
       }
@@ -633,7 +832,7 @@ static inline void GenerateRandomVectorAndDisparity( double&              dispOu
                                                      const openMVG::Vec3& viewVector,
                                                      const Camera&        cam,
                                                      const int            scale,
-                                                     std::mt19937_64&     rng )
+                                                     std::mt19937&        rng )
 {
   static std::uniform_real_distribution<double> distrib_01( 0.0, 1.0 );
 
@@ -683,7 +882,7 @@ void Refinement( DepthMap&                                                   map
                  const int                                                   scale )
 {
   // Initialize RNG
-  std::mt19937_64    rng;
+  std::mt19937       rng;
   std::random_device device;
   std::seed_seq      seq{device(), device(), device(), device()};
   rng.seed( seq );
@@ -704,6 +903,20 @@ void Refinement( DepthMap&                                                   map
   const int    nb_step  = 6;
   const double MAX_COST = DepthMapComputationParameters::metricMaxCostValue( params.metric() );
 
+  // selection set parameters
+  const double tau_min   = 0.8;
+  const double tau_up    = 1.2;
+  const double alpha     = 90;
+  const double beta      = 0.3;
+  const int    k         = 4;
+  const int    n1        = 2;
+  const int    n2        = 3;
+  const double id_iter   = params.getIterationId();
+  const double threshold = tau_min * std::exp( -( id_iter * id_iter ) / alpha );
+
+  DepthGenerator  d_gen( cam.m_min_depth, cam.m_max_depth );
+  NormalGenerator n_gen( 80 );
+
 #pragma omp parallel for
   for ( int id_row = 0; id_row < map.height(); ++id_row )
   {
@@ -711,84 +924,203 @@ void Refinement( DepthMap&                                                   map
     {
       const openMVG::Vec3 cam_dir = cam.getViewVector( id_col, id_row, scale ); //  cam.GetRay( openMVG::Vec2( id_col , id_row ) ).second ;
 
-#define USE_GIPUMA_REFINEMENT
+#define USE_GIPUMA_REFINEMENT 1
 #ifdef USE_GIPUMA_REFINEMENT
 
       const double min_disparity = cam.depthDisparityConversion( cam.m_max_depth, scale );
       const double max_disparity = cam.depthDisparityConversion( cam.m_min_depth, scale );
 
-      //      const double disparity_range = ( max_disparity - min_disparity ) ;
-
       double delta_disparity = max_disparity / 2.0;
       //      double delta_angle     = openMVG::D2R( 60.0 ) ;
       double delta_N = 1.0;
 
+      double depth_perturbation_percentage = 0.8;
+      double normal_perurbation_percentage = 0.8;
+
       while ( delta_disparity > disparity_threshold )
       {
-        // Compute new depth :
-        const openMVG::Vec4& plane = map.plane( id_row, id_col );
-        const openMVG::Vec3  cur_n( plane[ 0 ], plane[ 1 ], plane[ 2 ] );
-        const double         cur_depth = map.depth( id_row, id_col );
-
-        double        new_depth;
-        openMVG::Vec3 new_n;
-
-        GenerateRandomVectorAndDisparity( new_depth, new_n, cur_depth, cur_n, delta_disparity, delta_N, min_disparity, max_disparity, cam_dir, cam, scale, rng );
-
-        // Compute three planes : (new_n,new_d) - (new_n,old_d) - (old_n,new_d)
-
-        // Compute plane parameter d with new_d, new_n
-        const double d_plane_new_d_new_n = GetPlaneD( cam, id_row, id_col, new_depth, new_n, scale );
-        const double d_plane_old_d_new_n = GetPlaneD( cam, id_row, id_col, cur_depth, new_n, scale );
-        const double d_plane_new_d_old_n = GetPlaneD( cam, id_row, id_col, new_depth, cur_n, scale );
-
-        // Compute cost
-        const double cost_new_d_new_n = ComputeMultiViewCost( id_row, id_col, new_n, d_plane_new_d_new_n, cam, cams, stereo_rig, image_ref, neigh_imgs, params, c_metrics, scale );
-        const double cost_old_d_new_n = ComputeMultiViewCost( id_row, id_col, new_n, d_plane_old_d_new_n, cam, cams, stereo_rig, image_ref, neigh_imgs, params, c_metrics, scale );
-        const double cost_new_d_old_n = ComputeMultiViewCost( id_row, id_col, cur_n, d_plane_new_d_old_n, cam, cams, stereo_rig, image_ref, neigh_imgs, params, c_metrics, scale );
-
-        double        best_cost = std::numeric_limits<double>::max();
-        openMVG::Vec3 best_n;
-        double        best_d_plane;
-        double        best_depth;
-
-        if ( cost_new_d_new_n < cost_new_d_old_n &&
-             cost_new_d_new_n < cost_old_d_new_n )
+        if ( params.useJointViewSelection() )
         {
-          best_cost    = cost_new_d_new_n;
-          best_n       = new_n;
-          best_d_plane = d_plane_new_d_new_n;
-          best_depth   = new_depth;
-        }
-        else if ( cost_new_d_old_n < cost_new_d_new_n &&
-                  cost_new_d_old_n < cost_old_d_new_n )
-        {
-          best_cost    = cost_new_d_old_n;
-          best_n       = cur_n;
-          best_d_plane = d_plane_new_d_old_n;
-          best_depth   = new_depth;
+          // Propose hypothesis
+          std::vector<openMVG::Vec4> hypotheses;
+
+          const openMVG::Vec4 cur_plane = map.plane( id_row, id_col );
+          const double        cur_d     = map.depth( id_row, id_col );
+          const openMVG::Vec3 cur_n( cur_plane[ 0 ], cur_plane[ 1 ], cur_plane[ 2 ] );
+
+          // Generate perturbations (3 candidates : (old_n , new_d) , (new_n, old_d) , (new_n, new_d) )
+          const double        pert_d = d_gen.perturb( cur_d, depth_perturbation_percentage, rng );
+          const openMVG::Vec3 pert_n = n_gen.perturb( cur_n, normal_perurbation_percentage, -cam_dir, rng );
+          // pertubed n , perturbed depth
+          openMVG::Vec4 pert_plane;
+          pert_plane[ 0 ] = pert_n[ 0 ];
+          pert_plane[ 1 ] = pert_n[ 1 ];
+          pert_plane[ 2 ] = pert_n[ 2 ];
+          pert_plane[ 3 ] = GetPlaneD( cam, id_row, id_col, pert_d, pert_n, scale );
+          // perturbed n, old depth
+          openMVG::Vec4 pert_n_old_d = pert_plane;
+          pert_n_old_d[ 3 ]          = GetPlaneD( cam, id_row, id_col, cur_d, pert_n, scale );
+          // old_n, pert_depth
+          openMVG::Vec4 old_n_pert_d = cur_plane;
+          old_n_pert_d[ 3 ]          = GetPlaneD( cam, id_row, id_col, pert_d, cur_n, scale );
+
+          // Generate full randoms (3 candidates : (old_n , new_d) , (new_n,old_d) , (new_n,old_d) )
+          // random normal, random depth
+          const openMVG::Vec3 rnd_n     = n_gen.random( -cam_dir, rng );
+          const double        rnd_depth = d_gen.random( rng );
+          openMVG::Vec4       rnd_plane;
+          rnd_plane[ 0 ] = rnd_n[ 0 ];
+          rnd_plane[ 1 ] = rnd_n[ 1 ];
+          rnd_plane[ 2 ] = rnd_n[ 2 ];
+          rnd_plane[ 3 ] = GetPlaneD( cam, id_row, id_col, rnd_depth, rnd_n, scale );
+
+          // random normal, old depth
+          openMVG::Vec4 rnd_n_old_d = rnd_plane;
+          rnd_n_old_d[ 3 ]          = GetPlaneD( cam, id_row, id_col, cur_d, rnd_n, scale );
+          // old_n, new_depth
+          openMVG::Vec4 old_n_rnd_d = cur_plane;
+          old_n_rnd_d[ 3 ]          = GetPlaneD( cam, id_row, id_col, rnd_depth, cur_n, scale );
+
+          // More refinement : Half perturbation
+          const double        half_p_depth  = ( cur_d + pert_d ) / 2.0;
+          const openMVG::Vec3 half_p_normal = ( cur_n + pert_n ).normalized();
+          const openMVG::Vec4 half_d_half_n = openMVG::Vec4( half_p_normal[ 0 ], half_p_normal[ 1 ], half_p_normal[ 2 ], GetPlaneD( cam, id_row, id_col, half_p_depth, half_p_normal, scale ) );
+
+          // Append all hypotheses
+          hypotheses.push_back( cur_plane );
+          hypotheses.push_back( pert_plane );
+          hypotheses.push_back( pert_n_old_d );
+          hypotheses.push_back( old_n_pert_d );
+          hypotheses.push_back( rnd_plane );
+          hypotheses.push_back( rnd_n_old_d );
+          hypotheses.push_back( old_n_rnd_d );
+          hypotheses.push_back( half_d_half_n );
+
+          // Get cost matrix
+          openMVG::Mat cost_m;
+          ComputeMultiViewCostMatrix( cost_m, id_row, id_col, hypotheses, cam, cams, stereo_rig, image_ref, neigh_imgs, params, c_metrics, scale );
+
+          // Compute selection set
+          std::vector<int> selection_set;
+          ComputeSelectionSet( selection_set, cost_m, threshold, tau_up, n1, n2 );
+
+          // No valid view give up
+          if ( std::accumulate( selection_set.begin(), selection_set.end(), 0 ) == 0 )
+          {
+            delta_disparity /= 10.0;
+            delta_N /= 4.0;
+
+            normal_perurbation_percentage /= 2.0;
+            depth_perturbation_percentage /= 2.0;
+            continue;
+          }
+
+          // Compute importance for each view of the selection set
+          std::vector<double> importance;
+          ComputeViewImportance( importance, selection_set, cost_m, beta );
+          // Get only the k most important views, others get 0 importance
+          FilterBestNImportance( importance, k );
+
+          // Update importance based on previous best view
+          int last_best_view = map.bestView( id_row, id_col );
+          int cur_best_view  = ComputeBestView( importance );
+
+          UpdateImportanceBasedOnPreviousBestView( importance, selection_set, last_best_view );
+          map.bestView( id_row, id_col, cur_best_view );
+
+          // Compute per hypothesis cost
+          std::vector<double> hypothesis_cost;
+          ComputePerHypothesisCost( hypothesis_cost, importance, cost_m , params );
+
+          int    id_best_hyp   = -1;
+          double best_hyp_cost = std::numeric_limits<double>::max();
+
+          for ( int id_hyp = 0; id_hyp < cost_m.rows(); ++id_hyp )
+          {
+            if ( hypothesis_cost[ id_hyp ] < best_hyp_cost )
+            {
+              id_best_hyp   = id_hyp;
+              best_hyp_cost = hypothesis_cost[ id_hyp ];
+            }
+          }
+
+          if ( ( id_best_hyp != -1 ) && ( best_hyp_cost < map.cost( id_row, id_col ) ) )
+          {
+            map.cost( id_row, id_col, best_hyp_cost );
+            map.plane( id_row, id_col, hypotheses[ id_best_hyp ] );
+            const double z = ComputeDepth( hypotheses[ id_best_hyp ], id_row, id_col, cam, scale );
+            map.depth( id_row, id_col, z );
+          }
+
+          depth_perturbation_percentage /= 2.0;
+          normal_perurbation_percentage /= 2.0;
         }
         else
         {
-          best_cost    = cost_old_d_new_n;
-          best_n       = new_n;
-          best_d_plane = d_plane_old_d_new_n;
-          best_depth   = cur_depth;
+          // Compute new depth :
+          const openMVG::Vec4& plane = map.plane( id_row, id_col );
+          const openMVG::Vec3  cur_n( plane[ 0 ], plane[ 1 ], plane[ 2 ] );
+          const double         cur_depth = map.depth( id_row, id_col );
+
+          double        new_depth;
+          openMVG::Vec3 new_n;
+
+          GenerateRandomVectorAndDisparity( new_depth, new_n, cur_depth, cur_n, delta_disparity, delta_N, min_disparity, max_disparity, cam_dir, cam, scale, rng );
+
+          // Compute three planes : (new_n,new_d) - (new_n,old_d) - (old_n,new_d)
+
+          // Compute plane parameter d with new_d, new_n
+          const double d_plane_new_d_new_n = GetPlaneD( cam, id_row, id_col, new_depth, new_n, scale );
+          const double d_plane_old_d_new_n = GetPlaneD( cam, id_row, id_col, cur_depth, new_n, scale );
+          const double d_plane_new_d_old_n = GetPlaneD( cam, id_row, id_col, new_depth, cur_n, scale );
+
+          // Compute cost
+          const double cost_new_d_new_n = ComputeMultiViewCost( id_row, id_col, new_n, d_plane_new_d_new_n, cam, cams, stereo_rig, image_ref, neigh_imgs, params, c_metrics, scale );
+          const double cost_old_d_new_n = ComputeMultiViewCost( id_row, id_col, new_n, d_plane_old_d_new_n, cam, cams, stereo_rig, image_ref, neigh_imgs, params, c_metrics, scale );
+          const double cost_new_d_old_n = ComputeMultiViewCost( id_row, id_col, cur_n, d_plane_new_d_old_n, cam, cams, stereo_rig, image_ref, neigh_imgs, params, c_metrics, scale );
+
+          double        best_cost = std::numeric_limits<double>::max();
+          openMVG::Vec3 best_n;
+          double        best_d_plane;
+          double        best_depth;
+
+          if ( cost_new_d_new_n < cost_new_d_old_n &&
+               cost_new_d_new_n < cost_old_d_new_n )
+          {
+            best_cost    = cost_new_d_new_n;
+            best_n       = new_n;
+            best_d_plane = d_plane_new_d_new_n;
+            best_depth   = new_depth;
+          }
+          else if ( cost_new_d_old_n < cost_new_d_new_n &&
+                    cost_new_d_old_n < cost_old_d_new_n )
+          {
+            best_cost    = cost_new_d_old_n;
+            best_n       = cur_n;
+            best_d_plane = d_plane_new_d_old_n;
+            best_depth   = new_depth;
+          }
+          else
+          {
+            best_cost    = cost_old_d_new_n;
+            best_n       = new_n;
+            best_d_plane = d_plane_old_d_new_n;
+            best_depth   = cur_depth;
+          }
+
+          // {
+          //   const double best_cost = std::min( cost_new_d_new_n , std::min( cost_new_d_old_n , cost_old_d_new_n ) ) ;
+          // }
+          //        const double new_cost = ComputeMultiViewCost( id_row , id_col , new_n , d_plane , cam , cams , stereo_rig , image_ref , neigh_imgs , params , c_metrics , scale ) ;
+
+          if ( best_cost < map.cost( id_row, id_col ) )
+          {
+            // Update value
+            map.cost( id_row, id_col, best_cost );
+            map.plane( id_row, id_col, openMVG::Vec4( best_n[ 0 ], best_n[ 1 ], best_n[ 2 ], best_d_plane ) );
+            map.depth( id_row, id_col, best_depth );
+          }
         }
-
-        // {
-        //   const double best_cost = std::min( cost_new_d_new_n , std::min( cost_new_d_old_n , cost_old_d_new_n ) ) ;
-        // }
-        //        const double new_cost = ComputeMultiViewCost( id_row , id_col , new_n , d_plane , cam , cams , stereo_rig , image_ref , neigh_imgs , params , c_metrics , scale ) ;
-
-        if ( best_cost < map.cost( id_row, id_col ) )
-        {
-          // Update value
-          map.cost( id_row, id_col, best_cost );
-          map.plane( id_row, id_col, openMVG::Vec4( best_n[ 0 ], best_n[ 1 ], best_n[ 2 ], best_d_plane ) );
-          map.depth( id_row, id_col, best_depth );
-        }
-
         // Halve the range
         delta_disparity /= 10.0;
         delta_N /= 4.0;

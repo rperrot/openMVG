@@ -193,11 +193,11 @@ void PrepareOutputDirectory( const std::vector<MVS::Camera>&           cams,
 * @param start_scale Scale of the begginging process
 * @param out_path Path where to save the depth map
 */
-void ComputeMultipleScaleDepthMap( MVS::Camera&                              cam,
-                                   const std::vector<MVS::Camera>&           cams,
-                                   const MVS::DepthMapComputationParameters& params,
-                                   const int                                 start_scale, // Starting scale
-                                   const std::string&                        out_path )
+void ComputeMultipleScaleDepthMap( MVS::Camera&                        cam,
+                                   const std::vector<MVS::Camera>&     cams,
+                                   MVS::DepthMapComputationParameters& params,
+                                   const int                           start_scale, // Starting scale
+                                   const std::string&                  out_path )
 {
   // Get size of the intermediate images
   std::vector<std::pair<int, int>> imgs_dims;
@@ -221,11 +221,7 @@ void ComputeMultipleScaleDepthMap( MVS::Camera&                              cam
   // Initialize depth map
   MVS::DepthMap map( imgs_dims[ start_scale ].first, imgs_dims[ start_scale ].second );
 
-  // Add 20% of the range
-  const double min_disparity = cam.depthDisparityConversion( cam.m_max_depth * 1.2 );
-  const double max_disparity = cam.depthDisparityConversion( cam.m_min_depth * 0.8 );
-
-  map.randomizePlanes( cam, min_disparity, max_disparity, start_scale );
+  map.randomizePlanes( cam, cam.m_min_depth * 0.8, cam.m_max_depth * 1.2, start_scale );
   map.setGroundTruthDepth( cam, params, start_scale );
 
   // Compute relative motion between current camera and it's neighbors
@@ -315,7 +311,7 @@ void ComputeMultipleScaleDepthMap( MVS::Camera&                              cam
 #ifdef EXPORT_INTERMEDIATE_RESULT
     map.exportCost( GetInitCostName( scale ) );
     map.exportToGrayscale( GetInitDepthName( scale ) );
-    map.exportToPly( GetInitPlyName( scale ), cam, MAX_COST / 10.0, scale );
+    map.exportToPly( GetInitPlyName( scale ), cam, MAX_COST / 20.0, scale );
     map.exportNormal( GetInitNormalName( scale ) );
 #endif
 
@@ -327,6 +323,7 @@ void ComputeMultipleScaleDepthMap( MVS::Camera&                              cam
     // 2 - Propagate - Refine
     for ( int id_step = 0; id_step < nb_step[ index ]; ++id_step )
     {
+      params.setIterationId( id_step );
       // 2-1 Propagate
       start_time = std::chrono::high_resolution_clock::now();
 #ifdef USE_OPENCL
@@ -342,7 +339,7 @@ void ComputeMultipleScaleDepthMap( MVS::Camera&                              cam
 #ifdef EXPORT_INTERMEDIATE_RESULT
       map.exportCost( GetPropagationCostName( id_step, scale ) );
       map.exportToGrayscale( GetPropagationDepthName( id_step, scale ) );
-      map.exportToPly( GetPropagationPlyName( id_step, scale ), cam, MAX_COST / 10.0 );
+      map.exportToPly( GetPropagationPlyName( id_step, scale ), cam, MAX_COST / 20.0, params.scale() );
       map.exportNormal( GetPropagationNormalName( id_step, scale ) );
 #endif
 
@@ -362,7 +359,7 @@ void ComputeMultipleScaleDepthMap( MVS::Camera&                              cam
 #ifdef EXPORT_INTERMEDIATE_RESULT
       map.exportCost( GetRefinementCostName( id_step, scale ) );
       map.exportToGrayscale( GetRefinementDepthName( id_step, scale ) );
-      map.exportToPly( GetRefinementPlyName( id_step, scale ), cam, MAX_COST / 10.0, scale );
+      map.exportToPly( GetRefinementPlyName( id_step, scale ), cam, MAX_COST / 20.0, scale );
       map.exportNormal( GetRefinementNormalName( id_step, scale ) );
 #endif
 
@@ -381,7 +378,13 @@ void ComputeMultipleScaleDepthMap( MVS::Camera&                              cam
   }
 
   // Filter at the end
-  map = map.medianFilter( cam, 3, 3 );
+  map = map.medianFilter( cam, 3, 3, params.scale() );
+#ifdef EXPORT_INTERMEDIATE_RESULT
+  map.exportCost( "filtered_cost.png" );
+  map.exportToGrayscale( "filtered_depth.png" );
+  map.exportToPly( "filtered.ply", cam, MAX_COST / 20.0, params.scale() );
+  map.exportNormal( "filtered_normal.png" );
+#endif
 
   // Save the depth map
   map.save( out_path );
@@ -395,11 +398,11 @@ void ComputeMultipleScaleDepthMap( MVS::Camera&                              cam
 * @param image_ref Reference image data
 * @param out_path Path where the computed depth map should be saved
 */
-void ComputeDepthMap( MVS::Camera&                              cam,
-                      const std::vector<MVS::Camera>&           cams,
-                      const MVS::DepthMapComputationParameters& params,
-                      const MVS::Image&                         image_ref,
-                      const std::string&                        out_path )
+void ComputeDepthMap( MVS::Camera&                        cam,
+                      const std::vector<MVS::Camera>&     cams,
+                      MVS::DepthMapComputationParameters& params,
+                      const MVS::Image&                   image_ref,
+                      const std::string&                  out_path )
 {
   // Build openCL object
 #ifdef USE_OPENCL
@@ -452,7 +455,7 @@ void ComputeDepthMap( MVS::Camera&                              cam,
   }
   }
 #else
-  const MVS::ImageLoadType      load_type  = ComputeLoadType( params.metric() );
+  const MVS::ImageLoadType load_type = ComputeLoadType( params.metric() );
   const std::vector<MVS::Image> neigh_imgs = LoadNeighborImages( cam, params, load_type );
 
 #endif
@@ -468,10 +471,8 @@ void ComputeDepthMap( MVS::Camera&                              cam,
 
   // Initialize depth map
   MVS::DepthMap map( cam.m_cam_dims.second, cam.m_cam_dims.first );
-  const double  min_disparity = cam.depthDisparityConversion( cam.m_max_depth * 1.2 );
-  const double  max_disparity = cam.depthDisparityConversion( cam.m_min_depth * 0.8 );
 
-  map.randomizePlanes( cam, min_disparity, max_disparity );
+  map.randomizePlanes( cam, cam.m_min_depth * 0.8, cam.m_max_depth * 1.2, params.scale() );
   map.setGroundTruthDepth( cam, params, params.scale() );
 
   auto start_time = std::chrono::high_resolution_clock::now();
@@ -479,7 +480,7 @@ void ComputeDepthMap( MVS::Camera&                              cam,
 #ifdef USE_OPENCL
   ComputeCost( map, cam, cams, StereoRIG, image_ref, params, clWObject, krn_cost_full, krn_sum_kernel, krn_sort_n_store );
 #else
-  ComputeCost( map, cam, cams, StereoRIG, image_ref, neigh_imgs, params );
+  ComputeCost( map, cam, cams, StereoRIG, image_ref, neigh_imgs, params, params.scale() );
 #endif
   auto end_time = std::chrono::high_resolution_clock::now();
 
@@ -487,7 +488,7 @@ void ComputeDepthMap( MVS::Camera&                              cam,
 
 #ifdef EXPORT_INTERMEDIATE_RESULT
   map.exportToGrayscale( "init.png" );
-  map.exportToPly( "init.ply", cam, MAX_COST / 10.0 );
+  map.exportToPly( "init.ply", cam, MAX_COST / 20.0, params.scale() );
   map.exportCost( "init_cost.png" );
   map.exportNormal( "init_normal.png" );
 #endif
@@ -495,6 +496,7 @@ void ComputeDepthMap( MVS::Camera&                              cam,
   int nb_iteration = 8;
   for ( int id_iteration = 0; id_iteration < nb_iteration; ++id_iteration )
   {
+    params.setIterationId( id_iteration );
     std::stringstream str, str2, strply, strplyspa, strcost, strcostref, strnor, strnorref;
 
     // 1st : Propagation
@@ -523,7 +525,7 @@ void ComputeDepthMap( MVS::Camera&                              cam,
     strcost << "iter_" << id_iteration << "_cost.png";
     strnor << "iter_" << id_iteration << "_nor.png";
     map.exportToGrayscale( str.str() );
-    map.exportToPly( strplyspa.str(), cam, MAX_COST / 10.0 );
+    map.exportToPly( strplyspa.str(), cam, MAX_COST / 20.0, params.scale() );
     map.exportCost( strcost.str() );
     map.exportNormal( strnor.str() );
 #endif
@@ -539,21 +541,36 @@ void ComputeDepthMap( MVS::Camera&                              cam,
 
     std::cout << "Refinement time : " << std::chrono::duration_cast<std::chrono::milliseconds>( end_time - start_time ).count() << " ms " << std::endl;
 
+    // Filter at 1/3 of the computation
+    /*
+    if ( id_iteration == nb_iteration / 3 )
+    {
+      map = map.medianFilter( cam, 3, 3, params.scale() );
+    }
+    */
+
 #ifdef EXPORT_INTERMEDIATE_RESULT
     str2 << "iter_" << id_iteration << "_ref.png";
     strply << "iter_" << id_iteration << "_ref.ply";
     strcostref << "iter_" << id_iteration << "_cost_ref.png";
     strnorref << "iter_" << id_iteration << "_nor_ref.png";
     map.exportToGrayscale( str2.str() );
-    map.exportToPly( strply.str(), cam, MAX_COST / 10.0 );
+    map.exportToPly( strply.str(), cam, MAX_COST / 20.0, params.scale() );
     map.exportCost( strcostref.str() );
     map.exportNormal( strnorref.str() );
 #endif
   }
 
+  /*
   // Filter
   map = map.medianFilter( cam, 3, 3, params.scale() );
-
+#ifdef EXPORT_INTERMEDIATE_RESULT
+  map.exportCost( "filtered_cost.png" );
+  map.exportToGrayscale( "filtered_depth.png" );
+  map.exportToPly( "filtered.ply", cam, MAX_COST / 20.0, params.scale() );
+  map.exportNormal( "filtered_normal.png" );
+#endif
+*/
   // Now save the depth map
   map.save( out_path );
 }
@@ -590,6 +607,7 @@ int main( int argc, char** argv )
   int                    kMaxViewSelectionNb = 9;     // Maximum of neighbors for view selection
   int                    kMaxViewPerCost     = 3;     //
   MVS::PropagationScheme kScheme             = MVS::PROPAGATION_SCHEME_ASYMETRIC;
+  bool                   use_joint_view      = true;
 
   MVS::cost_metric kMetric = MVS::COST_METRIC_NCC;
 
@@ -603,7 +621,7 @@ int main( int argc, char** argv )
   cmd.add( make_option( 'f', kForceOverwrite, "forceOverwrite" ) );
   cmd.add( make_option( 'm', kMinAngleSelection, "minAngleSelection" ) );
   cmd.add( make_option( 'M', kMaxAngleSelection, "maxAngleSelection" ) );
-  cmd.add( make_option( 's', kMaxViewSelectionNb, "maxViewSelectionNb" ) );
+  //  cmd.add( make_option( 's', kMaxViewSelectionNb, "maxViewSelectionNb" ) );
   cmd.add( make_option( 'k', kMaxViewPerCost, "maxImageForCost" ) );
   cmd.add( make_option( 'y', kGamma, "gamma" ) );
 
@@ -653,6 +671,7 @@ int main( int argc, char** argv )
   std::cout << "Max view for cost (K)   : " << kMaxViewPerCost << std::endl;
 
   MVS::DepthMapComputationParameters params( kScale, kMetric, kAlpha, kTauCol, kTauGrad, kGamma, kScheme, kMinAngleSelection, kMaxAngleSelection, kMaxViewSelectionNb, kMaxViewPerCost, sOutDir );
+  params.setUseJointViewSelection( use_joint_view );
 
   // Load the SfM data
   openMVG::sfm::SfM_Data sfm_data;
@@ -697,7 +716,7 @@ int main( int argc, char** argv )
       ComputeMultipleScaleDepthMap( cams[ id_cam ], cams, params, params.scale() + 2, cur_depth_path );
 #else
       const MVS::ImageLoadType load_type = MVS::ComputeLoadType( params.metric() );
-      const MVS::Image         cur_image( color_path, grayscale_path, gradient_path, census_path, load_type );
+      const MVS::Image cur_image( color_path, grayscale_path, gradient_path, census_path, load_type );
       ComputeDepthMap( cams[ id_cam ], cams, params, cur_image, cur_depth_path );
 #endif
     }
