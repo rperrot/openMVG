@@ -165,4 +165,21 @@ openMVG::Vec3 BarycentricCoordinates( const openMVG::Vec3& A, const openMVG::Vec
   }
 }
 
+/**
+ * @brief Concatenate content of all the given files 
+ * 
+ * @param paths         Path of all files 
+ * @return std::string  Concatenation of content of all files 
+ */
+std::string GetFilesContent( const std::vector<std::string>& paths )
+{
+  std::string res;
+  for ( const auto& cur_path : paths )
+  {
+    res += GetFileContent( cur_path );
+    res += "\n";
+  }
+  return res;
+}
+
 } // namespace MVS

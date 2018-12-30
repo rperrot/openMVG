@@ -129,6 +129,14 @@ void GenerateNormalizedFrame( const openMVG::Vec3& n, openMVG::Vec3& x, openMVG:
 */
 openMVG::Vec3 BarycentricCoordinates( const openMVG::Vec3& A, const openMVG::Vec3& B, const openMVG::Vec3& C, const openMVG::Vec3& p );
 
+/**
+ * @brief Concatenate content of all the given files 
+ * 
+ * @param paths         Path of all files 
+ * @return std::string  Concatenation of content of all files 
+ */
+std::string GetFilesContent( const std::vector<std::string>& paths );
+
 } // namespace MVS
 
 #endif

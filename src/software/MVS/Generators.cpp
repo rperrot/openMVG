@@ -21,10 +21,10 @@ DepthGenerator::DepthGenerator( const double min_depth, const double max_depth )
 }
 
 /**
-   * @brief Get minimum depth value 
-   * 
-   * @return    Lower bound of the depth generator/perturbator
-   */
+  * @brief Get minimum depth value 
+  * 
+  * @return    Lower bound of the depth generator/perturbator
+  */
 double DepthGenerator::minDepth( void ) const
 {
   return m_min_depth;

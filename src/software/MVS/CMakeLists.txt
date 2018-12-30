@@ -77,6 +77,10 @@ target_link_libraries( openMVG_main_fusionDepthMaps openMVG_image openMVG_multiv
 
 
 
-# Copy kernel to destination folder 
+# Copy kernels to destination folder 
 add_custom_command( TARGET openMVG_main_computeDepthMaps PRE_BUILD 
                     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/opencl_kernels.cl ${OPENMVG_SOFTWARE_MVS_BUILD_DIR} )
+add_custom_command( TARGET openMVG_main_computeDepthMaps PRE_BUILD 
+                    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/opencl_metrics_kernels.cl ${OPENMVG_SOFTWARE_MVS_BUILD_DIR} )
+add_custom_command( TARGET openMVG_main_computeDepthMaps PRE_BUILD 
+                    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/opencl_common_kernels.cl ${OPENMVG_SOFTWARE_MVS_BUILD_DIR} )

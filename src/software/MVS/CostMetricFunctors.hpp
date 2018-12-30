@@ -168,6 +168,7 @@ private:
 class BilateralWeightedNCC : public AbstractCostMetric
 {
 public:
+
   /**
     * @brief Ctr
     * @param img_ref Reference image

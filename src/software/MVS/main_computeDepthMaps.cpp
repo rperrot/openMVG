@@ -18,7 +18,7 @@
 #include <random>
 
 // #define MULTISCALE
-//#define USE_OPENCL
+#define USE_OPENCL
 #define EXPORT_INTERMEDIATE_RESULT
 
 #ifdef EXPORT_INTERMEDIATE_RESULT
@@ -236,24 +236,28 @@ void ComputeMultipleScaleDepthMap( MVS::Camera&                        cam,
 
 #ifdef USE_OPENCL
   // Build openCL object
-  MVS::OpenCLWrapper clWObject( MVS::OpenCLWrapper::OPENCL_DEVICE_GPU );
-  std::string        cl_kernel_path        = std::string( MVS_BUILD_DIR ) + std::string( "/opencl_kernels.cl" );
-  cl_program         cl_pgm                = clWObject.createProgramFromSource( MVS::GetFileContent( cl_kernel_path ) );
-  cl_kernel          krn_cost_pm           = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_PM" );
-  cl_kernel          krn_cost_ncc          = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_NCC" );
-  cl_kernel          krn_cost_census       = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_Census" );
-  cl_kernel          krn_sum_kernel        = clWObject.getKernelFromName( cl_pgm, "store_costs" );
-  cl_kernel          krn_sort_n_store      = clWObject.getKernelFromName( cl_pgm, "sort_and_store_costs" );
-  cl_kernel          krn_cost_ncc_red      = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_NCC_red" );
-  cl_kernel          krn_cost_ncc_black    = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_NCC_black" );
-  cl_kernel          krn_cost_pm_red       = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_PM_red" );
-  cl_kernel          krn_cost_pm_black     = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_PM_black" );
-  cl_kernel          krn_cost_census_red   = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_Census_red" );
-  cl_kernel          krn_cost_census_black = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_Census_black" );
-  cl_kernel          krn_update_planes     = clWObject.getKernelFromName( cl_pgm, "update_plane_wrt_cost" );
-  cl_kernel          krn_compute_depth     = clWObject.getKernelFromName( cl_pgm, "compute_pixel_depth" );
-  cl_kernel          krn_update_planes2    = clWObject.getKernelFromName( cl_pgm, "update_plane_wrt_cost2" );
-  cl_kernel          krn_compute_planes    = clWObject.getKernelFromName( cl_pgm, "compute_new_plane" );
+  MVS::OpenCLWrapper       clWObject( MVS::OpenCLWrapper::OPENCL_DEVICE_GPU );
+  std::vector<std::string> cl_kernel_paths; // /!\ do not change order of the paths
+  cl_kernel_paths.push_back( std::string( MVS_BUILD_DIR ) + std::string( "/opencl_common_kernels.cl" ) );
+  cl_kernel_paths.push_back( std::string( MVS_BUILD_DIR ) + std::string( "/opencl_metrics_kernels.cl" ) );
+  cl_kernel_paths.push_back( std::string( MVS_BUILD_DIR ) + std::string( "/opencl_kernels.cl" ) );
+
+  cl_program cl_pgm                = clWObject.createProgramFromSource( MVS::GetFilesContent( cl_kernel_paths ) );
+  cl_kernel  krn_cost_pm           = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_PM" );
+  cl_kernel  krn_cost_ncc          = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_NCC" );
+  cl_kernel  krn_cost_census       = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_Census" );
+  cl_kernel  krn_sum_kernel        = clWObject.getKernelFromName( cl_pgm, "store_costs" );
+  cl_kernel  krn_sort_n_store      = clWObject.getKernelFromName( cl_pgm, "sort_and_store_costs" );
+  cl_kernel  krn_cost_ncc_red      = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_NCC_red" );
+  cl_kernel  krn_cost_ncc_black    = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_NCC_black" );
+  cl_kernel  krn_cost_pm_red       = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_PM_red" );
+  cl_kernel  krn_cost_pm_black     = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_PM_black" );
+  cl_kernel  krn_cost_census_red   = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_Census_red" );
+  cl_kernel  krn_cost_census_black = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_Census_black" );
+  cl_kernel  krn_update_planes     = clWObject.getKernelFromName( cl_pgm, "update_plane_wrt_cost" );
+  cl_kernel  krn_compute_depth     = clWObject.getKernelFromName( cl_pgm, "compute_pixel_depth" );
+  cl_kernel  krn_update_planes2    = clWObject.getKernelFromName( cl_pgm, "update_plane_wrt_cost2" );
+  cl_kernel  krn_compute_planes    = clWObject.getKernelFromName( cl_pgm, "compute_new_plane" );
 
   cl_kernel krn_cost_full;
   cl_kernel krn_cost_red;
@@ -406,24 +410,36 @@ void ComputeDepthMap( MVS::Camera&                        cam,
 {
   // Build openCL object
 #ifdef USE_OPENCL
-  MVS::OpenCLWrapper clWObject( MVS::OpenCLWrapper::OPENCL_DEVICE_GPU );
-  std::string        cl_kernel_path        = std::string( MVS_BUILD_DIR ) + std::string( "/opencl_kernels.cl" );
-  cl_program         cl_pgm                = clWObject.createProgramFromSource( MVS::GetFileContent( cl_kernel_path ) );
-  cl_kernel          krn_cost_pm           = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_PM" );
-  cl_kernel          krn_cost_ncc          = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_NCC" );
-  cl_kernel          krn_cost_census       = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_Census" );
-  cl_kernel          krn_sum_kernel        = clWObject.getKernelFromName( cl_pgm, "store_costs" );
-  cl_kernel          krn_sort_n_store      = clWObject.getKernelFromName( cl_pgm, "sort_and_store_costs" );
-  cl_kernel          krn_cost_ncc_red      = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_NCC_red" );
-  cl_kernel          krn_cost_ncc_black    = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_NCC_black" );
-  cl_kernel          krn_cost_pm_red       = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_PM_red" );
-  cl_kernel          krn_cost_pm_black     = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_PM_black" );
-  cl_kernel          krn_cost_census_red   = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_Census_red" );
-  cl_kernel          krn_cost_census_black = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_Census_black" );
-  cl_kernel          krn_update_planes     = clWObject.getKernelFromName( cl_pgm, "update_plane_wrt_cost" );
-  cl_kernel          krn_compute_depth     = clWObject.getKernelFromName( cl_pgm, "compute_pixel_depth" );
-  cl_kernel          krn_update_planes2    = clWObject.getKernelFromName( cl_pgm, "update_plane_wrt_cost2" );
-  cl_kernel          krn_compute_planes    = clWObject.getKernelFromName( cl_pgm, "compute_new_plane" );
+  MVS::OpenCLWrapper       clWObject( MVS::OpenCLWrapper::OPENCL_DEVICE_GPU );
+  std::vector<std::string> cl_kernel_paths; // /!\ do not change order of the paths
+  cl_kernel_paths.push_back( std::string( MVS_BUILD_DIR ) + std::string( "/opencl_common_kernels.cl" ) );
+  cl_kernel_paths.push_back( std::string( MVS_BUILD_DIR ) + std::string( "/opencl_metrics_kernels.cl" ) );
+  cl_kernel_paths.push_back( std::string( MVS_BUILD_DIR ) + std::string( "/opencl_kernels.cl" ) );
+
+  cl_program cl_pgm                 = clWObject.createProgramFromSource( MVS::GetFilesContent( cl_kernel_paths ) );
+  cl_kernel  krn_sum_kernel         = clWObject.getKernelFromName( cl_pgm, "store_costs" );
+  cl_kernel  krn_sort_n_store       = clWObject.getKernelFromName( cl_pgm, "sort_and_store_costs" );
+  // NCC
+  cl_kernel krn_cost_ncc       = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_NCC" );
+  cl_kernel krn_cost_ncc_red   = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_NCC_red" );
+  cl_kernel krn_cost_ncc_black = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_NCC_black" );
+  // Patch match
+  cl_kernel krn_cost_pm       = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_PM" );
+  cl_kernel krn_cost_pm_red   = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_PM_red" );
+  cl_kernel krn_cost_pm_black = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_PM_black" );
+  // Census
+  cl_kernel krn_cost_census       = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_Census" );
+  cl_kernel krn_cost_census_red   = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_Census_red" );
+  cl_kernel krn_cost_census_black = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_Census_black" );
+  // Bilateral NCC
+  cl_kernel krn_cost_bilateral_ncc       = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_Bilateral_NCC" );
+  cl_kernel krn_cost_bilateral_ncc_red   = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_Bilateral_NCC_red" );
+  cl_kernel krn_cost_bilateral_ncc_black = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_Bilateral_NCC_black" );
+
+  cl_kernel krn_update_planes  = clWObject.getKernelFromName( cl_pgm, "update_plane_wrt_cost" );
+  cl_kernel krn_compute_depth  = clWObject.getKernelFromName( cl_pgm, "compute_pixel_depth" );
+  cl_kernel krn_update_planes2 = clWObject.getKernelFromName( cl_pgm, "update_plane_wrt_cost2" );
+  cl_kernel krn_compute_planes = clWObject.getKernelFromName( cl_pgm, "compute_new_plane" );
 
   cl_kernel krn_cost_full;
   cl_kernel krn_cost_red;
@@ -452,6 +468,12 @@ void ComputeDepthMap( MVS::Camera&                        cam,
     krn_cost_red   = krn_cost_census_red;
     krn_cost_black = krn_cost_census_black;
     break;
+  }
+  case MVS::COST_METRIC_BILATERAL_NCC:
+  {
+    krn_cost_full  = krn_cost_bilateral_ncc;
+    krn_cost_red   = krn_cost_bilateral_ncc_red;
+    krn_cost_black = krn_cost_bilateral_ncc_black;
   }
   }
 #else
@@ -493,7 +515,7 @@ void ComputeDepthMap( MVS::Camera&                        cam,
   map.exportNormal( "init_normal.png" );
 #endif
 
-  int nb_iteration = 8;
+  int nb_iteration = 6;
   for ( int id_iteration = 0; id_iteration < nb_iteration; ++id_iteration )
   {
     params.setIterationId( id_iteration );
@@ -511,9 +533,6 @@ void ComputeDepthMap( MVS::Camera&                        cam,
     Propagate( map, 0, cam, cams, StereoRIG, image_ref, neigh_imgs, params, params.scale() );
     // Black
     Propagate( map, 1, cam, cams, StereoRIG, image_ref, neigh_imgs, params, params.scale() );
-
-    // Propagate( map , 0 , cam , cams , StereoRIG , image_ref , params ) ;
-    // Propagate( map , 1 , cam , cams , StereoRIG , image_ref , params ) ;
 #endif
 
     end_time = std::chrono::high_resolution_clock::now();
@@ -541,14 +560,6 @@ void ComputeDepthMap( MVS::Camera&                        cam,
 
     std::cout << "Refinement time : " << std::chrono::duration_cast<std::chrono::milliseconds>( end_time - start_time ).count() << " ms " << std::endl;
 
-    // Filter at 1/3 of the computation
-    /*
-    if ( id_iteration == nb_iteration / 3 )
-    {
-      map = map.medianFilter( cam, 3, 3, params.scale() );
-    }
-    */
-
 #ifdef EXPORT_INTERMEDIATE_RESULT
     str2 << "iter_" << id_iteration << "_ref.png";
     strply << "iter_" << id_iteration << "_ref.ply";
@@ -561,16 +572,6 @@ void ComputeDepthMap( MVS::Camera&                        cam,
 #endif
   }
 
-  /*
-  // Filter
-  map = map.medianFilter( cam, 3, 3, params.scale() );
-#ifdef EXPORT_INTERMEDIATE_RESULT
-  map.exportCost( "filtered_cost.png" );
-  map.exportToGrayscale( "filtered_depth.png" );
-  map.exportToPly( "filtered.ply", cam, MAX_COST / 20.0, params.scale() );
-  map.exportNormal( "filtered_normal.png" );
-#endif
-*/
   // Now save the depth map
   map.save( out_path );
 }
