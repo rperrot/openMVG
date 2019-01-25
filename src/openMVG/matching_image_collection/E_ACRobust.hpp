@@ -16,11 +16,13 @@
 #include "openMVG/cameras/Camera_Pinhole.hpp"
 #include "openMVG/matching/indMatch.hpp"
 #include "openMVG/matching_image_collection/Geometric_Filter_utils.hpp"
+#include "openMVG/multiview/solver_essential_five_point.hpp"
 #include "openMVG/multiview/solver_essential_kernel.hpp"
 #include "openMVG/multiview/essential.hpp"
 #include "openMVG/robust_estimation/robust_estimator_ACRansac.hpp"
 #include "openMVG/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
 #include "openMVG/robust_estimation/guided_matching.hpp"
+#include "openMVG/sfm/pipelines/sfm_regions_provider.hpp"
 #include "openMVG/sfm/sfm_data.hpp"
 #include "openMVG/types.hpp"
 

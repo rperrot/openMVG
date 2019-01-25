@@ -15,6 +15,9 @@ list(REMOVE_ITEM numeric_files_cpp ${REMOVEFILESUNITTEST})
 add_library(openMVG_numeric
   ${numeric_files_header}
   ${numeric_files_cpp})
+target_compile_features(openMVG_numeric INTERFACE ${CXX11_FEATURES})
+string(REPLACE " " ";" REPLACED_CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+target_compile_options(openMVG_numeric INTERFACE ${REPLACED_CMAKE_CXX_FLAGS})
 target_include_directories(openMVG_numeric
   PUBLIC
     $<BUILD_INTERFACE:${EIGEN_INCLUDE_DIRS}>
@@ -29,6 +32,9 @@ else()
     $<INSTALL_INTERFACE:${EIGEN_INCLUDE_DIRS}>)
 endif()
 
+if (MSVC)
+  target_compile_options(openMVG_numeric PUBLIC "-D_USE_MATH_DEFINES")
+endif (MSVC)
 set_target_properties(openMVG_numeric PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")
 set_property(TARGET openMVG_numeric PROPERTY FOLDER OpenMVG/OpenMVG)
 install(TARGETS openMVG_numeric DESTINATION lib EXPORT openMVG-targets)
