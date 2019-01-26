@@ -39,7 +39,7 @@ endif(NOT JPEG_FOUND)
 # TIFF and PNG depend on zlib, if one of them is not found add the internal zlib
 if(NOT PNG_FOUND OR NOT TIFF_FOUND)
   add_subdirectory(zlib)
-endif(NOT PNG_FOUND OR NOT TIFF_FOUND)
+endif()
 
 if (NOT PNG_FOUND)
   set(OpenMVG_USE_INTERNAL_PNG ON PARENT_SCOPE)
