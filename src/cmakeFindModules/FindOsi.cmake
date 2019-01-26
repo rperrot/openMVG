@@ -12,9 +12,9 @@ FIND_PATH(OSI_DIR OsiConfig.h
 ## Include OSI library
 ##----------------------------------------------------
 IF(EXISTS "${OSI_DIR}" AND NOT "${OSI_DIR}" STREQUAL "")
-        SET(OSI_FOUND TRUE)
-        SET(OSI_INCLUDE_DIRS ${OSI_DIR})
-        SET(OSI_DIR "${OSI_DIR}" CACHE PATH "" FORCE)
+        SET(OSI_FOUND TRUE )
+        SET(OSI_INCLUDE_DIRS ${OSI_DIR} )
+        SET(OSI_DIR "${OSI_DIR}" CACHE PATH "" )
         MARK_AS_ADVANCED(OSI_DIR)
 
         # Extract Osi version from OsiConfig.h
@@ -48,7 +48,7 @@ IF(EXISTS "${OSI_DIR}" AND NOT "${OSI_DIR}" STREQUAL "")
 
                 SET(OSI_VERSION "${OSI_VERSION_MAJOR}.${OSI_VERSION_MINOR}.${OSI_VERSION_RELEASE}")
         ENDIF (NOT EXISTS ${OSI_VERSION_FILE})
-        SET(OSI_INCLUDE_DIR ${OSI_DIR})
+        SET(OSI_INCLUDE_DIR ${OSI_DIR} )
 
         FIND_LIBRARY(OSI_LIBRARY NAMES Osi)
 
@@ -56,8 +56,18 @@ IF(EXISTS "${OSI_DIR}" AND NOT "${OSI_DIR}" STREQUAL "")
         IF(DEFINED OSI_LIBRARY)
           SET(OSI_LIBRARIES ${OSI_LIBRARY})
         ENDIF()
-
-        MESSAGE(STATUS "Osi ${OSI_VERSION} found (include: ${OSI_INCLUDE_DIRS})")
+	
+		# Check if it's internal openMVG (to set OSI_LIBRARY with the correct value).
+		IF( OSI_INCLUDE_DIRS )
+			get_filename_component(hint_path ${OSI_INCLUDE_DIRS} ABSOLUTE)
+			get_filename_component(mvg_path "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/osi_clp/Osi/src/Osi" ABSOLUTE)
+			IF( ${hint_path} STREQUAL ${mvg_path} )
+				set( OpenMVG_USE_INTERNAL_OSI ON )
+				set( OSI_LIBRARY lib_Osi )
+				set( OSI_LIBRARIES ${OSI_LIBRARY} )
+			ENDIF()
+		ENDIF()
+        MESSAGE(STATUS "Osi ${OSI_VERSION} found (include: ${OSI_INCLUDE_DIRS} - ${OSI_LIBRARY})")
 ELSE()
   MESSAGE(STATUS "You are attempting to build without Osi. "
           "Please use cmake variable -DOSI_INCLUDE_DIR_HINTS:STRING=\"PATH\" "

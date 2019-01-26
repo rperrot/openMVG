@@ -53,11 +53,22 @@ IF(EXISTS "${CLP_DIR}" AND NOT "${CLP_DIR}" STREQUAL "")
         FIND_LIBRARY(CLP_LIBRARY NAMES Clp)
         FIND_LIBRARY(CLPSOLVER_LIBRARY NAMES ClpSolver)
         FIND_LIBRARY(OSICLP_LIBRARY NAMES OsiClp)
-
+		
         # locate Clp libraries
         IF(DEFINED CLP_LIBRARY AND DEFINED CLPSOLVER_LIBRARY AND DEFINED OSICLP_LIBRARY)
           SET(CLP_LIBRARIES ${CLP_LIBRARY} ${CLPSOLVER_LIBRARY} ${OSICLP_LIBRARY})
         ENDIF()
+		
+		# HANDLE openMVG internal
+		get_filename_component(hint_path ${CLP_INCLUDE_DIR} ABSOLUTE)
+		get_filename_component(mvg_path "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/osi_clp/Clp/src" ABSOLUTE)
+		IF( ${hint_path} STREQUAL ${mvg_path} )
+			set( OpenMVG_USE_INTERNAL_CLP ON )
+			set( CLP_LIBRARIES lib_clp lib_OsiClpSolver)
+      set(CLP_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/osi_clp/Clp/src/
+                           ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/osi_clp/Clp/src/OsiClp/)
+
+		ENDIF()
 
         MESSAGE(STATUS "Clp ${CLP_VERSION} found (include: ${CLP_INCLUDE_DIRS})")
 ELSE()

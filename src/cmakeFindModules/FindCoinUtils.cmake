@@ -56,6 +56,14 @@ IF(EXISTS "${COINUTILS_DIR}" AND NOT "${COINUTILS_DIR}" STREQUAL "")
         IF(DEFINED COINUTILS_LIBRARY)
           SET(COINUTILS_LIBRARIES ${COINUTILS_LIBRARY})
         ENDIF()
+		
+		# HANDLE openMVG internal
+		get_filename_component(hint_path ${COINUTILS_INCLUDE_DIR} ABSOLUTE)
+		get_filename_component(mvg_path "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/osi_clp/CoinUtils/src" ABSOLUTE)
+		IF( ${hint_path} STREQUAL ${mvg_path} )
+			set(COINUTILS_LIBRARY lib_CoinUtils)
+			set(OpenMVG_USE_INTERNAL_COINUTILS ON)
+		ENDIF()
 
         MESSAGE(STATUS "CoinUtils ${COINUTILS_VERSION} found (include: ${COINUTILS_INCLUDE_DIRS})")
 ELSE()
