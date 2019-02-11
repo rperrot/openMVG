@@ -1,7 +1,5 @@
 #include "SfMDataHelper.hh"
 
-#include "openMVG/sfm/sfm_data.hpp"
-
 #include <algorithm>
 #include <utility>
 
