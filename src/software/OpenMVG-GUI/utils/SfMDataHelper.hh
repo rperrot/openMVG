@@ -1,18 +1,11 @@
 #ifndef _OPENMVG_SOFTWARE_OPENMVG_GUI_UTILS_SFM_HELPER_HH_
 #define _OPENMVG_SOFTWARE_OPENMVG_GUI_UTILS_SFM_HELPER_HH_
 
+#include "openMVG/sfm/sfm_data.hpp"
+
 #include <tuple>
 #include <utility>
 #include <vector>
-
-// fwrd declaration
-namespace openMVG
-{
-namespace sfm
-{
-struct SfM_Data ;
-}
-}
 
 namespace openMVG_gui
 {

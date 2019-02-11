@@ -341,11 +341,10 @@ void LoadPly( const std::string & path ,
 
   for( auto & it : tmp_col )
   {
-    openMVG::Vec3 tmp ;
-    tmp[0] = it[0] / 255.0 ;
-    tmp[1] = it[1] / 255.0 ;
-    tmp[2] = it[2] / 255.0 ;
-    col.emplace_back( tmp ) ;
+    col.emplace_back(
+      it[0] / 255.0,
+      it[1] / 255.0,
+      it[2] / 255.0 ) ;
   }
 }
 
