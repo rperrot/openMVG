@@ -106,7 +106,6 @@ void ComputeMultiViewCostMatrix( openMVG::Mat&                                  
                                  const std::vector<Camera>&                                  cams,
                                  const std::vector<std::pair<openMVG::Mat3, openMVG::Vec3>>& stereo_rig,
                                  const Image&                                                image_ref,
-                                 const std::vector<Image>&                                   neigh_imgs,
                                  const DepthMapComputationParameters&                        params,
                                  std::vector<std::shared_ptr<AbstractCostMetric>>            cost_metrics,
                                  const int                                                   scale = -1 );
@@ -143,7 +142,16 @@ void ComputeCost( DepthMap&                                                   ma
 * @param params Computation parameters
 * @param scale Scale of the computation
 */
-void Propagate( DepthMap& map, const int id_start, const Camera& cam, const std::vector<Camera>& cams, const std::vector<std::pair<openMVG::Mat3, openMVG::Vec3>>& stereo_rig, const Image& image_ref, const std::vector<Image>& neigh_imgs, const DepthMapComputationParameters& params, const int scale = -1 );
+void Propagate( DepthMap&                                                   map,
+                const int                                                   id_start,
+                const Camera&                                               cam,
+                const std::vector<Camera>&                                  cams,
+                const std::vector<std::pair<openMVG::Mat3, openMVG::Vec3>>& stereo_rig,
+                const Image&                                                image_ref,
+                const std::vector<Image>&                                   neigh_imgs,
+                const std::vector<DepthMap>&                                neigh_dms,
+                const DepthMapComputationParameters&                        params,
+                const int                                                   scale = -1 );
 
 /**
 * @brief Perform plane refinement at specific scale
@@ -160,6 +168,7 @@ void Refinement( DepthMap&                                                   map
                  const std::vector<std::pair<openMVG::Mat3, openMVG::Vec3>>& stereo_rig,
                  const Image&                                                image_ref,
                  const std::vector<Image>&                                   neigh_imgs,
+                 const std::vector<DepthMap>&                                neigh_dms,
                  const DepthMapComputationParameters&                        params,
                  const int                                                   scale = -1 );
 

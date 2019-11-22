@@ -159,7 +159,7 @@ double DepthMap::depth( const int id_row, const int id_col ) const
 */
 double DepthMap::depth( const openMVG::Vec2i& pos ) const
 {
-  return depth( pos[ 0 ], pos[ 1 ] );
+  return depth( pos[ 1 ], pos[ 0 ] );
 }
 
 /**
@@ -223,6 +223,10 @@ void DepthMap::randomizePlanes( const Camera& cam, const double min_depth, const
 */
 openMVG::Vec4 DepthMap::plane( const int id_row, const int id_col ) const
 {
+  if ( id_row < 0 || id_col < 0 || id_col >= m_plane.Width() || id_row >= m_plane.Height() )
+  {
+    std::cerr << "Pos : " << id_row << " , " << id_col << "w: " << m_plane.Width() << " h: " << m_plane.Height() << std::endl;
+  }
   return m_plane( id_row, id_col );
 }
 
@@ -233,7 +237,7 @@ openMVG::Vec4 DepthMap::plane( const int id_row, const int id_col ) const
 */
 openMVG::Vec4 DepthMap::plane( const openMVG::Vec2i& pos ) const
 {
-  return plane( pos[ 0 ], pos[ 1 ] );
+  return plane( pos[ 1 ], pos[ 0 ] );
 }
 
 /**
@@ -254,7 +258,7 @@ void DepthMap::plane( const int id_row, const int id_col, const openMVG::Vec4& n
 */
 void DepthMap::plane( const openMVG::Vec2i& pos, const openMVG::Vec4& new_normal )
 {
-  plane( pos[ 0 ], pos[ 1 ], new_normal );
+  plane( pos[ 1 ], pos[ 0 ], new_normal );
 }
 
 /**
@@ -380,6 +384,11 @@ const openMVG::image::Image<openMVG::Vec4>& DepthMap::planes( void ) const
   return m_plane;
 }
 
+const openMVG::image::Image<double>& DepthMap::costs( void ) const
+{
+  return m_cost;
+}
+
 /**
 * @brief Export to grayscale
 */
@@ -394,8 +403,11 @@ void DepthMap::exportToGrayscale( const std::string& path ) const
     for ( int id_col = 0; id_col < m_depth.Width(); ++id_col )
     {
       const double d = m_depth( id_row, id_col );
-      min_depth      = std::min( min_depth, d );
-      max_depth      = std::max( max_depth, d );
+      if ( d > 0.0 )
+      {
+        min_depth = std::min( min_depth, d );
+        max_depth = std::max( max_depth, d );
+      }
     }
   }
 
@@ -404,7 +416,7 @@ void DepthMap::exportToGrayscale( const std::string& path ) const
   {
     for ( int id_col = 0; id_col < m_depth.Width(); ++id_col )
     {
-      const double d = m_depth( id_row, id_col );
+      const double d = std::max( 0.0, m_depth( id_row, id_col ) );
 
       // range : [0;1]
       const double corrected = ( d - min_depth ) / ( max_depth - min_depth );
@@ -430,10 +442,12 @@ void DepthMap::exportCost( const std::string& path ) const
   {
     for ( int id_col = 0; id_col < m_cost.Width(); ++id_col )
     {
-      const double c = m_cost( id_row, id_col );
-
-      c_min = std::min( c_min, c );
-      c_max = std::max( c_max, c );
+      if ( m_depth( id_row, id_col ) > 0.0 )
+      {
+        const double c = m_cost( id_row, id_col );
+        c_min          = std::min( c_min, c );
+        c_max          = std::max( c_max, c );
+      }
     }
   }
 
@@ -443,14 +457,21 @@ void DepthMap::exportCost( const std::string& path ) const
   {
     for ( int id_col = 0; id_col < m_cost.Width(); ++id_col )
     {
-      const double c  = m_cost( id_row, id_col );
-      const double cc = c; // c < MAXIMUM_COST ? c : c_max ;
+      if ( m_depth( id_row, id_col ) > 0.0 )
+      {
+        const double c  = m_cost( id_row, id_col );
+        const double cc = c; // c < MAXIMUM_COST ? c : c_max ;
 
-      const double        corrected   = ( cc - c_min ) / ( c_max - c_min );
-      const int           corrected_i = static_cast<int>( corrected * 255.0 );
-      const unsigned char val         = corrected_i < 0 ? 0 : ( corrected_i > 255 ? 255 : corrected_i );
+        const double        corrected   = ( cc - c_min ) / ( c_max - c_min );
+        const int           corrected_i = static_cast<int>( corrected * 255.0 );
+        const unsigned char val         = corrected_i < 0 ? 0 : ( corrected_i > 255 ? 255 : corrected_i );
 
-      outImg( id_row, id_col ) = val;
+        outImg( id_row, id_col ) = val;
+      }
+      else
+      {
+        outImg( id_row, id_col ) = 0;
+      }
     }
   }
 
@@ -464,26 +485,33 @@ void DepthMap::exportNormal( const std::string& path ) const
   {
     for ( int id_col = 0; id_col < m_plane.Width(); ++id_col )
     {
-      const openMVG::Vec4& pl = m_plane( id_row, id_col );
-      const openMVG::Vec3  n( pl[ 0 ], pl[ 1 ], pl[ 2 ] );
+      if ( m_depth( id_row, id_col ) > 0.0 )
+      {
+        const openMVG::Vec4& pl = m_plane( id_row, id_col );
+        const openMVG::Vec3  n( pl[ 0 ], pl[ 1 ], pl[ 2 ] );
 
-      const double r = n[ 0 ];
-      const double g = n[ 1 ];
-      const double b = n[ 2 ];
+        const double r = n[ 0 ];
+        const double g = n[ 1 ];
+        const double b = n[ 2 ];
 
-      const double cr = ( r + 1.0 ) / 2.0;
-      const double cg = ( g + 1.0 ) / 2.0;
-      const double cb = ( b + 1.0 ) / 2.0;
+        const double cr = ( r + 1.0 ) / 2.0;
+        const double cg = ( g + 1.0 ) / 2.0;
+        const double cb = ( b + 1.0 ) / 2.0;
 
-      const int cri = static_cast<int>( cr * 255.0 );
-      const int cgi = static_cast<int>( cg * 255.0 );
-      const int cbi = static_cast<int>( cb * 255.0 );
+        const int cri = static_cast<int>( cr * 255.0 );
+        const int cgi = static_cast<int>( cg * 255.0 );
+        const int cbi = static_cast<int>( cb * 255.0 );
 
-      const int val_r = Clamp( cri, 0, 255 );
-      const int val_g = Clamp( cgi, 0, 255 );
-      const int val_b = Clamp( cbi, 0, 255 );
+        const int val_r = Clamp( cri, 0, 255 );
+        const int val_g = Clamp( cgi, 0, 255 );
+        const int val_b = Clamp( cbi, 0, 255 );
 
-      outImg( id_row, id_col ) = openMVG::image::RGBColor( val_r, val_g, val_b );
+        outImg( id_row, id_col ) = openMVG::image::RGBColor( val_r, val_g, val_b );
+      }
+      else
+      {
+        outImg( id_row, id_col ) = openMVG::image::RGBColor( 0, 0, 0 );
+      }
     }
   }
   WriteImage( path.c_str(), outImg );
@@ -509,7 +537,7 @@ void DepthMap::exportToPly( const std::string& path, const Camera& cam, const do
   {
     for ( int id_col = 0; id_col < m_cost.Width(); ++id_col )
     {
-      if ( m_cost( id_row, id_col ) < cost_threshold )
+      if ( m_cost( id_row, id_col ) < cost_threshold && m_depth( id_row, id_col ) > 0.0 )
       {
         pts.emplace_back( cam.unProject( id_col, id_row, m_depth( id_row, id_col ), scale ) );
         ++nb_valid;
@@ -604,12 +632,12 @@ DepthMap DepthMap::upscale( const int target_height, const int target_width ) co
         res.m_cost( id_row, id_col )  = ( m_cost( src_row, src_col_1 ) + m_cost( src_row, src_col_2 ) ) / 2.0;
         res.m_depth( id_row, id_col ) = ( m_depth( src_row, src_col_1 ) + m_depth( src_row, src_col_2 ) ) / 2.0;
 
-        openMVG::Vec4       interpolated_plane  = m_plane( src_row, src_col_1 ) + m_plane( src_row, src_col_2 );
+        openMVG::Vec4       interpolated_plane  = ( m_plane( src_row, src_col_1 ) + m_plane( src_row, src_col_2 ) ) / 2.0;
         const openMVG::Vec3 interpolated_normal = openMVG::Vec3( interpolated_plane[ 0 ], interpolated_plane[ 1 ], interpolated_plane[ 2 ] ).normalized();
         interpolated_plane[ 0 ]                 = interpolated_normal[ 0 ];
         interpolated_plane[ 1 ]                 = interpolated_normal[ 1 ];
         interpolated_plane[ 2 ]                 = interpolated_normal[ 2 ];
-        interpolated_plane[ 3 ] /= 2.0;
+        //        interpolated_plane[ 3 ] /= 2.0;
 
         res.m_plane( id_row, id_col ) = interpolated_plane;
       }
@@ -624,12 +652,12 @@ DepthMap DepthMap::upscale( const int target_height, const int target_width ) co
         res.m_cost( id_row, id_col )  = ( m_cost( src_row_1, src_col ) + m_cost( src_row_2, src_col ) ) / 2.0;
         res.m_depth( id_row, id_col ) = ( m_depth( src_row_1, src_col ) + m_depth( src_row_2, src_col ) ) / 2.0;
 
-        openMVG::Vec4       interpolated_plane  = m_plane( src_row_1, src_col ) + m_plane( src_row_2, src_col );
+        openMVG::Vec4       interpolated_plane  = ( m_plane( src_row_1, src_col ) + m_plane( src_row_2, src_col ) ) / 2.0;
         const openMVG::Vec3 interpolated_normal = openMVG::Vec3( interpolated_plane[ 0 ], interpolated_plane[ 1 ], interpolated_plane[ 2 ] ).normalized();
         interpolated_plane[ 0 ]                 = interpolated_normal[ 0 ];
         interpolated_plane[ 1 ]                 = interpolated_normal[ 1 ];
         interpolated_plane[ 2 ]                 = interpolated_normal[ 2 ];
-        interpolated_plane[ 3 ] /= 2.0;
+        //        interpolated_plane[ 3 ] /= 2.0;
 
         res.m_plane( id_row, id_col ) = interpolated_plane;
       }
@@ -656,15 +684,16 @@ DepthMap DepthMap::upscale( const int target_height, const int target_width ) co
               m_depth( src_row_2, src_col_2 ) ) /
             4.0;
 
-        openMVG::Vec4 interpolated_plane = m_plane( src_row_1, src_col_1 ) +
-                                           m_plane( src_row_1, src_col_2 ) +
-                                           m_plane( src_row_2, src_col_1 ) +
-                                           m_plane( src_row_2, src_col_2 );
+        openMVG::Vec4 interpolated_plane = ( m_plane( src_row_1, src_col_1 ) +
+                                             m_plane( src_row_1, src_col_2 ) +
+                                             m_plane( src_row_2, src_col_1 ) +
+                                             m_plane( src_row_2, src_col_2 ) ) /
+                                           4.0;
         const openMVG::Vec3 interpolated_normal = openMVG::Vec3( interpolated_plane[ 0 ], interpolated_plane[ 1 ], interpolated_plane[ 2 ] ).normalized();
         interpolated_plane[ 0 ]                 = interpolated_normal[ 0 ];
         interpolated_plane[ 1 ]                 = interpolated_normal[ 1 ];
         interpolated_plane[ 2 ]                 = interpolated_normal[ 2 ];
-        interpolated_plane[ 3 ] /= 4.0;
+        //        interpolated_plane[ 3 ] /= 4.0;
 
         res.m_plane( id_row, id_col ) = interpolated_plane;
       }
@@ -758,6 +787,40 @@ DepthMap DepthMap::medianFilter( const Camera& cam, const int x_size, const int 
     }
   }
 
+  return res;
+}
+
+/**
+  * @brief Perform filtering on the depth map to keep only values in the depth range 
+  * 
+  * @param min_th    Minimum depth 
+  * @param max_th    Maximum depth 
+  */
+void DepthMap::filterDepthRange( const double min_th, const double max_th )
+{
+  for ( int id_row = 0; id_row < m_depth.Height(); ++id_row )
+  {
+    for ( int id_col = 0; id_col < m_depth.Width(); ++id_col )
+    {
+      const double d = m_depth( id_row, id_col );
+      if ( d < min_th || d > max_th )
+      {
+        m_depth( id_row, id_col ) = -1.0;
+      }
+    }
+  }
+}
+
+std::vector<DepthMap> LoadNeighborDepthMaps( const Camera& cam, const int scale, const DepthMapComputationParameters& params )
+{
+  std::vector<DepthMap> res;
+  for ( size_t id_neigh = 0; id_neigh < cam.m_view_neighbors.size(); ++id_neigh )
+  {
+    const int         real_id = cam.m_view_neighbors[ id_neigh ];
+    const std::string path    = params.getDepthPath( real_id, scale );
+
+    res.emplace_back( DepthMap( path ) );
+  }
   return res;
 }
 

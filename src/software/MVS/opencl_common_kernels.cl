@@ -310,9 +310,9 @@ void compute_homography( const float * R,
   float tmp2[9] ;
   mat_outer_product_33( t, plane_n, tmp ) ;
   mat_scale_in_33( tmp, 1.0f / plane_d ) ;
-  mat_sub_33( R, tmp, tmp2 ) ;
-  mat_mul_33( tmp2, Kref_inv, tmp ) ;
-  mat_mul_33( Kother, tmp, H ) ;
+  mat_sub_33( R, tmp, tmp2 ) ;              // tmp2 = R - t*n / d 
+  mat_mul_33( tmp2, Kref_inv, tmp ) ;       // tmp   = ( R - t*n/d ) * Kinv
+  mat_mul_33( Kother, tmp, H ) ;            // H     = K * ( R - t*n/d ) * Kinv  
 }
 
 // Given a normalized direction, compute x,y such as x,y,n is an orthonormalized frame

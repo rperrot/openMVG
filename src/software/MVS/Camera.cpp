@@ -148,6 +148,12 @@ bool Camera::load( const std::string& path )
   return true;
 }
 
+openMVG::Vec2 Camera::project( const openMVG::Vec3& X, const int scale ) const
+{
+  const openMVG::Mat34& P = ( scale == -1 ) ? m_P : m_P_scaled[ scale ];
+  return openMVG::Project( P, X );
+}
+
 /**
  * Extract camera informations from sfm_data
  */
@@ -386,7 +392,7 @@ openMVG::Vec3 Camera::unProjectLocal( const double x, const double y, const doub
    * 
    * @return openMVG::Vec3 
    */
-openMVG::Vec3 Camera::unProject( const openMVG::Vec3& n ) const
+openMVG::Vec3 Camera::unProject( const openMVG::Vec3& n, const int scale ) const
 {
   return ( m_R.transpose() * n ).normalized();
 }
@@ -550,8 +556,8 @@ double Camera::randomPlane( openMVG::Vec4& pl, const int id_row, const int id_co
 }
 
 double ComputeDepth( const openMVG::Vec4& plane,
-                     const int            id_row,
-                     const int            id_col,
+                     const int            id_row,   // Y
+                     const int            id_col,   // X
                      const Camera&        cam,
                      const int            scale )
 {

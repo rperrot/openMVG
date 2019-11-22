@@ -22,21 +22,21 @@ std::string to_string( const PropagationScheme& pscheme )
 
   switch ( pscheme )
   {
-  case PROPAGATION_SCHEME_ASYMETRIC:
-  {
-    str << "asymetric";
-    break;
-  }
-  case PROPAGATION_SCHEME_FULL:
-  {
-    str << "full";
-    break;
-  }
-  case PROPAGATION_SCHEME_SPEED:
-  {
-    str << "speed";
-    break;
-  }
+    case PROPAGATION_SCHEME_ASYMETRIC:
+    {
+      str << "asymetric";
+      break;
+    }
+    case PROPAGATION_SCHEME_FULL:
+    {
+      str << "full";
+      break;
+    }
+    case PROPAGATION_SCHEME_SPEED:
+    {
+      str << "speed";
+      break;
+    }
   }
 
   return str.str();
@@ -48,30 +48,30 @@ std::string to_string( const cost_metric& metric )
 
   switch ( metric )
   {
-  case COST_METRIC_NCC:
-  {
-    str << "ncc";
-    break;
-  }
-  case COST_METRIC_PM:
-  {
-    str << "patch-match";
-    break;
-  }
-  case COST_METRIC_DAISY:
-  {
-    str << "daisy";
-    break;
-  }
-  case COST_METRIC_CENSUS:
-  {
-    str << "census";
-    break;
-  }
-  case COST_METRIC_BILATERAL_NCC:
-  {
-    str << "bilateral-ncc";
-  }
+    case COST_METRIC_NCC:
+    {
+      str << "ncc";
+      break;
+    }
+    case COST_METRIC_PM:
+    {
+      str << "patch-match";
+      break;
+    }
+    case COST_METRIC_DAISY:
+    {
+      str << "daisy";
+      break;
+    }
+    case COST_METRIC_CENSUS:
+    {
+      str << "census";
+      break;
+    }
+    case COST_METRIC_BILATERAL_NCC:
+    {
+      str << "bilateral-ncc";
+    }
   }
 
   return str.str();
@@ -139,26 +139,26 @@ double DepthMapComputationParameters::metricMaxCostValue( const cost_metric metr
 {
   switch ( metric )
   {
-  case COST_METRIC_NCC:
-  {
-    return MAX_COST_NCC;
-  }
-  case COST_METRIC_PM:
-  {
-    return MAX_COST_PM;
-  }
-  case COST_METRIC_CENSUS:
-  {
-    return MAX_COST_CENSUS;
-  }
-  case COST_METRIC_DAISY:
-  {
-    return MAX_COST_DAISY;
-  }
-  case COST_METRIC_BILATERAL_NCC:
-  {
-    return MAX_COST_BILATERAL_NCC;
-  }
+    case COST_METRIC_NCC:
+    {
+      return MAX_COST_NCC;
+    }
+    case COST_METRIC_PM:
+    {
+      return MAX_COST_PM;
+    }
+    case COST_METRIC_CENSUS:
+    {
+      return MAX_COST_CENSUS;
+    }
+    case COST_METRIC_DAISY:
+    {
+      return MAX_COST_DAISY;
+    }
+    case COST_METRIC_BILATERAL_NCC:
+    {
+      return MAX_COST_BILATERAL_NCC;
+    }
   }
   return std::numeric_limits<double>::max();
 }
@@ -343,12 +343,12 @@ std::string DepthMapComputationParameters::getCameraPath( const int id ) const
   return stlplus::create_filespec( camera_path, str.str() );
 }
 
-std::string DepthMapComputationParameters::getDepthPath( const int id ) const
+std::string DepthMapComputationParameters::getDepthPath( const int id, const int scale ) const
 {
   const std::string camera_path = getCameraDirectory( id );
   std::stringstream str;
 
-  str << "dm_" << m_scale << ".bin";
+  str << "dm_" << ( ( scale == -1 ) ? m_scale : scale ) << ".bin";
 
   return stlplus::create_filespec( camera_path, str.str() );
 }

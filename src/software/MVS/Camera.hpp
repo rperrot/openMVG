@@ -47,6 +47,16 @@ struct Camera
   bool load( const std::string& path );
 
   /**
+   * @brief Project a point on the camera.
+   * 
+   * @param X       3d point (in world coordinate).
+   * @param scale   Scale of the computation.
+   * 
+   * @return (2d) Position on the image plane of the camera. 
+   */
+  openMVG::Vec2 project( const openMVG::Vec3& X, const int scale ) const;
+
+  /**
   * @brief Get 3d point for a 2d position and it's depth
   * @param x postion in x value
   * @param y position in y value
@@ -70,7 +80,7 @@ struct Camera
    * 
    * @return openMVG::Vec3 
    */
-  openMVG::Vec3 unProject( const openMVG::Vec3& n ) const;
+  openMVG::Vec3 unProject( const openMVG::Vec3& n, const int scale ) const;
 
   /**
   * @brief Convert disparity and depth
@@ -299,21 +309,15 @@ static inline double GetPlaneD( const MVS::Camera&   cam,
                                 const openMVG::Vec3& n,
                                 const int            scale )
 {
-  /*
   const openMVG::Mat34& P     = ( scale == -1 ) ? cam.m_P : cam.m_P_scaled[ scale ];
   const openMVG::Mat3&  M_inv = ( scale == -1 ) ? cam.m_M_inv : cam.m_M_inv_scaled[ scale ];
-  const openMVG::Vec3   x( id_col, id_row, 1.0 );
 
-  const openMVG::Vec3 pt = x * depth - P.col( 3 );
-  */
-  /*
-  pt[0] = depth * id_col - P( 0 , 3 ) ;
-  pt[1] = depth * id_row - P( 1 , 3 ) ;
-  pt[2] = depth - P( 2 , 3 ) ;
-  */
-  const openMVG::Vec3 ptX = cam.unProjectLocal( id_col, id_row, depth, scale );
+  openMVG::Vec3 pt;
+  pt[ 0 ] = depth * id_col - P( 0, 3 );
+  pt[ 1 ] = depth * id_row - P( 1, 3 );
+  pt[ 2 ] = depth - P( 2, 3 );
 
-  //  openMVG::Vec3 ptX = M_inv * pt;
+  openMVG::Vec3 ptX = M_inv * pt;
 
   return -ptX.dot( n );
 }

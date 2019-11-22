@@ -10,6 +10,7 @@
 
 namespace MVS
 {
+
 /**
 * @brief Structure holding a depth map with their associated normal
 * @note depth and normals are relative to the current view (they must be back projected to have global frame in the fusion step)
@@ -102,6 +103,7 @@ public:
   double depth( const openMVG::Vec2i& pos ) const;
 
   /**
+   * 
     * @brief Set Depth value at specified position
     * @param id_row Row index
     * @param id_col Column index
@@ -214,10 +216,17 @@ public:
   int height( void ) const;
 
   /**
-    * @brief Get reference of the plane
+    * @brief Get reference of the planes image
     * @return Reference to the planes
     */
   const openMVG::image::Image<openMVG::Vec4>& planes( void ) const;
+
+  /**
+   * @brief Get reference of the costs image 
+   * 
+   * @return const openMVG::image::Image<double>& 
+   */
+  const openMVG::image::Image<double>& costs( void ) const;
 
   /**
     * @brief Export to grayscale depth value
@@ -262,6 +271,14 @@ public:
 
   DepthMap medianFilter( const Camera& cam, const int x_size, const int y_size, const int scale ) const;
 
+  /**
+   * @brief Perform filtering on the depth map to keep only values in the depth range 
+   * 
+   * @param min_th    Minimum depth 
+   * @param max_th    Maximum depth 
+   */
+  void filterDepthRange( const double min_th, const double max_th );
+
 private:
   // Matching cost
   openMVG::image::Image<double> m_cost;
@@ -275,6 +292,8 @@ private:
   // The current best important view index (relative to the neighbors list)
   openMVG::image::Image<int> m_most_important_view;
 };
+
+std::vector<DepthMap> LoadNeighborDepthMaps( const Camera& cam, const int scale, const DepthMapComputationParameters& params );
 
 } // namespace MVS
 

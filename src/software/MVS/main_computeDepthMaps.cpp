@@ -17,95 +17,123 @@
 #include <iostream>
 #include <random>
 
-// #define MULTISCALE
-#define USE_OPENCL
+#define MULTISCALE
+//#define USE_OPENCL
 #define EXPORT_INTERMEDIATE_RESULT
 
 #ifdef EXPORT_INTERMEDIATE_RESULT
 // Init
-static inline std::string GetInitDepthName( const int scale )
+static inline std::string GetInitDepthName( const int camera_id, const int scale )
 {
   std::stringstream str;
-  str << "[scale_" << scale << "]_init_depth.png";
+  str << "[cam_" << camera_id << "][scale_" << scale << "]_init_depth.png";
   return str.str();
 }
 
-static inline std::string GetInitPlyName( const int scale )
+static inline std::string GetInitPlyName( const int camera_id, const int scale )
 {
   std::stringstream str;
-  str << "[scale_" << scale << "]_init_model.ply";
+  str << "[cam_" << camera_id << "][scale_" << scale << "]_init_model.ply";
   return str.str();
 }
 
-static inline std::string GetInitCostName( const int scale )
+static inline std::string GetInitCostName( const int camera_id, const int scale )
 {
   std::stringstream str;
-  str << "[scale_" << scale << "]_init_cost.png";
+  str << "[cam_" << camera_id << "][scale_" << scale << "]_init_cost.png";
   return str.str();
 }
 
-static inline std::string GetInitNormalName( const int scale )
+static inline std::string GetInitNormalName( const int camera_id, const int scale )
 {
   std::stringstream str;
-  str << "[scale_" << scale << "]_init_normal.png";
+  str << "[cam_" << camera_id << "][scale_" << scale << "]_init_normal.png";
   return str.str();
 }
 
 // Propagation
-static inline std::string GetPropagationDepthName( const int iteration, const int scale )
+static inline std::string GetPropagationDepthName( const int camera_id, const int iteration, const int scale )
 {
   std::stringstream str;
-  str << "[scale_" << scale << "]_propagation_" << iteration << "_depth.png";
+  str << "[cam_" << camera_id << "][scale_" << scale << "]_propagation_" << iteration << "_depth.png";
   return str.str();
 }
 
-static inline std::string GetPropagationPlyName( const int iteration, const int scale )
+static inline std::string GetPropagationPlyName( const int camera_id, const int iteration, const int scale )
 {
   std::stringstream str;
-  str << "[scale_" << scale << "]_propagation_" << iteration << "_model.ply";
+  str << "[cam_" << camera_id << "][scale_" << scale << "]_propagation_" << iteration << "_model.ply";
   return str.str();
 }
 
-static inline std::string GetPropagationCostName( const int iteration, const int scale )
+static inline std::string GetPropagationCostName( const int camera_id, const int iteration, const int scale )
 {
   std::stringstream str;
-  str << "[scale_" << scale << "]_propagation_" << iteration << "_cost.png";
+  str << "[cam_" << camera_id << "][scale_" << scale << "]_propagation_" << iteration << "_cost.png";
   return str.str();
 }
 
-static inline std::string GetPropagationNormalName( const int iteration, const int scale )
+static inline std::string GetPropagationNormalName( const int camera_id, const int iteration, const int scale )
 {
   std::stringstream str;
-  str << "[scale_" << scale << "]_propagation_" << iteration << "_normal.png";
+  str << "[cam_" << camera_id << "][scale_" << scale << "]_propagation_" << iteration << "_normal.png";
   return str.str();
 }
 
 // Refine
-static inline std::string GetRefinementDepthName( const int iteration, const int scale )
+static inline std::string GetRefinementDepthName( const int camera_id, const int iteration, const int scale )
 {
   std::stringstream str;
-  str << "[scale_" << scale << "]_refine_" << iteration << "_depth.png";
+  str << "[cam_" << camera_id << "][scale_" << scale << "]_refine_" << iteration << "_depth.png";
   return str.str();
 }
 
-static inline std::string GetRefinementPlyName( const int iteration, const int scale )
+static inline std::string GetRefinementPlyName( const int camera_id, const int iteration, const int scale )
 {
   std::stringstream str;
-  str << "[scale_" << scale << "]_refine_" << iteration << "_model.ply";
+  str << "[cam_" << camera_id << "][scale_" << scale << "]_refine_" << iteration << "_model.ply";
   return str.str();
 }
 
-static inline std::string GetRefinementCostName( const int iteration, const int scale )
+static inline std::string GetRefinementCostName( const int camera_id, const int iteration, const int scale )
 {
   std::stringstream str;
-  str << "[scale_" << scale << "]_refine_" << iteration << "_cost.png";
+  str << "[cam_" << camera_id << "][scale_" << scale << "]_refine_" << iteration << "_cost.png";
   return str.str();
 }
 
-static inline std::string GetRefinementNormalName( const int iteration, const int scale )
+static inline std::string GetRefinementNormalName( const int camera_id, const int iteration, const int scale )
 {
   std::stringstream str;
-  str << "[scale_" << scale << "]_refine_" << iteration << "_normal.png";
+  str << "[cam_" << camera_id << "][scale_" << scale << "]_refine_" << iteration << "_normal.png";
+  return str.str();
+}
+
+static inline std::string GetFinalDepthName( const int id_cam )
+{
+  std::stringstream str;
+  str << "[cam_" << id_cam << "]_final_depth.png";
+  return str.str();
+}
+
+static inline std::string GetFinalPlyName( const int id_cam )
+{
+  std::stringstream str;
+  str << "[cam_" << id_cam << "]_final_model.ply";
+  return str.str();
+}
+
+static inline std::string GetFinalNormalName( const int id_cam )
+{
+  std::stringstream str;
+  str << "[cam_" << id_cam << "]_final_normal.png";
+  return str.str();
+}
+
+static inline std::string GetFinalCostName( const int id_cam )
+{
+  std::stringstream str;
+  str << "[cam_" << id_cam << "]_final_cost.png";
   return str.str();
 }
 
@@ -193,7 +221,8 @@ void PrepareOutputDirectory( const std::vector<MVS::Camera>&           cams,
 * @param start_scale Scale of the begginging process
 * @param out_path Path where to save the depth map
 */
-void ComputeMultipleScaleDepthMap( MVS::Camera&                        cam,
+void ComputeMultipleScaleDepthMap( const int                           id_cam,
+                                   MVS::Camera&                        cam,
                                    const std::vector<MVS::Camera>&     cams,
                                    MVS::DepthMapComputationParameters& params,
                                    const int                           start_scale, // Starting scale
@@ -266,27 +295,27 @@ void ComputeMultipleScaleDepthMap( MVS::Camera&                        cam,
   // Get the correct kernels
   switch ( params.metric() )
   {
-  case MVS::COST_METRIC_NCC:
-  {
-    krn_cost_full  = krn_cost_ncc;
-    krn_cost_red   = krn_cost_ncc_red;
-    krn_cost_black = krn_cost_ncc_black;
-    break;
-  }
-  case MVS::COST_METRIC_PM:
-  {
-    krn_cost_full  = krn_cost_pm;
-    krn_cost_red   = krn_cost_pm_red;
-    krn_cost_black = krn_cost_pm_black;
-    break;
-  }
-  case MVS::COST_METRIC_CENSUS:
-  {
-    krn_cost_full  = krn_cost_census;
-    krn_cost_red   = krn_cost_census_red;
-    krn_cost_black = krn_cost_census_black;
-    break;
-  }
+    case MVS::COST_METRIC_NCC:
+    {
+      krn_cost_full  = krn_cost_ncc;
+      krn_cost_red   = krn_cost_ncc_red;
+      krn_cost_black = krn_cost_ncc_black;
+      break;
+    }
+    case MVS::COST_METRIC_PM:
+    {
+      krn_cost_full  = krn_cost_pm;
+      krn_cost_red   = krn_cost_pm_red;
+      krn_cost_black = krn_cost_pm_black;
+      break;
+    }
+    case MVS::COST_METRIC_CENSUS:
+    {
+      krn_cost_full  = krn_cost_census;
+      krn_cost_red   = krn_cost_census_red;
+      krn_cost_black = krn_cost_census_black;
+      break;
+    }
   }
 #endif
 
@@ -300,8 +329,9 @@ void ComputeMultipleScaleDepthMap( MVS::Camera&                        cam,
     std::cout << "Depth map computation at scale : " << scale << std::endl;
 
     // 0 - Load image and its neighboring images at specified scale
-    const MVS::Image              reference_image = MVS::Image( cam.m_img_path, scale, cam.m_intrinsic, load_type );
-    const std::vector<MVS::Image> neigh_imgs      = LoadNeighborImages( cam, cams, params, scale, load_type );
+    const MVS::Image                 reference_image = MVS::Image( cam.m_img_path, scale, cam.m_intrinsic, load_type );
+    const std::vector<MVS::Image>    neigh_imgs      = LoadNeighborImages( cam, cams, params, scale, load_type );
+    const std::vector<MVS::DepthMap> neigh_dms       = LoadNeighborDepthMaps( cam, scale, params );
 
     // 1 - Compute Initial cost
     auto start_time = std::chrono::high_resolution_clock::now();
@@ -313,10 +343,10 @@ void ComputeMultipleScaleDepthMap( MVS::Camera&                        cam,
     auto end_time = std::chrono::high_resolution_clock::now();
 
 #ifdef EXPORT_INTERMEDIATE_RESULT
-    map.exportCost( GetInitCostName( scale ) );
-    map.exportToGrayscale( GetInitDepthName( scale ) );
-    map.exportToPly( GetInitPlyName( scale ), cam, MAX_COST / 20.0, scale );
-    map.exportNormal( GetInitNormalName( scale ) );
+    map.exportCost( GetInitCostName( id_cam, scale ) );
+    map.exportToGrayscale( GetInitDepthName( id_cam, scale ) );
+    map.exportToPly( GetInitPlyName( id_cam, scale ), cam, MAX_COST / 20.0, scale );
+    map.exportNormal( GetInitNormalName( id_cam, scale ) );
 #endif
 
     std::cout << " ** Initial cost time : "
@@ -336,15 +366,15 @@ void ComputeMultipleScaleDepthMap( MVS::Camera&                        cam,
       // Black
       Propagate( map, 1, cam, cams, StereoRIG, reference_image, neigh_imgs, params, scale, clWObject, krn_cost_red, krn_cost_black, krn_sum_kernel, krn_sort_n_store, krn_update_planes, krn_compute_depth );
 #else
-      Propagate( map, 0, cam, cams, StereoRIG, reference_image, neigh_imgs, params, scale );
-      Propagate( map, 1, cam, cams, StereoRIG, reference_image, neigh_imgs, params, scale );
+      Propagate( map, 0, cam, cams, StereoRIG, reference_image, neigh_imgs, neigh_dms, params, scale );
+      Propagate( map, 1, cam, cams, StereoRIG, reference_image, neigh_imgs, neigh_dms, params, scale );
 
 #endif
 #ifdef EXPORT_INTERMEDIATE_RESULT
-      map.exportCost( GetPropagationCostName( id_step, scale ) );
-      map.exportToGrayscale( GetPropagationDepthName( id_step, scale ) );
-      map.exportToPly( GetPropagationPlyName( id_step, scale ), cam, MAX_COST / 20.0, params.scale() );
-      map.exportNormal( GetPropagationNormalName( id_step, scale ) );
+      map.exportCost( GetPropagationCostName( id_cam, id_step, scale ) );
+      map.exportToGrayscale( GetPropagationDepthName( id_cam, id_step, scale ) );
+      map.exportToPly( GetPropagationPlyName( id_cam, id_step, scale ), cam, MAX_COST / 20.0, params.scale() );
+      map.exportNormal( GetPropagationNormalName( id_cam, id_step, scale ) );
 #endif
 
       end_time = std::chrono::high_resolution_clock::now();
@@ -358,13 +388,13 @@ void ComputeMultipleScaleDepthMap( MVS::Camera&                        cam,
 #ifdef USE_OPENCL
       Refinement( map, cam, cams, StereoRIG, reference_image, neigh_imgs, params, scale, clWObject, krn_cost_full, krn_sum_kernel, krn_sort_n_store, krn_update_planes2, krn_compute_planes );
 #else
-      Refinement( map, cam, cams, StereoRIG, reference_image, neigh_imgs, params, scale );
+      Refinement( map, cam, cams, StereoRIG, reference_image, neigh_imgs, neigh_dms, params, scale );
 #endif
 #ifdef EXPORT_INTERMEDIATE_RESULT
-      map.exportCost( GetRefinementCostName( id_step, scale ) );
-      map.exportToGrayscale( GetRefinementDepthName( id_step, scale ) );
-      map.exportToPly( GetRefinementPlyName( id_step, scale ), cam, MAX_COST / 20.0, scale );
-      map.exportNormal( GetRefinementNormalName( id_step, scale ) );
+      map.exportCost( GetRefinementCostName( id_cam, id_step, scale ) );
+      map.exportToGrayscale( GetRefinementDepthName( id_cam, id_step, scale ) );
+      map.exportToPly( GetRefinementPlyName( id_cam, id_step, scale ), cam, MAX_COST / 20.0, scale );
+      map.exportNormal( GetRefinementNormalName( id_cam, id_step, scale ) );
 #endif
 
       end_time = std::chrono::high_resolution_clock::now();
@@ -381,13 +411,15 @@ void ComputeMultipleScaleDepthMap( MVS::Camera&                        cam,
     }
   }
 
+  map.filterDepthRange( cam.m_min_depth * 0.81, cam.m_max_depth * 1.19 );
+
   // Filter at the end
-  map = map.medianFilter( cam, 3, 3, params.scale() );
+//  map = map.medianFilter( cam, 3, 3, params.scale() );
 #ifdef EXPORT_INTERMEDIATE_RESULT
-  map.exportCost( "filtered_cost.png" );
-  map.exportToGrayscale( "filtered_depth.png" );
-  map.exportToPly( "filtered.ply", cam, MAX_COST / 20.0, params.scale() );
-  map.exportNormal( "filtered_normal.png" );
+  map.exportCost( GetFinalCostName( id_cam ) );
+  map.exportToGrayscale( GetFinalDepthName( id_cam ) );
+  map.exportToPly( GetFinalPlyName( id_cam ), cam, MAX_COST / 20.0, params.scale() );
+  map.exportNormal( GetFinalNormalName( id_cam ) );
 #endif
 
   // Save the depth map
@@ -402,7 +434,8 @@ void ComputeMultipleScaleDepthMap( MVS::Camera&                        cam,
 * @param image_ref Reference image data
 * @param out_path Path where the computed depth map should be saved
 */
-void ComputeDepthMap( MVS::Camera&                        cam,
+void ComputeDepthMap( const int                           id_cam,
+                      MVS::Camera&                        cam,
                       const std::vector<MVS::Camera>&     cams,
                       MVS::DepthMapComputationParameters& params,
                       const MVS::Image&                   image_ref,
@@ -416,9 +449,9 @@ void ComputeDepthMap( MVS::Camera&                        cam,
   cl_kernel_paths.push_back( std::string( MVS_BUILD_DIR ) + std::string( "/opencl_metrics_kernels.cl" ) );
   cl_kernel_paths.push_back( std::string( MVS_BUILD_DIR ) + std::string( "/opencl_kernels.cl" ) );
 
-  cl_program cl_pgm                 = clWObject.createProgramFromSource( MVS::GetFilesContent( cl_kernel_paths ) );
-  cl_kernel  krn_sum_kernel         = clWObject.getKernelFromName( cl_pgm, "store_costs" );
-  cl_kernel  krn_sort_n_store       = clWObject.getKernelFromName( cl_pgm, "sort_and_store_costs" );
+  cl_program cl_pgm           = clWObject.createProgramFromSource( MVS::GetFilesContent( cl_kernel_paths ) );
+  cl_kernel  krn_sum_kernel   = clWObject.getKernelFromName( cl_pgm, "store_costs" );
+  cl_kernel  krn_sort_n_store = clWObject.getKernelFromName( cl_pgm, "sort_and_store_costs" );
   // NCC
   cl_kernel krn_cost_ncc       = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_NCC" );
   cl_kernel krn_cost_ncc_red   = clWObject.getKernelFromName( cl_pgm, "compute_pixel_cost_NCC_red" );
@@ -448,37 +481,38 @@ void ComputeDepthMap( MVS::Camera&                        cam,
   // Get the correct kernels
   switch ( params.metric() )
   {
-  case MVS::COST_METRIC_NCC:
-  {
-    krn_cost_full  = krn_cost_ncc;
-    krn_cost_red   = krn_cost_ncc_red;
-    krn_cost_black = krn_cost_ncc_black;
-    break;
-  }
-  case MVS::COST_METRIC_PM:
-  {
-    krn_cost_full  = krn_cost_pm;
-    krn_cost_red   = krn_cost_pm_red;
-    krn_cost_black = krn_cost_pm_black;
-    break;
-  }
-  case MVS::COST_METRIC_CENSUS:
-  {
-    krn_cost_full  = krn_cost_census;
-    krn_cost_red   = krn_cost_census_red;
-    krn_cost_black = krn_cost_census_black;
-    break;
-  }
-  case MVS::COST_METRIC_BILATERAL_NCC:
-  {
-    krn_cost_full  = krn_cost_bilateral_ncc;
-    krn_cost_red   = krn_cost_bilateral_ncc_red;
-    krn_cost_black = krn_cost_bilateral_ncc_black;
-  }
+    case MVS::COST_METRIC_NCC:
+    {
+      krn_cost_full  = krn_cost_ncc;
+      krn_cost_red   = krn_cost_ncc_red;
+      krn_cost_black = krn_cost_ncc_black;
+      break;
+    }
+    case MVS::COST_METRIC_PM:
+    {
+      krn_cost_full  = krn_cost_pm;
+      krn_cost_red   = krn_cost_pm_red;
+      krn_cost_black = krn_cost_pm_black;
+      break;
+    }
+    case MVS::COST_METRIC_CENSUS:
+    {
+      krn_cost_full  = krn_cost_census;
+      krn_cost_red   = krn_cost_census_red;
+      krn_cost_black = krn_cost_census_black;
+      break;
+    }
+    case MVS::COST_METRIC_BILATERAL_NCC:
+    {
+      krn_cost_full  = krn_cost_bilateral_ncc;
+      krn_cost_red   = krn_cost_bilateral_ncc_red;
+      krn_cost_black = krn_cost_bilateral_ncc_black;
+    }
   }
 #else
   const MVS::ImageLoadType load_type = ComputeLoadType( params.metric() );
   const std::vector<MVS::Image> neigh_imgs = LoadNeighborImages( cam, params, load_type );
+  const std::vector<MVS::DepthMap> neigh_dms = LoadNeighborDepthMaps( cam, params.scale(), params );
 
 #endif
 
@@ -509,10 +543,10 @@ void ComputeDepthMap( MVS::Camera&                        cam,
   std::cout << "Initial cost time : " << std::chrono::duration_cast<std::chrono::milliseconds>( end_time - start_time ).count() << " ms " << std::endl;
 
 #ifdef EXPORT_INTERMEDIATE_RESULT
-  map.exportToGrayscale( "init.png" );
-  map.exportToPly( "init.ply", cam, MAX_COST / 20.0, params.scale() );
-  map.exportCost( "init_cost.png" );
-  map.exportNormal( "init_normal.png" );
+  map.exportToGrayscale( GetInitDepthName( id_cam, params.scale() ) );
+  map.exportToPly( GetInitPlyName( id_cam, params.scale() ), cam, MAX_COST / 20.0, params.scale() );
+  map.exportCost( GetInitCostName( id_cam, params.scale() ) );
+  map.exportNormal( GetInitNormalName( id_cam, params.scale() ) );
 #endif
 
   int nb_iteration = 6;
@@ -530,23 +564,19 @@ void ComputeDepthMap( MVS::Camera&                        cam,
     Propagate( map, 1, cam, cams, StereoRIG, image_ref, params, clWObject, krn_cost_red, krn_cost_black, krn_sum_kernel, krn_sort_n_store, krn_update_planes, krn_compute_depth );
 #else
     // Red
-    Propagate( map, 0, cam, cams, StereoRIG, image_ref, neigh_imgs, params, params.scale() );
+    Propagate( map, 0, cam, cams, StereoRIG, image_ref, neigh_imgs, neigh_dms, params, params.scale() );
     // Black
-    Propagate( map, 1, cam, cams, StereoRIG, image_ref, neigh_imgs, params, params.scale() );
+    Propagate( map, 1, cam, cams, StereoRIG, image_ref, neigh_imgs, neigh_dms, params, params.scale() );
 #endif
 
     end_time = std::chrono::high_resolution_clock::now();
     std::cout << "Propagation time : " << std::chrono::duration_cast<std::chrono::milliseconds>( end_time - start_time ).count() << " ms " << std::endl;
 
 #ifdef EXPORT_INTERMEDIATE_RESULT
-    str << "iter_" << id_iteration << ".png";
-    strplyspa << "iter_" << id_iteration << ".ply";
-    strcost << "iter_" << id_iteration << "_cost.png";
-    strnor << "iter_" << id_iteration << "_nor.png";
-    map.exportToGrayscale( str.str() );
-    map.exportToPly( strplyspa.str(), cam, MAX_COST / 20.0, params.scale() );
-    map.exportCost( strcost.str() );
-    map.exportNormal( strnor.str() );
+    map.exportToGrayscale( GetPropagationDepthName( id_cam, id_iteration, params.scale() ) );
+    map.exportToPly( GetPropagationPlyName( id_cam, id_iteration, params.scale() ), cam, MAX_COST / 20.0, params.scale() );
+    map.exportCost( GetPropagationCostName( id_cam, id_iteration, params.scale() ) );
+    map.exportNormal( GetPropagationNormalName( id_cam, id_iteration, params.scale() ) );
 #endif
 
     // Make perturbation and update cost
@@ -554,23 +584,30 @@ void ComputeDepthMap( MVS::Camera&                        cam,
 #ifdef USE_OPENCL
     Refinement( map, cam, cams, StereoRIG, image_ref, params, clWObject, krn_cost_full, krn_sum_kernel, krn_sort_n_store, krn_update_planes2, krn_compute_planes );
 #else
-    Refinement( map, cam, cams, StereoRIG, image_ref, neigh_imgs, params, params.scale() );
+    Refinement( map, cam, cams, StereoRIG, image_ref, neigh_imgs, neigh_dms, params, params.scale() );
 #endif
     end_time = std::chrono::high_resolution_clock::now();
 
     std::cout << "Refinement time : " << std::chrono::duration_cast<std::chrono::milliseconds>( end_time - start_time ).count() << " ms " << std::endl;
 
 #ifdef EXPORT_INTERMEDIATE_RESULT
-    str2 << "iter_" << id_iteration << "_ref.png";
-    strply << "iter_" << id_iteration << "_ref.ply";
-    strcostref << "iter_" << id_iteration << "_cost_ref.png";
-    strnorref << "iter_" << id_iteration << "_nor_ref.png";
-    map.exportToGrayscale( str2.str() );
-    map.exportToPly( strply.str(), cam, MAX_COST / 20.0, params.scale() );
-    map.exportCost( strcostref.str() );
-    map.exportNormal( strnorref.str() );
+    map.exportToGrayscale( GetRefinementDepthName( id_cam, id_iteration, params.scale() ) );
+    map.exportToPly( GetRefinementPlyName( id_cam, id_iteration, params.scale() ), cam, MAX_COST / 20.0, params.scale() );
+    map.exportCost( GetRefinementCostName( id_cam, id_iteration, params.scale() ) );
+    map.exportNormal( GetRefinementNormalName( id_cam, id_iteration, params.scale() ) );
 #endif
   }
+
+  std::cout << "Post filtering" << std::endl;
+
+  map.filterDepthRange( cam.m_min_depth * 0.81, cam.m_max_depth * 1.19 );
+
+#ifdef EXPORT_INTERMEDIATE_RESULT
+  map.exportCost( GetFinalCostName( id_cam ) );
+  map.exportToGrayscale( GetFinalDepthName( id_cam ) );
+  map.exportToPly( GetFinalPlyName( id_cam ), cam, MAX_COST / 20.0, params.scale() );
+  map.exportNormal( GetFinalNormalName( id_cam ) );
+#endif
 
   // Now save the depth map
   map.save( out_path );
@@ -597,18 +634,19 @@ int main( int argc, char** argv )
   std::string sOutDir     = "";
   std::string sCostMetric = "";
 
-  int                    kScale              = 1;     // Divide image by 2^scale
-  double                 kTauCol             = 10.0;  // threshold on color
-  double                 kTauGrad            = 2.0;   // threshold on gradient
-  double                 kAlpha              = 0.9;   // Balance between color and gradient (90% on grad ; 10% on color)
-  double                 kGamma              = 10.0;  // Gaussian factor used to weight far samples
-  bool                   kForceOverwrite     = false; //
-  double                 kMinAngleSelection  = 5.0;   // Minimum view angle for elements
-  double                 kMaxAngleSelection  = 60.0;  // Maximum view angle for elements
-  int                    kMaxViewSelectionNb = 9;     // Maximum of neighbors for view selection
-  int                    kMaxViewPerCost     = 3;     //
-  MVS::PropagationScheme kScheme             = MVS::PROPAGATION_SCHEME_ASYMETRIC;
-  bool                   use_joint_view      = true;
+  int                    kScale              = 1;                                 // Divide image by 2^scale
+  double                 kTauCol             = 10.0;                              // threshold on color
+  double                 kTauGrad            = 2.0;                               // threshold on gradient
+  double                 kAlpha              = 0.9;                               // Balance between color and gradient (90% on grad ; 10% on color)
+  double                 kGamma              = 10.0;                              // Gaussian factor used to weight far samples
+  bool                   kForceOverwrite     = false;                             //
+  double                 kMinAngleSelection  = 5.0;                               // Minimum view angle for elements
+  double                 kMaxAngleSelection  = 60.0;                              // Maximum view angle for elements
+  int                    kMaxViewSelectionNb = 9;                                 // Maximum of neighbors for view selection
+  int                    kMaxViewPerCost     = 4;                                 //
+  MVS::PropagationScheme kScheme             = MVS::PROPAGATION_SCHEME_ASYMETRIC; //MVS::PROPAGATION_SCHEME_FULL;
+  bool                   kUseJointView       = false;                             // false;
+  std::string            sPropagationScheme  = "FIXED_FULL";                      // FIXED_SPEED - ASYMETRIC
 
   MVS::cost_metric kMetric = MVS::COST_METRIC_NCC;
 
@@ -625,11 +663,14 @@ int main( int argc, char** argv )
   //  cmd.add( make_option( 's', kMaxViewSelectionNb, "maxViewSelectionNb" ) );
   cmd.add( make_option( 'k', kMaxViewPerCost, "maxImageForCost" ) );
   cmd.add( make_option( 'y', kGamma, "gamma" ) );
+  cmd.add( make_option( 'p', sPropagationScheme, "propagationScheme" ) );
+  cmd.add( make_option( 'j', kUseJointView, "jointViewSelection" ) );
 
   cmd.process( argc, argv );
 
   std::cerr << "metric : " << sCostMetric << std::endl;
 
+  // Cost metric
   if ( MVS::to_lower( sCostMetric ) == "ncc" )
   {
     kMetric = MVS::COST_METRIC_NCC;
@@ -656,23 +697,43 @@ int main( int argc, char** argv )
     std::cerr << "Switch back to NCC metric " << std::endl;
   }
 
+  // Sampling scheme
+  if ( MVS::to_lower( sPropagationScheme ) == "fixed_full" )
+  {
+    kScheme = MVS::PROPAGATION_SCHEME_FULL;
+  }
+  else if ( MVS::to_lower( sPropagationScheme ) == "fixed_speed" )
+  {
+    kScheme = MVS::PROPAGATION_SCHEME_SPEED;
+  }
+  else if ( MVS::to_lower( sPropagationScheme ) == "dynamic_asymetric" )
+  {
+    kScheme = MVS::PROPAGATION_SCHEME_ASYMETRIC;
+  }
+  else
+  {
+    std::cerr << "Unknown propagation scheme" << std::endl;
+    std::cerr << "Switch back to DYNAMIC_ASYMETRIC" << std::endl;
+  }
+
   std::cout << "You called " << std::endl;
-  std::cout << "input                   : " << sSfM_Data_Filename << std::endl;
-  std::cout << "outdir                  : " << sOutDir << std::endl;
-  std::cout << "scale                   : " << kScale << std::endl;
-  std::cout << "metric                  : " << to_string( kMetric ) << std::endl;
-  std::cout << "alpha                   : " << kAlpha << std::endl;
-  std::cout << "Tau I                   : " << kTauCol << std::endl;
-  std::cout << "Tau G                   : " << kTauGrad << std::endl;
-  std::cout << "Gamma                   : " << kGamma << std::endl;
-  std::cout << "Propagation scheme      : " << to_string( kScheme ) << std::endl;
-  std::cout << "Min angle               : " << kMinAngleSelection << std::endl;
-  std::cout << "Max angle               : " << kMaxAngleSelection << std::endl;
-  std::cout << "Max neighbor (S)        : " << kMaxViewSelectionNb << std::endl;
-  std::cout << "Max view for cost (K)   : " << kMaxViewPerCost << std::endl;
+  std::cout << "input                    : " << sSfM_Data_Filename << std::endl;
+  std::cout << "outdir                   : " << sOutDir << std::endl;
+  std::cout << "scale                    : " << kScale << std::endl;
+  std::cout << "metric                   : " << to_string( kMetric ) << std::endl;
+  std::cout << "Propagation scheme       : " << to_string( kScheme ) << std::endl;
+  std::cout << "Use joint view selection : " << ( kUseJointView ? "yes" : "no" ) << std::endl;
+  std::cout << "alpha                    : " << kAlpha << std::endl;
+  std::cout << "Tau I                    : " << kTauCol << std::endl;
+  std::cout << "Tau G                    : " << kTauGrad << std::endl;
+  std::cout << "Gamma                    : " << kGamma << std::endl;
+  std::cout << "Min angle                : " << kMinAngleSelection << std::endl;
+  std::cout << "Max angle                : " << kMaxAngleSelection << std::endl;
+  std::cout << "Max neighbor (S)         : " << kMaxViewSelectionNb << std::endl;
+  std::cout << "Max view for cost (K)    : " << kMaxViewPerCost << std::endl;
 
   MVS::DepthMapComputationParameters params( kScale, kMetric, kAlpha, kTauCol, kTauGrad, kGamma, kScheme, kMinAngleSelection, kMaxAngleSelection, kMaxViewSelectionNb, kMaxViewPerCost, sOutDir );
-  params.setUseJointViewSelection( use_joint_view );
+  params.setUseJointViewSelection( kUseJointView );
 
   // Load the SfM data
   openMVG::sfm::SfM_Data sfm_data;
@@ -686,13 +747,6 @@ int main( int argc, char** argv )
   // Load the cameras from sfm_data
   std::vector<MVS::Camera> cams = MVS::LoadCameras( sfm_data, params );
 
-  /*
-  for( size_t id_cam = 0 ; id_cam < cams.size() ; ++id_cam )
-  {
-    std::cout << "Cam[" << id_cam << "]" << "d -> " << cams[id_cam].m_min_depth << " , " << cams[id_cam].m_max_depth << std::endl ;
-  }
-  */
-
   // Prepare the output folder
   PrepareOutputDirectory( cams, params );
 
@@ -700,7 +754,7 @@ int main( int argc, char** argv )
   for ( size_t id_cam = 0; id_cam < cams.size(); ++id_cam )
   {
     // Get path for current objets
-    const std::string cur_depth_path = params.getDepthPath( id_cam );
+    const std::string cur_depth_path = params.getDepthPath( id_cam, params.scale() );
     const std::string cur_cam_path   = params.getCameraPath( id_cam );
     const std::string color_path     = params.getColorPath( id_cam );
     const std::string grayscale_path = params.getGrayscalePath( id_cam );
@@ -714,11 +768,11 @@ int main( int argc, char** argv )
       std::cout << "Compute Depth for camera : " << id_cam << std::endl;
 
 #ifdef MULTISCALE
-      ComputeMultipleScaleDepthMap( cams[ id_cam ], cams, params, params.scale() + 2, cur_depth_path );
+      ComputeMultipleScaleDepthMap( id_cam, cams[ id_cam ], cams, params, params.scale() + 2, cur_depth_path );
 #else
       const MVS::ImageLoadType load_type = MVS::ComputeLoadType( params.metric() );
       const MVS::Image cur_image( color_path, grayscale_path, gradient_path, census_path, load_type );
-      ComputeDepthMap( cams[ id_cam ], cams, params, cur_image, cur_depth_path );
+      ComputeDepthMap( id_cam, cams[ id_cam ], cams, params, cur_image, cur_depth_path );
 #endif
     }
     else

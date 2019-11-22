@@ -244,7 +244,7 @@ struct DepthMapComputationParameters
   * @param id Id of the depth map to get
   * @return Path of the depth image for the given camera
   */
-  std::string getDepthPath( const int id ) const;
+  std::string getDepthPath( const int id, const int scale ) const;
 
   /**
    * @brief Get output model directory

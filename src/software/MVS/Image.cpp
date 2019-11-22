@@ -2,8 +2,8 @@
 
 #include "openMVG/cameras/Camera_undistort_image.hpp"
 
-#include "openMVG/image/image_io.hpp"
 #include "openMVG/image/image_filtering.hpp"
+#include "openMVG/image/image_io.hpp"
 #include "openMVG/image/image_resampling.hpp"
 #include "openMVG/image/pixel_types_io_cereal.hpp"
 
@@ -22,41 +22,41 @@ namespace MVS
   * @param path Path of the image to load
   * @param scale Scale of the image (0 -> Same size , 1 -> half the size , other -> 1/2^scale)
   */
-Image::Image( const std::string & path , const int scale , const openMVG::cameras::IntrinsicBase * intrinsic , ImageLoadType load )
+Image::Image( const std::string& path, const int scale, const openMVG::cameras::IntrinsicBase* intrinsic, ImageLoadType load )
 {
-  if( ReadImage( path.c_str() , &m_grayscale ) == 0 )
+  if ( ReadImage( path.c_str(), &m_grayscale ) == 0 )
   {
-    std::cerr << "Warning : could not load image" << std::endl ;
+    std::cerr << "Warning : could not load image" << std::endl;
   }
 
-  openMVG::image::Image< openMVG::image::RGBColor > color_img ;
-  if( ! ReadImage( path.c_str() , &color_img ) )
+  openMVG::image::Image<openMVG::image::RGBColor> color_img;
+  if ( !ReadImage( path.c_str(), &color_img ) )
   {
-    std::cerr << "Could not load image" << std::endl ;
+    std::cerr << "Could not load image" << std::endl;
   }
 
   // Undistort image
   if ( intrinsic->have_disto() )
   {
-    openMVG::image::Image<openMVG::image::RGBColor> img_ud ;
+    openMVG::image::Image<openMVG::image::RGBColor> img_ud;
     // Undistort
-    UndistortImage( color_img , intrinsic , img_ud , openMVG::image::BLACK );
-    color_img = img_ud ;
+    UndistortImage( color_img, intrinsic, img_ud, openMVG::image::BLACK );
+    color_img = img_ud;
   }
 
   const openMVG::image::Sampler2d<openMVG::image::SamplerLinear> sampler;
-  openMVG::image::Rescale( color_img , scale , sampler , m_color ) ;
+  openMVG::image::Rescale( color_img, scale, sampler, m_color );
 
   // Convert to grayscale
-  openMVG::image::ConvertPixelType( m_color , &m_grayscale ) ;
+  openMVG::image::ConvertPixelType( m_color, &m_grayscale );
 
-  if( ( load & IMAGE_GRADIENT ) != 0 )
+  if ( ( load & IMAGE_GRADIENT ) != 0 )
   {
-    computeGradient() ;
+    computeGradient();
   }
-  if( ( load & IMAGE_CENSUS ) != 0 )
+  if ( ( load & IMAGE_CENSUS ) != 0 )
   {
-    computeCensus() ;
+    computeCensus();
   }
 }
 
@@ -65,14 +65,24 @@ Image::Image( const std::string & path , const int scale , const openMVG::camera
 * @param gray_image_path Path of the image
 * @param gradient_image_path Path of the image
 */
-Image::Image( const std::string & color_image_path , const std::string & gray_image_path , const std::string & gradient_image_path , const std::string & census_path , const ImageLoadType & load )
+Image::Image( const std::string& color_image_path, const std::string& gray_image_path, const std::string& gradient_image_path, const std::string& census_path, const ImageLoadType& load )
 {
-  if( ! this->load( color_image_path , gray_image_path , gradient_image_path , census_path , load ) )
+  if ( !this->load( color_image_path, gray_image_path, gradient_image_path, census_path, load ) )
   {
-    std::cerr << "Warning : could not create image from serialization" << std::endl ;
+    std::cerr << "Warning : could not create image from serialization" << std::endl;
   }
 }
 
+openMVG::Vec3 Image::color( const openMVG::Vec2i& pix ) const
+{
+  return color( pix[ 1 ], pix[ 0 ] );
+}
+
+openMVG::Vec3 Image::color( const int id_row, const int id_col ) const
+{
+  const openMVG::image::RGBColor& col = m_color( id_row, id_col );
+  return openMVG::Vec3( col.r(), col.g(), col.b() );
+}
 
 /**
 * @brief Get intensity at a specified position
@@ -80,9 +90,9 @@ Image::Image( const std::string & color_image_path , const std::string & gray_im
 * @param id_col Index of the column
 * @return intensity at specified position
 */
-unsigned char Image::intensity( const int id_row , const int id_col ) const
+unsigned char Image::intensity( const int id_row, const int id_col ) const
 {
-  return m_grayscale.coeffRef( id_row , id_col ) ;
+  return m_grayscale.coeffRef( id_row, id_col );
 }
 
 /**
@@ -90,11 +100,10 @@ unsigned char Image::intensity( const int id_row , const int id_col ) const
 * @param pos Position ( id_y , id_x )
 * @return intensity at specified position
 */
-unsigned char Image::intensity( const openMVG::Vec2i & pos ) const
+unsigned char Image::intensity( const openMVG::Vec2i& pos ) const
 {
-  return intensity( pos[0] , pos[1] ) ;
+  return intensity( pos[ 0 ], pos[ 1 ] );
 }
-
 
 /**
 * @brief Get census bitstring at specified position
@@ -102,9 +111,9 @@ unsigned char Image::intensity( const openMVG::Vec2i & pos ) const
 * @param id_col Index of the column
 * @return census bitstring for corresponding pixel
 */
-uint64_t Image::census( const int id_row , const int id_col ) const
+uint64_t Image::census( const int id_row, const int id_col ) const
 {
-  return m_census.coeffRef( id_row , id_col ) ;
+  return m_census.coeffRef( id_row, id_col );
 }
 
 /**
@@ -113,9 +122,9 @@ uint64_t Image::census( const int id_row , const int id_col ) const
 * @param id_col Index of the column
 * @return Gradient magnitude at specified position
 */
-const openMVG::Vec4 & Image::gradient( const int id_row , const int id_col ) const
+const openMVG::Vec4& Image::gradient( const int id_row, const int id_col ) const
 {
-  return m_gradient.coeffRef( id_row , id_col ) ;
+  return m_gradient.coeffRef( id_row, id_col );
 }
 
 /**
@@ -123,9 +132,9 @@ const openMVG::Vec4 & Image::gradient( const int id_row , const int id_col ) con
 * @param pos Position ( id_y , id_x )
 * @return intensity at specified position
 */
-const openMVG::Vec4 & Image::gradient( const openMVG::Vec2i & pos ) const
+const openMVG::Vec4& Image::gradient( const openMVG::Vec2i& pos ) const
 {
-  return gradient( pos[0] , pos[1] ) ;
+  return gradient( pos[ 0 ], pos[ 1 ] );
 }
 
 /**
@@ -135,9 +144,9 @@ const openMVG::Vec4 & Image::gradient( const openMVG::Vec2i & pos ) const
 * @retval true if pixel is in the image
 * @retval false if pixel is outside the image
 */
-bool Image::inside( const int id_row , const int id_col ) const
+bool Image::inside( const int id_row, const int id_col ) const
 {
-  return m_grayscale.Contains( id_row , id_col ) ;
+  return m_grayscale.Contains( id_row, id_col );
 }
 
 /**
@@ -146,9 +155,9 @@ bool Image::inside( const int id_row , const int id_col ) const
 * @retval true if position is inside the image
 * @retval false if position is outside the image
 */
-bool Image::inside( const openMVG::Vec2i & pos ) const
+bool Image::inside( const openMVG::Vec2i& pos ) const
 {
-  return inside( pos[0] , pos[1] ) ;
+  return inside( pos[ 0 ], pos[ 1 ] );
 }
 
 /**
@@ -157,7 +166,7 @@ bool Image::inside( const openMVG::Vec2i & pos ) const
 */
 unsigned long Image::width( void ) const
 {
-  return m_grayscale.Width() ;
+  return m_grayscale.Width();
 }
 
 /**
@@ -166,7 +175,7 @@ unsigned long Image::width( void ) const
 */
 unsigned long Image::height( void ) const
 {
-  return m_grayscale.Height() ;
+  return m_grayscale.Height();
 }
 
 /**
@@ -176,100 +185,100 @@ unsigned long Image::height( void ) const
  * @retval true If succes
  * @retval false If failure
  */
-bool Image::save( const std::string & color_path ,
-                  const std::string & grayscale_path ,
-                  const std::string & gradient_path ,
-                  const std::string & census_path ,
-                  const ImageLoadType & load ) const
+bool Image::save( const std::string&   color_path,
+                  const std::string&   grayscale_path,
+                  const std::string&   gradient_path,
+                  const std::string&   census_path,
+                  const ImageLoadType& load ) const
 {
-  if( ( load & IMAGE_COLOR ) != 0 )
+  if ( ( load & IMAGE_COLOR ) != 0 )
   {
-    std::ofstream out_color( color_path , std::ios::binary ) ;
-    if( ! out_color )
+    std::ofstream out_color( color_path, std::ios::binary );
+    if ( !out_color )
     {
-      return false ;
+      return false;
     }
 
-    cereal::PortableBinaryOutputArchive ar_color( out_color ) ;
+    cereal::PortableBinaryOutputArchive ar_color( out_color );
 
     try
     {
-      ar_color( m_color ) ;
+      ar_color( m_color );
     }
-    catch( ... )
+    catch ( ... )
     {
-      std::cerr << "Error while trying to serialize-out the color image" << std::endl ;
-      return false ;
+      std::cerr << "Error while trying to serialize-out the color image" << std::endl;
+      return false;
     }
   }
 
   // Grayscale
-  if( ( load & IMAGE_GRAYSCALE ) != 0 )
+  if ( ( load & IMAGE_GRAYSCALE ) != 0 )
   {
-    std::ofstream out_gray( grayscale_path , std::ios::binary ) ;
-    if( ! out_gray )
+    std::ofstream out_gray( grayscale_path, std::ios::binary );
+    if ( !out_gray )
     {
-      return false ;
+      return false;
     }
 
-    cereal::PortableBinaryOutputArchive ar_gray( out_gray ) ;
+    cereal::PortableBinaryOutputArchive ar_gray( out_gray );
 
     try
     {
-      ar_gray( m_grayscale ) ;
+      ar_gray( m_grayscale );
     }
-    catch( ... )
+    catch ( ... )
     {
-      std::cerr << "Error while trying to serialize-out the grayscale image" << std::endl ;
-      return false ;
+      std::cerr << "Error while trying to serialize-out the grayscale image" << std::endl;
+      return false;
     }
   }
 
   // Gradient
-  if( ( load & IMAGE_GRADIENT ) != 0 )
+  if ( ( load & IMAGE_GRADIENT ) != 0 )
   {
-    std::ofstream out_grad( gradient_path , std::ios::binary ) ;
-    if( ! out_grad )
+    std::ofstream out_grad( gradient_path, std::ios::binary );
+    if ( !out_grad )
     {
-      return false ;
+      return false;
     }
 
-    cereal::PortableBinaryOutputArchive ar_grad( out_grad ) ;
+    cereal::PortableBinaryOutputArchive ar_grad( out_grad );
 
     try
     {
-      ar_grad( m_gradient ) ;
+      ar_grad( m_gradient );
     }
-    catch( ... )
+    catch ( ... )
     {
-      std::cerr << "Error while trying to serialize-out the gradient image" << std::endl ;
-      return false ;
+      std::cerr << "Error while trying to serialize-out the gradient image" << std::endl;
+      return false;
     }
   }
 
   // Census
-  if( ( load & IMAGE_CENSUS ) != 0 )
+  if ( ( load & IMAGE_CENSUS ) != 0 )
   {
-    std::ofstream out_census( census_path , std::ios::binary ) ;
-    if( ! out_census )
+    std::ofstream out_census( census_path, std::ios::binary );
+    if ( !out_census )
     {
-      return false ;
+      return false;
     }
 
-    cereal::PortableBinaryOutputArchive ar_census( out_census ) ;
+    cereal::PortableBinaryOutputArchive ar_census( out_census );
 
     try
     {
-      ar_census( m_census ) ;
+      ar_census( m_census );
     }
-    catch( ... )
+    catch ( ... )
     {
-      std::cerr << "Error while trying to serialize-out the census image" << std::endl ;
-      return false ;
+      std::cerr << "Error while trying to serialize-out the census image" << std::endl;
+      return false;
     }
   }
 
-  return true ;
+  return true;
 }
 
 /**
@@ -279,168 +288,167 @@ bool Image::save( const std::string & color_path ,
  * @retval true If success
  * @retval false If failure
  */
-bool Image::load( const std::string & color_path ,
-                  const std::string & grayscale_path ,
-                  const std::string & gradient_path ,
-                  const std::string & census_path ,
-                  const ImageLoadType & load )
+bool Image::load( const std::string&   color_path,
+                  const std::string&   grayscale_path,
+                  const std::string&   gradient_path,
+                  const std::string&   census_path,
+                  const ImageLoadType& load )
 {
   // Color
-  if( ( load & IMAGE_COLOR ) != 0 )
+  if ( ( load & IMAGE_COLOR ) != 0 )
   {
-    std::ifstream in_color( color_path , std::ios::binary ) ;
-    if( ! in_color )
+    std::ifstream in_color( color_path, std::ios::binary );
+    if ( !in_color )
     {
-      std::cerr << "Could not open : " << color_path << std::endl ;
-      return false ;
+      std::cerr << "Could not open : " << color_path << std::endl;
+      return false;
     }
 
-    cereal::PortableBinaryInputArchive ar_color( in_color ) ;
+    cereal::PortableBinaryInputArchive ar_color( in_color );
 
     try
     {
-      ar_color( m_color ) ;
+      ar_color( m_color );
     }
-    catch( ... )
+    catch ( ... )
     {
-      std::cerr << "Error while trying to serialize-in color image" << std::endl ;
-      return false ;
+      std::cerr << "Error while trying to serialize-in color image" << std::endl;
+      return false;
     }
   }
 
   // Grayscale
-  if( ( load & IMAGE_GRAYSCALE ) != 0 )
+  if ( ( load & IMAGE_GRAYSCALE ) != 0 )
   {
-    std::ifstream in_gray( grayscale_path , std::ios::binary ) ;
-    if( ! in_gray )
+    std::ifstream in_gray( grayscale_path, std::ios::binary );
+    if ( !in_gray )
     {
-      std::cerr << "Could not open : " << grayscale_path << std::endl ;
-      return false ;
+      std::cerr << "Could not open : " << grayscale_path << std::endl;
+      return false;
     }
 
-    cereal::PortableBinaryInputArchive ar_gray( in_gray ) ;
+    cereal::PortableBinaryInputArchive ar_gray( in_gray );
 
     try
     {
-      ar_gray( m_grayscale ) ;
+      ar_gray( m_grayscale );
     }
-    catch( ... )
+    catch ( ... )
     {
-      std::cerr << "Error while trying to serialize-in grayscale image" << std::endl ;
-      return false ;
+      std::cerr << "Error while trying to serialize-in grayscale image" << std::endl;
+      return false;
     }
   }
 
   // Gradient
-  if( ( load & IMAGE_GRADIENT ) != 0 )
+  if ( ( load & IMAGE_GRADIENT ) != 0 )
   {
-    std::ifstream in_grad( gradient_path , std::ios::binary ) ;
-    if( ! in_grad )
+    std::ifstream in_grad( gradient_path, std::ios::binary );
+    if ( !in_grad )
     {
-      std::cerr << "Could not open : '" << gradient_path << "'" << std::endl ;
-      return false ;
+      std::cerr << "Could not open : '" << gradient_path << "'" << std::endl;
+      return false;
     }
 
-    cereal::PortableBinaryInputArchive ar_grad( in_grad ) ;
+    cereal::PortableBinaryInputArchive ar_grad( in_grad );
 
     try
     {
-      ar_grad( m_gradient ) ;
+      ar_grad( m_gradient );
     }
-    catch( ... )
+    catch ( ... )
     {
-      std::cerr << "Error while trying to serialize-in gradient image" << std::endl ;
-      return false ;
+      std::cerr << "Error while trying to serialize-in gradient image" << std::endl;
+      return false;
     }
   }
 
   // Census
-  if( ( load & IMAGE_CENSUS ) != 0 )
+  if ( ( load & IMAGE_CENSUS ) != 0 )
   {
-    std::ifstream in_census( census_path , std::ios::binary ) ;
-    if( ! in_census )
+    std::ifstream in_census( census_path, std::ios::binary );
+    if ( !in_census )
     {
-      std::cerr << "Could not open : " << census_path << std::endl ;
-      return false ;
+      std::cerr << "Could not open : " << census_path << std::endl;
+      return false;
     }
 
-    cereal::PortableBinaryInputArchive ar_census( in_census ) ;
+    cereal::PortableBinaryInputArchive ar_census( in_census );
 
     try
     {
-      ar_census( m_census ) ;
+      ar_census( m_census );
     }
-    catch( ... )
+    catch ( ... )
     {
-      std::cerr << "Error while trying to serialize-in census image" << std::endl ;
-      return false ;
+      std::cerr << "Error while trying to serialize-in census image" << std::endl;
+      return false;
     }
   }
 
-  return true ;
+  return true;
 }
 
 /**
  * @brief Used for std::map usage
  */
-bool operator<( const Image & imgA , const Image & imgB )
+bool operator<( const Image& imgA, const Image& imgB )
 {
-  if( imgA.m_color.data() < imgB.m_color.data() )
+  if ( imgA.m_color.data() < imgB.m_color.data() )
   {
-    return true ;
+    return true;
   }
-  else if( imgA.m_color.data() > imgB.m_color.data() )
+  else if ( imgA.m_color.data() > imgB.m_color.data() )
   {
-    return false ;
+    return false;
   }
   else
   {
     // m_color == m_color
-    if( imgA.m_grayscale.data() < imgB.m_grayscale.data() )
+    if ( imgA.m_grayscale.data() < imgB.m_grayscale.data() )
     {
-      return true ;
+      return true;
     }
-    else if( imgA.m_grayscale.data() > imgB.m_grayscale.data() )
+    else if ( imgA.m_grayscale.data() > imgB.m_grayscale.data() )
     {
-      return false ;
+      return false;
     }
     else
     {
       // m_color == m_color && m_grayscale == m_grayscale
-      if( imgA.m_gradient.data() < imgB.m_gradient.data() )
+      if ( imgA.m_gradient.data() < imgB.m_gradient.data() )
       {
-        return true ;
+        return true;
       }
-      else if( imgA.m_gradient.data() > imgB.m_gradient.data() )
+      else if ( imgA.m_gradient.data() > imgB.m_gradient.data() )
       {
-        return false ;
+        return false;
       }
       else
       {
         // m_color == m_color && m_grayscale == m_grayscale && m_gradient == m_gradient
-        return imgA.m_census.data() < imgB.m_census.data() ;
+        return imgA.m_census.data() < imgB.m_census.data();
       }
     }
   }
 }
 
-
-const openMVG::image::Image<unsigned char> & Image::intensity( void ) const
+const openMVG::image::Image<unsigned char>& Image::intensity( void ) const
 {
-  return m_grayscale ;
+  return m_grayscale;
 }
 
-const openMVG::image::Image<openMVG::Vec4> & Image::gradient( void ) const
+const openMVG::image::Image<openMVG::Vec4>& Image::gradient( void ) const
 {
-  return m_gradient ;
+  return m_gradient;
 }
 
 /**
 * @brief Get Census image
 */
-const openMVG::image::Image<uint64_t> & Image::census( void ) const
+const openMVG::image::Image<uint64_t>& Image::census( void ) const
 {
-  return m_census ;
+  return m_census;
 }
 
 /**
@@ -449,24 +457,24 @@ const openMVG::image::Image<uint64_t> & Image::census( void ) const
 * @param params The computation parameters
 * @return a vector of neighboring images
 */
-std::vector< Image > LoadNeighborImages( const Camera & reference_cam ,
-    const DepthMapComputationParameters & params ,
-    const ImageLoadType & load )
+std::vector<Image> LoadNeighborImages( const Camera&                        reference_cam,
+                                       const DepthMapComputationParameters& params,
+                                       const ImageLoadType&                 load )
 {
-  std::vector< Image > neigh_imgs ;
-  for( size_t id_neigh = 0 ; id_neigh < reference_cam.m_view_neighbors.size() ; ++id_neigh )
+  std::vector<Image> neigh_imgs;
+  for ( size_t id_neigh = 0; id_neigh < reference_cam.m_view_neighbors.size(); ++id_neigh )
   {
-    const int real_id = reference_cam.m_view_neighbors[ id_neigh ] ;
-    const std::string camera_path    = params.getCameraDirectory( real_id ) ;
-    const std::string color_path     = params.getColorPath( real_id ) ;
-    const std::string grayscale_path = params.getGrayscalePath( real_id ) ;
-    const std::string gradient_path  = params.getGradientPath( real_id ) ;
-    const std::string census_path    = params.getCensusPath( real_id ) ;
+    const int         real_id        = reference_cam.m_view_neighbors[ id_neigh ];
+    const std::string camera_path    = params.getCameraDirectory( real_id );
+    const std::string color_path     = params.getColorPath( real_id );
+    const std::string grayscale_path = params.getGrayscalePath( real_id );
+    const std::string gradient_path  = params.getGradientPath( real_id );
+    const std::string census_path    = params.getCensusPath( real_id );
 
-    neigh_imgs.emplace_back( Image( color_path , grayscale_path , gradient_path , census_path , load ) ) ;
+    neigh_imgs.emplace_back( Image( color_path, grayscale_path, gradient_path, census_path, load ) );
   }
 
-  return neigh_imgs ;
+  return neigh_imgs;
 }
 
 /**
@@ -477,24 +485,24 @@ std::vector< Image > LoadNeighborImages( const Camera & reference_cam ,
  * @param scale Scale of the requested images
  * @return a vector of neighboring images
  */
-std::vector< Image > LoadNeighborImages( const Camera & reference_cam ,
-    const std::vector< Camera > & all_cams ,
-    const DepthMapComputationParameters & params ,
-    const int scale ,
-    const ImageLoadType & load )
+std::vector<Image> LoadNeighborImages( const Camera&                        reference_cam,
+                                       const std::vector<Camera>&           all_cams,
+                                       const DepthMapComputationParameters& params,
+                                       const int                            scale,
+                                       const ImageLoadType&                 load )
 {
-  std::vector< Image > neigh_imgs ;
-  for( size_t id_neigh = 0 ; id_neigh < reference_cam.m_view_neighbors.size() ; ++id_neigh )
+  std::vector<Image> neigh_imgs;
+  for ( size_t id_neigh = 0; id_neigh < reference_cam.m_view_neighbors.size(); ++id_neigh )
   {
-    const int real_id = reference_cam.m_view_neighbors[ id_neigh ] ;
-    const Camera & neigh_cam = all_cams[ real_id ] ;
-    const std::string img_path = neigh_cam.m_img_path ;
+    const int         real_id   = reference_cam.m_view_neighbors[ id_neigh ];
+    const Camera&     neigh_cam = all_cams[ real_id ];
+    const std::string img_path  = neigh_cam.m_img_path;
 
     // Load image and convert at specific scale
-    neigh_imgs.emplace_back( Image( img_path , scale , neigh_cam.m_intrinsic , load ) ) ;
+    neigh_imgs.emplace_back( Image( img_path, scale, neigh_cam.m_intrinsic, load ) );
   }
 
-  return neigh_imgs ;
+  return neigh_imgs;
 }
 
 #define MEAN_CENSUS_TRANSFORM 1
@@ -504,107 +512,106 @@ std::vector< Image > LoadNeighborImages( const Camera & reference_cam ,
 */
 void Image::computeCensus( void )
 {
-  m_census.resize( m_grayscale.Width() , m_grayscale.Height() , true , 0ul ) ;
+  m_census.resize( m_grayscale.Width(), m_grayscale.Height(), true, 0ul );
 
-  const int half_h = 3 ;
-  const int half_w = 4 ;
+  const int half_h = 3;
+  const int half_w = 4;
 
   // { y , x } -> { y , x }
-  const int star_pattern_idx[24][2][2] =
+  const int star_pattern_idx[ 24 ][ 2 ][ 2 ] =
+      {
+          {{-2, -2}, {-2, 0}},
+          {{-2, -1}, {-1, 1}},
+          {{-2, 0}, {-1, -2}},
+          {{-2, 1}, {-2, -1}},
+          {{-2, 2}, {0, 2}},
+
+          {{-1, -2}, {1, -2}},
+          {{-1, -1}, {0, 1}},
+          {{-1, 0}, {-2, -2}},
+          {{-1, 1}, {1, 0}},
+          {{-1, 2}, {1, 1}},
+
+          {{0, -2}, {2, 1}},
+          {{0, -1}, {2, -2}},
+          {{0, 1}, {-2, 2}},
+          {{0, 2}, {-2, 1}},
+
+          {{1, -2}, {-1, -1}},
+          {{1, -1}, {-1, 0}},
+          {{1, 0}, {2, 2}},
+          {{1, 1}, {0, -1}},
+          {{1, 2}, {-1, 2}},
+
+          {{2, -2}, {0, -2}},
+          {{2, -1}, {2, 1}},
+          {{2, 0}, {1, 2}},
+          {{2, 1}, {1, -1}},
+          {{2, 2}, {2, 0}}};
+
+  for ( int id_row = half_h; id_row < m_gradient.Height() - half_h; ++id_row )
   {
-    { { -2 , -2 } , { -2 , 0 } } ,
-    { { -2 , -1 } , { -1 , 1 } } ,
-    { { -2 , 0 } , { -1 , -2 } } ,
-    { { -2 , 1 } , { -2 , -1 } } ,
-    { { -2 , 2 } , { 0 , 2 } } ,
-
-    { { -1 , -2 } , { 1 , -2 } } ,
-    { { -1 , -1 } , { 0 , 1 } } ,
-    { { -1 , 0 } , { -2 , -2 } } ,
-    { { -1 , 1 } , { 1 , 0 } } ,
-    { { -1 , 2 } , { 1 , 1 } } ,
-
-    { { 0 , -2 } , { 2 , 1 } } ,
-    { { 0 , -1 } , { 2 , -2 } } ,
-    { { 0 , 1 } , { -2 , 2 } } ,
-    { { 0 , 2 } , { -2 , 1 } } ,
-
-    { { 1 , -2 } , { -1 , -1 } } ,
-    { { 1 , -1 } , { -1 , 0 } } ,
-    { { 1 , 0 } , { 2 , 2 } } ,
-    { { 1 , 1 } , { 0 , -1 } } ,
-    { { 1 , 2 } , { -1 , 2 } } ,
-
-    { { 2 , -2 } , { 0 , -2 } } ,
-    { { 2 , -1 } , { 2 , 1 } } ,
-    { { 2 , 0 } , { 1 , 2 } } ,
-    { { 2 , 1 } , { 1 , -1 } } ,
-    { { 2 , 2 } , { 2 , 0 } }
-  } ;
-
-  for( int id_row = half_h ; id_row < m_gradient.Height() - half_h ; ++id_row )
-  {
-    for( int id_col = half_w ; id_col < m_gradient.Width() - half_w ; ++id_col )
+    for ( int id_col = half_w; id_col < m_gradient.Width() - half_w; ++id_col )
     {
       // Compute mean inside 9x7 window
 #ifdef MEAN_CENSUS_TRANSFORM
-      int sum = 0 ;
-      int nb = 0 ;
-      for( int y = id_row - half_h ; y <= id_row + half_h ; ++y )
+      int sum = 0;
+      int nb  = 0;
+      for ( int y = id_row - half_h; y <= id_row + half_h; ++y )
       {
-        for( int x = id_col - half_w ; x <= id_col + half_w ; ++x )
+        for ( int x = id_col - half_w; x <= id_col + half_w; ++x )
         {
-          sum += m_grayscale( y , x ) ;
-          ++nb ;
+          sum += m_grayscale( y, x );
+          ++nb;
         }
       }
-      const unsigned char c = static_cast<unsigned char>( sum / nb ) ;
+      const unsigned char c = static_cast<unsigned char>( sum / nb );
 #elif defined CENSUS_TRANSFORM
-      const unsigned char c = m_grayscale( id_row , id_col ) ;
+      const unsigned char c = m_grayscale( id_row, id_col );
 #elif defined STAR_CENSUS_TRANSFORM
 
 #endif
 
-      uint64_t  census = 0 ;
+      uint64_t census = 0;
 
 #ifdef STAR_CENSUS_TRANSFORM
       // Ref : https://www.spiedigitallibrary.org/journals/Optical-Engineering/volume-55/issue-06/063107/Improved-census-transform-for-noise-robust-stereo-matching/10.1117/1.OE.55.6.063107.full?SSO=1
       // use 24-2-1 pattern
-      for( int sample = 0 ; sample < 24 ; ++sample )
+      for ( int sample = 0; sample < 24; ++sample )
       {
-        const int ipy = id_row + star_pattern_idx[ sample ][ 0 ][ 0 ] ;
-        const int ipx = id_col + star_pattern_idx[ sample ][ 0 ][ 1 ] ;
+        const int ipy = id_row + star_pattern_idx[ sample ][ 0 ][ 0 ];
+        const int ipx = id_col + star_pattern_idx[ sample ][ 0 ][ 1 ];
 
-        const int iqy = id_row + star_pattern_idx[ sample ][ 1 ][ 0 ] ;
-        const int iqx = id_col + star_pattern_idx[ sample ][ 1 ][ 1 ] ;
+        const int iqy = id_row + star_pattern_idx[ sample ][ 1 ][ 0 ];
+        const int iqx = id_col + star_pattern_idx[ sample ][ 1 ][ 1 ];
 
-        const unsigned char Ip = m_grayscale( ipy , ipy ) ;
-        const unsigned char Iq = m_grayscale( iqy , iqx ) ;
+        const unsigned char Ip = m_grayscale( ipy, ipy );
+        const unsigned char Iq = m_grayscale( iqy, iqx );
 
-        const int val = Ip < Iq ;
+        const int val = Ip < Iq;
 
-        census <<= 1 ;
-        census |= val & 0x1 ;
+        census <<= 1;
+        census |= val & 0x1;
       }
 
 #else
       // Standard census transform and mean census
       // 9x7 window
-      for( int y = id_row - half_h ; y <= id_row + half_h ; ++y )
+      for ( int y = id_row - half_h; y <= id_row + half_h; ++y )
       {
-        for( int x = id_col - half_w ; x <= id_col + half_w ; ++x )
+        for ( int x = id_col - half_w; x <= id_col + half_w; ++x )
         {
-          if( ! ( x == id_col && y == id_row ) )
+          if ( !( x == id_col && y == id_row ) )
           {
-            const int val = m_grayscale( y , x ) < c ;
+            const int val = m_grayscale( y, x ) < c;
 
-            census <<= 1 ;
-            census |= val & 0x1 ;
+            census <<= 1;
+            census |= val & 0x1;
           }
         }
       }
 #endif
-      m_census( id_row , id_col ) = census ;
+      m_census( id_row, id_col ) = census;
     }
   }
 }
@@ -614,24 +621,23 @@ void Image::computeCensus( void )
 */
 void Image::computeGradient( void )
 {
-  openMVG::image::Image< double > in_d ;
-  in_d = m_grayscale.GetMat().cast<double>() ;
-  openMVG::image::Image< double > Dx , Dy ;
+  openMVG::image::Image<double> in_d;
+  in_d = m_grayscale.GetMat().cast<double>();
+  openMVG::image::Image<double> Dx, Dy;
 
-  openMVG::image::ImageScharrXDerivative( in_d , Dx ) ;
-  openMVG::image::ImageScharrYDerivative( in_d , Dy ) ;
+  openMVG::image::ImageScharrXDerivative( in_d, Dx );
+  openMVG::image::ImageScharrYDerivative( in_d, Dy );
 
-  m_gradient.resize( m_grayscale.Width() , m_grayscale.Height() , true , openMVG::Vec4( 0 , 0 , 0 , 0 ) ) ;
-  for( int y = 0 ; y < m_gradient.Height() ; ++y )
+  m_gradient.resize( m_grayscale.Width(), m_grayscale.Height(), true, openMVG::Vec4( 0, 0, 0, 0 ) );
+  for ( int y = 0; y < m_gradient.Height(); ++y )
   {
-    for( int x = 0 ; x < m_gradient.Width() ; ++x )
+    for ( int x = 0; x < m_gradient.Width(); ++x )
     {
       // TODO : compute dxy and dyx
-      openMVG::Vec4 grad( Dx( y , x ) , Dy( y , x ) , 0.0 , 0.0 ) ;
-      m_gradient( y , x ) = grad ;
+      openMVG::Vec4 grad( Dx( y, x ), Dy( y, x ), 0.0, 0.0 );
+      m_gradient( y, x ) = grad;
     }
   }
 }
-
 
 } // namespace MVS

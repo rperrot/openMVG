@@ -73,10 +73,10 @@ double ZNCCCostMetric::operator()( const int id_row, const int id_col, const ope
       refValues( 1, nb ) = y;
 
       const openMVG::Vec3 p( x, y, 1.0 );
-      const openMVG::Vec3 q = H * p;
+      const openMVG::Vec3 q = H * p ;
 
       // Handle division by 0
-      if ( fabs( q[ 2 ] ) <= std::numeric_limits<double>::epsilon() )
+      if ( fabs( q[ 2 ] ) <= 0.00001 ) //  std::numeric_limits<double>::epsilon() )
       {
         return DepthMapComputationParameters::MAX_COST_NCC;
       }
@@ -110,8 +110,8 @@ double ZNCCCostMetric::operator()( const int id_row, const int id_col, const ope
     const int qx = otherValues( 0, id_pair );
     const int qy = otherValues( 1, id_pair );
 
-    const double v1 = static_cast<double>( m_image_ref.intensity( y, x ) );     // / 255.0 ;
-    const double v2 = static_cast<double>( m_image_other.intensity( qy, qx ) ); // / 255.0 ;
+    const double v1 = static_cast<double>( m_image_ref.intensity( y, x ) ) / 255.0;
+    const double v2 = static_cast<double>( m_image_other.intensity( qy, qx ) ) / 255.0;
 
     sum1 += v1;
     sum2 += v2;
