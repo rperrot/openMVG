@@ -18,6 +18,7 @@ add_subdirectory(features_siftPutativeMatches)
 add_subdirectory(features_image_matching)
 add_subdirectory(features_image_matching_gmsfilter)
 add_subdirectory(describe_and_match_GUI)
+add_subdirectory(features_spectral_sift)
 
 add_subdirectory(geodesy_show_exif_gps_position)
 
