@@ -159,6 +159,11 @@ double upper_incomplete_gamma( const double a, const double z )
   {
     return 1.0;
   }
+  if ( a == 0.0 )
+  {
+    // Special case for a == 0 ->  GammaUpper(0,x) == E1(x)
+    return exponential_integral( 1, z );
+  }
   if ( z < a + 1.0 )
   {
     // Better using series
@@ -175,6 +180,115 @@ double upper_incomplete_gamma( const double a, const double z )
 double generalized_incomplete_gamma( const double a, const double z0, const double z1 )
 {
   return upper_incomplete_gamma( a, z0 ) - upper_incomplete_gamma( a, z1 );
+}
+
+double exponential_integral( const int i, const double x )
+{
+  // Note: use expint since c++17
+  // @ref: numerical recipes
+  // Euler Mascheroni constant.
+  static const double EULER_g  = 0.5772156649015328606065120900824024310421593359399235988057672348848677267776646709369470632917467495;
+  static const int    MAX_ITER = 2048;
+
+  if ( ( i < 0 ) || ( x < 0.0 ) || ( ( x == 0.0 ) && ( ( i == 0 ) || ( i == 1 ) ) ) )
+  {
+    // Undefinite cases:
+    // i negative
+    // x negative
+    // x==0 and (i==0) or (i==1) -> division by zero.
+    return std::numeric_limits<double>::infinity();
+  }
+
+  if ( i == 0 )
+  {
+    // Special case
+    return std::exp( -x ) / x;
+  }
+
+  // here n>1
+  if ( x == 0.0 )
+  {
+    // Special case x == 0
+    return 1.0 / static_cast<double>( i - 1 );
+  }
+
+  // Here we compute E_i(x) using two different schemes depending on the value of x.
+  // if x > 1.0, we use the continous fraction (and Lentz algorithm)
+  // f_n = A_n/B_n
+  //
+  //  A_n = -n(i-1+n)
+  //  B_n = x + i + 2 * n
+  //
+  // if x < 1.0, we use series expansion
+  //
+  // f_n = (-x)^(i-1)/ (i-1) ! * (-ln x + psi(i)) - sum_k (-x)^k / (k-i+1) k!
+  //
+  if ( x > 1.0 )
+  {
+    // Continuous fraction using Lentz scheme.
+
+    double b = x + (double)i;
+    double c = std::numeric_limits<double>::max() * std::numeric_limits<double>::epsilon();
+    double d = 1.0 / b;
+    double f = d;
+
+    for ( int k = 1; k <= MAX_ITER; ++k )
+    {
+      const double an = -k * ( i - 1 + k );
+      b += 2.0;
+      d = 1.0 / ( an * d + b );
+      c = b + an / c;
+
+      const double delta = c * d;
+
+      f *= delta;
+
+      if ( abs( delta - 1.0 ) < std::numeric_limits<double>::epsilon() )
+      {
+        // Early exit
+        break;
+      }
+    }
+
+    return f * std::exp( -x );
+  }
+  else
+  {
+    // Series expansion
+
+    // First term
+    double f    = ( i - 1 ) != 0 ? 1.0 / static_cast<double>( i - 1 ) : -log( x ) - EULER_g;
+    double frac = 1.0; // Store -x ^ k / k !
+
+    for ( int k = 1; k < MAX_ITER; ++k )
+    {
+      frac *= -x / k;
+
+      double delta;
+      if ( k != ( i - 1 ) )
+      {
+        delta = -frac / static_cast<double>( k - (i - 1) );
+      }
+      else
+      {
+        double psi = -EULER_g;
+        for ( int p = 0; p < ( i - 1 ); ++p )
+        {
+          psi += 1.0 / p;
+        }
+        delta = frac * ( -std::log( x ) + psi );
+      }
+
+      f += delta;
+      if ( abs( delta ) < abs( f ) * std::numeric_limits<double>::epsilon() )
+      {
+        // Early exit.
+        break;
+      }
+    }
+
+    return f;
+  }
 }
 
 } // namespace numeric

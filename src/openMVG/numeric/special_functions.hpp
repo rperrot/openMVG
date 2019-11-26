@@ -25,6 +25,17 @@ double upper_incomplete_gamma( const double a, const double z );
  */
 double generalized_incomplete_gamma( const double a, const double z0, const double z1 );
 
+/**
+ * @brief Compute Exponential integral 
+ * 
+ * @param i   E_i( x )
+ * @param x   value
+ * @return Exponential integral 
+ * 
+ * @note x > 0 || i > 0
+ */
+double exponential_integral( const int i, const double x );
+
 } // namespace numeric
 } // namespace openMVG
 
