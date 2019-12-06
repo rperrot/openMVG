@@ -208,15 +208,29 @@ int main( int argc, char** argv )
     }
     else
     {
-      for ( size_t i = 0; i < iFilterWidth; ++i )
+      for ( size_t i = 0; i < 2 * iFilterWidth + 1; ++i )
       {
-        for ( size_t j = 0; j < iFilterWidth; ++j )
+        for ( size_t j = 0; j < 2 * iFilterWidth + 1; ++j )
         {
           file << std::setprecision( 10 ) << F( i, j ) << " ";
         }
         file << "\n";
       }
     }
+  }
+
+  // Write a_i
+  std::stringstream filename;
+  filename << sDirectoryOutput << "/a_" << iOrder << "_[" << sLow << "_" << sUp << "]"
+           << ".txt";
+  std::ofstream file( filename.str() );
+  for ( size_t i = 0; i <= iOrder; ++i )
+  {
+    for ( size_t j = 0; j <= iOrder; ++j )
+    {
+      file << std::setprecision( 10 ) << v( i, j ) << " ";
+    }
+    file << "\n";
   }
 
   return EXIT_SUCCESS;
