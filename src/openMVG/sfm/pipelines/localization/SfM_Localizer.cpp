@@ -65,26 +65,22 @@ public:
                   models); // Found model hypothesis
   }
 
-  double Error(uint32_t sample, const Model &model) const {
-    const Vec3 t = model.block(0, 3, 3, 1);
-    const geometry::Pose3 pose(model.block(0, 0, 3, 3),
-                               - model.block(0, 0, 3, 3).transpose() * t);
-    const bool ignore_distortion = true; // We ignore distortion since we are using undistorted bearing vector as input
-    return (camera_->residual(pose(x3D_.col(sample)),
-                              x2d_.col(sample),
-                              ignore_distortion) * N1_(0,0)).squaredNorm();
-  }
-
   void Errors(const Model & model, std::vector<double> & vec_errors) const
   {
+    // Convert the found model into a Pose3
     const Vec3 t = model.block(0, 3, 3, 1);
     const geometry::Pose3 pose(model.block(0, 0, 3, 3),
                                - model.block(0, 0, 3, 3).transpose() * t);
 
     vec_errors.resize(x2d_.cols());
+
+    const bool ignore_distortion = true; // We ignore distortion since we are using undistorted bearing vector as input
+
     for (Mat::Index sample = 0; sample < x2d_.cols(); ++sample)
     {
-      vec_errors[sample] = this->Error(sample, model);
+      vec_errors[sample] = (camera_->residual(pose(x3D_.col(sample)),
+                              x2d_.col(sample),
+                              ignore_distortion) * N1_(0,0)).squaredNorm();
     }
   }
 
@@ -163,6 +159,36 @@ namespace sfm {
           resection_data.pt3D);
         // Robust estimation of the pose and its precision
         const std::pair<double,double> ACRansacOut =
+          openMVG::robust::ACRANSAC(kernel,
+                                    resection_data.vec_inliers,
+                                    resection_data.max_iteration,
+                                    &P,
+                                    dPrecision,
+                                    true);
+        // Update the upper bound precision of the model found by AC-RANSAC
+        resection_data.error_max = ACRansacOut.first;
+      }
+      break;
+      case resection::SolverType::P3P_NORDBERG_ECCV18:
+      {
+        if (!optional_intrinsics)
+        {
+          std::cerr << "Intrinsic data is required for P3P solvers." << std::endl;
+          return false;
+        }
+        //--
+        // Since the intrinsic data is known, compute only the pose
+        using SolverType = openMVG::euclidean_resection::P3PSolver_Nordberg;
+        MINIMUM_SAMPLES = SolverType::MINIMUM_SAMPLES;
+
+        using KernelType =
+          ACKernelAdaptorResection_Intrinsics<
+            SolverType,
+            Mat34>;
+
+        KernelType kernel(resection_data.pt2D, resection_data.pt3D, optional_intrinsics);
+        // Robust estimation of the pose matrix and its precision
+        const auto ACRansacOut =
           openMVG::robust::ACRANSAC(kernel,
                                     resection_data.vec_inliers,
                                     resection_data.max_iteration,

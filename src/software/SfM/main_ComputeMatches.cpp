@@ -7,6 +7,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "openMVG/graph/graph.hpp"
+#include "openMVG/graph/graph_stats.hpp"
 #include "openMVG/features/akaze/image_describer_akaze.hpp"
 #include "openMVG/features/descriptor.hpp"
 #include "openMVG/features/feature.hpp"
@@ -125,6 +126,7 @@ int main(int argc, char **argv)
       << "  AUTO: auto choice from regions type,\n"
       << "  For Scalar based regions descriptor:\n"
       << "    BRUTEFORCEL2: L2 BruteForce matching,\n"
+      << "    HNSWL2: L2 Approximate Matching with Hierarchical Navigable Small World graphs,\n"
       << "    ANNL2: L2 Approximate Nearest Neighbor matching,\n"
       << "    CASCADEHASHINGL2: L2 Cascade Hashing matching.\n"
       << "    FASTCASCADEHASHINGL2: (default)\n"
@@ -334,6 +336,12 @@ int main(int argc, char **argv)
       collectionMatcher.reset(new Matcher_Regions(fDistRatio, BRUTE_FORCE_HAMMING));
     }
     else
+    if (sNearestMatchingMethod == "HNSWL2")
+    {
+      std::cout << "Using HNSWL2 matcher" << std::endl;
+      collectionMatcher.reset(new Matcher_Regions(fDistRatio, HNSW_L2));
+    }
+    else
     if (sNearestMatchingMethod == "ANNL2")
     {
       std::cout << "Using ANN_L2 matcher" << std::endl;
@@ -494,6 +502,9 @@ int main(int argc, char **argv)
     }
 
     std::cout << "Task done in (s): " << timer.elapsed() << std::endl;
+
+    // -- export Geometric View Graph statistics
+    graph::getGraphStatistics(sfm_data.GetViews().size(), getPairs(map_GeometricMatches));
 
     //-- export Adjacency matrix
     std::cout << "\n Export Adjacency Matrix of the pairwise's geometric matches"

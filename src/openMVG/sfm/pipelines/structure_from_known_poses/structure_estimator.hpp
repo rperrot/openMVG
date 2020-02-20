@@ -12,6 +12,7 @@
 #include <memory>
 
 #include "openMVG/matching/indMatch.hpp"
+#include "openMVG/multiview/triangulation_method.hpp"
 
 namespace openMVG { namespace sfm { struct Regions_Provider; } }
 namespace openMVG { namespace sfm { struct SfM_Data; } }
@@ -36,7 +37,8 @@ public:
   void run(
     SfM_Data & sfm_data,
     const Pair_Set & pairs,
-    const std::shared_ptr<Regions_Provider> & regions_provider);
+    const std::shared_ptr<Regions_Provider> & regions_provider,
+    const ETriangulationMethod triangulation_method);
 
 private:
 
@@ -52,10 +54,11 @@ private:
     const Pair_Set & pairs,
     const std::shared_ptr<Regions_Provider> & regions_provider);
 
-  /// Init & triangulate landmark observations from validated 3-view correspondences
+  /// Init & triangulate landmark observations from the fused validated 3-view correspondences
   void triangulate(
     SfM_Data & sfm_data,
-    const std::shared_ptr<Regions_Provider> & regions_provider);
+    const std::shared_ptr<Regions_Provider> & regions_provider,
+    const ETriangulationMethod triangulation_method);
 
 private:
   //--

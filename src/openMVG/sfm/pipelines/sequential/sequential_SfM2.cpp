@@ -151,7 +151,7 @@ bool SequentialSfMReconstructionEngine2::Process() {
   // First the camera with the most of 2D-3D overlap are added then we add
   // ones with lower confidence.
   const std::array<float, 2> track_inlier_ratios = {0.2, 0.0};
-  for (auto track_inlier_ratio = track_inlier_ratios.cbegin(); 
+  for (auto track_inlier_ratio = track_inlier_ratios.cbegin();
     track_inlier_ratio < track_inlier_ratios.cend(); ++track_inlier_ratio)
   {
     IndexT pose_before = sfm_data_.GetPoses().size();
@@ -177,7 +177,7 @@ bool SequentialSfMReconstructionEngine2::Process() {
       if (pose_before >= pose_after)
         break;
       pose_before = sfm_data_.GetPoses().size();
-      // Since we have augmented our set of poses we can reset our track inlier ratio iterator 
+      // Since we have augmented our set of poses we can reset our track inlier ratio iterator
       track_inlier_ratio = track_inlier_ratios.cbegin();
     }
   }
@@ -279,7 +279,8 @@ bool SequentialSfMReconstructionEngine2::Triangulation()
   SfM_Data_Structure_Computation_Robust triangulation_engine(
       max_reprojection_error,
       min_required_inliers,
-      min_sample_index);
+      min_sample_index,
+      triangulation_method_);
 
   triangulation_engine.triangulate(sfm_data_);
 
@@ -395,7 +396,7 @@ bool SequentialSfMReconstructionEngine2::AddingMissingView
         geometry::Pose3 pose;
         const bool bResection = sfm::SfM_Localizer::Localize
         (
-          intrinsic ? resection::SolverType::P3P_KE_CVPR17 : resection::SolverType::DLT_6POINTS,
+          intrinsic ? resection::SolverType::P3P_NORDBERG_ECCV18 : resection::SolverType::DLT_6POINTS,
           {view->ui_width, view->ui_height},
           intrinsic ? intrinsic.get() : nullptr,
           resection_data,
