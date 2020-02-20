@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <string>
 
 using namespace openMVG;
 using namespace openMVG::numeric;
@@ -137,6 +138,7 @@ int main( int argc, char** argv )
 
   // Compute K and S
   Mat K, S;
+
   K.resize( iOrder + 1, iOrder + 1 );
   S.resize( iOrder + 1, iOrder + 1 );
 
