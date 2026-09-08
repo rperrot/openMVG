@@ -19,6 +19,7 @@
 #include "openMVG/features/spectral_sift/spectral_sift_basis.hpp"
 #include "openMVG/features/spectral_sift/spectral_sift_descriptor.hpp"
 #include "openMVG/features/spectral_sift/spectral_sift_detector.hpp"
+#include "openMVG/features/spectral_sift/spectral_sift_thread_pool.hpp"
 #include "openMVG/image/image_container.hpp"
 #include "openMVG/image/image_resampling.hpp"
 #include "openMVG/system/logger.hpp"
@@ -79,8 +80,18 @@ public:
   };
 
   explicit Spectral_SIFT_Image_describer( const Params& params = Params() )
-      : Image_describer(), params_( params )
+      : Image_describer(),
+        params_( params ),
+        thread_pool_( std::make_shared<ThreadPool>() )
   {
+  }
+
+  ~Spectral_SIFT_Image_describer() override
+  {
+    if ( thread_pool_ )
+    {
+      thread_pool_->Shutdown();
+    }
   }
 
   bool Set_configuration_preset( EDESCRIBER_PRESET preset ) override
@@ -103,6 +114,8 @@ public:
         OPENMVG_LOG_ERROR << "[Spectral SIFT] Invalid preset configuration";
         return false;
     }
+    detector_.reset();
+    descriptor_extractor_.reset();
     return true;
   }
 
@@ -125,27 +138,37 @@ public:
     // Convert input image to float [0, 1]
     const image::Image<float> If( image.GetMat().cast<float>() / 255.0f );
 
-    // Instantiate detector and descriptor extractor
-    SpectralSIFTDetector::Params det_params(
-        params_.peak_threshold_,
-        params_.edge_threshold_,
-        params_.sigma_min_,
-        params_.sigma_max_,
-        params_.degree_,
-        params_.energy_threshold_ );
-    SpectralSIFTDetector detector( det_params );
+    // Initialize or reuse detector and descriptor extractor
+    if ( !detector_ )
+    {
+      SpectralSIFTDetector::Params det_params(
+          params_.peak_threshold_,
+          params_.edge_threshold_,
+          params_.sigma_min_,
+          params_.sigma_max_,
+          params_.degree_,
+          params_.energy_threshold_ );
+      detector_.reset( new SpectralSIFTDetector( det_params ) );
+      detector_->SetThreadPool( thread_pool_.get() );
+      detector_->Init();
+    }
 
-    SpectralSIFTDescriptorExtractor::Params desc_params(
-        params_.root_sift_,
-        1.5f, // orientation_scale
-        0.8f, // percentage_keep
-        6,    // nb_smoothing_step
-        0.2f, // clip_value
-        params_.sigma_min_,
-        params_.sigma_max_,
-        params_.degree_,
-        params_.energy_threshold_ );
-    SpectralSIFTDescriptorExtractor descriptor_extractor( desc_params );
+    if ( !descriptor_extractor_ )
+    {
+      SpectralSIFTDescriptorExtractor::Params desc_params(
+          params_.root_sift_,
+          1.5f, // orientation_scale
+          0.8f, // percentage_keep
+          6,    // nb_smoothing_step
+          0.2f, // clip_value
+          params_.sigma_min_,
+          params_.sigma_max_,
+          params_.degree_,
+          params_.energy_threshold_ );
+      descriptor_extractor_.reset( new SpectralSIFTDescriptorExtractor( desc_params ) );
+      descriptor_extractor_->SetThreadPool( thread_pool_.get() );
+      descriptor_extractor_->Init();
+    }
 
     // Octave pyramid processing
     image::Image<float> cur_octave_img;
@@ -168,13 +191,14 @@ public:
         break;
       }
 
-      // Detect continuous keypoints in current octave
+      // Compute forward 2D FFT of current octave image once, shared by detector and descriptor
+      MatrixXcf                     octave_fft;
       std::vector<SpectralKeypoint> oct_keypoints;
-      detector.DetectOctave( cur_octave_img, o, oct_keypoints );
+      detector_->DetectOctave( cur_octave_img, o, oct_keypoints, &octave_fft );
 
-      // Compute dominant orientations and 128-D descriptors
+      // Compute dominant orientations and 128-D descriptors reusing precomputed forward FFT
       std::vector<SpectralOrientedKeypoint> oct_described;
-      descriptor_extractor.DescribeOctave( cur_octave_img, o, oct_keypoints, oct_described );
+      descriptor_extractor_->DescribeOctave( cur_octave_img, o, oct_keypoints, oct_described, &octave_fft );
 
       // Map coordinates back to original image scale
       const float octave_scale = std::pow( 2.0f, static_cast<float>( o ) );
@@ -241,7 +265,10 @@ public:
   inline void serialize( Archive& ar );
 
 private:
-  Params params_;
+  Params                                           params_;
+  std::shared_ptr<ThreadPool>                      thread_pool_;
+  std::unique_ptr<SpectralSIFTDetector>            detector_;
+  std::unique_ptr<SpectralSIFTDescriptorExtractor> descriptor_extractor_;
 };
 
 } // namespace spectral_sift

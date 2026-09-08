@@ -194,52 +194,73 @@ public:
   }
 
   /**
-   * @brief Evaluate the k-th weight polynomial w_k(t) = sum_{p=0}^d c_{k, p} * t^p
+   * @brief Evaluate the k-th weight polynomial w_k(t) using Horner's method
    * @param k Index of the basis (0 <= k < K_)
    * @param t Normalized scale in [-1, 1]
    */
   inline float EvaluatePolynomial( int k, float t ) const
   {
-    float val = 0.0f;
-    float tp  = 1.0f;
-    for ( int p = 0; p <= degree_; ++p )
+    if ( degree_ == 3 )
     {
-      val += poly_coeffs_( k, p ) * tp;
-      tp *= t;
+      return poly_coeffs_( k, 0 ) + t * ( poly_coeffs_( k, 1 ) + t * ( poly_coeffs_( k, 2 ) + t * poly_coeffs_( k, 3 ) ) );
+    }
+    else if ( degree_ == 4 )
+    {
+      return poly_coeffs_( k, 0 ) + t * ( poly_coeffs_( k, 1 ) + t * ( poly_coeffs_( k, 2 ) + t * ( poly_coeffs_( k, 3 ) + t * poly_coeffs_( k, 4 ) ) ) );
+    }
+
+    float val = poly_coeffs_( k, degree_ );
+    for ( int p = degree_ - 1; p >= 0; --p )
+    {
+      val = poly_coeffs_( k, p ) + t * val;
     }
     return val;
   }
 
   /**
-   * @brief Evaluate the derivative of the k-th weight polynomial w'_k(t) = sum_{p=1}^d p * c_{k, p} * t^{p-1}
+   * @brief Evaluate the derivative w'_k(t) using Horner's method
    * @param k Index of the basis (0 <= k < K_)
    * @param t Normalized scale in [-1, 1]
    */
   inline float EvaluateDerivative( int k, float t ) const
   {
-    float val = 0.0f;
-    float tp  = 1.0f;
-    for ( int p = 1; p <= degree_; ++p )
+    if ( degree_ == 3 )
     {
-      val += static_cast<float>( p ) * poly_coeffs_( k, p ) * tp;
-      tp *= t;
+      return poly_coeffs_( k, 1 ) + t * ( 2.0f * poly_coeffs_( k, 2 ) + t * ( 3.0f * poly_coeffs_( k, 3 ) ) );
+    }
+    else if ( degree_ == 4 )
+    {
+      return poly_coeffs_( k, 1 ) + t * ( 2.0f * poly_coeffs_( k, 2 ) + t * ( 3.0f * poly_coeffs_( k, 3 ) + t * ( 4.0f * poly_coeffs_( k, 4 ) ) ) );
+    }
+
+    float val = static_cast<float>( degree_ ) * poly_coeffs_( k, degree_ );
+    for ( int p = degree_ - 1; p >= 1; --p )
+    {
+      val = static_cast<float>( p ) * poly_coeffs_( k, p ) + t * val;
     }
     return val;
   }
 
   /**
-   * @brief Evaluate the second derivative of the k-th weight polynomial w''_k(t) = sum_{p=2}^d p*(p-1) * c_{k, p} * t^{p-2}
+   * @brief Evaluate the second derivative w''_k(t) using Horner's method
    * @param k Index of the basis (0 <= k < K_)
    * @param t Normalized scale in [-1, 1]
    */
   inline float EvaluateSecondDerivative( int k, float t ) const
   {
-    float val = 0.0f;
-    float tp  = 1.0f;
-    for ( int p = 2; p <= degree_; ++p )
+    if ( degree_ == 3 )
     {
-      val += static_cast<float>( p * ( p - 1 ) ) * poly_coeffs_( k, p ) * tp;
-      tp *= t;
+      return 2.0f * poly_coeffs_( k, 2 ) + t * ( 6.0f * poly_coeffs_( k, 3 ) );
+    }
+    else if ( degree_ == 4 )
+    {
+      return 2.0f * poly_coeffs_( k, 2 ) + t * ( 6.0f * poly_coeffs_( k, 3 ) + t * ( 12.0f * poly_coeffs_( k, 4 ) ) );
+    }
+
+    float val = static_cast<float>( degree_ * ( degree_ - 1 ) ) * poly_coeffs_( k, degree_ );
+    for ( int p = degree_ - 1; p >= 2; --p )
+    {
+      val = static_cast<float>( p * ( p - 1 ) ) * poly_coeffs_( k, p ) + t * val;
     }
     return val;
   }

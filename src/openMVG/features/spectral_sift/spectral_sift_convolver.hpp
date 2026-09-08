@@ -15,6 +15,7 @@
 #include <Eigen/Core>
 #include <unsupported/Eigen/FFT>
 
+#include "openMVG/features/spectral_sift/spectral_sift_thread_pool.hpp"
 #include "openMVG/image/image_container.hpp"
 
 namespace openMVG
@@ -24,7 +25,8 @@ namespace features
 namespace spectral_sift
 {
 
-using MatrixXcf = Eigen::Matrix<std::complex<float>, Eigen::Dynamic, Eigen::Dynamic>;
+using MatrixXcf   = Eigen::Matrix<std::complex<float>, Eigen::Dynamic, Eigen::Dynamic>;
+using RowMatrixXf = Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
 /**
  * @brief Class managing 2D circular/linear convolution in the frequency domain using Eigen::FFT (KissFFT backend).
@@ -34,6 +36,14 @@ class SpectralConvolver
 {
 public:
   SpectralConvolver();
+
+  /**
+   * @brief Attach a thread pool for parallel FFT execution
+   */
+  void SetThreadPool( ThreadPool* pool )
+  {
+    pool_ = pool;
+  }
 
   /**
    * @brief Initialize or update cached filter FFTs for a given image dimension (W x H).
@@ -46,6 +56,22 @@ public:
   void Init( int                                 width,
              int                                 height,
              const std::vector<Eigen::MatrixXf>& spatial_kernels );
+
+  /**
+   * @brief Compute the 2D Forward FFT of an input image.
+   * @param input_image Input image
+   * @param[out] image_fft Output complex 2D spectrum
+   */
+  void ComputeImageFFT( const image::Image<float>& input_image,
+                        MatrixXcf&                 image_fft );
+
+  /**
+   * @brief Convolve using a precomputed 2D FFT of the input image with all cached basis filters.
+   * @param input_fft Precomputed forward FFT spectrum of the input image
+   * @param[out] output_convolutions Vector of K convolved images
+   */
+  void ConvolveAllFromFFT( const MatrixXcf&                 input_fft,
+                           std::vector<image::Image<float>>& output_convolutions );
 
   /**
    * @brief Convolve input image with all cached basis filters simultaneously.
@@ -68,14 +94,24 @@ public:
                  image::Image<float>&       output_image );
 
   /**
-   * @brief 2D Forward FFT of a real matrix to a complex spectrum
+   * @brief 2D Forward FFT of a real column-major matrix to a complex spectrum
    */
   void ForwardFFT2D( const Eigen::MatrixXf& in, MatrixXcf& out );
 
   /**
-   * @brief 2D Inverse FFT of a complex spectrum to a real matrix
+   * @brief 2D Forward FFT of a real row-major matrix to a complex spectrum
+   */
+  void ForwardFFT2D( const RowMatrixXf& in, MatrixXcf& out );
+
+  /**
+   * @brief 2D Inverse FFT of a complex spectrum to a real column-major matrix
    */
   void InverseFFT2D( const MatrixXcf& in, Eigen::MatrixXf& out );
+
+  /**
+   * @brief 2D Inverse FFT of a complex spectrum to a real row-major matrix
+   */
+  void InverseFFT2D( const MatrixXcf& in, RowMatrixXf& out );
 
   int GetCachedWidth() const
   {
@@ -91,10 +127,20 @@ public:
   }
 
 private:
+  void EnsureScratch( int H, int W );
+
   int                    cached_width_;
   int                    cached_height_;
   std::vector<MatrixXcf> cached_filter_ffts_;
-  Eigen::FFT<float>      fft_;
+  ThreadPool*            pool_;
+
+  struct ThreadScratch
+  {
+    Eigen::FFT<float>                fft;
+    std::vector<float>               r_buf;
+    std::vector<std::complex<float>> c_buf;
+  };
+  std::vector<ThreadScratch> thread_scratch_;
 };
 
 } // namespace spectral_sift

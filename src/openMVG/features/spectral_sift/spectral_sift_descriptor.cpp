@@ -12,10 +12,6 @@
 #include <algorithm>
 #include <cmath>
 
-#ifdef OPENMVG_USE_OPENMP
-#include <omp.h>
-#endif
-
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
@@ -29,13 +25,15 @@ namespace spectral_sift
 
 SpectralSIFTDescriptorExtractor::SpectralSIFTDescriptorExtractor()
     : params_( Params() ),
-      is_initialized_( false )
+      is_initialized_( false ),
+      pool_( nullptr )
 {
 }
 
 SpectralSIFTDescriptorExtractor::SpectralSIFTDescriptorExtractor( const Params& params )
     : params_( params ),
-      is_initialized_( false )
+      is_initialized_( false ),
+      pool_( nullptr )
 {
 }
 
@@ -64,7 +62,8 @@ bool SpectralSIFTDescriptorExtractor::Init()
 void SpectralSIFTDescriptorExtractor::DescribeOctave( const image::Image<float>&             octave_image,
                                                       int                                    octave_idx,
                                                       const std::vector<SpectralKeypoint>&   input_keypoints,
-                                                      std::vector<SpectralOrientedKeypoint>& output_keypoints )
+                                                      std::vector<SpectralOrientedKeypoint>& output_keypoints,
+                                                      const MatrixXcf*                       octave_fft )
 {
   if ( input_keypoints.empty() )
   {
@@ -87,9 +86,21 @@ void SpectralSIFTDescriptorExtractor::DescribeOctave( const image::Image<float>&
 
   // Convolve octave image with the K Gaussian basis filters
   std::vector<image::Image<float>> G_images;
-  convolver_.ConvolveAll( octave_image, G_images );
+  if ( octave_fft != nullptr )
+  {
+    if ( octave_fft->rows() != H || octave_fft->cols() != W )
+    {
+      convolver_.ComputeImageFFT( octave_image, const_cast<MatrixXcf&>( *octave_fft ) );
+    }
+    convolver_.ConvolveAllFromFFT( *octave_fft, G_images );
+  }
+  else
+  {
+    convolver_.ConvolveAll( octave_image, G_images );
+  }
 
-  // Precompute spatial central difference gradients for each basis image
+  // Precompute spatial central difference gradients for each basis image using Eigen block operations
+  using RowMatrix = image::Image<float>::Base;
   std::vector<image::Image<float>> Gx_images( K_gauss );
   std::vector<image::Image<float>> Gy_images( K_gauss );
 
@@ -100,37 +111,59 @@ void SpectralSIFTDescriptorExtractor::DescribeOctave( const image::Image<float>&
     Gx_images[ k ].fill( 0.0f );
     Gy_images[ k ].fill( 0.0f );
 
-#ifdef OPENMVG_USE_OPENMP
-#pragma omp parallel for
-#endif
-    for ( int y = 1; y < H - 1; ++y )
+    if ( H > 2 && W > 2 )
     {
-      for ( int x = 1; x < W - 1; ++x )
-      {
-        Gx_images[ k ]( y, x ) = 0.5f * ( G_images[ k ]( y, x + 1 ) - G_images[ k ]( y, x - 1 ) );
-        Gy_images[ k ]( y, x ) = 0.5f * ( G_images[ k ]( y + 1, x ) - G_images[ k ]( y - 1, x ) );
-      }
+      static_cast<RowMatrix&>( Gx_images[ k ] ).block( 1, 1, H - 2, W - 2 ) =
+          0.5f * ( static_cast<const RowMatrix&>( G_images[ k ] ).block( 1, 2, H - 2, W - 2 ) -
+                   static_cast<const RowMatrix&>( G_images[ k ] ).block( 1, 0, H - 2, W - 2 ) );
+
+      static_cast<RowMatrix&>( Gy_images[ k ] ).block( 1, 1, H - 2, W - 2 ) =
+          0.5f * ( static_cast<const RowMatrix&>( G_images[ k ] ).block( 2, 1, H - 2, W - 2 ) -
+                   static_cast<const RowMatrix&>( G_images[ k ] ).block( 0, 1, H - 2, W - 2 ) );
     }
   }
 
-  // Compute orientations and descriptors for each keypoint
-  for ( const auto& kp : input_keypoints )
+  // Multi-threaded computation of orientations and descriptors across keypoints
+  const int   num_kps     = static_cast<int>( input_keypoints.size() );
+  ThreadPool* pool        = pool_ ? pool_ : &ThreadPool::GlobalInstance();
+  const int   num_threads = std::max( 1, static_cast<int>( pool->NumThreads() ) );
+
+  std::vector<std::vector<SpectralOrientedKeypoint>> thread_kps( num_threads );
+
+  ParallelForWithId(
+      0, num_kps,
+      [&]( int i, int tid ) {
+        const auto& kp = input_keypoints[ i ];
+        std::vector<float> orientations;
+        ComputeOrientations( Gx_images, Gy_images, kp, orientations );
+
+        for ( const float theta : orientations )
+        {
+          SpectralOrientedKeypoint okp;
+          okp.x      = kp.x;
+          okp.y      = kp.y;
+          okp.sigma  = kp.sigma;
+          okp.theta  = theta;
+          okp.octave = octave_idx;
+          okp.val    = kp.val;
+
+          ComputeDescriptor( Gx_images, Gy_images, kp, theta, okp.descr );
+          thread_kps[ tid ].emplace_back( std::move( okp ) );
+        }
+      },
+      pool );
+
+  size_t total_described = 0;
+  for ( const auto& kps : thread_kps )
   {
-    std::vector<float> orientations;
-    ComputeOrientations( Gx_images, Gy_images, kp, orientations );
-
-    for ( const float theta : orientations )
+    total_described += kps.size();
+  }
+  output_keypoints.reserve( output_keypoints.size() + total_described );
+  for ( auto& kps : thread_kps )
+  {
+    for ( auto& kp : kps )
     {
-      SpectralOrientedKeypoint okp;
-      okp.x      = kp.x;
-      okp.y      = kp.y;
-      okp.sigma  = kp.sigma;
-      okp.theta  = theta;
-      okp.octave = octave_idx;
-      okp.val    = kp.val;
-
-      ComputeDescriptor( Gx_images, Gy_images, kp, theta, okp.descr );
-      output_keypoints.emplace_back( std::move( okp ) );
+      output_keypoints.emplace_back( std::move( kp ) );
     }
   }
 }
@@ -146,11 +179,12 @@ void SpectralSIFTDescriptorExtractor::ComputeOrientations( const std::vector<ima
   const int H       = Gx_images[ 0 ].Height();
   const int K_gauss = basis_gauss_.GetK();
 
-  const float sigma            = kp.sigma;
-  const float radius_ori       = 3.0f * params_.orientation_scale_ * sigma;
-  const int   int_radius       = static_cast<int>( std::ceil( radius_ori ) );
-  const float sigma_ori        = params_.orientation_scale_ * sigma;
-  const float two_sigma_ori_sq = 2.0f * sigma_ori * sigma_ori;
+  const float sigma                = kp.sigma;
+  const float radius_ori           = 3.0f * params_.orientation_scale_ * sigma;
+  const int   int_radius           = static_cast<int>( std::ceil( radius_ori ) );
+  const float sigma_ori            = params_.orientation_scale_ * sigma;
+  const float two_sigma_ori_sq     = 2.0f * sigma_ori * sigma_ori;
+  const float inv_two_sigma_ori_sq = 1.0f / two_sigma_ori_sq;
 
   const float        t = basis_gauss_.ScaleToT( sigma );
   std::vector<float> weights( K_gauss );
@@ -159,8 +193,9 @@ void SpectralSIFTDescriptorExtractor::ComputeOrientations( const std::vector<ima
     weights[ k ] = basis_gauss_.EvaluatePolynomial( k, t );
   }
 
-  const int          num_bins = 36;
-  const float        bin_size = 2.0f * static_cast<float>( M_PI ) / static_cast<float>( num_bins );
+  const int   num_bins     = 36;
+  const float bin_size     = 2.0f * static_cast<float>( M_PI ) / static_cast<float>( num_bins );
+  const float inv_bin_size = 1.0f / bin_size;
   std::vector<float> hist( num_bins, 0.0f );
 
   const int center_x = static_cast<int>( std::round( kp.x ) );
@@ -202,8 +237,8 @@ void SpectralSIFTDescriptorExtractor::ComputeOrientations( const std::vector<ima
         angle += 2.0f * static_cast<float>( M_PI );
       }
 
-      const float w   = std::exp( -r2 / two_sigma_ori_sq );
-      int         bin = static_cast<int>( std::floor( angle / bin_size ) );
+      const float w   = std::exp( -r2 * inv_two_sigma_ori_sq );
+      int         bin = static_cast<int>( std::floor( angle * inv_bin_size ) );
       bin             = std::max( 0, std::min( num_bins - 1, bin ) );
 
       hist[ bin ] += w * mag;
@@ -283,10 +318,13 @@ void SpectralSIFTDescriptorExtractor::ComputeDescriptor( const std::vector<image
   const int H       = Gx_images[ 0 ].Height();
   const int K_gauss = basis_gauss_.GetK();
 
-  const float sigma        = kp.sigma;
-  const float cell_width   = 3.0f * sigma;
-  const float descr_radius = 2.0f * std::sqrt( 2.0f ) * 2.0f * cell_width;
-  const int   int_radius   = static_cast<int>( std::ceil( descr_radius ) );
+  const float sigma                 = kp.sigma;
+  const float cell_width            = 3.0f * sigma;
+  const float inv_cell_width        = 1.0f / cell_width;
+  const float descr_radius          = 2.0f * std::sqrt( 2.0f ) * 2.0f * cell_width;
+  const int   int_radius            = static_cast<int>( std::ceil( descr_radius ) );
+  const float inv_angle_bin_size    = 8.0f / ( 2.0f * static_cast<float>( M_PI ) );
+  const float inv_two_sigma_grid_sq = 1.0f / 8.0f; // 2.0 * sigma_grid^2 = 2.0 * 2.0^2 = 8.0
 
   const float        t = basis_gauss_.ScaleToT( sigma );
   std::vector<float> weights( K_gauss );
@@ -319,8 +357,8 @@ void SpectralSIFTDescriptorExtractor::ComputeDescriptor( const std::vector<image
       const float delta_x = static_cast<float>( px ) - kp.x;
 
       // Rotate offset by -orientation and scale by cell width
-      const float x_rot = ( cos_t * delta_x + sin_t * delta_y ) / cell_width;
-      const float y_rot = ( -sin_t * delta_x + cos_t * delta_y ) / cell_width;
+      const float x_rot = ( cos_t * delta_x + sin_t * delta_y ) * inv_cell_width;
+      const float y_rot = ( -sin_t * delta_x + cos_t * delta_y ) * inv_cell_width;
 
       // Cell coordinates centered at (1.5, 1.5)
       const float u = x_rot + 1.5f;
@@ -348,10 +386,10 @@ void SpectralSIFTDescriptorExtractor::ComputeDescriptor( const std::vector<image
       while ( diff_theta >= 2.0f * static_cast<float>( M_PI ) )
         diff_theta -= 2.0f * static_cast<float>( M_PI );
 
-      const float o = diff_theta / ( 2.0f * static_cast<float>( M_PI ) / 8.0f );
+      const float o = diff_theta * inv_angle_bin_size;
 
       // Gaussian weighting window on descriptor patch (sigma_grid = 2.0)
-      const float w_spatial    = std::exp( -( x_rot * x_rot + y_rot * y_rot ) / ( 2.0f * 4.0f ) );
+      const float w_spatial    = std::exp( -( x_rot * x_rot + y_rot * y_rot ) * inv_two_sigma_grid_sq );
       const float weighted_mag = mag * w_spatial;
 
       // Trilinear interpolation: u, v, o

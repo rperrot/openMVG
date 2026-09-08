@@ -14,6 +14,7 @@
 
 #include "openMVG/features/spectral_sift/spectral_sift_basis.hpp"
 #include "openMVG/features/spectral_sift/spectral_sift_convolver.hpp"
+#include "openMVG/features/spectral_sift/spectral_sift_thread_pool.hpp"
 #include "openMVG/image/image_container.hpp"
 
 namespace openMVG
@@ -72,6 +73,12 @@ public:
   SpectralSIFTDetector();
   explicit SpectralSIFTDetector( const Params& params );
 
+  void SetThreadPool( ThreadPool* pool )
+  {
+    pool_ = pool;
+    convolver_.SetThreadPool( pool );
+  }
+
   /**
    * @brief Initialize detector basis filters and FFT convolver
    */
@@ -82,10 +89,12 @@ public:
    * @param octave_image Floating point grayscale image of the current octave
    * @param octave_idx Octave index
    * @param[out] keypoints List of detected keypoints with subpixel coordinates and continuous scales
+   * @param octave_fft Optional pointer to precomputed forward FFT or output container
    */
   void DetectOctave( const image::Image<float>&     octave_image,
                      int                            octave_idx,
-                     std::vector<SpectralKeypoint>& keypoints );
+                     std::vector<SpectralKeypoint>& keypoints,
+                     MatrixXcf*                     octave_fft = nullptr );
 
   const SpectralBasis& GetBasis() const
   {
@@ -100,12 +109,17 @@ public:
     params_         = params;
     is_initialized_ = false;
   }
+  SpectralConvolver& GetConvolver()
+  {
+    return convolver_;
+  }
 
 private:
   Params            params_;
   bool              is_initialized_;
   SpectralBasis     basis_slog_;
   SpectralConvolver convolver_;
+  ThreadPool*       pool_;
 };
 
 } // namespace spectral_sift

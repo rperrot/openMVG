@@ -16,6 +16,7 @@
 #include "openMVG/features/spectral_sift/spectral_sift_basis.hpp"
 #include "openMVG/features/spectral_sift/spectral_sift_convolver.hpp"
 #include "openMVG/features/spectral_sift/spectral_sift_detector.hpp"
+#include "openMVG/features/spectral_sift/spectral_sift_thread_pool.hpp"
 #include "openMVG/image/image_container.hpp"
 
 namespace openMVG
@@ -83,6 +84,12 @@ public:
   SpectralSIFTDescriptorExtractor();
   explicit SpectralSIFTDescriptorExtractor( const Params& params );
 
+  void SetThreadPool( ThreadPool* pool )
+  {
+    pool_ = pool;
+    convolver_.SetThreadPool( pool );
+  }
+
   /**
    * @brief Initialize Gaussian spectral basis and convolver
    */
@@ -94,11 +101,13 @@ public:
    * @param octave_idx Octave index
    * @param input_keypoints List of detected keypoints (from SpectralSIFTDetector)
    * @param[out] output_keypoints Oriented keypoints with computed 128-D descriptors
+   * @param octave_fft Optional pointer to precomputed forward FFT spectrum
    */
   void DescribeOctave( const image::Image<float>&             octave_image,
                        int                                    octave_idx,
                        const std::vector<SpectralKeypoint>&   input_keypoints,
-                       std::vector<SpectralOrientedKeypoint>& output_keypoints );
+                       std::vector<SpectralOrientedKeypoint>& output_keypoints,
+                       const MatrixXcf*                       octave_fft = nullptr );
 
   const SpectralBasis& GetBasis() const
   {
@@ -113,12 +122,17 @@ public:
     params_         = params;
     is_initialized_ = false;
   }
+  SpectralConvolver& GetConvolver()
+  {
+    return convolver_;
+  }
 
 private:
   Params            params_;
   bool              is_initialized_;
   SpectralBasis     basis_gauss_;
   SpectralConvolver convolver_;
+  ThreadPool*       pool_;
 
   /**
    * @brief Assign dominant orientation(s) to a keypoint

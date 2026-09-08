@@ -14,10 +14,6 @@
 #include <algorithm>
 #include <cmath>
 
-#ifdef OPENMVG_USE_OPENMP
-#include <omp.h>
-#endif
-
 namespace openMVG
 {
 namespace features
@@ -26,12 +22,12 @@ namespace spectral_sift
 {
 
 SpectralSIFTDetector::SpectralSIFTDetector()
-    : params_( Params() ), is_initialized_( false )
+    : params_( Params() ), is_initialized_( false ), pool_( nullptr )
 {
 }
 
 SpectralSIFTDetector::SpectralSIFTDetector( const Params& params )
-    : params_( params ), is_initialized_( false )
+    : params_( params ), is_initialized_( false ), pool_( nullptr )
 {
 }
 
@@ -59,7 +55,8 @@ bool SpectralSIFTDetector::Init()
 
 void SpectralSIFTDetector::DetectOctave( const image::Image<float>&     octave_image,
                                          int                            octave_idx,
-                                         std::vector<SpectralKeypoint>& keypoints )
+                                         std::vector<SpectralKeypoint>& keypoints,
+                                         MatrixXcf*                     octave_fft )
 {
   if ( !Init() )
   {
@@ -86,39 +83,41 @@ void SpectralSIFTDetector::DetectOctave( const image::Image<float>&     octave_i
 
   // Convolve octave image with the K basis filters
   std::vector<image::Image<float>> C_images;
-  convolver_.ConvolveAll( octave_image, C_images );
+  if ( octave_fft != nullptr )
+  {
+    if ( octave_fft->rows() != H || octave_fft->cols() != W )
+    {
+      convolver_.ComputeImageFFT( octave_image, *octave_fft );
+    }
+    convolver_.ConvolveAllFromFFT( *octave_fft, C_images );
+  }
+  else
+  {
+    convolver_.ConvolveAll( octave_image, C_images );
+  }
 
   // Precalculate the (degree + 1) coefficient images:
   // A_p(y, x) = sum_{k=0}^{K-1} c_{k, p} * C_k(y, x)
+  // Vectorized via Eigen matrix linear combinations (BLAS-1 saxpy)
+  using RowMatrix = image::Image<float>::Base;
   const Eigen::MatrixXf&           poly_coeffs = basis_slog_.GetPolyCoeffs();
   std::vector<image::Image<float>> A_images( num_coeffs );
   for ( int p = 0; p < num_coeffs; ++p )
   {
     A_images[ p ].resize( W, H );
-    A_images[ p ].fill( 0.0f );
-  }
-
-#ifdef OPENMVG_USE_OPENMP
-#pragma omp parallel for
-#endif
-  for ( int y = 0; y < H; ++y )
-  {
-    for ( int x = 0; x < W; ++x )
+    static_cast<RowMatrix&>( A_images[ p ] ).setZero();
+    for ( int k = 0; k < K; ++k )
     {
-      for ( int p = 0; p < num_coeffs; ++p )
+      const float c = poly_coeffs( k, p );
+      if ( c != 0.0f )
       {
-        float val = 0.0f;
-        for ( int k = 0; k < K; ++k )
-        {
-          val += poly_coeffs( k, p ) * C_images[ k ]( y, x );
-        }
-        A_images[ p ]( y, x ) = val;
+        static_cast<RowMatrix&>( A_images[ p ] ) += c * static_cast<const RowMatrix&>( C_images[ k ] );
       }
     }
   }
 
   // Coarse-to-fine candidate selection:
-  // Evaluate 5 discrete scale layers across [-1, 1]
+  // Evaluate 5 discrete scale layers across [-1, 1] using Horner's method on full matrices
   const int                        num_discrete_slices               = 5;
   const float                      discrete_t[ num_discrete_slices ] = { -1.0f, -0.5f, 0.0f, 0.5f, 1.0f };
   std::vector<image::Image<float>> S_slices( num_discrete_slices );
@@ -127,29 +126,12 @@ void SpectralSIFTDetector::DetectOctave( const image::Image<float>&     octave_i
     S_slices[ s ].resize( W, H );
     const float t = discrete_t[ s ];
 
-    std::vector<float> tp( num_coeffs );
-    float              cur_t = 1.0f;
-    for ( int p = 0; p < num_coeffs; ++p )
+    RowMatrix mat = static_cast<const RowMatrix&>( A_images[ degree ] );
+    for ( int p = degree - 1; p >= 0; --p )
     {
-      tp[ p ] = cur_t;
-      cur_t *= t;
+      mat = ( mat * t + static_cast<const RowMatrix&>( A_images[ p ] ) ).eval();
     }
-
-#ifdef OPENMVG_USE_OPENMP
-#pragma omp parallel for
-#endif
-    for ( int y = 0; y < H; ++y )
-    {
-      for ( int x = 0; x < W; ++x )
-      {
-        float val = 0.0f;
-        for ( int p = 0; p < num_coeffs; ++p )
-        {
-          val += A_images[ p ]( y, x ) * tp[ p ];
-        }
-        S_slices[ s ]( y, x ) = val;
-      }
-    }
+    static_cast<RowMatrix&>( S_slices[ s ] ) = mat;
   }
 
   // Pre-filter candidates via 3D discrete 3x3x3 local extrema on the 3 central slices (1, 2, 3)
@@ -278,8 +260,9 @@ void SpectralSIFTDetector::DetectOctave( const image::Image<float>&     octave_i
         if ( delta >= 0.0f )
         {
           const float sqrt_delta = std::sqrt( delta );
-          const float r1         = ( -b + sqrt_delta ) / ( 2.0f * a );
-          const float r2         = ( -b - sqrt_delta ) / ( 2.0f * a );
+          const float inv_2a     = 0.5f / a;
+          const float r1         = ( -b + sqrt_delta ) * inv_2a;
+          const float r2         = ( -b - sqrt_delta ) * inv_2a;
 
           if ( r1 >= -1.0f && r1 <= 1.0f )
             roots.push_back( r1 );
@@ -317,19 +300,43 @@ void SpectralSIFTDetector::DetectOctave( const image::Image<float>&     octave_i
     // Process each valid root
     for ( const float t_exact : roots )
     {
-      // Verify extremum: evaluate P(t) and P''(t)
+      // Verify extremum: evaluate P(t) and P''(t) using Horner's method
       float P_val    = 0.0f;
       float P_deriv2 = 0.0f;
 
-      float tp = 1.0f;
-      for ( int p = 0; p < num_coeffs; ++p )
+      if ( degree == 3 )
       {
-        P_val += A_images[ p ]( y, x ) * tp;
-        if ( p >= 2 )
+        const float A0 = A_images[ 0 ]( y, x );
+        const float A1 = A_images[ 1 ]( y, x );
+        const float A2 = A_images[ 2 ]( y, x );
+        const float A3 = A_images[ 3 ]( y, x );
+
+        P_val    = ( ( A3 * t_exact + A2 ) * t_exact + A1 ) * t_exact + A0;
+        P_deriv2 = 6.0f * A3 * t_exact + 2.0f * A2;
+      }
+      else if ( degree == 4 )
+      {
+        const float A0 = A_images[ 0 ]( y, x );
+        const float A1 = A_images[ 1 ]( y, x );
+        const float A2 = A_images[ 2 ]( y, x );
+        const float A3 = A_images[ 3 ]( y, x );
+        const float A4 = A_images[ 4 ]( y, x );
+
+        P_val    = ( ( ( A4 * t_exact + A3 ) * t_exact + A2 ) * t_exact + A1 ) * t_exact + A0;
+        P_deriv2 = ( 12.0f * A4 * t_exact + 6.0f * A3 ) * t_exact + 2.0f * A2;
+      }
+      else
+      {
+        float tp = 1.0f;
+        for ( int p = 0; p < num_coeffs; ++p )
         {
-          P_deriv2 += static_cast<float>( p * ( p - 1 ) ) * A_images[ p ]( y, x ) * std::pow( t_exact, p - 2 );
+          P_val += A_images[ p ]( y, x ) * tp;
+          if ( p >= 2 )
+          {
+            P_deriv2 += static_cast<float>( p * ( p - 1 ) ) * A_images[ p ]( y, x ) * std::pow( t_exact, p - 2 );
+          }
+          tp *= t_exact;
         }
-        tp *= t_exact;
       }
 
       // Check contrast threshold
@@ -347,20 +354,38 @@ void SpectralSIFTDetector::DetectOctave( const image::Image<float>&     octave_i
       // Continuous scale
       const float sigma_exact = basis_slog_.TToScale( t_exact );
 
-      // Subpixel 2D Taylor refinement on 3x3 local patch at continuous scale t_exact
+      // Subpixel 2D Taylor refinement on 3x3 local patch at continuous scale t_exact using Horner
       float V[ 3 ][ 3 ];
       for ( int dy = -1; dy <= 1; ++dy )
       {
         for ( int dx = -1; dx <= 1; ++dx )
         {
-          float v     = 0.0f;
-          float cur_t = 1.0f;
-          for ( int p = 0; p < num_coeffs; ++p )
+          if ( degree == 3 )
           {
-            v += A_images[ p ]( y + dy, x + dx ) * cur_t;
-            cur_t *= t_exact;
+            V[ dy + 1 ][ dx + 1 ] =
+                ( ( A_images[ 3 ]( y + dy, x + dx ) * t_exact + A_images[ 2 ]( y + dy, x + dx ) ) * t_exact +
+                  A_images[ 1 ]( y + dy, x + dx ) ) * t_exact +
+                A_images[ 0 ]( y + dy, x + dx );
           }
-          V[ dy + 1 ][ dx + 1 ] = v;
+          else if ( degree == 4 )
+          {
+            V[ dy + 1 ][ dx + 1 ] =
+                ( ( ( A_images[ 4 ]( y + dy, x + dx ) * t_exact + A_images[ 3 ]( y + dy, x + dx ) ) * t_exact +
+                    A_images[ 2 ]( y + dy, x + dx ) ) * t_exact +
+                  A_images[ 1 ]( y + dy, x + dx ) ) * t_exact +
+                A_images[ 0 ]( y + dy, x + dx );
+          }
+          else
+          {
+            float v     = 0.0f;
+            float cur_t = 1.0f;
+            for ( int p = 0; p < num_coeffs; ++p )
+            {
+              v += A_images[ p ]( y + dy, x + dx ) * cur_t;
+              cur_t *= t_exact;
+            }
+            V[ dy + 1 ][ dx + 1 ] = v;
+          }
         }
       }
 
@@ -382,15 +407,16 @@ void SpectralSIFTDetector::DetectOctave( const image::Image<float>&     octave_i
       }
 
       // Edge rejection (Lowe curvature ratio)
-      const float edge_score = ( trace * trace ) / det;
+      const float inv_det    = 1.0f / det;
+      const float edge_score = ( trace * trace ) * inv_det;
       if ( edge_score > edge_ratio_threshold )
       {
         continue;
       }
 
       // Solve 2x2 system H * delta = -J
-      const float delta_x = ( -Dx * Dyy + Dy * Dxy ) / det;
-      const float delta_y = ( -Dy * Dxx + Dx * Dxy ) / det;
+      const float delta_x = ( -Dx * Dyy + Dy * Dxy ) * inv_det;
+      const float delta_y = ( -Dy * Dxx + Dx * Dxy ) * inv_det;
 
       if ( std::abs( delta_x ) > 0.5f || std::abs( delta_y ) > 0.5f )
       {
