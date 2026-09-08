@@ -12,6 +12,7 @@
 #include "openMVG/features/akaze/image_describer_akaze_io.hpp"
 
 #include "openMVG/features/sift/SIFT_Anatomy_Image_Describer_io.hpp"
+#include "openMVG/features/spectral_sift/spectral_sift_image_describer_io.hpp"
 #include "openMVG/image/image_io.hpp"
 #include "openMVG/features/regions_factory_io.hpp"
 #include "openMVG/sfm/sfm_data.hpp"
@@ -100,6 +101,7 @@ int main(int argc, char **argv)
         << "  (method to use to describe an image):\n"
         << "   SIFT (default),\n"
         << "   SIFT_ANATOMY,\n"
+        << "   SPECTRAL_SIFT: Spectral SIFT (Gou Koutaki, CVPR 2014),\n"
         << "   AKAZE_FLOAT: AKAZE with floating point descriptors,\n"
         << "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
         << "[-u|--upright] Use Upright feature 0 or 1\n"
@@ -199,6 +201,13 @@ int main(int argc, char **argv)
     {
       image_describer.reset(
         new SIFT_Anatomy_Image_describer(SIFT_Anatomy_Image_describer::Params()));
+    }
+    else
+    if (sImage_Describer_Method == "SPECTRAL_SIFT")
+    {
+      image_describer.reset(
+        new features::spectral_sift::Spectral_SIFT_Image_describer(
+          features::spectral_sift::Spectral_SIFT_Image_describer::Params()));
     }
     else
     if (sImage_Describer_Method == "AKAZE_FLOAT")

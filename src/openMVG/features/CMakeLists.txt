@@ -12,8 +12,10 @@ file(
 )
 
 file(GLOB_RECURSE REMOVEFILESUNITTEST *_test.cpp)
+file(GLOB_RECURSE REMOVEMAINFILES main_*.cpp)
 #Remove the future main files
 list(REMOVE_ITEM features_files_sources ${REMOVEFILESUNITTEST})
+list(REMOVE_ITEM features_files_sources ${REMOVEMAINFILES})
 
 set_source_files_properties(${features_files_sources} PROPERTIES LANGUAGE CXX)
 add_library(openMVG_features ${features_files_sources} ${features_files_headers})
@@ -46,4 +48,5 @@ UNIT_TEST(openMVG image_describer "openMVG_features;${STLPLUS_LIBRARY}")
 add_subdirectory(akaze)
 add_subdirectory(mser)
 add_subdirectory(sift)
+add_subdirectory(spectral_sift)
 add_subdirectory(tbmr)
