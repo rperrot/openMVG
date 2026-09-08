@@ -7,6 +7,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "openMVG/features/spectral_sift/spectral_sift_detector.hpp"
+#include "openMVG/numeric/poly.h"
 #include "openMVG/system/logger.hpp"
 
 #include <unsupported/Eigen/Polynomials>
@@ -38,8 +39,13 @@ bool SpectralSIFTDetector::Init()
     return true;
   }
 
-  if ( !ComputeSpectralBasis( params_.sigma_min_,
-                              params_.sigma_max_,
+  // Expand the spectral basis range by margin_factor_ to keep the active octave [sigma_min, sigma_max]
+  // well inside the interior of the continuous polynomial domain, eliminating boundary/Runge artifacts.
+  const float s_min = params_.sigma_min_ / params_.margin_factor_;
+  const float s_max = params_.sigma_max_ * params_.margin_factor_;
+
+  if ( !ComputeSpectralBasis( s_min,
+                              s_max,
                               params_.degree_,
                               params_.energy_threshold_,
                               FILTER_SLOG,
@@ -117,9 +123,12 @@ void SpectralSIFTDetector::DetectOctave( const image::Image<float>&     octave_i
   }
 
   // Coarse-to-fine candidate selection:
-  // Evaluate 5 discrete scale layers across [-1, 1] using Horner's method on full matrices
-  const int                        num_discrete_slices               = 5;
-  const float                      discrete_t[ num_discrete_slices ] = { -1.0f, -0.5f, 0.0f, 0.5f, 1.0f };
+  // Evaluate 7 discrete scale layers across [-1, 1] using Horner's method on full matrices.
+  // With margin_factor = sqrt(2), the active octave [sigma_min, sigma_max] maps to t in [-0.724, +0.219].
+  // Slices 1..5 bracket the entire active range, guaranteeing that all scale extrema are captured.
+  const int                        num_discrete_slices               = 7;
+  const float                      discrete_t[ num_discrete_slices ] = {
+      -1.0f, -2.0f / 3.0f, -1.0f / 3.0f, 0.0f, 1.0f / 3.0f, 2.0f / 3.0f, 1.0f };
   std::vector<image::Image<float>> S_slices( num_discrete_slices );
   for ( int s = 0; s < num_discrete_slices; ++s )
   {
@@ -134,17 +143,16 @@ void SpectralSIFTDetector::DetectOctave( const image::Image<float>&     octave_i
     static_cast<RowMatrix&>( S_slices[ s ] ) = mat;
   }
 
-  // Pre-filter candidates via 3D discrete 3x3x3 local extrema on the 3 central slices (1, 2, 3)
+  // Pre-filter candidates via 3D discrete 3x3x3 local extrema on the 5 central slices (1..5)
   const float coarse_threshold = 0.8f * params_.peak_threshold_;
   struct Candidate
   {
     int x;
     int y;
-    int s;
   };
   std::vector<Candidate> candidates;
 
-  for ( int s = 1; s <= 3; ++s )
+  for ( int s = 1; s <= 5; ++s )
   {
     const image::Image<float>& prev_slice = S_slices[ s - 1 ];
     const image::Image<float>& curr_slice = S_slices[ s ];
@@ -218,7 +226,7 @@ void SpectralSIFTDetector::DetectOctave( const image::Image<float>&     octave_i
 
         if ( is_max || is_min )
         {
-          candidates.push_back( { x, y, s } );
+          candidates.push_back( { x, y } );
         }
       }
     }
@@ -243,31 +251,19 @@ void SpectralSIFTDetector::DetectOctave( const image::Image<float>&     octave_i
       const float b = 2.0f * A_images[ 2 ]( y, x );
       const float a = 3.0f * A_images[ 3 ]( y, x );
 
-      if ( std::abs( a ) < 1e-8f )
+      // Use RobustQuadraticSolver (Citardauq formula / Muller) to eliminate catastrophic cancellation
+      // when b^2 >> 4ac, which loses precision in standard single-precision float formula.
+      std::vector<double> quad_roots;
+      RobustQuadraticSolver( static_cast<double>( a ),
+                             static_cast<double>( b ),
+                             static_cast<double>( c ),
+                             quad_roots,
+                             1e-8 );
+      for ( const double r : quad_roots )
       {
-        if ( std::abs( b ) > 1e-8f )
+        if ( r >= -1.0 && r <= 1.0 )
         {
-          const float root = -c / b;
-          if ( root >= -1.0f && root <= 1.0f )
-          {
-            roots.push_back( root );
-          }
-        }
-      }
-      else
-      {
-        const float delta = b * b - 4.0f * a * c;
-        if ( delta >= 0.0f )
-        {
-          const float sqrt_delta = std::sqrt( delta );
-          const float inv_2a     = 0.5f / a;
-          const float r1         = ( -b + sqrt_delta ) * inv_2a;
-          const float r2         = ( -b - sqrt_delta ) * inv_2a;
-
-          if ( r1 >= -1.0f && r1 <= 1.0f )
-            roots.push_back( r1 );
-          if ( r2 >= -1.0f && r2 <= 1.0f && std::abs( r2 - r1 ) > 1e-4f )
-            roots.push_back( r2 );
+          roots.push_back( static_cast<float>( r ) );
         }
       }
     }
@@ -354,6 +350,17 @@ void SpectralSIFTDetector::DetectOctave( const image::Image<float>&     octave_i
       // Continuous scale
       const float sigma_exact = basis_slog_.TToScale( t_exact );
 
+      // Scale filtering: retain only keypoints whose continuous scale falls within the active
+      // octave scale range [sigma_min, sigma_max]. Extrema outside this range belong to adjacent
+      // octaves. Expanding the spectral basis by margin_factor keeps this active range away from
+      // polynomial boundary/Runge effects at t = +-1.
+      const float eps_sigma = 1e-3f;
+      if ( sigma_exact < ( params_.sigma_min_ - eps_sigma ) ||
+           sigma_exact > ( params_.sigma_max_ + eps_sigma ) )
+      {
+        continue;
+      }
+
       // Subpixel 2D Taylor refinement on 3x3 local patch at continuous scale t_exact using Horner
       float V[ 3 ][ 3 ];
       for ( int dy = -1; dy <= 1; ++dy )
@@ -400,13 +407,14 @@ void SpectralSIFTDetector::DetectOctave( const image::Image<float>&     octave_i
       const float trace = Dxx + Dyy;
       const float det   = Dxx * Dyy - Dxy * Dxy;
 
-      // Discard unstable / saddle points
+      // Discard unstable / saddle points (must be a local extremum in 2D space)
       if ( det <= 0.0f )
       {
         continue;
       }
 
-      // Edge rejection (Lowe curvature ratio)
+      // Edge rejection: Lowe principal curvature ratio test on the physical Hessian.
+      // trace^2 / det < (r + 1)^2 / r
       const float inv_det    = 1.0f / det;
       const float edge_score = ( trace * trace ) * inv_det;
       if ( edge_score > edge_ratio_threshold )
@@ -414,9 +422,27 @@ void SpectralSIFTDetector::DetectOctave( const image::Image<float>&     octave_i
         continue;
       }
 
-      // Solve 2x2 system H * delta = -J
-      const float delta_x = ( -Dx * Dyy + Dy * Dxy ) * inv_det;
-      const float delta_y = ( -Dy * Dxx + Dx * Dxy ) * inv_det;
+      // Solve 2x2 system H_reg * delta = -J for subpixel shift delta = (delta_x, delta_y).
+      // Tikhonov (Levenberg-Marquardt) regularization:
+      //   H_reg = H + lambda * |trace(H)| * I
+      // When det(H) is close to 0 (e.g. near ill-conditioned structures or weak textures),
+      // naive inversion delta = -H^{-1} J amplifies noise and causes delta to hit the +-0.5 boundary,
+      // introducing systematic subpixel jitter.
+      // Regularizing the diagonal with a fraction of |trace| ensures well-conditioned inversion
+      // while preserving the true curvature orientation.
+      const float reg_diag = params_.tikhonov_lambda_ * std::abs( trace );
+      const float Hxx_reg  = Dxx + reg_diag;
+      const float Hyy_reg  = Dyy + reg_diag;
+      const float det_reg  = Hxx_reg * Hyy_reg - Dxy * Dxy;
+
+      if ( det_reg <= 0.0f )
+      {
+        continue;
+      }
+
+      const float inv_det_reg = 1.0f / det_reg;
+      const float delta_x     = ( -Dx * Hyy_reg + Dy * Dxy ) * inv_det_reg;
+      const float delta_y     = ( -Dy * Hxx_reg + Dx * Dxy ) * inv_det_reg;
 
       if ( std::abs( delta_x ) > 0.5f || std::abs( delta_y ) > 0.5f )
       {

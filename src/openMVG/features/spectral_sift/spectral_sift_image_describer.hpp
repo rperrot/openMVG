@@ -51,7 +51,9 @@ public:
             float sigma_min        = 1.6f,
             float sigma_max        = 3.2f,
             float energy_threshold = 0.999f,
-            bool  root_sift        = true )
+            bool  root_sift        = true,
+            float tikhonov_lambda  = 1e-3f,
+            float margin_factor    = 1.41421356f )
         : first_octave_( first_octave ),
           num_octaves_( num_octaves ),
           edge_threshold_( edge_threshold ),
@@ -60,7 +62,9 @@ public:
           sigma_min_( sigma_min ),
           sigma_max_( sigma_max ),
           energy_threshold_( energy_threshold ),
-          root_sift_( root_sift )
+          root_sift_( root_sift ),
+          tikhonov_lambda_( tikhonov_lambda ),
+          margin_factor_( margin_factor )
     {
     }
 
@@ -77,6 +81,8 @@ public:
     float sigma_max_;        // Scale-space range max per octave (default: 3.2)
     float energy_threshold_; // Target energy conservation ratio (default: 0.999)
     bool  root_sift_;        // Apply Root-SIFT normalization (default: true)
+    float tikhonov_lambda_;  // Tikhonov damping factor for 2D Hessian subpixel solve (default: 1e-3)
+    float margin_factor_;    // Scale-space expansion margin factor (default: sqrt(2) ~ 1.4142)
   };
 
   explicit Spectral_SIFT_Image_describer( const Params& params = Params() )
@@ -147,7 +153,9 @@ public:
           params_.sigma_min_,
           params_.sigma_max_,
           params_.degree_,
-          params_.energy_threshold_ );
+          params_.energy_threshold_,
+          params_.tikhonov_lambda_,
+          params_.margin_factor_ );
       detector_.reset( new SpectralSIFTDetector( det_params ) );
       detector_->SetThreadPool( thread_pool_.get() );
       detector_->Init();
@@ -164,7 +172,8 @@ public:
           params_.sigma_min_,
           params_.sigma_max_,
           params_.degree_,
-          params_.energy_threshold_ );
+          params_.energy_threshold_,
+          params_.margin_factor_ );
       descriptor_extractor_.reset( new SpectralSIFTDescriptorExtractor( desc_params ) );
       descriptor_extractor_->SetThreadPool( thread_pool_.get() );
       descriptor_extractor_->Init();
@@ -196,11 +205,18 @@ public:
       std::vector<SpectralKeypoint> oct_keypoints;
       detector_->DetectOctave( cur_octave_img, o, oct_keypoints, &octave_fft );
 
-      // Compute dominant orientations and 128-D descriptors reusing precomputed forward FFT
-      std::vector<SpectralOrientedKeypoint> oct_described;
-      descriptor_extractor_->DescribeOctave( cur_octave_img, o, oct_keypoints, oct_described, &octave_fft );
+      // Compute dominant orientations and 128-D descriptors reusing precomputed forward FFT.
+      // Also reconstruct the Gaussian smoothed image at scale 2 * sigma_min (3.2) for the next octave.
+      const bool                           is_last_octave = ( o == params_.first_octave_ + params_.num_octaves_ - 1 );
+      image::Image<float>                  smoothed_img;
+      image::Image<float>*                 p_smoothed = is_last_octave ? nullptr : &smoothed_img;
 
-      // Map coordinates back to original image scale
+      std::vector<SpectralOrientedKeypoint> oct_described;
+      descriptor_extractor_->DescribeOctave( cur_octave_img, o, oct_keypoints, oct_described, &octave_fft, p_smoothed );
+
+      // Map coordinates back to original image scale.
+      // Because ImageDecimate samples exactly (2i, 2j), there is zero subpixel phase shift across octaves:
+      // x_orig = x_octave * 2^o
       const float octave_scale = std::pow( 2.0f, static_cast<float>( o ) );
       for ( auto& kp : oct_described )
       {
@@ -210,10 +226,13 @@ public:
         all_keypoints.emplace_back( std::move( kp ) );
       }
 
-      // Downsample by 2 for next octave
-      image::Image<float> next_octave_img;
-      image::ImageHalfSample( cur_octave_img, next_octave_img );
-      cur_octave_img = std::move( next_octave_img );
+      // Downsample by 2 for next octave using exact decimation without phase shift
+      if ( !is_last_octave )
+      {
+        image::Image<float> next_octave_img;
+        image::ImageDecimate( smoothed_img, next_octave_img );
+        cur_octave_img = std::move( next_octave_img );
+      }
     }
 
     // Filter by mask and populate Regions

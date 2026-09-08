@@ -26,7 +26,9 @@ inline void openMVG::features::spectral_sift::Spectral_SIFT_Image_describer::Par
       cereal::make_nvp( "sigma_min", sigma_min_ ),
       cereal::make_nvp( "sigma_max", sigma_max_ ),
       cereal::make_nvp( "energy_threshold", energy_threshold_ ),
-      cereal::make_nvp( "root_sift", root_sift_ ) );
+      cereal::make_nvp( "root_sift", root_sift_ ),
+      cereal::make_nvp( "tikhonov_lambda", tikhonov_lambda_ ),
+      cereal::make_nvp( "margin_factor", margin_factor_ ) );
 }
 
 template <class Archive>

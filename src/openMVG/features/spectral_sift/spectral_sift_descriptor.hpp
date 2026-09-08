@@ -57,7 +57,8 @@ public:
             float sigma_min         = 1.6f,
             float sigma_max         = 3.2f,
             int   degree            = 3,
-            float energy_threshold  = 0.999f )
+            float energy_threshold  = 0.999f,
+            float margin_factor     = 1.41421356f )
         : root_sift_( root_sift ),
           orientation_scale_( orientation_scale ),
           percentage_keep_( percentage_keep ),
@@ -66,7 +67,8 @@ public:
           sigma_min_( sigma_min ),
           sigma_max_( sigma_max ),
           degree_( degree ),
-          energy_threshold_( energy_threshold )
+          energy_threshold_( energy_threshold ),
+          margin_factor_( margin_factor )
     {
     }
 
@@ -79,6 +81,8 @@ public:
     float sigma_max_;
     int   degree_;
     float energy_threshold_;
+    // Expansion factor applied to [sigma_min, sigma_max] when generating Gaussian spectral basis
+    float margin_factor_;
   };
 
   SpectralSIFTDescriptorExtractor();
@@ -102,12 +106,15 @@ public:
    * @param input_keypoints List of detected keypoints (from SpectralSIFTDetector)
    * @param[out] output_keypoints Oriented keypoints with computed 128-D descriptors
    * @param octave_fft Optional pointer to precomputed forward FFT spectrum
+   * @param[out] smoothed_image_at_2sigma Optional output pointer to receive Gaussian smoothed image
+   *             reconstructed at scale 2 * sigma_min (for exact decimation into the next octave)
    */
   void DescribeOctave( const image::Image<float>&             octave_image,
                        int                                    octave_idx,
                        const std::vector<SpectralKeypoint>&   input_keypoints,
                        std::vector<SpectralOrientedKeypoint>& output_keypoints,
-                       const MatrixXcf*                       octave_fft = nullptr );
+                       const MatrixXcf*                       octave_fft               = nullptr,
+                       image::Image<float>*                   smoothed_image_at_2sigma = nullptr );
 
   const SpectralBasis& GetBasis() const
   {

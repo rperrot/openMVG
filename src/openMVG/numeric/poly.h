@@ -20,6 +20,75 @@ namespace openMVG
 {
 
 /**
+ * @brief Numerically robust quadratic polynomial solver for a * x^2 + b * x + c = 0
+ *        Uses Citardauq / Muller formulation (Numerical Recipes) to avoid catastrophic cancellation
+ *        when b^2 >> 4ac.
+ * @param a Quadratic coefficient
+ * @param b Linear coefficient
+ * @param c Constant coefficient
+ * @param[out] roots Array of up to 2 real roots
+ * @param eps Numerical tolerance for degeneracy checks
+ * @return Number of unique real roots found (0, 1, or 2)
+ */
+template <typename Real>
+int RobustQuadraticSolver( Real a, Real b, Real c, Real roots[ 2 ], Real eps = std::numeric_limits<Real>::epsilon() )
+{
+  if ( std::abs( a ) <= eps )
+  {
+    if ( std::abs( b ) > eps )
+    {
+      roots[ 0 ] = -c / b;
+      return 1;
+    }
+    return 0; // Degenerate or constant
+  }
+
+  const Real delta = b * b - static_cast<Real>( 4 ) * a * c;
+  if ( delta < static_cast<Real>( 0 ) )
+  {
+    return 0; // No real roots
+  }
+
+  const Real sqrt_delta = std::sqrt( delta );
+  // Citardauq / Muller formula: q = -0.5 * (b + sgn(b) * sqrt(delta))
+  // Terms have the same sign, completely eliminating catastrophic cancellation
+  const Real sign_b = ( b >= static_cast<Real>( 0 ) ) ? static_cast<Real>( 1 ) : static_cast<Real>( -1 );
+  const Real q      = static_cast<Real>( -0.5 ) * ( b + sign_b * sqrt_delta );
+
+  roots[ 0 ] = q / a;
+  if ( std::abs( q ) > eps )
+  {
+    roots[ 1 ] = c / q;
+  }
+  else
+  {
+    roots[ 1 ] = roots[ 0 ];
+  }
+
+  if ( std::abs( roots[ 0 ] - roots[ 1 ] ) <= eps )
+  {
+    return 1;
+  }
+  return 2;
+}
+
+/**
+ * @brief Vector overload of RobustQuadraticSolver
+ */
+template <typename Real>
+int RobustQuadraticSolver( Real a, Real b, Real c, std::vector<Real>& roots, Real eps = std::numeric_limits<Real>::epsilon() )
+{
+  Real r[ 2 ];
+  const int n = RobustQuadraticSolver( a, b, c, r, eps );
+  roots.clear();
+  for ( int i = 0; i < n; ++i )
+  {
+    roots.push_back( r[ i ] );
+  }
+  return n;
+}
+
+/**
 * @brief Solve roots of a cubic polynomial
 * \f$ x^3 + a x^2 + b x + c = 0 \f$
 * @param a Coefficient of quadratic parameter

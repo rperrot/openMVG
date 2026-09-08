@@ -418,6 +418,73 @@ TEST( SpectralSIFT, CerealPolymorphicSerialization )
     EXPECT_NEAR( spectral_ptr->GetParams().peak_threshold_, 0.03f, 1e-4f );
     EXPECT_EQ( spectral_ptr->GetParams().degree_, 3 );
     EXPECT_TRUE( spectral_ptr->GetParams().root_sift_ );
+    EXPECT_NEAR( spectral_ptr->GetParams().tikhonov_lambda_, 1e-3f, 1e-6f );
+    EXPECT_NEAR( spectral_ptr->GetParams().margin_factor_, 1.41421356f, 1e-4f );
+  }
+}
+
+TEST( SpectralSIFT, InterOctaveGridAlignment )
+{
+  // Synthesize an image containing a Gaussian blob at scale sigma = 4.8.
+  // In octave 0 ([1.6, 3.2]), this blob is outside the nominal scale range.
+  // In octave 1 (decimated by 2), the effective scale is 4.8 / 2 = 2.4, which is detected.
+  // We verify that the reconstructed coordinates (scaled by 2^1) align subpixel-accurately
+  // with the ground truth center, proving that ImageDecimate introduces 0 systematic phase shift.
+  const int   W        = 256;
+  const int   H        = 256;
+  const float center_x = 128.0f;
+  const float center_y = 128.0f;
+  const float sigma    = 4.8f;
+  const float s2_2     = 2.0f * sigma * sigma;
+
+  Image<unsigned char> img( W, H );
+  for ( int y = 0; y < H; ++y )
+  {
+    const float dy = static_cast<float>( y ) - center_y;
+    for ( int x = 0; x < W; ++x )
+    {
+      const float dx = static_cast<float>( x ) - center_x;
+      const float r2 = dx * dx + dy * dy;
+      const float val = 255.0f * std::exp( -r2 / s2_2 );
+      img( y, x ) = static_cast<unsigned char>( std::max( 0.0f, std::min( 255.0f, val ) ) );
+    }
+  }
+
+  Spectral_SIFT_Image_describer describer;
+  describer.ChangeParams().num_octaves_    = 2;
+  describer.ChangeParams().peak_threshold_ = 0.01f;
+
+  auto regions = describer.Describe( img );
+  EXPECT_TRUE( regions != nullptr );
+  EXPECT_TRUE( regions->RegionCount() > 0 );
+
+  if ( regions && regions->RegionCount() > 0 )
+  {
+    const auto* sift_regions = dynamic_cast<const SIFT_Regions*>( regions.get() );
+    EXPECT_TRUE( sift_regions != nullptr );
+    if ( sift_regions )
+    {
+      const auto& feats = sift_regions->Features();
+      float best_dist = 1e9f;
+      int   best_idx  = 0;
+      for ( size_t i = 0; i < feats.size(); ++i )
+      {
+        const float d = std::hypot( feats[ i ].x() - center_x, feats[ i ].y() - center_y );
+        if ( d < best_dist )
+        {
+          best_dist = d;
+          best_idx  = static_cast<int>( i );
+        }
+      }
+
+      // Feature detected in octave 1 accurately matches ground truth position (no systematic +0.5 shift)
+      EXPECT_NEAR( feats[ best_idx ].x(), center_x, 0.3f );
+      EXPECT_NEAR( feats[ best_idx ].y(), center_y, 0.3f );
+      // Effective scale accounts for the pre-smoothing sigma=3.2 applied before decimation:
+      // sigma_eff = sqrt(sigma_blob^2 + sigma_smooth^2) = sqrt(4.8^2 + 3.2^2) ~ 5.77
+      const float expected_scale = std::hypot( sigma, 3.2f );
+      EXPECT_NEAR( feats[ best_idx ].scale(), expected_scale, 0.5f );
+    }
   }
 }
 

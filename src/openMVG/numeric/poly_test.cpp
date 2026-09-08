@@ -80,6 +80,37 @@ TEST(Poly, SolveCubicPolynomial) {
   EXPECT_NEAR(coeff[2], found_roots[1], epsilon);
 }
 
+TEST( Poly, RobustQuadraticSolver )
+{
+  std::vector<double> roots;
+
+  // Case 1: Standard roots (x - 1)(x - 2) = x^2 - 3x + 2 = 0
+  CHECK_EQUAL( 2, RobustQuadraticSolver( 1.0, -3.0, 2.0, roots ) );
+  std::sort( roots.begin(), roots.end() );
+  EXPECT_NEAR( 1.0, roots[ 0 ], 1e-6 );
+  EXPECT_NEAR( 2.0, roots[ 1 ], 1e-6 );
+
+  // Case 2: Double root (x - 3)^2 = x^2 - 6x + 9 = 0
+  CHECK_EQUAL( 1, RobustQuadraticSolver( 1.0, -6.0, 9.0, roots ) );
+  EXPECT_NEAR( 3.0, roots[ 0 ], 1e-6 );
+
+  // Case 3: No real roots x^2 + 1 = 0
+  CHECK_EQUAL( 0, RobustQuadraticSolver( 1.0, 0.0, 1.0, roots ) );
+
+  // Case 4: Degenerate linear equation a = 0: 2x - 6 = 0 => x = 3
+  CHECK_EQUAL( 1, RobustQuadraticSolver( 0.0, 2.0, -6.0, roots ) );
+  EXPECT_NEAR( 3.0, roots[ 0 ], 1e-6 );
+
+  // Case 5: Catastrophic cancellation test case in float precision:
+  // x^2 - 10000.0f * x + 1.0f = 0 => roots are ~ 10000.0f and ~ 0.0001f (1/10000)
+  std::vector<float> roots_f;
+  CHECK_EQUAL( 2, RobustQuadraticSolver( 1.0f, -10000.0f, 1.0f, roots_f, 1e-6f ) );
+  std::sort( roots_f.begin(), roots_f.end() );
+  EXPECT_NEAR( 1e-4f, roots_f[ 0 ], 1e-7f );
+  EXPECT_NEAR( 10000.0f, roots_f[ 1 ], 1e-1f );
+}
+
 /* ************************************************************************* */
 int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
 /* ************************************************************************* */
+

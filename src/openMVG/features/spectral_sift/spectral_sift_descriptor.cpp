@@ -44,8 +44,13 @@ bool SpectralSIFTDescriptorExtractor::Init()
     return true;
   }
 
-  if ( !ComputeSpectralBasis( params_.sigma_min_,
-                              params_.sigma_max_,
+  // Expand Gaussian spectral basis by margin_factor_ so that the nominal octave range [sigma_min, sigma_max]
+  // and scale 2 * sigma_min (for inter-octave decimation) are squarely in the interior of the continuous polynomial.
+  const float s_min = params_.sigma_min_ / params_.margin_factor_;
+  const float s_max = params_.sigma_max_ * params_.margin_factor_;
+
+  if ( !ComputeSpectralBasis( s_min,
+                              s_max,
                               params_.degree_,
                               params_.energy_threshold_,
                               FILTER_GAUSSIAN,
@@ -63,9 +68,10 @@ void SpectralSIFTDescriptorExtractor::DescribeOctave( const image::Image<float>&
                                                       int                                    octave_idx,
                                                       const std::vector<SpectralKeypoint>&   input_keypoints,
                                                       std::vector<SpectralOrientedKeypoint>& output_keypoints,
-                                                      const MatrixXcf*                       octave_fft )
+                                                      const MatrixXcf*                       octave_fft,
+                                                      image::Image<float>*                   smoothed_image_at_2sigma )
 {
-  if ( input_keypoints.empty() )
+  if ( input_keypoints.empty() && smoothed_image_at_2sigma == nullptr )
   {
     return;
   }
@@ -99,8 +105,31 @@ void SpectralSIFTDescriptorExtractor::DescribeOctave( const image::Image<float>&
     convolver_.ConvolveAll( octave_image, G_images );
   }
 
-  // Precompute spatial central difference gradients for each basis image using Eigen block operations
   using RowMatrix = image::Image<float>::Base;
+
+  // Reconstruct smoothed image at sigma = 2 * sigma_min for downsampling the next octave
+  if ( smoothed_image_at_2sigma != nullptr )
+  {
+    smoothed_image_at_2sigma->resize( W, H );
+    static_cast<RowMatrix&>( *smoothed_image_at_2sigma ).setZero();
+    const float t_2sigma = basis_gauss_.ScaleToT( 2.0f * params_.sigma_min_ );
+    for ( int k = 0; k < K_gauss; ++k )
+    {
+      const float w = basis_gauss_.EvaluatePolynomial( k, t_2sigma );
+      if ( w != 0.0f )
+      {
+        static_cast<RowMatrix&>( *smoothed_image_at_2sigma ) +=
+            w * static_cast<const RowMatrix&>( G_images[ k ] );
+      }
+    }
+  }
+
+  if ( input_keypoints.empty() )
+  {
+    return;
+  }
+
+  // Precompute spatial central difference gradients for each basis image using Eigen block operations
   std::vector<image::Image<float>> Gx_images( K_gauss );
   std::vector<image::Image<float>> Gy_images( K_gauss );
 

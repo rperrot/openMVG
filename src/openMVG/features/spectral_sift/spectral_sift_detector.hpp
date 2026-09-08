@@ -52,13 +52,17 @@ public:
             float sigma_min        = 1.6f,
             float sigma_max        = 3.2f,
             int   degree           = 3,
-            float energy_threshold = 0.999f )
+            float energy_threshold = 0.999f,
+            float tikhonov_lambda  = 1e-3f,
+            float margin_factor    = 1.41421356f )
         : peak_threshold_( peak_threshold ),
           edge_threshold_( edge_threshold ),
           sigma_min_( sigma_min ),
           sigma_max_( sigma_max ),
           degree_( degree ),
-          energy_threshold_( energy_threshold )
+          energy_threshold_( energy_threshold ),
+          tikhonov_lambda_( tikhonov_lambda ),
+          margin_factor_( margin_factor )
     {
     }
 
@@ -68,6 +72,12 @@ public:
     float sigma_max_;
     int   degree_;
     float energy_threshold_;
+    // Tikhonov / Levenberg-Marquardt damping factor for the 2D spatial Hessian (H_reg = H + lambda * |trace| * I).
+    // Prevents extreme subpixel coordinate blow-up when det(H) -> 0 near ill-conditioned structures.
+    float tikhonov_lambda_;
+    // Expansion factor applied to [sigma_min, sigma_max] when generating the spectral basis.
+    // Places the active octave squarely in the interior of the polynomial, eliminating octave-boundary truncation.
+    float margin_factor_;
   };
 
   SpectralSIFTDetector();
