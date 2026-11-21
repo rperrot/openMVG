@@ -195,6 +195,11 @@ void SpectralConvolver::Init( int                                 width,
                               int                                 height,
                               const std::vector<Eigen::MatrixXf>& spatial_kernels )
 {
+  if ( width <= 0 || height <= 0 )
+  {
+    return;
+  }
+
   cached_width_  = width;
   cached_height_ = height;
   cached_filter_ffts_.clear();
@@ -212,12 +217,12 @@ void SpectralConvolver::Init( int                                 width,
     for ( int y = 0; y < L; ++y )
     {
       const int dy     = y - radius;
-      const int dest_y = ( dy + height ) % height;
+      const int dest_y = ( ( dy % height ) + height ) % height;
       for ( int x = 0; x < L; ++x )
       {
         const int dx             = x - radius;
-        const int dest_x         = ( dx + width ) % width;
-        padded( dest_y, dest_x ) = kernel( y, x );
+        const int dest_x         = ( ( dx % width ) + width ) % width;
+        padded( dest_y, dest_x ) += kernel( y, x );
       }
     }
 

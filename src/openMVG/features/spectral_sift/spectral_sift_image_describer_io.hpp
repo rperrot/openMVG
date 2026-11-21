@@ -25,8 +25,50 @@ inline void openMVG::features::spectral_sift::Spectral_SIFT_Image_describer::Par
       cereal::make_nvp( "degree", degree_ ),
       cereal::make_nvp( "sigma_min", sigma_min_ ),
       cereal::make_nvp( "sigma_max", sigma_max_ ),
-      cereal::make_nvp( "energy_threshold", energy_threshold_ ),
-      cereal::make_nvp( "root_sift", root_sift_ ),
+      cereal::make_nvp( "energy_threshold", energy_threshold_ ) );
+
+  if ( !Archive::is_loading::value )
+  {
+    int norm_int = static_cast<int>( normalization_ );
+    ar(
+        cereal::make_nvp( "normalization", norm_int ),
+        cereal::make_nvp( "dsp_min_scale", dsp_min_scale_ ),
+        cereal::make_nvp( "dsp_max_scale", dsp_max_scale_ ),
+        cereal::make_nvp( "dsp_num_scales", dsp_num_scales_ ) );
+  }
+  else
+  {
+    int norm_int = static_cast<int>( DSP_ROOT_SIFT );
+    try
+    {
+      ar( cereal::make_nvp( "normalization", norm_int ) );
+      if ( norm_int >= static_cast<int>( LOWE_SIFT ) &&
+           norm_int <= static_cast<int>( DSP_ROOT_SIFT ) )
+      {
+        normalization_ = static_cast<ESpectralDescriptorNormalization>( norm_int );
+      }
+      else
+      {
+        normalization_ = DSP_ROOT_SIFT;
+      }
+      ar(
+          cereal::make_nvp( "dsp_min_scale", dsp_min_scale_ ),
+          cereal::make_nvp( "dsp_max_scale", dsp_max_scale_ ),
+          cereal::make_nvp( "dsp_num_scales", dsp_num_scales_ ) );
+    }
+    catch ( const cereal::Exception& )
+    {
+      // Backward compatibility for legacy JSON files storing only "root_sift"
+      bool legacy_root_sift = true;
+      ar( cereal::make_nvp( "root_sift", legacy_root_sift ) );
+      normalization_  = legacy_root_sift ? ROOT_SIFT : LOWE_SIFT;
+      dsp_min_scale_  = 1.0f / 6.0f;
+      dsp_max_scale_  = 2.0f;
+      dsp_num_scales_ = 10;
+    }
+  }
+
+  ar(
       cereal::make_nvp( "tikhonov_lambda", tikhonov_lambda_ ),
       cereal::make_nvp( "margin_factor", margin_factor_ ) );
 }

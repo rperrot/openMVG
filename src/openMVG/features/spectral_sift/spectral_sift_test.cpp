@@ -380,6 +380,277 @@ TEST( SpectralDescriptor, OrientationAndDescriptorComputation )
   }
 }
 
+TEST( SpectralDescriptor, FourModesAndLogScaleSpacing )
+{
+  // Verify defaults: DSP_ROOT_SIFT, [1/6, 2.0], 10 logarithmic scales
+  SpectralSIFTDescriptorExtractor default_extractor;
+  EXPECT_TRUE( default_extractor.Init() );
+  EXPECT_EQ( default_extractor.GetParams().normalization_, DSP_ROOT_SIFT );
+  EXPECT_NEAR( default_extractor.GetParams().dsp_min_scale_, 1.0f / 6.0f, 1e-6f );
+  EXPECT_NEAR( default_extractor.GetParams().dsp_max_scale_, 2.0f, 1e-6f );
+  EXPECT_EQ( default_extractor.GetParams().dsp_num_scales_, 10 );
+
+  const auto& scales = default_extractor.GetDSPScales();
+  EXPECT_EQ( scales.size(), 10u );
+  EXPECT_NEAR( scales.front(), 1.0f / 6.0f, 1e-6f );
+  EXPECT_NEAR( scales.back(), 2.0f, 1e-6f );
+  const float expected_ratio = std::pow( 12.0f, 1.0f / 9.0f );
+  for ( size_t i = 0; i + 1 < scales.size(); ++i )
+  {
+    EXPECT_NEAR( scales[ i + 1 ] / scales[ i ], expected_ratio, 1e-4f );
+  }
+
+  // Synthesize rich multi-scale image (corner + blob + sinusoids)
+  const int    W = 128;
+  const int    H = 128;
+  Image<float> image( W, H );
+  for ( int y = 0; y < H; ++y )
+  {
+    for ( int x = 0; x < W; ++x )
+    {
+      const float dx = static_cast<float>( x ) - 64.0f;
+      const float dy = static_cast<float>( y ) - 64.0f;
+      const float r2 = dx * dx + dy * dy;
+      const float corner = ( x > 62 && y > 61 ) ? 0.35f : 0.0f;
+      image( y, x ) = 0.45f * std::exp( -r2 / ( 2.0f * 3.5f * 3.5f ) ) +
+                      corner +
+                      0.2f * std::sin( static_cast<float>( x ) / 3.0f ) * std::cos( static_cast<float>( y ) / 4.0f );
+    }
+  }
+
+  SpectralKeypoint kp;
+  kp.x      = 64.0f;
+  kp.y      = 64.0f;
+  kp.sigma  = 2.2f;
+  kp.val    = 0.5f;
+  kp.octave = 0;
+  std::vector<SpectralKeypoint> in_kps = { kp };
+
+  const ESpectralDescriptorNormalization modes[ 4 ] = {
+      LOWE_SIFT, ROOT_SIFT, DSP_SIFT, DSP_ROOT_SIFT };
+  Eigen::Matrix<float, 128, 1> descr_by_mode[ 4 ];
+
+  for ( int m = 0; m < 4; ++m )
+  {
+    SpectralSIFTDescriptorExtractor::Params params;
+    params.normalization_ = modes[ m ];
+    SpectralSIFTDescriptorExtractor extractor( params );
+    EXPECT_TRUE( extractor.Init() );
+
+    std::vector<SpectralOrientedKeypoint> out_kps;
+    extractor.DescribeOctave( image, 0, in_kps, out_kps );
+    EXPECT_TRUE( !out_kps.empty() );
+    if ( !out_kps.empty() )
+    {
+      descr_by_mode[ m ] = out_kps[ 0 ].descr;
+      EXPECT_NEAR( descr_by_mode[ m ].norm(), 512.0f, 1e-2f );
+      for ( int b = 0; b < 128; ++b )
+      {
+        EXPECT_TRUE( std::isfinite( descr_by_mode[ m ][ b ] ) );
+        EXPECT_TRUE( descr_by_mode[ m ][ b ] >= 0.0f );
+      }
+    }
+  }
+
+  // Verify all 4 modes produce distinct descriptors
+  for ( int a = 0; a < 4; ++a )
+  {
+    for ( int b = a + 1; b < 4; ++b )
+    {
+      const float diff = ( descr_by_mode[ a ] - descr_by_mode[ b ] ).norm();
+      EXPECT_TRUE( diff > 5.0f );
+    }
+  }
+}
+
+TEST( SpectralDescriptor, DSPNumericalStabilityAndEdgeCases )
+{
+  // 1) Textured 256x256 image: test kp.sigma = 1.6 (sub-0.5 + Band_low),
+  //    kp.sigma = 3.2 (Band_nom + decimated next_octave), border keypoint, and dsp_max_scale = 4.0 (level-2 cascade)
+  const int    W = 256;
+  const int    H = 256;
+  Image<float> image( W, H );
+  for ( int y = 0; y < H; ++y )
+  {
+    for ( int x = 0; x < W; ++x )
+    {
+      image( y, x ) = 0.5f + 0.3f * std::sin( static_cast<float>( x ) / 4.0f ) +
+                      0.2f * std::cos( static_cast<float>( y ) / 5.0f );
+    }
+  }
+
+  {
+    SpectralSIFTDescriptorExtractor extractor;
+    EXPECT_TRUE( extractor.Init() );
+
+    std::vector<SpectralKeypoint> in_kps( 3 );
+    in_kps[ 0 ] = { 128.0f, 128.0f, 1.6f, 0.5f, 0, 128, 128, 1.0f };
+    in_kps[ 1 ] = { 128.0f, 128.0f, 3.2f, 0.5f, 0, 128, 128, 1.0f };
+    in_kps[ 2 ] = { 19.0f, 19.0f, 3.2f, 0.5f, 0, 19, 19, 1.0f };
+
+    std::vector<SpectralOrientedKeypoint> out_kps;
+    extractor.DescribeOctave( image, 0, in_kps, out_kps );
+    EXPECT_TRUE( out_kps.size() >= 3u );
+    for ( const auto& okp : out_kps )
+    {
+      EXPECT_NEAR( okp.descr.norm(), 512.0f, 1e-2f );
+      for ( int b = 0; b < 128; ++b )
+      {
+        EXPECT_TRUE( std::isfinite( okp.descr[ b ] ) );
+      }
+    }
+  }
+
+  // 2) Extreme dsp_max_scale = 4.0 (triggers level-2 W/4 x H/4 cascade up to 12.8)
+  {
+    SpectralSIFTDescriptorExtractor::Params params;
+    params.normalization_ = DSP_ROOT_SIFT;
+    params.dsp_max_scale_ = 4.0f;
+    SpectralSIFTDescriptorExtractor extractor( params );
+    EXPECT_TRUE( extractor.Init() );
+
+    SpectralKeypoint kp = { 128.0f, 128.0f, 3.2f, 0.5f, 0, 128, 128, 1.0f };
+    std::vector<SpectralOrientedKeypoint> out_kps;
+    extractor.DescribeOctave( image, 0, { kp }, out_kps );
+    EXPECT_TRUE( !out_kps.empty() );
+    if ( !out_kps.empty() )
+    {
+      EXPECT_NEAR( out_kps[ 0 ].descr.norm(), 512.0f, 1e-2f );
+      for ( int b = 0; b < 128; ++b )
+      {
+        EXPECT_TRUE( std::isfinite( out_kps[ 0 ].descr[ b ] ) );
+      }
+    }
+  }
+
+  // 3) Degenerate dsp_num_scales = 1
+  {
+    SpectralSIFTDescriptorExtractor::Params params;
+    params.normalization_  = DSP_ROOT_SIFT;
+    params.dsp_num_scales_ = 1;
+    SpectralSIFTDescriptorExtractor extractor( params );
+    EXPECT_TRUE( extractor.Init() );
+    EXPECT_EQ( extractor.GetDSPScales().size(), 1u );
+    EXPECT_NEAR( extractor.GetDSPScales()[ 0 ], 1.0f, 1e-6f );
+
+    SpectralKeypoint kp = { 128.0f, 128.0f, 2.4f, 0.5f, 0, 128, 128, 1.0f };
+    std::vector<SpectralOrientedKeypoint> out_kps;
+    extractor.DescribeOctave( image, 0, { kp }, out_kps );
+    EXPECT_TRUE( !out_kps.empty() );
+    if ( !out_kps.empty() )
+    {
+      EXPECT_NEAR( out_kps[ 0 ].descr.norm(), 512.0f, 1e-2f );
+    }
+  }
+
+  // 4) Zero / flat image -> finite zero descriptor (no NaN/Inf)
+  {
+    Image<float> zero_img( 64, 64 );
+    zero_img.fill( 0.0f );
+    SpectralSIFTDescriptorExtractor extractor;
+    EXPECT_TRUE( extractor.Init() );
+
+    SpectralKeypoint kp = { 32.0f, 32.0f, 2.0f, 0.0f, 0, 32, 32, 1.0f };
+    std::vector<SpectralOrientedKeypoint> out_kps;
+    extractor.DescribeOctave( zero_img, 0, { kp }, out_kps );
+    EXPECT_TRUE( !out_kps.empty() );
+    if ( !out_kps.empty() )
+    {
+      EXPECT_NEAR( out_kps[ 0 ].descr.norm(), 0.0f, 1e-6f );
+      for ( int b = 0; b < 128; ++b )
+      {
+        EXPECT_TRUE( std::isfinite( out_kps[ 0 ].descr[ b ] ) );
+      }
+    }
+  }
+
+  // 5) Small octave (56x56 where W/2 = 28 < L_nom = 33, so decimated coarse level is skipped safely)
+  {
+    Image<float> small_img( 56, 56 );
+    for ( int y = 0; y < 56; ++y )
+    {
+      for ( int x = 0; x < 56; ++x )
+      {
+        small_img( y, x ) = static_cast<float>( x + 2 * y ) / 168.0f;
+      }
+    }
+    SpectralSIFTDescriptorExtractor extractor;
+    EXPECT_TRUE( extractor.Init() );
+
+    SpectralKeypoint kp = { 28.0f, 28.0f, 3.2f, 0.5f, 0, 28, 28, 1.0f };
+    std::vector<SpectralOrientedKeypoint> out_kps;
+    extractor.DescribeOctave( small_img, 0, { kp }, out_kps );
+    EXPECT_TRUE( !out_kps.empty() );
+    if ( !out_kps.empty() )
+    {
+      EXPECT_TRUE( out_kps[ 0 ].descr.norm() > 0.0f );
+      for ( int b = 0; b < 128; ++b )
+      {
+        EXPECT_TRUE( std::isfinite( out_kps[ 0 ].descr[ b ] ) );
+      }
+    }
+  }
+}
+
+TEST( SpectralDescriptor, DSPScalePerturbationRobustness )
+{
+  const int    W = 256;
+  const int    H = 256;
+  Image<float> img_a( W, H );
+  Image<float> img_b( W, H );
+
+  for ( int y = 0; y < H; ++y )
+  {
+    for ( int x = 0; x < W; ++x )
+    {
+      const float dx = static_cast<float>( x ) - 128.0f;
+      const float dy = static_cast<float>( y ) - 128.0f;
+      const float r  = std::hypot( dx, dy );
+      const float fg = 0.5f * std::exp( -( r * r ) / ( 2.0f * 4.5f * 4.5f ) ) +
+                       ( ( x > 126 && y > 125 ) ? 0.35f : 0.0f ) +
+                       0.2f * std::sin( static_cast<float>( x ) / 3.0f ) * std::cos( static_cast<float>( y ) / 4.0f );
+      const float bg_a = 0.4f * std::sin( static_cast<float>( x ) / 7.0f + static_cast<float>( y ) / 5.0f );
+      const float bg_b = 0.4f * std::cos( static_cast<float>( x ) / 6.0f - static_cast<float>( y ) / 8.0f );
+      img_a( y, x )    = ( r < 45.0f ) ? fg : bg_a;
+      img_b( y, x )    = ( r < 45.0f ) ? fg : bg_b;
+    }
+  }
+
+  auto describe_one = []( const Image<float>& img, ESpectralDescriptorNormalization mode, float sigma ) {
+    SpectralSIFTDescriptorExtractor::Params params;
+    params.normalization_ = mode;
+    SpectralSIFTDescriptorExtractor extractor( params );
+    extractor.Init();
+
+    SpectralKeypoint kp = { 128.0f, 128.0f, sigma, 0.5f, 0, 128, 128, 1.0f };
+    std::vector<SpectralOrientedKeypoint> out_kps;
+    extractor.DescribeOctave( img, 0, { kp }, out_kps );
+    return out_kps[ 0 ].descr;
+  };
+
+  const float s0 = 2.2f;
+  const float sp = 2.2f * 1.35f;
+  const float sm = 2.2f * 0.70f;
+
+  const auto lowe_0     = describe_one( img_a, LOWE_SIFT, s0 );
+  const auto lowe_p     = describe_one( img_b, LOWE_SIFT, sp );
+  const auto lowe_m     = describe_one( img_b, LOWE_SIFT, sm );
+  const auto root_0     = describe_one( img_a, ROOT_SIFT, s0 );
+  const auto root_p     = describe_one( img_b, ROOT_SIFT, sp );
+  const auto root_m     = describe_one( img_b, ROOT_SIFT, sm );
+  const auto dsp_sift_0 = describe_one( img_a, DSP_SIFT, s0 );
+  const auto dsp_sift_p = describe_one( img_b, DSP_SIFT, sp );
+  const auto dsp_sift_m = describe_one( img_b, DSP_SIFT, sm );
+  const auto dsp_root_0 = describe_one( img_a, DSP_ROOT_SIFT, s0 );
+  const auto dsp_root_p = describe_one( img_b, DSP_ROOT_SIFT, sp );
+  const auto dsp_root_m = describe_one( img_b, DSP_ROOT_SIFT, sm );
+
+  EXPECT_TRUE( ( dsp_sift_0 - dsp_sift_p ).norm() < ( lowe_0 - lowe_p ).norm() );
+  EXPECT_TRUE( ( dsp_sift_0 - dsp_sift_m ).norm() < ( lowe_0 - lowe_m ).norm() );
+  EXPECT_TRUE( ( dsp_root_0 - dsp_root_p ).norm() < ( root_0 - root_p ).norm() );
+  EXPECT_TRUE( ( dsp_root_0 - dsp_root_m ).norm() < ( root_0 - root_m ).norm() );
+}
+
 TEST( SpectralSIFT, EmptyImage )
 {
   Image<unsigned char>          empty_image;
@@ -394,7 +665,7 @@ TEST( SpectralSIFT, CerealPolymorphicSerialization )
   std::unique_ptr<Image_describer> describer(
       new Spectral_SIFT_Image_describer(
           Spectral_SIFT_Image_describer::Params(
-              0, 5, 12.0f, 0.03f, 3, 1.6f, 3.2f, 0.999f, true ) ) );
+              0, 5, 12.0f, 0.03f, 3, 1.6f, 3.2f, 0.999f, DSP_ROOT_SIFT, 1e-3f, 1.41421356f, 0.2f, 2.5f, 8 ) ) );
 
   std::stringstream ss;
   {
@@ -417,9 +688,63 @@ TEST( SpectralSIFT, CerealPolymorphicSerialization )
     EXPECT_NEAR( spectral_ptr->GetParams().edge_threshold_, 12.0f, 1e-4f );
     EXPECT_NEAR( spectral_ptr->GetParams().peak_threshold_, 0.03f, 1e-4f );
     EXPECT_EQ( spectral_ptr->GetParams().degree_, 3 );
-    EXPECT_TRUE( spectral_ptr->GetParams().root_sift_ );
+    EXPECT_EQ( spectral_ptr->GetParams().normalization_, DSP_ROOT_SIFT );
+    EXPECT_NEAR( spectral_ptr->GetParams().dsp_min_scale_, 0.2f, 1e-5f );
+    EXPECT_NEAR( spectral_ptr->GetParams().dsp_max_scale_, 2.5f, 1e-5f );
+    EXPECT_EQ( spectral_ptr->GetParams().dsp_num_scales_, 8 );
     EXPECT_NEAR( spectral_ptr->GetParams().tikhonov_lambda_, 1e-3f, 1e-6f );
     EXPECT_NEAR( spectral_ptr->GetParams().margin_factor_, 1.41421356f, 1e-4f );
+  }
+}
+
+TEST( SpectralSIFT, CerealLegacyBackwardCompatibility )
+{
+  auto make_legacy_json = []( bool root_sift ) {
+    std::ostringstream oss;
+    oss << "{\n"
+        << "  \"image_describer\": {\n"
+        << "    \"polymorphic_id\": 2147483649,\n"
+        << "    \"polymorphic_name\": \"Spectral_SIFT_Image_describer\",\n"
+        << "    \"ptr_wrapper\": {\n"
+        << "      \"valid\": 1,\n"
+        << "      \"data\": {\n"
+        << "        \"params\": {\n"
+        << "          \"first_octave\": 0,\n"
+        << "          \"num_octaves\": 6,\n"
+        << "          \"edge_threshold\": 10.0,\n"
+        << "          \"peak_threshold\": 0.04,\n"
+        << "          \"degree\": 3,\n"
+        << "          \"sigma_min\": 1.6,\n"
+        << "          \"sigma_max\": 3.2,\n"
+        << "          \"energy_threshold\": 0.999,\n"
+        << "          \"root_sift\": " << ( root_sift ? "true" : "false" ) << ",\n"
+        << "          \"tikhonov_lambda\": 0.001,\n"
+        << "          \"margin_factor\": 1.41421356\n"
+        << "        }\n"
+        << "      }\n"
+        << "    }\n"
+        << "  }\n"
+        << "}\n";
+    return oss.str();
+  };
+
+  for ( const bool root_flag : { true, false } )
+  {
+    std::stringstream ss( make_legacy_json( root_flag ) );
+    std::unique_ptr<Image_describer> loaded_describer;
+    {
+      cereal::JSONInputArchive ia( ss );
+      ia( cereal::make_nvp( "image_describer", loaded_describer ) );
+    }
+    EXPECT_TRUE( loaded_describer != nullptr );
+    auto spectral_ptr = dynamic_cast<Spectral_SIFT_Image_describer*>( loaded_describer.get() );
+    EXPECT_TRUE( spectral_ptr != nullptr );
+    if ( spectral_ptr )
+    {
+      EXPECT_EQ( spectral_ptr->GetParams().normalization_, root_flag ? ROOT_SIFT : LOWE_SIFT );
+      EXPECT_NEAR( spectral_ptr->GetParams().tikhonov_lambda_, 1e-3f, 1e-6f );
+      EXPECT_NEAR( spectral_ptr->GetParams().margin_factor_, 1.41421356f, 1e-4f );
+    }
   }
 }
 
@@ -511,6 +836,27 @@ TEST( SpectralSIFT, DescribeRealImage )
   {
     EXPECT_EQ( sift_regions->RegionCount(), sift_regions->Features().size() );
     EXPECT_EQ( sift_regions->RegionCount(), sift_regions->Descriptors().size() );
+
+    // Verify ChangeParams() properly resets cached descriptor extractor across Describe() calls
+    describer.ChangeParams().normalization_ = ROOT_SIFT;
+    auto regions_root = describer.Describe( in_image );
+    EXPECT_TRUE( regions_root != nullptr );
+    const auto* root_sift_regions = dynamic_cast<const SIFT_Regions*>( regions_root.get() );
+    EXPECT_TRUE( root_sift_regions != nullptr );
+    if ( root_sift_regions )
+    {
+      EXPECT_EQ( root_sift_regions->RegionCount(), sift_regions->RegionCount() );
+      bool any_diff = false;
+      for ( size_t i = 0; i < std::min<size_t>( 10, sift_regions->Descriptors().size() ); ++i )
+      {
+        if ( !( root_sift_regions->Descriptors()[ i ] == sift_regions->Descriptors()[ i ] ) )
+        {
+          any_diff = true;
+          break;
+        }
+      }
+      EXPECT_TRUE( any_diff );
+    }
   }
 }
 
