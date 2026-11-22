@@ -10,6 +10,7 @@
 #define OPENMVG_FEATURES_FEATURE_HPP
 
 #include <algorithm>
+#include <iomanip>
 #include <iterator>
 #include <fstream>
 #include <string>
@@ -172,6 +173,9 @@ static bool saveFeatsToFile(
   std::ofstream file(sfileNameFeats.c_str());
   if (!file.is_open())
     return false;
+  // Use 9 significant digits to preserve full IEEE-754 float32 round-trip precision
+  // (default 6 digits would truncate sub-pixel refinements to ~0.01 px on 10k-px images).
+  file << std::setprecision(9);
   std::copy(vec_feat.cbegin(), vec_feat.cend(),
             std::ostream_iterator<typename FeaturesT::value_type >(file,"\n"));
   const bool bOk = file.good();

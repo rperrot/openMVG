@@ -11,6 +11,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "openMVG/features/feature.hpp"
 #include "openMVG/features/feature_container.hpp"
@@ -31,6 +32,10 @@ struct Features_Provider
 {
   /// PointFeature array per ViewId of the considered SfM_Data container
   Hash_Map<IndexT, features::PointFeatures> feats_per_view;
+  /// Optional per-feature dominant orientations (radians) and detection scales (pixels)
+  /// keyed by ViewId; populated only when the loaded Regions type exposes them (e.g. SIFT/AKAZE).
+  Hash_Map<IndexT, std::vector<float>> orientations_per_view;
+  Hash_Map<IndexT, std::vector<float>> scales_per_view;
 
   virtual ~Features_Provider() = default;
 
@@ -65,12 +70,21 @@ struct Features_Provider
 #endif
           bContinue = false;
         }
+        // Extract positions and optional scale/orientation outside the OpenMP critical section
+        auto positions = regions->GetRegionsPositions();
+        auto orientations = regions->GetRegionsOrientations();
+        auto scales = regions->GetRegionsScales();
 #ifdef OPENMVG_USE_OPENMP
       #pragma omp critical
 #endif
         {
-          // save loaded Features as PointFeature
-          feats_per_view[iter->second->id_view] = regions->GetRegionsPositions();
+          // Save loaded features as PointFeature plus optional orientation & scale arrays
+          const IndexT view_id = iter->second->id_view;
+          feats_per_view[view_id] = std::move(positions);
+          if (!orientations.empty())
+            orientations_per_view[view_id] = std::move(orientations);
+          if (!scales.empty())
+            scales_per_view[view_id] = std::move(scales);
         }
         ++my_progress_bar;
       }
@@ -90,6 +104,24 @@ struct Features_Provider
       return it->second;
     else
       return emptyFeats;
+  }
+
+  /// Return the orientation (radians) of a feature if available, or 0.0f otherwise.
+  float getFeatureOrientation(const IndexT id_view, const size_t id_feat) const
+  {
+    const auto it = orientations_per_view.find(id_view);
+    if (it != orientations_per_view.end() && id_feat < it->second.size())
+      return it->second[id_feat];
+    return 0.0f;
+  }
+
+  /// Return the scale (pixels) of a feature if available, or 0.0f otherwise.
+  float getFeatureScale(const IndexT id_view, const size_t id_feat) const
+  {
+    const auto it = scales_per_view.find(id_view);
+    if (it != scales_per_view.end() && id_feat < it->second.size())
+      return it->second[id_feat];
+    return 0.0f;
   }
 }; // Features_Provider
 

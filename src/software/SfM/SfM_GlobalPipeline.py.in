@@ -23,16 +23,25 @@ OPENMVG_SFM_BIN = "@OPENMVG_SOFTWARE_SFM_BUILD_DIR@"
 # Indicate the openMVG camera sensor width directory
 CAMERA_SENSOR_WIDTH_DIRECTORY = "@OPENMVG_SOFTWARE_SFM_SRC_DIR@" + "/../../openMVG/exif/sensor_width_database"
 
+import argparse
 import os
 import subprocess
 import sys
 
-if len(sys.argv) < 3:
-    print ("Usage %s image_dir output_dir" % sys.argv[0])
-    sys.exit(1)
+parser = argparse.ArgumentParser(description="OpenMVG Global SfM Pipeline")
+parser.add_argument("input_dir", help="Input image directory")
+parser.add_argument("output_dir", help="Output reconstruction directory")
+parser.add_argument(
+    "--refine_tracks_lsm",
+    action="store_true",
+    default=False,
+    help="Run Multi-View Least-Squares Matching (MV-LSM) track refinement before SfM",
+)
 
-input_dir = sys.argv[1]
-output_dir = sys.argv[2]
+args = parser.parse_args()
+
+input_dir = args.input_dir
+output_dir = args.output_dir
 matches_dir = os.path.join(output_dir, "matches")
 reconstruction_dir = os.path.join(output_dir, "reconstruction_global")
 camera_file_params = os.path.join(CAMERA_SENSOR_WIDTH_DIRECTORY, "sensor_width_camera_database.txt")
@@ -65,6 +74,14 @@ pMatches.wait()
 print ("5. Filter matches" )
 pFiltering = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_GeometricFilter"), "-i", matches_dir+"/sfm_data.json", "-m", matches_dir+"/matches.putative.bin" , "-g" , "e" , "-o" , matches_dir+"/matches.e.bin" ] )
 pFiltering.wait()
+
+if args.refine_tracks_lsm:
+    print ("5b. Refine tracks with Multi-View LSM")
+    pRefine = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_RefineTracksLSM"), "-i", matches_dir+"/sfm_data.json", "-m", matches_dir, "-M", matches_dir+"/matches.e.bin", "-o", matches_dir] )
+    ret = pRefine.wait()
+    if ret != 0:
+        print ("Error: openMVG_main_RefineTracksLSM failed with exit code", ret)
+        sys.exit(ret)
 
 # Create the reconstruction if not present
 if not os.path.exists(reconstruction_dir):

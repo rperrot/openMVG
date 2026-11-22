@@ -10,6 +10,7 @@
 #define OPENMVG_FEATURES_BINARY_REGIONS_HPP
 
 #include <typeinfo>
+#include <vector>
 
 #include "openMVG/features/descriptor.hpp"
 #include "openMVG/features/regions.hpp"
@@ -71,6 +72,11 @@ public:
     return loadFeatsFromFile(sfileNameFeats, vec_feats_);
   }
 
+  bool SaveFeatures(const std::string& sfileNameFeats) const override
+  {
+    return saveFeatsToFile(sfileNameFeats, vec_feats_);
+  }
+
   PointFeatures GetRegionsPositions() const override
   {
     return {vec_feats_.cbegin(), vec_feats_.cend()};
@@ -79,6 +85,23 @@ public:
   Vec2 GetRegionPosition(size_t i) const override
   {
     return Vec2f(vec_feats_[i].coords()).cast<double>();
+  }
+
+  void SetRegionPosition(size_t i, float x, float y) override
+  {
+    assert(i < vec_feats_.size());
+    vec_feats_[i].x() = x;
+    vec_feats_[i].y() = y;
+  }
+
+  std::vector<float> GetRegionsOrientations() const override
+  {
+    return detail::ExtractRegionsOrientations(vec_feats_);
+  }
+
+  std::vector<float> GetRegionsScales() const override
+  {
+    return detail::ExtractRegionsScales(vec_feats_);
   }
 
   /// Return the number of defined regions

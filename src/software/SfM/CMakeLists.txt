@@ -174,6 +174,16 @@ target_link_libraries(openMVG_main_SfM
     ${STLPLUS_LIBRARY}
 )
 
+add_executable(openMVG_main_RefineTracksLSM main_RefineTracksLSM.cpp)
+target_link_libraries(openMVG_main_RefineTracksLSM
+  PRIVATE
+    openMVG_system
+    openMVG_image
+    openMVG_features
+    openMVG_sfm
+    ${STLPLUS_LIBRARY}
+)
+
 add_executable(openMVG_main_ConvertSfM_DataFormat main_ConvertSfM_DataFormat.cpp)
 target_link_libraries(openMVG_main_ConvertSfM_DataFormat
   PRIVATE
@@ -238,6 +248,8 @@ target_link_libraries(openMVG_main_ChangeLocalOrigin
 # Installation rules
 set_property(TARGET openMVG_main_SfM PROPERTY FOLDER OpenMVG/software)
 install(TARGETS openMVG_main_SfM DESTINATION bin/)
+set_property(TARGET openMVG_main_RefineTracksLSM PROPERTY FOLDER OpenMVG/software)
+install(TARGETS openMVG_main_RefineTracksLSM DESTINATION bin/)
 set_property(TARGET openMVG_main_ConvertSfM_DataFormat PROPERTY FOLDER OpenMVG/software)
 install(TARGETS openMVG_main_ConvertSfM_DataFormat DESTINATION bin/)
 set_property(TARGET openMVG_main_FrustumFiltering PROPERTY FOLDER OpenMVG/software)
